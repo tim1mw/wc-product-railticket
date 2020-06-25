@@ -96,21 +96,29 @@ function railticket_style()
 }
 
 
-function railticket_ajax() {
-    $ticketbuilder = new TicketBuilder();
+function railticket_ajax_request() {
+    $ticketbuilder = railticket_getticketbuilder();
+    $function = railticket_getpostfield('function');
+    $result = array();
+    switch ($function) {
+        case 'bookable_stations':
+            $result = $ticketbuilder->get_bookable_stations();
+            break;
+        case 'bookable_trains':
+            $result = $ticketbuilder->get_bookable_trains();
+            break;
+    }
 
-
-
-    wp_send_json_success( $result );
+    wp_send_json_success($result);
 }
 
 function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');
     $fromstation = railticket_getpostfield('fromstation');
-    $tostation = sanitize_text_field('tostation');
-    $type = sanitize_text_field('type');
-    $outtime = sanitize_text_field('outtime');
-    $rettime = sanitize_text_field('rettime');
+    $tostation = railticket_getpostfield('tostation');
+    $type = railticket_getpostfield('type');
+    $outtime = railticket_getpostfield('outtime');
+    $rettime = railticket_getpostfield('rettime');
     $tickets = array();
 
     return new TicketBuilder($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $tickets);
@@ -135,4 +143,4 @@ add_action( 'woocommerce_product_options_general_product_data', function(){
 add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
 add_action( 'wp_enqueue_scripts', 'railticket_style' );
-add_action( 'railticket_ajax', 'railticket_ajax');
+add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');

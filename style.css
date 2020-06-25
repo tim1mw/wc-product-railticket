@@ -46,25 +46,25 @@
     border-radius: 4px;
 }
 
-#stationdiv_from {
+.railticket_listselect_left {
     float:left;
     width:50%;
     overflow: hidden;
 }
 
-#stationdiv_to {
+.railticket_listselect_right {
     width:50%;
     overflow: hidden;
 }
 
-#stationdiv_from .inner {
+.railticket_listselect_left .inner {
     margin-left:auto;
     width:100%;
 
     text-align:center;
 }
 
-#stationdiv_to .inner {
+.railticket_listselect_right .inner {
     width:100%;
 
     text-align:center;
@@ -76,18 +76,18 @@
 
 .railticket_stationselect {}
 
-#stations ul {
+.railticket_listselect ul {
     list-style:none;
     margin-left:0px;
 }
 
-#stations input[type="radio"] {
+.railticket_listselect input[type="radio"] {
     opacity: 0;
     position: fixed;
     width: 0;
 }
 
-#stations label {
+.railticket_listselect label {
     font-size:large;
     font-weight:bold;
     width:100%;
@@ -100,18 +100,26 @@
     border-radius: 4px;
 }
 
-#stations input[disabled] + label {
+.railticket_listselect input[disabled] + label {
     background-color:#fafafa;
     color:#aaaaaa;
 }
 
-#stations input[type="radio"]:checked + label {
+.railticket_listselect input[type="radio"]:checked + label {
     font-weight:bolder;
     background-color:#f2f0a6;
     color:#880000;
     border-color: #880000;
 }
 
-#stations input[type="radio"]:focus + label {
+.railticket_listselect input[type="radio"]:focus + label {
     border: 2px dashed #444;
+}
+
+.railticket_hlist {
+
+}
+
+.railticket_caplitalise {
+    text-transform:capitalize;
 }

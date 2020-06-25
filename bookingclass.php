@@ -26,11 +26,58 @@ class TicketBuilder {
     public function render() {
         return $this->get_javascript().
             $this->get_datepick().
-            '<form action="post">'.
+            '<form action="post" name="railticketbooking">'.
             $this->get_stations().
             $this->get_deptimes().
             $this->get_ticket_choices().
             $this->get_addtocart().'</form>';
+    }
+
+    public function is_date_bookable($date) {
+        global $wpdb;
+
+        if ($date instanceof DateTime) {
+            $date = $date->format('Y-m-d');
+        }
+
+        $sql = "SELECT COUNT(*) FROM {$wpdb->prefix}railtimetable_dates ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
+            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date."' AND ".
+            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
+
+        $rec = $wpdb->get_var($sql );
+        if ($rec > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function get_bookable_stations() {
+        $bookable = array();
+        $bookable['from'] = array(0 => true, 1 => false, 2 => false);
+        $bookable['to'] = array(0 => false, 1 => true, 2 => true);
+        return $bookable;
+    }
+
+    public function get_bookable_trains() {
+        $bookable = array();
+        $bookable['out'] = array(
+            0 => array( 'dep' => '11:00', 'arr' => '11:25'),
+            1 => array( 'dep' => '12:45', 'arr' => '13:10'),
+            2 => array( 'dep' => '2:20', 'arr' => '2:45'),
+            3 => array( 'dep' => '3:55', 'arr' => '4:20'));
+
+        $bookable['ret'] = array(
+            0 => array( 'dep' => '11:40', 'arr' => '12:05'),
+            1 => array( 'dep' => '1:25', 'arr' => '1:50'),
+            2 => array( 'dep' => '3:00', 'arr' => '3:25'),
+            3 => array( 'dep' => '4:25', 'arr' => '4:50'));
+
+        $bookable['tickets'] = array('single', 'return');
+
+        return $bookable;
     }
 
     private function get_javascript() {
@@ -81,11 +128,15 @@ class TicketBuilder {
             "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
 
         $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>";
-        //if ($this->today->format('H') < 19) { 
+        if ($this->today->format('H') < 19 && $this->is_date_bookable($this->today)) { 
              $str .= "<input type='button' value='Travel Today' id='todaybutton' title='Click to travel today' class='railticket_datebuttons' />&nbsp;";
-        //}
-        $str .= "<input type='button' value='Travel Tomorrow' id='tomorrowbutton' title='Click to travel tomorrow' ".
-            "class='railticket_datebuttons' /></form></div>".
+        }
+
+        if ($this->is_date_bookable($this->tomorrow)) {
+            $str .= "<input type='button' value='Travel Tomorrow' id='tomorrowbutton' title='Click to travel tomorrow' ".
+                "class='railticket_datebuttons' />";
+        }
+        $str .= "</form></div>".
             "<div id='datechosen' class='railticket_container'>No Date Chosen</div>".
             "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' /></div>";
 
@@ -93,9 +144,9 @@ class TicketBuilder {
     }
 
     private function get_stations() {
-        $str = "<div id='stations' class='railticket_stageblock'><div class='railticket_container'>".
-            "<div id='stationdiv_from'><div class='inner'><h3>From</h3>".$this->station_radio($stations, "fromstation", true)."</div></div>".
-            "<div id='stationdiv_to'><div  class='inner'><h3>To</h3>".$this->station_radio($stations, "tostation", false)."</div></div>".
+        $str = "<div id='stations' class='railticket_stageblock railticket_listselect'><div class='railticket_container'>".
+            "<div class='railticket_listselect_left'><div class='inner'><h3>From</h3>".$this->station_radio($stations, "fromstation", true)."</div></div>".
+            "<div class='railticket_listselect_right'><div class='inner'><h3>To</h3>".$this->station_radio($stations, "tostation", false)."</div></div>".
             "</div></div>";
 
         return $str;
@@ -104,18 +155,8 @@ class TicketBuilder {
     private function station_radio($stations, $name, $from) {
         $str="<ul>";
         foreach ($this->stations as $station) {
-            if ($this->station_bookable($station, $from)) {
-                $class='';
-                $title='Click to select this station';
-                $att='';
-            } else {
-                $class='railticket_notbookable';
-                $title='No tickets are available for this station';
-                $att='disabled ';
-            }
-
-            $str .= "<li title='".$title."'><input type='radio' name='".$name."' id='".$name.$station->id."' value='".$station->id.
-                "' class='railticket_stationselect railticket_".$name." ".$class."' ".$att."/>\n".
+            $str .= "<li title='No tickets are available for this station'><input type='radio' name='".$name."' id='".$name.$station->id."' value='".$station->id.
+                "' class='railticket_".$name." railticket_notbookable' disabled />\n".
                 "<label for='".$name.$station->id."'>".$station->name."</label></li>";
         }
         $str.="</ul>";
@@ -144,10 +185,15 @@ class TicketBuilder {
     }
 
     private function get_deptimes() {
-        $str = "<div id='deptimes' class='railticket_stageblock'>".
-            "<h3>Choose a Departure</h3>";
-
-        $str .= "</div>";
+        $str =
+            "<div id='deptimes' class='railticket_stageblock railticket_listselect'>".
+            "  <h3>Choose a Departure</h3>".
+            "  <div id='deptimes_data' class='railticket_container'>".
+            "    <div id='deptimes_data_out' class='railticket_listselect_left'></div>".
+            "    <div id='deptimes_data_ret' class='railticket_listselect_right'></div>".
+            "  </div>".
+            "  <div id='ticket_type' class='railticket_container'></div>".
+            "</div>";
 
         return $str;
     }
