@@ -95,7 +95,8 @@ function soldOut(bdate) {
 
 function setChosenDate(text, bdate) {
     var ele = document.getElementById('datechosen');
-    ele.innerHTML = text+": "+bdate;
+    var ddate = new Date(bdate);
+    ele.innerHTML = text+": "+ddate.toLocaleDateString();
     var dot = document.getElementById('dateoftravel');
     dot.value = bdate;
 }
@@ -103,8 +104,8 @@ function setChosenDate(text, bdate) {
 function showTicketStages(stage) {
     var display = 'block';
     
-    var datechoser = document.getElementById('datechoser');
-    datechoser.style.display = display;
+    var datechooser = document.getElementById('datechooser');
+    datechooser.style.display = display;
 
     if (stage == 'date') {
         display = 'none';
@@ -150,5 +151,5 @@ function skipStations() {
 }
 
 function skipDepTimes() {
-    return true;
+    return false;
 }

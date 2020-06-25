@@ -4,9 +4,9 @@ class TicketBuilder {
 
     private $today, $tomorrow, $tickettypes, $stations;
 
-    private $date, $type, $outtime, $rettime,$outtime, $rettime, $tickets;
+    //private $date, $type, $outtime, $rettime,$outtime, $rettime, $tickets;
 
-    public function __construct($date, $fromstation, $tostation, $type, $outtime, $rettime, $tickets) {
+    public function __construct($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $tickets) {
         global $wpdb;
         $this->today = new DateTime();
         $this->tomorrow = new DateTime();
@@ -14,7 +14,7 @@ class TicketBuilder {
         $this->tickettypes = railticket_get_ticket_data();
         $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC");
 
-        $this->date = $date;
+        $this->dateoftravel = $date;
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
         $this->type = $type;
@@ -73,24 +73,30 @@ class TicketBuilder {
 
         $scroll = $this->today->format("Y-n");
 
-        $cal .= '<script type="text/javascript">var baseurl = "'.railtimetable_currentlang()."/".get_site_url().'";var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script><form>';
+        $cal .= '<script type="text/javascript">var baseurl = "'.railtimetable_currentlang()."/".get_site_url().'";var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
 
-        if ($this->today->format('H') < 19) { 
-             $cal .= "<input type='button' value='Travel Today' id='todaybutton' title='Click to travel today' />";
-        }
-        $cal .= "<input type='button' value='Travel Tomorrow' id='tomorrowbutton' title='Click to travel tomorrow' /></form>";
 
-        return "<div id='datechoser' class='calendar-wrapper' id='railtimetable-cal'>".
-            "<h3>Choose Date of Travel</h3>".$cal.
-            "<div id='datechosen'>No Date Chosen</div>".
+
+        $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3></div>".
+            "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
+
+        $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>";
+        //if ($this->today->format('H') < 19) { 
+             $str .= "<input type='button' value='Travel Today' id='todaybutton' title='Click to travel today' class='railticket_datebuttons' />&nbsp;";
+        //}
+        $str .= "<input type='button' value='Travel Tomorrow' id='tomorrowbutton' title='Click to travel tomorrow' ".
+            "class='railticket_datebuttons' /></form></div>".
+            "<div id='datechosen' class='railticket_container'>No Date Chosen</div>".
             "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' /></div>";
+
+        return $str;
     }
 
     private function get_stations() {
-        $str = "<div id='stations' class='railticket_stageblock'>".
+        $str = "<div id='stations' class='railticket_stageblock'><div class='railticket_container'>".
             "<div id='stationdiv_from'><div class='inner'><h3>From</h3>".$this->station_radio($stations, "fromstation", true)."</div></div>".
             "<div id='stationdiv_to'><div  class='inner'><h3>To</h3>".$this->station_radio($stations, "tostation", false)."</div></div>".
-            "</div>";
+            "</div></div>";
 
         return $str;
     }
