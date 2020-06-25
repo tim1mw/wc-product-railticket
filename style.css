@@ -1,0 +1,102 @@
+.railticket_datebuttons {
+    text-align:center;
+    margin-bottom:4px;
+}
+
+#datechosen {
+    width:400px;
+    margin-left:auto;
+    margin-right:auto;
+    margin-top:10px;
+    margin-bottom:10px;
+    text-align:center;
+    font-size:x-large;
+    font-weight:bolder;
+    background-color:#f2f0a6;
+    color:#880000;
+    border: 2px solid #880000;
+    border-radius: 4px;
+}
+
+.railticket_stageblock {
+    border: 1px solid #eeeeee;
+    background: #fafafa;
+    margin-top:10px;
+    display: none;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.railticket_stageblock h3 {
+    text-align:center;
+}
+
+#stationdiv_from {
+    float:left;
+    width:50%;
+    overflow: hidden;
+}
+
+#stationdiv_to {
+    width:50%;
+    overflow: hidden;
+}
+
+#stationdiv_from .inner {
+    margin-left:auto;
+    width:200px;
+
+    text-align:center;
+}
+
+#stationdiv_to .inner {
+    width:200px;
+
+    text-align:center;
+}
+
+.railticket_fromstation {}
+
+.railticket_tostation {}
+
+.railticket_stationselect {}
+
+#stations ul {
+    list-style:none;
+    margin-left:0px;
+}
+
+#stations input[type="radio"] {
+    opacity: 0;
+    position: fixed;
+    width: 0;
+}
+
+#stations label {
+    font-size:large;
+    font-weight:bold;
+    width:100%;
+    display: inline-block;
+    background-color: #880000;
+    color:white;
+    padding: 10px 20px;
+    font-family: sans-serif, Arial;
+    border: 2px solid #fafafa;
+    border-radius: 4px;
+}
+
+#stations input[disabled] + label {
+    background-color:#fafafa;
+    color:#aaaaaa;
+}
+
+#stations input[type="radio"]:checked + label {
+    font-weight:bolder;
+    background-color:#f2f0a6;
+    color:#880000;
+    border-color: #880000;
+}
+
+#stations input[type="radio"]:focus + label {
+    border: 2px dashed #444;
+}
