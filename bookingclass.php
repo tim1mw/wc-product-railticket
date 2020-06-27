@@ -2,16 +2,14 @@
 
 class TicketBuilder {
 
-    private $today, $tomorrow, $tickettypes, $stations;
+    private $today, $tomorrow, $stations;
 
-    //private $date, $type, $outtime, $rettime,$outtime, $rettime, $tickets;
-
-    public function __construct($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $tickettype, $tickets) {
+    public function __construct($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $journeytype, $tickets) {
         global $wpdb;
         $this->today = new DateTime();
         $this->tomorrow = new DateTime();
         $this->tomorrow->modify('+1 day');
-        $this->tickettypes = railticket_get_ticket_data();
+        //$this->tickettypes = railticket_get_ticket_data();
         $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC");
 
         $this->dateoftravel = $dateoftravel;
@@ -20,6 +18,7 @@ class TicketBuilder {
         $this->type = $type;
         $this->outtime = $outtime;
         $this->rettime = $rettime;
+        $this->journeytype = $journeytype;
         $this->tickets = $tickets;
     }
 
@@ -163,6 +162,11 @@ class TicketBuilder {
         return $bookable;
     }
 
+    public function getTickets() {
+        global $wpdb;
+        
+    }
+
     /**
     * Gets the outbound direction
     **/
@@ -195,7 +199,7 @@ class TicketBuilder {
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
             " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
             "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$this->dateoftravel."'", OBJECT );
-file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', $this->dateoftravel."\n".print_r($this, true));
+
         return ($timetable[0]) ? : false;
     }
 
@@ -300,7 +304,7 @@ file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', $this->dateo
 
     private function get_ticket_choices() {
         $str = "<div id='tickets' class='railticket_stageblock'>".
-            "<input type='hidden' name='tickettype' value='' />".
+            "<input type='hidden' name='journeytype' value='' />".
             "</div>";
 
         return $str;

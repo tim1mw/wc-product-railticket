@@ -15,6 +15,7 @@ define('SPECIAL_TICKET', 2);
 
 require_once('calendar.php');
 require_once('bookingclass.php');
+//require_once('editlib.php');
 
 
 // Wordpress is failing to set the timezone, so force it here.
@@ -55,7 +56,6 @@ function railticket_product_front() {
     }
 
     echo '</li>';
-
 }
 
 /*
@@ -107,6 +107,9 @@ function railticket_ajax_request() {
         case 'bookable_trains':
             $result = $ticketbuilder->get_bookable_trains();
             break;
+        case 'tickets':
+            $result = $ticketbuilder->get_tickets();
+            break;
     }
 
     wp_send_json_success($result);
@@ -119,10 +122,10 @@ function railticket_getticketbuilder() {
     $type = railticket_getpostfield('type');
     $outtime = railticket_getpostfield('outtime');
     $rettime = railticket_getpostfield('rettime');
-    $tickettype = railticket_getpostfield('tickettype');
+    $journeytype = railticket_getpostfield('journeytype');
     $tickets = array();
 
-    return new TicketBuilder($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $tickettype, $tickets);
+    return new TicketBuilder($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $journeytype, $tickets);
 }
 
 function railticket_getpostfield($field) {
@@ -138,7 +141,7 @@ add_action('woocommerce_after_single_product_summary', 'railticket_product_front
 
 // General options refuse to show without an advanced element we don't need....
 add_action( 'woocommerce_product_options_general_product_data', function(){
-            echo '<div class="options_group show_if_advanced clear"></div>';
+    echo '<div class="options_group show_if_advanced clear"></div>';
 } );
 
 add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
