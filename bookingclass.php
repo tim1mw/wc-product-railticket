@@ -6,7 +6,7 @@ class TicketBuilder {
 
     //private $date, $type, $outtime, $rettime,$outtime, $rettime, $tickets;
 
-    public function __construct($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $tickets) {
+    public function __construct($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $tickettype, $tickets) {
         global $wpdb;
         $this->today = new DateTime();
         $this->tomorrow = new DateTime();
@@ -14,7 +14,7 @@ class TicketBuilder {
         $this->tickettypes = railticket_get_ticket_data();
         $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC");
 
-        $this->dateoftravel = $date;
+        $this->dateoftravel = $dateoftravel;
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
         $this->type = $type;
@@ -54,30 +54,148 @@ class TicketBuilder {
         }
     }
 
+    public function is_train_bookable($time, $stn, $direction) {
+        //if ($direction == "up") {
+        //    return false;
+        //}
+        return true;
+    }
+
     public function get_bookable_stations() {
         $bookable = array();
-        $bookable['from'] = array(0 => true, 1 => false, 2 => false);
-        $bookable['to'] = array(0 => false, 1 => true, 2 => true);
+        $bookable['from'] = array(0 => true, 1 => false, 2 => true);
+        $bookable['to'] = array(0 => true, 1 => false, 2 => true);
         return $bookable;
     }
 
+/*
+    private function station_bookable($station, $from) {
+        if ($from) {
+            foreach ($this->tickettypes->prices as $price) {
+                // If we are going from this station, then make sure it has some destinations
+                if ($price->station == $station->id && count($price->destinations) > 0) {
+                    return true;
+                }
+            }
+        } else {
+            foreach ($this->tickettypes->prices as $price) {
+                // Otherwise we want to see if this station appears as a destination from some other station
+                foreach ($price->destinations as $dest) {
+                    if ($dest->station == $station->id) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+*/
+
     public function get_bookable_trains() {
+        global $wpdb;
+        $fmt = get_option('railtimetable_time_format');
         $bookable = array();
-        $bookable['out'] = array(
-            0 => array( 'dep' => '11:00', 'arr' => '11:25'),
-            1 => array( 'dep' => '12:45', 'arr' => '13:10'),
-            2 => array( 'dep' => '2:20', 'arr' => '2:45'),
-            3 => array( 'dep' => '3:55', 'arr' => '4:20'));
 
-        $bookable['ret'] = array(
-            0 => array( 'dep' => '11:40', 'arr' => '12:05'),
-            1 => array( 'dep' => '1:25', 'arr' => '1:50'),
-            2 => array( 'dep' => '3:00', 'arr' => '3:25'),
-            3 => array( 'dep' => '4:25', 'arr' => '4:50'));
+        $timetable = $this->findTimetable();
+        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$this->fromstation."' ".
+            " AND timetableid = ".$timetable->id)[0];
+        $rettimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$this->tostation."' ".
+            " AND timetableid = ".$timetable->id)[0];
+        $direction = $this->getDirection();
 
-        $bookable['tickets'] = array('single', 'return');
+        $bookable['out'] = array();
+        $dd = $direction."_deps";
+        $da = $direction."_arrs";
+        $deptimes = explode(",", $deptimesdata->$dd);
+        $deparrs = explode(",", $rettimesdata->$da);
+        $firstdep = false;
+        $outtotal = 0;
+        foreach ($deptimes as $index => $dep) {
+            $canbook = $this->is_train_bookable($dep, $this->fromstation, $direction);
+            $bookable['out'][] = array('dep' => $dep, 'depdisp' => strftime($fmt, strtotime($dep)),
+                'arr' => $deparrs[$index],  'arrdisp' => strftime($fmt, strtotime($deparrs[$index])),
+                'bookable' => $canbook);
+            if ($firstdep == false) {
+                $firstdep = strtotime($dep);
+            }
+            if ($canbook) {
+                $outtotal++;
+            }
+        }
+        
+        if ($direction == 'up') {
+            $direction = 'down';
+        } else {
+            $direction = 'up';
+        }
+
+        $dd = $direction."_deps";
+        $da = $direction."_arrs";
+        $rettimes = explode(",", $rettimesdata->$dd);
+        $retarrs = explode(",", $deptimesdata->$da);
+        $bookable['ret'] = array();
+        $testfirst = true;
+        $intotal = 0;
+        foreach ($rettimes as $index => $ret) {
+            if ($testfirst && strtotime($ret) < $firstdep) {
+                // If the first return trip is before the first departure,skip it
+                $testfirst = false;
+                continue;
+            }
+            $canbook = $this->is_train_bookable($ret, $this->$tostation, $direction);
+            $bookable['ret'][] = array('dep' => $ret, 'depdisp' => strftime($fmt, strtotime($ret)),
+                'arr' => $retarrs[$index], 'arrdisp' => strftime($fmt, strtotime($retarrs[$index])), 
+                'bookable' => $canbook);
+            $testfirst = false;
+            if ($canbook) {
+                $intotal ++;
+            }
+        }
+        $bookable['tickets'] = array();
+        if ($outtotal > 0) {
+            $bookable['tickets'][] = 'single';
+            if ($intotal > 0) {
+                $bookable['tickets'][] = 'return';
+            }
+        }
 
         return $bookable;
+    }
+
+    /**
+    * Gets the outbound direction
+    **/
+
+    private function getDirection() {
+        global $wpdb;
+
+        $from = $this->getStationData($this->fromstation);
+        $to = $this->getStationData($this->tostation);
+
+        if ($from->sequence > $to->sequence) {
+            return "up";
+        } else {
+            return "down";
+        }
+    }
+
+    private function getStationData($stationid) {
+        global $wpdb;
+        $stn = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$stationid);
+        return ($stn[0]) ? : false;
+    }
+
+    private function findTimetable()
+    {
+        global $wpdb;
+        $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
+            "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
+            " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
+            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$this->dateoftravel."'", OBJECT );
+file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', $this->dateoftravel."\n".print_r($this, true));
+        return ($timetable[0]) ? : false;
     }
 
     private function get_javascript() {
@@ -163,34 +281,15 @@ class TicketBuilder {
         return $str;
     }
 
-    private function station_bookable($station, $from) {
-        if ($from) {
-            foreach ($this->tickettypes->prices as $price) {
-                // If we are going from this station, then make sure it has some destinations
-                if ($price->station == $station->id && count($price->destinations) > 0) {
-                    return true;
-                }
-            }
-        } else {
-            foreach ($this->tickettypes->prices as $price) {
-                // Otherwise we want to see if this station appears as a destination from some other station
-                foreach ($price->destinations as $dest) {
-                    if ($dest->station == $station->id) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     private function get_deptimes() {
         $str =
             "<div id='deptimes' class='railticket_stageblock railticket_listselect'>".
             "  <h3>Choose a Departure</h3>".
             "  <div id='deptimes_data' class='railticket_container'>".
-            "    <div id='deptimes_data_out' class='railticket_listselect_left'></div>".
-            "    <div id='deptimes_data_ret' class='railticket_listselect_right'></div>".
+            "    <div id='deptimes_data_out' class='railticket_listselect_left'>".
+            "    <input type='hidden' name='outtime' value='' /></div>".
+            "    <div id='deptimes_data_ret' class='railticket_listselect_right'>".
+            "    <input type='hidden' name='rettime' value='' /></div>".
             "  </div>".
             "  <div id='ticket_type' class='railticket_container'></div>".
             "</div>";
@@ -199,9 +298,9 @@ class TicketBuilder {
     }
 
     private function get_ticket_choices() {
-        $str = "<div id='tickets' class='railticket_stageblock'>";
-
-        $str .= "</div>";
+        $str = "<div id='tickets' class='railticket_stageblock'>".
+            "<input type='hidden' name='tickettype' value='' />".
+            "</div>";
 
         return $str;
     }

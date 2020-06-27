@@ -112,14 +112,11 @@
     border-color: #880000;
 }
 
-.railticket_listselect input[type="radio"]:focus + label {
-    border: 2px dashed #444;
-}
-
-.railticket_hlist {
-
-}
-
 .railticket_caplitalise {
     text-transform:capitalize;
+}
+
+.railticket_arrtime {
+    line-height:70%;
+    font-size:small;
 }

@@ -42,24 +42,29 @@ function railTicketAjax(datareq, callback) {
     data.append('action', 'railticket_ajax');
     data.append('function', datareq);
     data.append('dateoftravel', document.getElementById('dateoftravel').value);
-    data.append('fromstation', document.railticketbooking['fromstation']);
-    data.append('tostation', document.railticketbooking['tostation']);
-    console.log("railTicketAjax "+document.getElementById('dateoftravel').value);
+    data.append('fromstation', document.railticketbooking['fromstation'].value);
+    data.append('tostation', document.railticketbooking['tostation'].value);
+    data.append('outtime', document.railticketbooking['outtime'].value);
+    data.append('rettime', document.railticketbooking['rettime'].value);
+    data.append('tickettype', document.railticketbooking['tickettype'].value);
+
     request.send(data);
 }
 
 function setBookingDate(bdate) {
     setChosenDate("Date of Travel", bdate);
-    showTicketStages('stations');
+    showTicketStages('date');
     railTicketAjax('bookable_stations', function(response) {
         enableStations('from', response);
         enableStations('to', response);
+        showTicketStages('stations');
     });
 }
 
 function enableStations(type, response) {
     for (stnid in response[type]) {
         var stn = document.getElementById(type+'station'+stnid);
+
         if (response[type][stnid]) {
             stn.disabled = false;
             stn.title = 'Click to select this station';
@@ -67,6 +72,7 @@ function enableStations(type, response) {
             stn.disabled = true;
             stn.title = 'No tickets are available for this station';
         }
+        stn.checked = false;
     }
 }
 
@@ -81,6 +87,7 @@ function soldOut(bdate) {
 }
 
 function setChosenDate(text, bdate) {
+
     var ele = document.getElementById('datechosen');
     var ddate = new Date(bdate);
     ele.innerHTML = text+": "+ddate.toLocaleDateString();
@@ -101,7 +108,7 @@ function fromStationChanged(evt) {
     lastfrom=evt.target.value;
 
     if (lastto!=-1) {
-        showTicketStages('deptimes');
+        showTicketStages('stations');
         getDepTimes();
     }
 }
@@ -118,28 +125,33 @@ function toStationChanged(evt) {
     }
     lastto=evt.target.value;
     if (lastfrom!=-1) {
-        showTicketStages('deptimes');
+        showTicketStages('stations');
         getDepTimes();
     }
 }
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', function(response) {
+         showTicketStages('deptimes');
         showTimes(response['out'], 'out', "Outbound");
         showTimes(response['ret'], 'ret', "Return");
-  
-        var str = "<ul>";
-        for (index in response['tickets']) {
-            var selected ="";
-            if (index == response['tickets'].length-1) {
-                selected = " checked ";
+        var str = "";
+        if (response['tickets'].length == 0) {
+            str += "<h4>Sorry, no services can be booked on line for these choices. Please try a different selection.</h4>";
+        } else {
+            str += "<ul>";
+            for (index in response['tickets']) {
+                var selected ="";
+                if (index == response['tickets'].length-1) {
+                    selected = " checked ";
+                }
+                var type = response['tickets'][index];
+                str += "<li class='railticket_hlist'><input type='radio' name='tickettype' id='tickettype"+
+                    type+"' "+selected+" onclick='ticketTypeChanged(\""+type+"\")'/><label class='railticket_caplitalise' for='tickettype"+
+                    type+"'>"+type+"</label></li>";
             }
-            var type = response['tickets'][index];
-            str += "<li class='railticket_hlist'><input type='radio' name='tickettype' id='tickettype"+
-                type+"' "+selected+" onclick='ticketTypeChanged(\""+type+"\")'/><label class='railticket_caplitalise' for='tickettype"+
-                type+"'>"+type+"</label></li>";
+            str += "</ul>";
         }
-        str += "</ul>";
         document.getElementById('ticket_type').innerHTML = str;
     });
 }
@@ -147,25 +159,63 @@ function getDepTimes() {
 function showTimes(times, type, header) {
     var str = "<h3>"+header+"</h3>";
     if (times.length == 0) {
-        str += '<h4>No Trains</h4>';
+        str += '<h4>No Trains</h4><input type="hidden" name="'+type+'time" value="" />';
     }
     str += '<ul>';
     for (index in times) {
-        str += "<li><input type='radio' name='"+type+"time' id='dep"+type+index+"' class='tickettype"+type+"' /><label for='dep"+type+index+"'>"+times[index]['dep']+"</label></li>";
+        if (times[index].length == 0) {
+            str += "<li><div class='timespacer'></div></li>";     
+        } else {
+            var disabled = '';
+            var tclass = "tickettype"+type;
+            if (!times[index]['bookable']) {
+                disabled = ' disabled ';
+                tclass = '';
+            }
+            str += "<li><input type='radio' name='"+type+"time' id='dep"+type+index+"' class='"+tclass+"' value='"+times[index]['dep']+"' "+
+                "onclick='trainTimeChanged("+index+", \""+type+"\")' "+disabled+" />"+
+                "<label for='dep"+type+index+"'>"+times[index]['depdisp']+
+                "<div class='railticket_arrtime'>(arrives: "+times[index]['arrdisp']+")</div></label></li>";
+        }
     }
     str += "</ul>";
     document.getElementById('deptimes_data_'+type).innerHTML = str;
 }
 
+function trainTimeChanged(index, type) {
+    if (type == 'ret' || document.railticketbooking['tickettype'] == 'single') {
+        return;
+    }
+
+    var tt = document.getElementsByClassName('tickettyperet');
+    var d = true;
+    for (t in tt) { 
+        if (t == index) {
+            d = false;
+        }
+        tt[t].disabled = d;
+        if (d) {
+            tt[t].checked = false;
+        }
+    }
+
+}
+
 function ticketTypeChanged(type) {
-    var d = false;
-    if (type == 'single') {
-        d = true;
+    if (type == 'return') {
+        var ot = document.getElementsByClassName('tickettypeout');
+        for (i in ot) {
+            if (ot[i].checked == true) {
+                trainTimeChanged(i, 'out')
+                break;
+            }
+        }
+        return;
     }
 
     var tt = document.getElementsByClassName('tickettyperet');
     for (t in tt) {
-        tt[t].disabled = d;
+        tt[t].disabled = true;
         tt[t].checked = false;
     }
 }

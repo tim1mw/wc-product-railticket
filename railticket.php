@@ -119,9 +119,10 @@ function railticket_getticketbuilder() {
     $type = railticket_getpostfield('type');
     $outtime = railticket_getpostfield('outtime');
     $rettime = railticket_getpostfield('rettime');
+    $tickettype = railticket_getpostfield('tickettype');
     $tickets = array();
 
-    return new TicketBuilder($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $tickets);
+    return new TicketBuilder($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $tickettype, $tickets);
 }
 
 function railticket_getpostfield($field) {
