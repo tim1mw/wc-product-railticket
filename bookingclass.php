@@ -25,12 +25,13 @@ class TicketBuilder {
 
     public function render() {
         return $this->get_javascript().
+            '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>'.
             $this->get_datepick().
             '<form action="post" name="railticketbooking">'.
             $this->get_stations().
             $this->get_deptimes().
             $this->get_ticket_choices().
-            $this->get_addtocart().'</form>';
+            $this->get_addtocart().'</form></div>';
     }
 
     public function is_date_bookable($date) {

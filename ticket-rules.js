@@ -28,6 +28,8 @@ function setupTickets() {
 }
 
 function railTicketAjax(datareq, callback) {
+    var spinner = document.getElementById('pleasewait');
+    spinner.style.display = 'block';
 
     var request = new XMLHttpRequest();
     request.open('POST', ajaxurl, true);
@@ -35,6 +37,7 @@ function railTicketAjax(datareq, callback) {
         console.log(request);
         if (request.status >= 200 && request.status < 400) {
             callback(JSON.parse(request.responseText).data);
+            spinner.style.display = 'none';
         }
     };
 
