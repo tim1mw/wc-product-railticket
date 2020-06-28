@@ -193,7 +193,7 @@ class TicketBuilder {
             $tickets->prices[$ticketd->tickettype] = $ticketd;
         }
 
-        file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', $sql.print_r($tickets, true));
+        //file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', $sql.print_r($tickets, true));
         return $tickets;
     }
 
@@ -308,7 +308,7 @@ class TicketBuilder {
     private function station_radio($stations, $name, $from) {
         $str="<ul>";
         foreach ($this->stations as $station) {
-            $str .= "<li title='No tickets are available for this station'><input type='radio' name='".$name."' id='".$name.$station->id."' value='".$station->id.
+            $str .= "<li><input type='radio' name='".$name."' id='".$name.$station->id."' value='".$station->id.
                 "' class='railticket_".$name." railticket_notbookable' disabled />\n".
                 "<label for='".$name.$station->id."'>".$station->name."</label></li>";
         }

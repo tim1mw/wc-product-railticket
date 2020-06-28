@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", setupTickets);
 
 var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata;
 var ticketselections = new Array();
+var ticketsAllocated = new Array();
 
 function setupTickets() {
     var todaybutton = document.getElementById('todaybutton');
@@ -71,10 +72,10 @@ function enableStations(type, response) {
 
         if (response[type][stnid]) {
             stn.disabled = false;
-            stn.title = 'Click to select this station';
+            //stn.title = 'Click to select this station';
         } else {
             stn.disabled = true;
-            stn.title = 'No tickets are available for this station';
+            //stn.title = 'No tickets are available for this station';
         }
         stn.checked = false;
     }
@@ -91,7 +92,6 @@ function soldOut(bdate) {
 }
 
 function setChosenDate(text, bdate) {
-
     var ele = document.getElementById('datechosen');
     var ddate = new Date(bdate);
     ele.innerHTML = text+": "+ddate.toLocaleDateString();
@@ -172,14 +172,18 @@ function showTimes(times, type, header) {
         } else {
             var disabled = '';
             var tclass = "journeytype"+type;
-            var title = "Click to book this train";
+            var title = "";
+
             if (!times[index]['bookable']) {
                 disabled = ' disabled ';
                 tclass = '';
-                title = "Sorry, this train cannot be booked online";
+                //title = "Sorry, this train cannot be booked online";
             }
-            str += "<li><input type='radio' name='"+type+"time' id='dep"+type+index+"' class='"+tclass+"' value='"+times[index]['dep']+"' "+
-                "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" title='"+title+"' />"+
+
+            str += "<li id='lidep"+type+index+"' title='"+title+"'><input type='radio' name='"+type+"time' id='dep"+
+                type+index+"' class='"+tclass+"' "+
+                "value='"+times[index]['dep']+"' "+
+                "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" />"+
                 "<label for='dep"+type+index+"'>"+times[index]['depdisp']+
                 "<div class='railticket_arrtime'>(arrives: "+times[index]['arrdisp']+")</div></label></li>";
         }
@@ -189,11 +193,8 @@ function showTimes(times, type, header) {
 }
 
 function trainTimeChanged(index, type, skip) {
-
-
     if (type == 'out') {
         if (index == lastout) {
-            console.log("out train already set");
             return;
         } else {
             lastout = index;
@@ -202,7 +203,6 @@ function trainTimeChanged(index, type, skip) {
 
     if (type == 'ret') {
         if  (index == lastret) {
-            console.log("ret train already set");
             return;
         } else {
             lastret = index;
@@ -222,8 +222,16 @@ function trainTimeChanged(index, type, skip) {
             d = false;
         }
         tt[t].disabled = d;
+
+        if (typeof(tt[t].id) !== 'undefined') {
+            continue;
+        }
+        var li = document.getElementById("li"+tt[t].id);
         if (d) {
             tt[t].checked = false;
+            //li.title = "Only available with an earlier departure";
+        } else {
+            //li.title = "Click to book this train";
         }
     }
     showTicketSelector();
@@ -241,10 +249,15 @@ function journeyTypeChanged(type) {
         }
     } else {
         lastret = -1;
-        var tt = document.getElementsByClassName('journeytyperet');
+        //var tt = document.getElementsByClassName('journeytyperet');
         for (t in tt) {
+            //if (typeof(tt[t].id) !== 'undefined') {
+            //    continue;
+            //}
             tt[t].disabled = true;
             tt[t].checked = false;
+            var li = document.getElementById("li"+tt[t].id);
+            //li.title = "Return tickets only";
         }
     }
     showTicketSelector();
@@ -303,23 +316,81 @@ function renderTicketSelector(response) {
 
 function travellersChanged() {
    var allocation = new Array();
+   allocationTotal = 0;
+   ticketsAllocated = new Array();
 
    for (i in ticketdata.travellers) {
        var code = ticketdata.travellers[i].code;
        var v=document.getElementById("q_"+code);
        if (v.value > -1) {
-           ticketselections[code] = v.value;
-           allocation[code] = v.value;
+           ticketselections[code] = parseInt(v.value);
+           allocation[code] = parseInt(v.value);
+           allocationTotal += parseInt(v.value);
        } else {
            v.value = 0;
        }
    }
 
-   for (i in ticketdata.prices) {
-       var tkt = ticketdata.prices[i];
-       
+   console.log(allocation);
+
+   var count = 0;
+   while (allocationTotal > 0) {
+       // See if we can find a ticket to match the travellers we have
+       var tkt = matchTicket(allocation);
+       // Allocate the actual ticket if we found one
+       if (tkt !== false) {
+           for (i in allocation) {
+               allocation[i] = allocation[i] - tkt.composition[i];
+               allocationTotal = allocationTotal - tkt.composition[i];
+           }
+
+           if (tkt.tickettype in ticketsAllocated) {
+               ticketsAllocated[tkt.tickettype] ++;
+           } else {
+               ticketsAllocated[tkt.tickettype] = 1;
+           }
+       }
+       // Get out of here if stuck
+       count++;
+       if (count > 1000) break;
    }
 
+   console.log(ticketsAllocated);
+}
+
+function matchTicket(allocation) {
+   for (i in ticketdata.prices) {
+       var tkt = ticketdata.prices[i];
+       var matches = 0;
+       var count = 0;
+       for (ci in tkt.composition) {
+           if (tkt.composition[ci] == 0) {
+               continue;
+           }
+           if (allocation[ci] >= tkt.composition[ci]) {
+               matches ++;
+           }
+           count++;
+       }
+
+       if (matches > 0 && count == matches) {
+           console.log(tkt.depends);
+           console.log(tkt.depends.length);
+           if (tkt.depends.length == 0) {
+               console.log("match "+tkt.tickettype);
+               return tkt;
+           }
+
+           for (di in tkt.depends) {
+               if (tkt.depends[di] in ticketsAllocated) {
+                   console.log("depend match "+tkt.tickettype);
+                   return tkt;
+               }
+           }
+       }
+   }
+
+   return false;
 }
 
 function showTicketStages(stage) {
