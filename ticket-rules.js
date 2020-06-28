@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
-var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata;
+var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage;
 var ticketselections = new Array();
 var ticketsAllocated = new Array();
 
@@ -36,7 +36,6 @@ function railTicketAjax(datareq, callback) {
     var request = new XMLHttpRequest();
     request.open('POST', ajaxurl, true);
     request.onload = function () {
-        //console.log(request);
         if (request.status >= 200 && request.status < 400) {
             callback(JSON.parse(request.responseText).data);
             spinner.style.display = 'none';
@@ -315,6 +314,10 @@ function renderTicketSelector(response) {
 }
 
 function travellersChanged() {
+    setTimeout(allocateTickets, 10);
+}
+
+function allocateTickets() {
    var allocation = new Array();
    allocationTotal = 0;
    ticketsAllocated = new Array();
@@ -331,7 +334,11 @@ function travellersChanged() {
        }
    }
 
-   console.log(allocation);
+   var summary = document.getElementById('ticket_summary');
+   if (allocationTotal == 0) {
+       summary.innerHTML = '<h4>No Tickets Chosen</h4>';
+       return;
+   }
 
    var count = 0;
    while (allocationTotal > 0) {
@@ -352,11 +359,40 @@ function travellersChanged() {
        }
        // Get out of here if stuck
        count++;
-       if (count > 1000) break;
+       if (count > 1000) {
+           summary.innerHTML='<p>Something has gone badly wrong.... Please give us call or email.</p>';
+           return;
+       }
    }
 
-   console.log(ticketsAllocated);
+   // Now show off what we have
+   var str = "<div class='railticket_travellers_table_container'><h4>My Tickets</h4>"+
+       "<table class='railticket_travellers_table'>";
+   var total = 0;
+   for (i in ticketsAllocated) {
+       var tkt = ticketdata.prices[i];
+       str += '<tr>'+
+           '<td><span>'+ticketsAllocated[i]+' X</span></td>'+
+           '<td><span>'+tkt.name+'</span><br />'+tkt.description+'</td>'+
+           '<td><span>'+formatter.format(tkt.price)+'</span></td>'+
+           '<td><img src="'+tkt.image+'" class="railticket_image" /></td>'+
+           '</tr>';
+       total += parseInt(tkt.price);
+   }
+
+   str += "<tr><td></td><td><span>Total</span></td><td><span>"+formatter.format(total)+"</span></td><td></td></tr>";
+   str += '</table></div>';
+   summary.innerHTML = str;
 }
+
+
+const formatter = new Intl.NumberFormat('en-GB', {
+  style: 'currency',
+  currency: 'GBP',
+  minimumFractionDigits: 2
+})
+
+
 
 function matchTicket(allocation) {
    for (i in ticketdata.prices) {
@@ -374,16 +410,12 @@ function matchTicket(allocation) {
        }
 
        if (matches > 0 && count == matches) {
-           console.log(tkt.depends);
-           console.log(tkt.depends.length);
            if (tkt.depends.length == 0) {
-               console.log("match "+tkt.tickettype);
                return tkt;
            }
 
            for (di in tkt.depends) {
                if (tkt.depends[di] in ticketsAllocated) {
-                   console.log("depend match "+tkt.tickettype);
                    return tkt;
                }
            }
@@ -447,8 +479,13 @@ function showTicketStages(stage) {
     if (scroll == null) {
         scroll = addtocart;
     }
-
-    scroll.scrollIntoView();
+    if (stage != laststage) {
+        scroll.scrollIntoView(true);
+        if (window.innerWidth >= 1010) {
+            window.scrollBy(0, -80); 
+        }
+    }
+    laststage = stage;
 }
 
 function skipStations() {

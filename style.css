@@ -60,13 +60,11 @@
 .railticket_listselect_left .inner {
     margin-left:auto;
     width:100%;
-
     text-align:center;
 }
 
 .railticket_listselect_right .inner {
     width:100%;
-
     text-align:center;
 }
 
@@ -126,6 +124,54 @@
     border: 2px solid #880000;
     margin: 2px;
     border-radius: 4px;
+    width:100%;
+}
+
+.railticket_image {
+    width:120px;
+    height:64px;  
+}
+
+@media (max-width: 500px) {
+    .railticket_image {
+        display:none;
+    }
+}
+
+.railticket_travellers_table_container {
+    background-color:#f2f0a6;
+    text-align:left;
+    border: 2px solid #880000;
+    margin: 2px;
+    border-radius: 4px;
+    text-align:center;
+}
+
+.railticket_travellers_table {
+    width:95%;
+}
+
+.railticket_travellers_table td {
+    background-color:#f2f0a6 !important;
+    border:0px;
+    vertical-align:middle;
+    text-align:center;
+}
+
+.railticket_travellers_table td span {
+    color:#880000;
+    font-size:large;
+    font-weight:bold;
+}
+
+.railticket_help {
+    color:#880000;
+    text-align:center;
+}
+
+#ticket_summary{
+    margin-top:8px;
+    overflow: auto;
 }
 
 .railticket_travellers_numbers label {
@@ -147,6 +193,11 @@
     margin:4px;
 }
 
+
+/* Force Chrome to show the up/down number buttons */
+input[type=number]::-webkit-inner-spin-button {
+    opacity: 1;
+}
 
 /* Absolute Center Spinner */
 .railticket_loading {

@@ -166,9 +166,6 @@ class TicketBuilder {
         global $wpdb;
         $tickets = new stdClass();
         $tickets->travellers = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers", OBJECT );
-        //foreach ($travellers as $traveller) {
-        //    $tickets['travellers'][$traveller->code] = array('name' => $traveller->name, 'description' => $traveller->description);
-        //}
 
         $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
             "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
@@ -176,7 +173,8 @@ class TicketBuilder {
             "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.description, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.composition, ".
-            "{$wpdb->prefix}wc_railticket_tickettypes.depends ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.depends, ".
+            "{$wpdb->prefix}wc_railticket_prices.image ".
             "FROM {$wpdb->prefix}wc_railticket_prices ".
             "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
             "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
@@ -193,7 +191,6 @@ class TicketBuilder {
             $tickets->prices[$ticketd->tickettype] = $ticketd;
         }
 
-        //file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', $sql.print_r($tickets, true));
         return $tickets;
     }
 
@@ -275,8 +272,6 @@ class TicketBuilder {
 
         $cal .= '<script type="text/javascript">var baseurl = "'.railtimetable_currentlang()."/".get_site_url().'";var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
 
-
-
         $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3></div>".
             "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
 
@@ -290,14 +285,17 @@ class TicketBuilder {
                 "class='railticket_datebuttons' />";
         }
         $str .= "</form></div>".
-            "<div id='datechosen' class='railticket_container'>No Date Chosen</div>".
+            "<div id='datechosen' class='railticket_container'>Tap or click a date to choose</div>".
             "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' /></div>";
 
         return $str;
     }
 
     private function get_stations() {
-        $str = "<div id='stations' class='railticket_stageblock railticket_listselect'><div class='railticket_container'>".
+        $str = "<div id='stations' class='railticket_stageblock railticket_listselect'>".
+            "<h3>Choose Stations</h3>".
+            "<p class='railticket_help'>Tap or click the stations to select</p>".
+            "<div class='railticket_container'>".
             "<div class='railticket_listselect_left'><div class='inner'><h3>From</h3>".$this->station_radio($stations, "fromstation", true)."</div></div>".
             "<div class='railticket_listselect_right'><div class='inner'><h3>To</h3>".$this->station_radio($stations, "tostation", false)."</div></div>".
             "</div></div>";
@@ -320,6 +318,7 @@ class TicketBuilder {
         $str =
             "<div id='deptimes' class='railticket_stageblock railticket_listselect'>".
             "  <h3>Choose a Departure</h3>".
+            "  <p class='railticket_help'>Tap or click the times and ticket type to select</p>".
             "  <div id='deptimes_data' class='railticket_container'>".
             "    <div id='deptimes_data_out' class='railticket_listselect_left'>".
             "    <input type='hidden' name='outtime' value='' /></div>".
@@ -335,6 +334,7 @@ class TicketBuilder {
     private function get_ticket_choices() {
         $str = "<div id='tickets' class='railticket_stageblock'>".
             "<h3>Choose Tickets</h3>".
+            "<p class='railticket_help'>Use the boxes on the left to enter the number of tickets required</p>".
             "  <div id='ticket_travellers' class='railticket_container'>".
             "  </div>".
             "  <div id='ticket_summary' class='railticket_container'></div>".
