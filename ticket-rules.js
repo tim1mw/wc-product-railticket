@@ -248,7 +248,7 @@ function journeyTypeChanged(type) {
         }
     } else {
         lastret = -1;
-        //var tt = document.getElementsByClassName('journeytyperet');
+        var tt = document.getElementsByClassName('journeytyperet');
         for (t in tt) {
             //if (typeof(tt[t].id) !== 'undefined') {
             //    continue;
