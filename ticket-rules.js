@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
-var lastto=-1, lastfrom=-1;
+var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata;
+var ticketselections = new Array();
 
 function setupTickets() {
     var todaybutton = document.getElementById('todaybutton');
@@ -34,7 +35,7 @@ function railTicketAjax(datareq, callback) {
     var request = new XMLHttpRequest();
     request.open('POST', ajaxurl, true);
     request.onload = function () {
-        console.log(request);
+        //console.log(request);
         if (request.status >= 200 && request.status < 400) {
             callback(JSON.parse(request.responseText).data);
             spinner.style.display = 'none';
@@ -96,6 +97,8 @@ function setChosenDate(text, bdate) {
     ele.innerHTML = text+": "+ddate.toLocaleDateString();
     var dot = document.getElementById('dateoftravel');
     dot.value = bdate;
+    lastto = -1;
+    lastfrom = -1;
 }
 
 function fromStationChanged(evt) {
@@ -147,7 +150,7 @@ function getDepTimes() {
                 }
                 var type = response['tickets'][index];
                 str += "<li class='railticket_hlist'><input type='radio' name='journeytype' id='journeytype"+
-                    type+"' "+selected+" onclick='journeyTypeChanged(\""+type+"\")'/><label class='railticket_caplitalise' for='journeytype"+
+                    type+"' "+selected+" onclick='journeyTypeChanged(\""+type+"\")' value='"+type+"' /><label class='railticket_caplitalise' for='journeytype"+
                     type+"'>"+type+"</label></li>";
             }
             str += "</ul>";
@@ -169,12 +172,14 @@ function showTimes(times, type, header) {
         } else {
             var disabled = '';
             var tclass = "journeytype"+type;
+            var title = "Click to book this train";
             if (!times[index]['bookable']) {
                 disabled = ' disabled ';
                 tclass = '';
+                title = "Sorry, this train cannot be booked online";
             }
             str += "<li><input type='radio' name='"+type+"time' id='dep"+type+index+"' class='"+tclass+"' value='"+times[index]['dep']+"' "+
-                "onclick='trainTimeChanged("+index+", \""+type+"\")' "+disabled+" />"+
+                "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" title='"+title+"' />"+
                 "<label for='dep"+type+index+"'>"+times[index]['depdisp']+
                 "<div class='railticket_arrtime'>(arrives: "+times[index]['arrdisp']+")</div></label></li>";
         }
@@ -183,10 +188,30 @@ function showTimes(times, type, header) {
     document.getElementById('deptimes_data_'+type).innerHTML = str;
 }
 
-function trainTimeChanged(index, type) {
-    //showTicketSeletion*(
+function trainTimeChanged(index, type, skip) {
 
-    if (type == 'ret' || document.railticketbooking['journeytype'] == 'single') {
+
+    if (type == 'out') {
+        if (index == lastout) {
+            console.log("out train already set");
+            return;
+        } else {
+            lastout = index;
+        }
+    }
+
+    if (type == 'ret') {
+        if  (index == lastret) {
+            console.log("ret train already set");
+            return;
+        } else {
+            lastret = index;
+        }
+    }
+
+    var journeytype = document.railticketbooking['journeytype'].value;
+    if (type == 'ret' || journeytype == 'single') {
+        showTicketSelector();
         return;
     }
 
@@ -201,29 +226,101 @@ function trainTimeChanged(index, type) {
             tt[t].checked = false;
         }
     }
-
+    showTicketSelector();
 }
 
 function journeyTypeChanged(type) {
     if (type == 'return') {
         var ot = document.getElementsByClassName('journeytypeout');
+        lastout = -1;
         for (i in ot) {
             if (ot[i].checked == true) {
-                trainTimeChanged(i, 'out')
+                trainTimeChanged(i, 'out', true)
                 break;
             }
         }
+    } else {
+        lastret = -1;
+        var tt = document.getElementsByClassName('journeytyperet');
+        for (t in tt) {
+            tt[t].disabled = true;
+            tt[t].checked = false;
+        }
+    }
+    showTicketSelector();
+}
+
+function showTicketSelector() {
+
+    if ( (document.railticketbooking['outtime'].value != "" && document.railticketbooking['journeytype'].value == "single") ||
+        (document.railticketbooking['outtime'].value != "" &&
+        document.railticketbooking['rettime'].value != "" &&
+        document.railticketbooking['journeytype'].value == "return") ) {
+        railTicketAjax('tickets', renderTicketSelector);  
+    } else {
+        showTicketStages('deptimes');
+    }
+
+}
+
+function renderTicketSelector(response) {
+    ticketdata = response;
+
+    if (response.length == 0) {
+        document.getElementById('ticket_type').style.display = "none";
+        document.getElementById('ticket_numbers').style.display = "none";
+        document.getElementById('ticket_summary').innerHTML = "<h3>Sorry, no tickets were found for this journey</h3>";
+        showTicketStages('tickets');
         return;
     }
 
-    var tt = document.getElementsByClassName('journeytyperet');
-    for (t in tt) {
-        tt[t].disabled = true;
-        tt[t].checked = false;
+    var travellers = "";
+
+    for (i in response.travellers) {
+        var value = 0;
+        var code = response.travellers[i].code;
+        if (code in ticketselections) {
+           value = ticketselections[ticketdata.travellers[i].code];
+        }
+
+        travellers += "<div class='railticket_travellers'>"+
+            "<div class='railticket_travellers_numbers woocommerce'><div class='quantity'>"+
+            " <input type='number' id='q_"+code+"' name='q_"+code+"' "+
+            " class='input-text qty text' min='0' max='99' value='"+value+"' oninput='travellersChanged()'> "+
+            " <label for='q_"+code+"'>"+response.travellers[i].name+"</label> "+
+            " <span>("+response.travellers[i].description+")</span>"+
+            "</div>"+
+            "</div>";
     }
+
+    var tn = document.getElementById('ticket_travellers')
+    tn.style.display = "block";
+    tn.innerHTML = travellers;
+    travellersChanged();
+
+    showTicketStages('tickets');
 }
 
+function travellersChanged() {
+   var allocation = new Array();
 
+   for (i in ticketdata.travellers) {
+       var code = ticketdata.travellers[i].code;
+       var v=document.getElementById("q_"+code);
+       if (v.value > -1) {
+           ticketselections[code] = v.value;
+           allocation[code] = v.value;
+       } else {
+           v.value = 0;
+       }
+   }
+
+   for (i in ticketdata.prices) {
+       var tkt = ticketdata.prices[i];
+       
+   }
+
+}
 
 function showTicketStages(stage) {
     var display = 'block';

@@ -24,13 +24,13 @@ class TicketBuilder {
 
     public function render() {
         return $this->get_javascript().
-            '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>'.
             $this->get_datepick().
             '<form action="post" name="railticketbooking">'.
             $this->get_stations().
             $this->get_deptimes().
             $this->get_ticket_choices().
-            $this->get_addtocart().'</form></div>';
+            $this->get_addtocart().'</form>'.
+            '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>';
     }
 
     public function is_date_bookable($date) {
@@ -101,7 +101,7 @@ class TicketBuilder {
             " AND timetableid = ".$timetable->id)[0];
         $rettimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$this->tostation."' ".
             " AND timetableid = ".$timetable->id)[0];
-        $direction = $this->getDirection();
+        $direction = $this->get_direction();
 
         $bookable['out'] = array();
         $dd = $direction."_deps";
@@ -162,16 +162,46 @@ class TicketBuilder {
         return $bookable;
     }
 
-    public function getTickets() {
+    public function get_tickets() {
         global $wpdb;
-        
+        $tickets = new stdClass();
+        $tickets->travellers = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers", OBJECT );
+        //foreach ($travellers as $traveller) {
+        //    $tickets['travellers'][$traveller->code] = array('name' => $traveller->name, 'description' => $traveller->description);
+        //}
+
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
+            "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
+            "{$wpdb->prefix}wc_railticket_prices.price, ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.description, ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.composition, ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.depends ".
+            "FROM {$wpdb->prefix}wc_railticket_prices ".
+            "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
+            "WHERE ((stationone = ".$this->fromstation." AND stationtwo = ".$this->tostation.") OR ".
+            "(stationone = ".$this->tostation." AND stationtwo = ".$this->fromstation.")) AND ".
+            "journeytype = '".$this->journeytype."' AND disabled = 0 ".
+            "ORDER BY {$wpdb->prefix}wc_railticket_tickettypes.sequence ASC";
+        $ticketdata = $wpdb->get_results($sql, OBJECT);
+
+        $tickets->prices = array();
+        foreach($ticketdata as $ticketd) {
+            $ticketd->composition = json_decode($ticketd->composition);
+            $ticketd->depends = json_decode($ticketd->depends);
+            $tickets->prices[$ticketd->tickettype] = $ticketd;
+        }
+
+        file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', $sql.print_r($tickets, true));
+        return $tickets;
     }
 
     /**
     * Gets the outbound direction
     **/
 
-    private function getDirection() {
+    private function get_direction() {
         global $wpdb;
 
         $from = $this->getStationData($this->fromstation);
@@ -296,7 +326,7 @@ class TicketBuilder {
             "    <div id='deptimes_data_ret' class='railticket_listselect_right'>".
             "    <input type='hidden' name='rettime' value='' /></div>".
             "  </div>".
-            "  <div id='ticket_type' class='railticket_container'></div>".
+            "  <div id='ticket_type' class='railticket_container'><input type='hidden' name='journeytype' value='' /></div>".
             "</div>";
 
         return $str;
@@ -304,7 +334,10 @@ class TicketBuilder {
 
     private function get_ticket_choices() {
         $str = "<div id='tickets' class='railticket_stageblock'>".
-            "<input type='hidden' name='journeytype' value='' />".
+            "<h3>Choose Tickets</h3>".
+            "  <div id='ticket_travellers' class='railticket_container'>".
+            "  </div>".
+            "  <div id='ticket_summary' class='railticket_container'></div>".
             "</div>";
 
         return $str;

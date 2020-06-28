@@ -120,12 +120,37 @@
     font-size:small;
 }
 
+.railticket_travellers_numbers {
+    background-color:#f2f0a6;
+    text-align:left;
+    border: 2px solid #880000;
+    margin: 2px;
+    border-radius: 4px;
+}
 
+.railticket_travellers_numbers label {
+    font-size:x-large;
+    font-weight:bold;
+    color:#880000;
+}
+
+.railticket_travellers_numbers span {
+    font-size:medium;
+    color:#880000;
+}
+
+.railticket_travellers_numbers input {
+    font-size:large;
+    color:#880000 !important;
+    border: 2px solid #880000 !important;
+    border-radius: 4px;
+    margin:4px;
+}
 
 
 /* Absolute Center Spinner */
 .railticket_loading {
-  position: fixed;
+  position: static;
   z-index: 999;
   overflow: show;
   margin: auto;
