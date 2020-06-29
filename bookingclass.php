@@ -55,9 +55,15 @@ class TicketBuilder {
     }
 
     public function is_train_bookable($time, $stn, $direction) {
-        //if ($direction == "up") {
-        //    return false;
-        //}
+        // Dates which are in the past should never show on the calendar, so if it's not today, return true
+        if (date('Y-m-d') != $this->dateoftravel) {
+            return true;
+        }
+
+        if (strtotime($time) < time()) {
+            return false;
+        }
+
         return true;
     }
 
@@ -67,29 +73,6 @@ class TicketBuilder {
         $bookable['to'] = array(0 => true, 1 => false, 2 => true);
         return $bookable;
     }
-
-/*
-    private function station_bookable($station, $from) {
-        if ($from) {
-            foreach ($this->tickettypes->prices as $price) {
-                // If we are going from this station, then make sure it has some destinations
-                if ($price->station == $station->id && count($price->destinations) > 0) {
-                    return true;
-                }
-            }
-        } else {
-            foreach ($this->tickettypes->prices as $price) {
-                // Otherwise we want to see if this station appears as a destination from some other station
-                foreach ($price->destinations as $dest) {
-                    if ($dest->station == $station->id) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-*/
 
     public function get_bookable_trains() {
         global $wpdb;

@@ -51,10 +51,6 @@ function railTicketAjax(datareq, callback) {
     data.append('outtime', document.railticketbooking['outtime'].value);
     data.append('rettime', document.railticketbooking['rettime'].value);
     data.append('journeytype', document.railticketbooking['journeytype'].value);
-    console.log("selections");
-    console.log(JSON.stringify(ticketSelections));
-    console.log("allocations");
-    console.log(JSON.stringify(ticketsAllocated));
     data.append('ticketselections', JSON.stringify(ticketSelections));
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
 
@@ -145,7 +141,8 @@ function getDepTimes() {
         showTimes(response['ret'], 'ret', "Return");
         var str = "";
         if (response['tickets'].length == 0) {
-            str += "<h4>Sorry, no services can be booked on line for these choices. Please try a different selection.</h4>";
+            str += "<h4>Sorry, no services can be booked on line for these choices. Please try a different selection.</h4>"+
+                "<input type='hidden' name='journeytype' />";
         } else {
             str += "<ul>";
             for (index in response['tickets']) {
