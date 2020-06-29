@@ -234,8 +234,7 @@ class TicketBuilder {
         return ($stn[0]) ? : false;
     }
 
-    private function findTimetable()
-    {
+    private function findTimetable() {
         global $wpdb;
         $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
             "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".

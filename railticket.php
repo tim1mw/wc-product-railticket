@@ -158,48 +158,30 @@ add_filter( 'woocommerce_get_price_html', 'railticket_remove_price_fields', 10, 
 function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
     global $wpdb;
     if ( isset($cart_item['ticketselections']) && isset($cart_item['ticketsallocated']) && isset($cart_item['tickettimes'])) {
-
-        $jdate = DateTime::createFromFormat('Y-m-d', $cart_item['tickettimes']['dateoftravel']);
-        $jdate = strftime(get_option('railtimetable_date_format'), $jdate->getTimeStamp());
         $item_data[] = array(
             'key'       => "Date of Travel",
-            'value'     => $jdate
+            'value'     => railticket_product_format_date($cart_item['tickettimes']['dateoftravel'])
         );
         $item_data[] = array(
             'key'       => "Journey Type",
             'value'     => ucfirst($cart_item['tickettimes']['journeytype'])
         );
 
-        $dtime = DateTime::createFromFormat('H.i', $cart_item['tickettimes']['outtime']);
-        $dtime = strftime(get_option('railtimetable_time_format'), $dtime->getTimeStamp());
-        $fstation = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$cart_item['tickettimes']['fromstation']);
+        $fstation = railticket_product_get_station_name($cart_item['tickettimes']['fromstation']);
         $item_data[] = array(
             'key'       => "Outbound",
-            'value'     => $fstation.", ".$dtime
+            'value'     => $fstation.", ".railticket_product_format_time($cart_item['tickettimes']['outtime'])
         );
         if ($cart_item['tickettimes']['journeytype'] == 'return') {
-            $rtime = DateTime::createFromFormat('H.i', $cart_item['tickettimes']['rettime']);
-            $rtime = strftime(get_option('railtimetable_time_format'), $rtime->getTimeStamp());
-            $tstation = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$cart_item['tickettimes']['tostation']);
+            $tstation = railticket_product_get_station_name($cart_item['tickettimes']['tostation']);
             $item_data[] = array(
                 'key'       => "Return",
-                'value'     => $tstation.", ".$rtime
+                'value'     => $tstation.", ".railticket_product_format_time($cart_item['tickettimes']['rettime'])
             );
         }
 
         foreach ($cart_item['ticketsallocated'] as $ttype => $qty) {
-
-            $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
-                "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
-                "{$wpdb->prefix}wc_railticket_prices.price, ".
-                "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
-                "{$wpdb->prefix}wc_railticket_tickettypes.description ".
-                "FROM {$wpdb->prefix}wc_railticket_prices ".
-                "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
-                "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
-                "WHERE tickettype = '".$ttype."'";
-            $ticketdata = $wpdb->get_results($sql, OBJECT)[0];
-
+            $ticketdata = railticket_product_ticketsallocated_display($ttype);
             $item_data[] = array(
                 'key'       => $qty." x ".$ticketdata->name,
                 'value'     => $ticketdata->description
@@ -210,7 +192,122 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
     return $item_data;
 }
 
+function railticket_product_format_date($date) {
+    $jdate = DateTime::createFromFormat('Y-m-d', $date);
+    return strftime(get_option('railtimetable_date_format'), $jdate->getTimeStamp());
+}
+
+function railticket_product_format_time($time) {
+    $dtime = DateTime::createFromFormat('H.i', $time);
+    return strftime(get_option('railtimetable_time_format'), $dtime->getTimeStamp());
+}
+
+function railticket_product_get_station_name($id) {
+    global $wpdb;
+    return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$id);
+}
+
+function railticket_product_ticketsallocated_display($ttype) {
+    global $wpdb;
+    $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
+        "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
+        "{$wpdb->prefix}wc_railticket_prices.price, ".
+        "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
+        "{$wpdb->prefix}wc_railticket_tickettypes.description ".
+        "FROM {$wpdb->prefix}wc_railticket_prices ".
+        "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
+        "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
+        "WHERE tickettype = '".$ttype."'";
+    return $wpdb->get_results($sql, OBJECT)[0];
+}
+
 add_filter( 'woocommerce_get_item_data', 'railticket_cart_item_custom_meta_data', 10, 2 );
+
+
+function railticket_product_add_on_order_item_meta($item_id, $values) {
+    railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketselections');
+    railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketsallocated');
+    railticket_product_add_on_order_item_meta2($item_id, $values, 'tickettimes');
+}
+
+function railticket_product_add_on_order_item_meta2($item_id, $values, $key) {
+    if ( ! empty( $values[$key] ) ) {
+        foreach ($values[$key] as $a => $b) {
+            wc_add_order_item_meta($item_id, $key."-".$a, $b);
+        }
+    }
+}
+
+add_action( 'woocommerce_add_order_item_meta', 'railticket_product_add_on_order_item_meta', 10, 2 );
+
+
+add_filter( 'woocommerce_order_item_get_formatted_meta_data', 'railticket_order_item_get_formatted_meta_data', 10, 1 );
+
+function railticket_order_item_get_formatted_meta_data($formatted_meta) {
+    $retmeta = array();
+    $tickets = "";
+    $tkey = false;
+    $outstationindex = false;
+    $tostationindex = false;
+    foreach ($formatted_meta as $index => $fm) {
+        $fmparts = explode("-", $fm->key);
+        switch ($fmparts[0]) {
+            case 'ticketselections':
+                // Hide this
+                break;
+            case 'ticketsallocated':
+                if ($tkey == false) {
+                    $tkey = $index;
+                    $retmeta[$index] = $fm;
+                }
+
+                $ticket = railticket_product_ticketsallocated_display($fmparts[1]);
+                $tickets .= $fm->value.'x&nbsp;'.$ticket->name." (".$ticket->description.'), ';
+                break;
+            case 'tickettimes':
+                switch ($fmparts[1]) {
+                    case 'fromstation':
+                        $fm->display_key = 'From';
+                        $fm->display_value = '<p>'.railticket_product_get_station_name($fm->value);
+                        $outstationindex = $index;
+                        $retmeta[$index] = $fm;
+                        break;
+                    case 'tostation':
+                        $fm->display_key = 'Return';
+                        $fm->display_value = '<p>'.railticket_product_get_station_name($fm->value);
+                        $tostationindex = $index;
+                        $retmeta[$index] = $fm;
+                        break;
+                    case 'outtime':
+                        $retmeta[$outstationindex]->display_value .= ", ".railticket_product_format_time($fm->value).'</p>';
+                        break;
+                    case 'rettime':
+                        $retmeta[$tostationindex]->display_value .= ", ".railticket_product_format_time($fm->value).'</p>';
+                        break;
+                    case 'dateoftravel':
+                        $fm->display_key = 'Date of travel';
+                        $fm->display_value = '<p>'.railticket_product_format_date($fm->value).'</p>';
+                        $retmeta[$index] = $fm;
+                        break;
+                    case 'journeytype':
+                        $fm->display_key = 'Journey Type';
+                        if ($fm->value == 'single') {
+                            $fm->display_value = '<p>Single</p>';
+                        } else {
+                            $fm->display_value = '<p>Return</p>';
+                        }
+                        $retmeta[$index] = $fm;
+                        break;
+                }
+                break;
+        }
+    }
+    $retmeta[$tkey]->display_key = "Tickets";
+    $retmeta[$tkey]->display_value = '<p>'.substr($tickets, 0, strlen($tickets)-2).'</p>';
+
+    return $retmeta;
+}
+
 
 function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');

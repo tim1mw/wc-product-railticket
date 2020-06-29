@@ -74,4 +74,9 @@ class WC_Product_RailTicket extends WC_Product {
         return true;
     }
 
+    public function get_virtual( $context = 'view' ) {
+        return true;
+    }
+
+
 }
