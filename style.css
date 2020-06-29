@@ -194,10 +194,26 @@
 }
 
 
+.railticket_terms {
+    font-size:large;
+    color:#880000;
+    margin:4px;  
+    font-wright:bold;
+}
+
+.railticket_terms input[type="checkbox"] {
+    transform: scale(3);
+}
+
+#addticketstocart {
+    display:none
+}
+
 /* Force Chrome to show the up/down number buttons */
 input[type=number]::-webkit-inner-spin-button {
     opacity: 1;
 }
+
 
 /* Absolute Center Spinner */
 .railticket_loading {

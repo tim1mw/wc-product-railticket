@@ -9,7 +9,8 @@ add_action('admin_init', 'railticket_register_settings' );
 function railticket_register_settings() {
    add_option('wc_product_railticket_woocommerce_product', '');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_woocommerce_product'); 
-   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_min_price'); 
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_min_price');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termspage');
 }
 
 function railticket_add_pages() {
@@ -29,6 +30,10 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_min_price">Minimum Ticket Order Price</label></th>
             <td><input type="text" id="wc_product_railticket_min_price" name="wc_product_railticket_min_price" value="<?php echo get_option('wc_product_railticket_min_price'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_termspage">Ticket Terms Page</label></th>
+            <td><input type="text" size='80' id="wc_product_railticket_min_price" name="wc_product_railticket_termspage" value="<?php echo get_option('wc_product_railticket_termspage'); ?>" /></td>
         </tr>
     </table>
     <?php submit_button(); ?>

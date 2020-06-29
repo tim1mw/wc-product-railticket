@@ -430,6 +430,15 @@ function matchTicket(allocation) {
    return false;
 }
 
+function termsClicked() {
+    var cart = document.getElementById('addticketstocart');
+    if (document.railticketbooking['terms'].checked) {
+        cart.style.display='inline';
+    } else {
+        cart.style.display='none';
+    }
+}
+
 function cartTickets() {
     railTicketAjax('purchase', function(response) {
         window.location.replace('/basket');

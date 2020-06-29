@@ -187,6 +187,11 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
                 'value'     => $ticketdata->description
             );
         }
+
+        $item_data[] = array(
+            'key'       => "Total Seats",
+            'value'     => $cart_item['tickettimes']['totalseats']
+        );
     }
 
     return $item_data;
@@ -296,6 +301,12 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                         } else {
                             $fm->display_value = '<p>Return</p>';
                         }
+                        $retmeta[$index] = $fm;
+                        break;
+                    case 'totalseats':
+                        $fm->display_key = 'Total Seats';
+                        $fm->display_value = '<p>'.$fm->value.'</p>';
+                        $tostationindex = $index;
                         $retmeta[$index] = $fm;
                         break;
                 }

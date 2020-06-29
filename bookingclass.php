@@ -181,9 +181,6 @@ class TicketBuilder {
         global $woocommerce, $wpdb;
         $purchase = new stdclass();
 
-        file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt",
-            print_r($this->ticketselections, true)."\n\n".print_r($this->ticketsallocated, true));
-
         $custom_price = 0;
         foreach ($this->ticketsallocated as $ttype => $qty) {
             $price = $wpdb->get_var("SELECT price FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."'");
@@ -196,7 +193,8 @@ class TicketBuilder {
             'outtime' => $this->outtime,
             'rettime' => $this->rettime,
             'dateoftravel' => $this->dateoftravel,
-            'journeytype' => $this->journeytype
+            'journeytype' => $this->journeytype,
+            'totalseats' => $this->count_seats()
         );
 
         $cart_item_data = array('custom_price' => $custom_price, 'ticketselections' => $this->ticketselections,
@@ -209,6 +207,18 @@ class TicketBuilder {
         $woocommerce->cart->maybe_set_cart_cookies();
 
         return $purchase;
+    }
+
+    private function count_seats() {
+        global $wpdb;
+        $total = 0;
+        $tkts = (array) $this->ticketselections;
+
+        foreach ($tkts as $ttype => $number) {
+            $val = $wpdb->get_var("SELECT seats FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$ttype."'") * $number;
+            $total += $val;
+        }
+        return $total;
     }
 
     /**
@@ -364,7 +374,9 @@ class TicketBuilder {
             "<input type='hidden' name='ticketselections' />".
             "<input type='hidden' name='ticketallocations' />".
             "<div class='railticket_container'>".
-            "<input type='button' value='Add To Cart' onclick='cartTickets()' /></div>".
+            "<p class='railticket_terms'><input type='checkbox' name='terms' onclick='termsClicked()'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
+            "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
+            "<p><input type='button' value='Add To Cart' onclick='cartTickets()' id='addticketstocart' /></p></div>".
             "</div>";
 
         return $str;
