@@ -192,6 +192,13 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
             'key'       => "Total Seats",
             'value'     => $cart_item['tickettimes']['totalseats']
         );
+
+        if ($cart_item['tickettimes']['pricesupplement'] > 0) {
+            $item_data[] = array(
+                'key'       => "Minimum Price Supplement",
+                'value'     => "£".$cart_item['tickettimes']['pricesupplement']
+            );
+        }
     }
 
     return $item_data;
@@ -244,8 +251,6 @@ function railticket_product_add_on_order_item_meta2($item_id, $values, $key) {
 }
 
 add_action( 'woocommerce_add_order_item_meta', 'railticket_product_add_on_order_item_meta', 10, 2 );
-
-
 add_filter( 'woocommerce_order_item_get_formatted_meta_data', 'railticket_order_item_get_formatted_meta_data', 10, 1 );
 
 function railticket_order_item_get_formatted_meta_data($formatted_meta) {
@@ -308,6 +313,14 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                         $fm->display_value = '<p>'.$fm->value.'</p>';
                         $tostationindex = $index;
                         $retmeta[$index] = $fm;
+                        break;
+                    case 'pricesupplement':
+                        if ($fm->value > 0) {
+                            $fm->display_key = 'Minimum Price Supplement';
+                            $fm->display_value = '<p>£'.$fm->value.'</p>';
+                            $tostationindex = $index;
+                            $retmeta[$index] = $fm;
+                        }
                         break;
                 }
                 break;

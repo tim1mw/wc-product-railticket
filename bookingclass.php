@@ -187,6 +187,14 @@ class TicketBuilder {
             $custom_price += $price*$qty;
         }
 
+        $mprice = get_option('wc_product_railticket_min_price');
+        $supplement = 0;
+        if (strlen($mprice) > 0 && $custom_price < $mprice) {
+            $mprice=intval($mprice);
+            $supplement = $mprice - $custom_price;
+            $custom_price = $mprice;
+        }
+
         $data = array(
             'fromstation' => $this->fromstation,
             'tostation' => $this->tostation,
@@ -194,7 +202,8 @@ class TicketBuilder {
             'rettime' => $this->rettime,
             'dateoftravel' => $this->dateoftravel,
             'journeytype' => $this->journeytype,
-            'totalseats' => $this->count_seats()
+            'totalseats' => $this->count_seats(),
+            'pricesupplement' => $supplement
         );
 
         $cart_item_data = array('custom_price' => $custom_price, 'ticketselections' => $this->ticketselections,
@@ -261,11 +270,18 @@ class TicketBuilder {
         wp_register_script('railticket_script', plugins_url('wc-product-railticket/ticket-rules.js'));
         wp_enqueue_script('railticket_script');
 
+        $minprice = 'false';
+        $opt = get_option('wc_product_railticket_min_price');
+        if (strlen($opt) > 0) {
+            $minprice = $opt;
+        }
+
         return "\n<script type='text/javascript'>\n".
             "var ajaxurl = '".admin_url( 'admin-ajax.php', 'relative' )."';\n".
             "\nvar stations = ".json_encode($stations).";\n".
             "var today = '".$this->today->format('Y-m-d')."'\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
+            "var minprice = ".$minprice."\n".
             "</script>";
     }
 

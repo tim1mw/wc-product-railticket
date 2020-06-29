@@ -337,9 +337,15 @@ function allocateTickets() {
         }
     }
 
+    var minstr = "";
+    if (minprice !== false) {
+        minstr = "<p>All purchases are currently subject to a minimum booking price of £"+minprice+". If your booking is below £"+
+           minprice+" a supplement will be added to make up the difference.</p>";
+    }
+
     var summary = document.getElementById('ticket_summary');
     if (allocationTotal == 0) {
-        summary.innerHTML = '<h4>No Tickets Chosen</h4>';
+        summary.innerHTML = '<h4>No Tickets Chosen</h4>'+minstr;
         return;
     }
 
@@ -370,17 +376,29 @@ function allocateTickets() {
 
     // Now show off what we have
     var str = "<div class='railticket_travellers_table_container'><h4>My Tickets</h4>"+
+        minstr+
         "<table class='railticket_travellers_table'>";
     var total = 0;
     for (i in ticketsAllocated) {
         var tkt = ticketdata.prices[i];
         str += '<tr>'+
-            '<td><span>'+ticketsAllocated[i]+' X</span></td>'+
+            '<td><span>'+ticketsAllocated[i]+'&nbspx</span></td>'+
             '<td><span>'+tkt.name+'</span><br />'+tkt.description+'</td>'+
             '<td><span>'+formatter.format(tkt.price)+'</span></td>'+
             '<td><img src="'+tkt.image+'" class="railticket_image" /></td>'+
             '</tr>';
         total += parseInt(tkt.price);
+    }
+    var supplement = 0;
+    if (total < minprice) {
+        supplement = minprice - total;
+        str += '<tr>'+
+            '<td><span>&nbsp</span></td>'+
+            '<td><span>Minimum price supplement</td>'+
+            '<td><span>'+formatter.format(supplement)+'</span></td>'+
+            '<td></td>'+
+            '</tr>';
+        total = minprice
     }
 
     str += "<tr><td></td><td><span>Total</span></td><td><span>"+formatter.format(total)+"</span></td><td></td></tr>";
