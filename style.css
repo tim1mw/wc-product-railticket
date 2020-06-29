@@ -128,8 +128,8 @@
 }
 
 .railticket_image {
-    width:120px;
-    height:64px;  
+    width:150px;
+    height:80px;  
 }
 
 @media (max-width: 500px) {

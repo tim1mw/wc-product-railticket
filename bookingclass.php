@@ -4,22 +4,22 @@ class TicketBuilder {
 
     private $today, $tomorrow, $stations;
 
-    public function __construct($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $journeytype, $tickets) {
+    public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
+        $journeytype, $ticketselections, $ticketsallocated) {
         global $wpdb;
         $this->today = new DateTime();
         $this->tomorrow = new DateTime();
         $this->tomorrow->modify('+1 day');
-        //$this->tickettypes = railticket_get_ticket_data();
         $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC");
 
         $this->dateoftravel = $dateoftravel;
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
-        $this->type = $type;
         $this->outtime = $outtime;
         $this->rettime = $rettime;
         $this->journeytype = $journeytype;
-        $this->tickets = $tickets;
+        $this->ticketselections = $ticketselections;
+        $this->ticketsallocated = $ticketsallocated;
     }
 
     public function render() {
@@ -194,6 +194,40 @@ class TicketBuilder {
         return $tickets;
     }
 
+    public function do_purchase() {
+        global $woocommerce, $wpdb;
+        $purchase = new stdclass();
+
+        file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt",
+            print_r($this->ticketselections, true)."\n\n".print_r($this->ticketsallocated, true));
+
+        $custom_price = 0;
+        foreach ($this->ticketsallocated as $ttype => $qty) {
+            $price = $wpdb->get_var("SELECT price FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."'");
+            $custom_price += $price*$qty;
+        }
+
+        $data = array(
+            'fromstation' => $this->fromstation,
+            'tostation' => $this->tostation,
+            'outtime' => $this->outtime,
+            'rettime' => $this->rettime,
+            'dateoftravel' => $this->dateoftravel,
+            'journeytype' => $this->journeytype
+        );
+
+        $cart_item_data = array('custom_price' => $custom_price, 'ticketselections' => $this->ticketselections,
+            'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data);
+
+        $bridge_product = get_option('wc_product_railticket_woocommerce_product');
+        $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
+        $woocommerce->cart->calculate_totals();
+        $woocommerce->cart->set_session();
+        $woocommerce->cart->maybe_set_cart_cookies();
+
+        return $purchase;
+    }
+
     /**
     * Gets the outbound direction
     **/
@@ -345,7 +379,10 @@ class TicketBuilder {
 
     private function get_addtocart() {
         $str .= "<div id='addtocart' class='railticket_stageblock'>".
-            "<input type='submit' value='Add To Cart' />".
+            "<input type='hidden' name='ticketselections' />".
+            "<input type='hidden' name='ticketallocations' />".
+            "<div class='railticket_container'>".
+            "<input type='button' value='Add To Cart' onclick='cartTickets()' /></div>".
             "</div>";
 
         return $str;

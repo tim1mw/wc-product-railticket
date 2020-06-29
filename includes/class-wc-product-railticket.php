@@ -62,4 +62,12 @@ class WC_Product_RailTicket extends WC_Product {
         return apply_filters( 'woocommerce_product_add_to_cart_description', sprintf( $text, $this->get_name() ), $this );
     }
 
+    public function is_purchaseable() {
+        return true;
+    }
+
+    public function is_in_stock() {
+        return true;
+    }
+
 }

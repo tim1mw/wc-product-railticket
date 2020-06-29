@@ -15,7 +15,7 @@ define('SPECIAL_TICKET', 2);
 
 require_once('calendar.php');
 require_once('bookingclass.php');
-//require_once('editlib.php');
+require_once('editlib.php');
 
 
 // Wordpress is failing to set the timezone, so force it here.
@@ -110,22 +110,121 @@ function railticket_ajax_request() {
         case 'tickets':
             $result = $ticketbuilder->get_tickets();
             break;
+        case 'purchase':
+            $result = $ticketbuilder->do_purchase();
+            break;
     }
 
     wp_send_json_success($result);
 }
 
+ function railticket_custom_price_to_cart_item( $cart_object ) {  
+    if( !WC()->session->__isset( "reload_checkout" )) {
+        foreach ( $cart_object->cart_contents as $key => $value ) {
+            if( isset( $value["custom_price"] ) ) {
+                //for woocommerce version lower than 3
+                //$value['data']->price = $value["custom_price"];
+                //for woocommerce version +3
+                $value['data']->set_price($value["custom_price"]);
+            }
+        }  
+    }  
+}
+
+function railticket_remove_quantity_fields( $return, $product ) {
+    switch ( $product->product_type ) :
+        case "railticket":
+            return true;
+            break;
+        default: 
+            return false;
+            break;
+    endswitch;
+}
+add_filter( 'woocommerce_is_sold_individually', 'railticket_remove_quantity_fields', 10, 2 );
+
+function railticket_remove_price_fields( $price, $product ) {
+    switch ( $product->product_type ) :
+        case "railticket":
+            return "";
+            break;
+        default: 
+            return $price;
+            break;
+    endswitch;
+}
+add_filter( 'woocommerce_get_price_html', 'railticket_remove_price_fields', 10, 2 );
+
+function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
+    global $wpdb;
+    if ( isset($cart_item['ticketselections']) && isset($cart_item['ticketsallocated']) && isset($cart_item['tickettimes'])) {
+
+        $jdate = DateTime::createFromFormat('Y-m-d', $cart_item['tickettimes']['dateoftravel']);
+        $jdate = strftime(get_option('railtimetable_date_format'), $jdate->getTimeStamp());
+        $item_data[] = array(
+            'key'       => "Date of Travel",
+            'value'     => $jdate
+        );
+        $item_data[] = array(
+            'key'       => "Journey Type",
+            'value'     => ucfirst($cart_item['tickettimes']['journeytype'])
+        );
+
+        $dtime = DateTime::createFromFormat('H.i', $cart_item['tickettimes']['outtime']);
+        $dtime = strftime(get_option('railtimetable_time_format'), $dtime->getTimeStamp());
+        $fstation = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$cart_item['tickettimes']['fromstation']);
+        $item_data[] = array(
+            'key'       => "Outbound",
+            'value'     => $fstation.", ".$dtime
+        );
+        if ($cart_item['tickettimes']['journeytype'] == 'return') {
+            $rtime = DateTime::createFromFormat('H.i', $cart_item['tickettimes']['rettime']);
+            $rtime = strftime(get_option('railtimetable_time_format'), $rtime->getTimeStamp());
+            $tstation = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$cart_item['tickettimes']['tostation']);
+            $item_data[] = array(
+                'key'       => "Return",
+                'value'     => $tstation.", ".$rtime
+            );
+        }
+
+        foreach ($cart_item['ticketsallocated'] as $ttype => $qty) {
+
+            $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
+                "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
+                "{$wpdb->prefix}wc_railticket_prices.price, ".
+                "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
+                "{$wpdb->prefix}wc_railticket_tickettypes.description ".
+                "FROM {$wpdb->prefix}wc_railticket_prices ".
+                "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
+                "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
+                "WHERE tickettype = '".$ttype."'";
+            $ticketdata = $wpdb->get_results($sql, OBJECT)[0];
+
+            $item_data[] = array(
+                'key'       => $qty." x ".$ticketdata->name,
+                'value'     => $ticketdata->description
+            );
+        }
+    }
+
+    return $item_data;
+}
+
+add_filter( 'woocommerce_get_item_data', 'railticket_cart_item_custom_meta_data', 10, 2 );
+
 function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');
     $fromstation = railticket_getpostfield('fromstation');
     $tostation = railticket_getpostfield('tostation');
-    $type = railticket_getpostfield('type');
     $outtime = railticket_getpostfield('outtime');
     $rettime = railticket_getpostfield('rettime');
     $journeytype = railticket_getpostfield('journeytype');
+    $ticketselections = json_decode(stripslashes($_REQUEST['ticketselections']));
+    $ticketsallocated = json_decode(stripslashes($_REQUEST['ticketallocated']));
     $tickets = array();
 
-    return new TicketBuilder($dateoftravel, $fromstation, $tostation, $type, $outtime, $rettime, $journeytype, $tickets);
+    return new TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
+        $journeytype, $ticketselections, $ticketsallocated);
 }
 
 function railticket_getpostfield($field) {
@@ -148,3 +247,5 @@ add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
 add_action( 'wp_enqueue_scripts', 'railticket_style' );
 add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
+
+add_action( 'woocommerce_before_calculate_totals', 'railticket_custom_price_to_cart_item', 99 );

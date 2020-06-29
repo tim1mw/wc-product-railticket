@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
 var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage;
-var ticketselections = new Array();
-var ticketsAllocated = new Array();
+var ticketSelections = {};
+var ticketsAllocated = {};
 
 function setupTickets() {
     var todaybutton = document.getElementById('todaybutton');
@@ -51,6 +51,12 @@ function railTicketAjax(datareq, callback) {
     data.append('outtime', document.railticketbooking['outtime'].value);
     data.append('rettime', document.railticketbooking['rettime'].value);
     data.append('journeytype', document.railticketbooking['journeytype'].value);
+    console.log("selections");
+    console.log(JSON.stringify(ticketSelections));
+    console.log("allocations");
+    console.log(JSON.stringify(ticketsAllocated));
+    data.append('ticketselections', JSON.stringify(ticketSelections));
+    data.append('ticketallocated', JSON.stringify(ticketsAllocated));
 
     request.send(data);
 }
@@ -291,8 +297,8 @@ function renderTicketSelector(response) {
     for (i in response.travellers) {
         var value = 0;
         var code = response.travellers[i].code;
-        if (code in ticketselections) {
-           value = ticketselections[ticketdata.travellers[i].code];
+        if (code in ticketSelections) {
+           value = ticketSelections[ticketdata.travellers[i].code];
         }
 
         travellers += "<div class='railticket_travellers'>"+
@@ -318,80 +324,82 @@ function travellersChanged() {
 }
 
 function allocateTickets() {
-   var allocation = new Array();
-   allocationTotal = 0;
-   ticketsAllocated = new Array();
+    var allocation = new Array();
+    allocationTotal = 0;
+    ticketsAllocated = {};
 
-   for (i in ticketdata.travellers) {
-       var code = ticketdata.travellers[i].code;
-       var v=document.getElementById("q_"+code);
-       if (v.value > -1) {
-           ticketselections[code] = parseInt(v.value);
-           allocation[code] = parseInt(v.value);
-           allocationTotal += parseInt(v.value);
-       } else {
-           v.value = 0;
-       }
-   }
+    for (i in ticketdata.travellers) {
+        var code = ticketdata.travellers[i].code;
+        var v=document.getElementById("q_"+code);
+        if (v.value > -1) {
+            ticketSelections[code] = parseInt(v.value);
+            allocation[code] = parseInt(v.value);
+            allocationTotal += parseInt(v.value);
+        } else {
+            v.value = 0;
+        }
+    }
 
-   var summary = document.getElementById('ticket_summary');
-   if (allocationTotal == 0) {
-       summary.innerHTML = '<h4>No Tickets Chosen</h4>';
-       return;
-   }
+    var summary = document.getElementById('ticket_summary');
+    if (allocationTotal == 0) {
+        summary.innerHTML = '<h4>No Tickets Chosen</h4>';
+        return;
+    }
 
-   var count = 0;
-   while (allocationTotal > 0) {
-       // See if we can find a ticket to match the travellers we have
-       var tkt = matchTicket(allocation);
-       // Allocate the actual ticket if we found one
-       if (tkt !== false) {
-           for (i in allocation) {
-               allocation[i] = allocation[i] - tkt.composition[i];
-               allocationTotal = allocationTotal - tkt.composition[i];
-           }
+    var count = 0;
+    while (allocationTotal > 0) {
+        // See if we can find a ticket to match the travellers we have
+        var tkt = matchTicket(allocation);
+        // Allocate the actual ticket if we found one
+        if (tkt !== false) {
+            for (i in allocation) {
+                allocation[i] = allocation[i] - tkt.composition[i];
+                allocationTotal = allocationTotal - tkt.composition[i];
+            }
 
-           if (tkt.tickettype in ticketsAllocated) {
-               ticketsAllocated[tkt.tickettype] ++;
-           } else {
-               ticketsAllocated[tkt.tickettype] = 1;
-           }
-       }
-       // Get out of here if stuck
-       count++;
-       if (count > 1000) {
-           summary.innerHTML='<p>Something has gone badly wrong.... Please give us call or email.</p>';
-           return;
-       }
-   }
+            if (tkt.tickettype in ticketsAllocated) {
+                ticketsAllocated[tkt.tickettype] ++;
+            } else {
+                ticketsAllocated[tkt.tickettype] = 1;
+            }
+        }
+        // Get out of here if stuck
+        count++;
+        if (count > 1000) {
+            summary.innerHTML='<p>Something has gone badly wrong.... Please give us call or email.</p>';
+            return;
+        }
+    }
 
-   // Now show off what we have
-   var str = "<div class='railticket_travellers_table_container'><h4>My Tickets</h4>"+
-       "<table class='railticket_travellers_table'>";
-   var total = 0;
-   for (i in ticketsAllocated) {
-       var tkt = ticketdata.prices[i];
-       str += '<tr>'+
-           '<td><span>'+ticketsAllocated[i]+' X</span></td>'+
-           '<td><span>'+tkt.name+'</span><br />'+tkt.description+'</td>'+
-           '<td><span>'+formatter.format(tkt.price)+'</span></td>'+
-           '<td><img src="'+tkt.image+'" class="railticket_image" /></td>'+
-           '</tr>';
-       total += parseInt(tkt.price);
-   }
+    // Now show off what we have
+    var str = "<div class='railticket_travellers_table_container'><h4>My Tickets</h4>"+
+        "<table class='railticket_travellers_table'>";
+    var total = 0;
+    for (i in ticketsAllocated) {
+        var tkt = ticketdata.prices[i];
+        str += '<tr>'+
+            '<td><span>'+ticketsAllocated[i]+' X</span></td>'+
+            '<td><span>'+tkt.name+'</span><br />'+tkt.description+'</td>'+
+            '<td><span>'+formatter.format(tkt.price)+'</span></td>'+
+            '<td><img src="'+tkt.image+'" class="railticket_image" /></td>'+
+            '</tr>';
+        total += parseInt(tkt.price);
+    }
 
-   str += "<tr><td></td><td><span>Total</span></td><td><span>"+formatter.format(total)+"</span></td><td></td></tr>";
-   str += '</table></div>';
-   summary.innerHTML = str;
+    str += "<tr><td></td><td><span>Total</span></td><td><span>"+formatter.format(total)+"</span></td><td></td></tr>";
+    str += '</table></div>';
+    summary.innerHTML = str;
+
+    if (total > 0) {
+        showTicketStages('addtocart');
+    }
 }
 
-
 const formatter = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP',
-  minimumFractionDigits: 2
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 2
 })
-
 
 
 function matchTicket(allocation) {
@@ -424,6 +432,13 @@ function matchTicket(allocation) {
 
    return false;
 }
+
+function cartTickets() {
+    railTicketAjax('purchase', function(response) {
+        window.location.replace('/basket');
+    });
+}
+
 
 function showTicketStages(stage) {
     var display = 'block';
@@ -476,10 +491,7 @@ function showTicketStages(stage) {
     var tickets = document.getElementById('addtocart');
     addtocart.style.display = display;
 
-    if (scroll == null) {
-        scroll = addtocart;
-    }
-    if (stage != laststage) {
+    if (scroll !=null && stage != laststage) {
         scroll.scrollIntoView(true);
         if (window.innerWidth >= 1010) {
             window.scrollBy(0, -80); 
