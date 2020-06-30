@@ -205,7 +205,15 @@
     transform: scale(3);
 }
 
+#confirmchoices {
+    font-size:x-large;
+    width:100%;
+    display:none;
+}
+
 #addticketstocart {
+    font-size:x-large;
+    width:100%;
     display:none
 }
 

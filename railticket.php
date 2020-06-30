@@ -19,7 +19,8 @@ require_once('editlib.php');
 
 
 // Wordpress is failing to set the timezone, so force it here.
-date_default_timezone_set(get_option('timezone_string'));
+//date_default_timezone_set(get_option('timezone_string'));
+$railticket_timezone = new DateTimeZone(get_option('timezone_string'));
 
 /**
  * Register the custom product type after init
@@ -109,6 +110,9 @@ function railticket_ajax_request() {
             break;
         case 'tickets':
             $result = $ticketbuilder->get_tickets();
+            break;
+        case 'capacity':
+            $result = $ticketbuilder->get_capacity();
             break;
         case 'purchase':
             $result = $ticketbuilder->do_purchase();
@@ -205,12 +209,12 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
 }
 
 function railticket_product_format_date($date) {
-    $jdate = DateTime::createFromFormat('Y-m-d', $date);
+    $jdate = DateTime::createFromFormat('Y-m-d', $date, $railticket_timezone);
     return strftime(get_option('railtimetable_date_format'), $jdate->getTimeStamp());
 }
 
 function railticket_product_format_time($time) {
-    $dtime = DateTime::createFromFormat('H.i', $time);
+    $dtime = DateTime::createFromFormat('H.i', $time, $railticket_timezone);
     return strftime(get_option('railtimetable_time_format'), $dtime->getTimeStamp());
 }
 
@@ -277,7 +281,7 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
             case 'tickettimes':
                 switch ($fmparts[1]) {
                     case 'fromstation':
-                        $fm->display_key = 'From';
+                        $fm->display_key = 'Outbound';
                         $fm->display_value = '<p>'.railticket_product_get_station_name($fm->value);
                         $outstationindex = $index;
                         $retmeta[$index] = $fm;

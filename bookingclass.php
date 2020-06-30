@@ -6,9 +6,11 @@ class TicketBuilder {
 
     public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
         $journeytype, $ticketselections, $ticketsallocated) {
-        global $wpdb;
+        global $wpdb, $railticket_timezone;
         $this->today = new DateTime();
+        $this->today->setTimezone($railticket_timezone);
         $this->tomorrow = new DateTime();
+        $this->tomorrow->setTimezone($railticket_timezone);
         $this->tomorrow->modify('+1 day');
         $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC");
 
@@ -177,6 +179,13 @@ class TicketBuilder {
         return $tickets;
     }
 
+    public function get_capacity() {
+        global $wpdb;
+        
+
+        return array();
+    }
+
     public function do_purchase() {
         global $woocommerce, $wpdb;
         $purchase = new stdclass();
@@ -210,7 +219,7 @@ class TicketBuilder {
             'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data);
 
         $bridge_product = get_option('wc_product_railticket_woocommerce_product');
-        $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
+        $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
         $woocommerce->cart->calculate_totals();
         $woocommerce->cart->set_session();
         $woocommerce->cart->maybe_set_cart_cookies();
@@ -380,6 +389,8 @@ class TicketBuilder {
             "  <div id='ticket_travellers' class='railticket_container'>".
             "  </div>".
             "  <div id='ticket_summary' class='railticket_container'></div>".
+            "  <div id='ticket_summary' class='railticket_container'>".
+            "  <input type='button' value='Confirm Choices' onclick='checkCapacity()' id='confirmchoices' /></div>".
             "</div>";
 
         return $str;

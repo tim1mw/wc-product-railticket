@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
-var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage;
+var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
 
@@ -29,9 +29,11 @@ function setupTickets() {
     showTicketStages('date');
 }
 
-function railTicketAjax(datareq, callback) {
-    var spinner = document.getElementById('pleasewait');
-    spinner.style.display = 'block';
+function railTicketAjax(datareq, spinner, callback) {
+    if (spinner) {
+        var spinner = document.getElementById('pleasewait');
+        spinner.style.display = 'block';
+    }
 
     var request = new XMLHttpRequest();
     request.open('POST', ajaxurl, true);
@@ -60,7 +62,7 @@ function railTicketAjax(datareq, callback) {
 function setBookingDate(bdate) {
     setChosenDate("Date of Travel", bdate);
 
-    railTicketAjax('bookable_stations', function(response) {
+    railTicketAjax('bookable_stations', true, function(response) {
         enableStations('from', response);
         enableStations('to', response);
         showTicketStages('stations');
@@ -136,7 +138,7 @@ function toStationChanged(evt) {
 }
 
 function getDepTimes() {
-    railTicketAjax('bookable_trains', function(response) {
+    railTicketAjax('bookable_trains', true, function(response) {
         showTimes(response['out'], 'out', "Outbound");
         showTimes(response['ret'], 'ret', "Return");
         var str = "";
@@ -271,7 +273,7 @@ function showTicketSelector() {
         (document.railticketbooking['outtime'].value != "" &&
         document.railticketbooking['rettime'].value != "" &&
         document.railticketbooking['journeytype'].value == "return") ) {
-        railTicketAjax('tickets', renderTicketSelector);  
+        railTicketAjax('tickets', true, renderTicketSelector);  
     } else {
         showTicketStages('deptimes');
     }
@@ -405,8 +407,11 @@ function allocateTickets() {
     str += '</table></div>';
     summary.innerHTML = str;
 
+    var confirm = document.getElementById('confirmchoices');
     if (total > 0) {
-        showTicketStages('addtocart');
+        confirm.style.display = 'inline';
+    } else {
+        confirm.style.display = 'none';
     }
 }
 
@@ -415,6 +420,12 @@ const formatter = new Intl.NumberFormat('en-GB', {
     currency: 'GBP',
     minimumFractionDigits: 2
 })
+
+function checkCapacity() {
+    railTicketAjax('capacity', true, function(response) {
+        showTicketStages('addtocart');
+    });
+}
 
 
 function matchTicket(allocation) {
@@ -458,7 +469,7 @@ function termsClicked() {
 }
 
 function cartTickets() {
-    railTicketAjax('purchase', function(response) {
+    railTicketAjax('purchase', false, function(response) {
         window.location.replace('/basket');
     });
 }
