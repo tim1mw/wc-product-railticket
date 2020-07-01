@@ -17,11 +17,6 @@ require_once('calendar.php');
 require_once('bookingclass.php');
 require_once('editlib.php');
 
-
-// Wordpress is failing to set the timezone, so force it here.
-//date_default_timezone_set(get_option('timezone_string'));
-$railticket_timezone = new DateTimeZone(get_option('timezone_string'));
-
 /**
  * Register the custom product type after init
  */
@@ -209,11 +204,17 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
 }
 
 function railticket_product_format_date($date) {
+    // Wordpress is failing to set the timezone, so force it here.
+    //date_default_timezone_set(get_option('timezone_string'));
+    $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
     $jdate = DateTime::createFromFormat('Y-m-d', $date, $railticket_timezone);
     return strftime(get_option('railtimetable_date_format'), $jdate->getTimeStamp());
 }
 
 function railticket_product_format_time($time) {
+    // Wordpress is failing to set the timezone, so force it here.
+    //date_default_timezone_set(get_option('timezone_string'));
+    $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
     $dtime = DateTime::createFromFormat('H.i', $time, $railticket_timezone);
     return strftime(get_option('railtimetable_time_format'), $dtime->getTimeStamp());
 }
@@ -344,8 +345,14 @@ function railticket_getticketbuilder() {
     $outtime = railticket_getpostfield('outtime');
     $rettime = railticket_getpostfield('rettime');
     $journeytype = railticket_getpostfield('journeytype');
-    $ticketselections = json_decode(stripslashes($_REQUEST['ticketselections']));
-    $ticketsallocated = json_decode(stripslashes($_REQUEST['ticketallocated']));
+    $ticketselections = null;
+    if (array_key_exists('ticketselections', $_REQUEST)) {
+        $ticketselections = json_decode(stripslashes($_REQUEST['ticketselections']));
+    }
+    $ticketsallocated = null;
+    if (array_key_exists('ticketselections', $_REQUEST)) {
+        $ticketsallocated = json_decode(stripslashes($_REQUEST['ticketallocated']));
+    }
     $tickets = array();
 
     return new TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,

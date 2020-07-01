@@ -33,7 +33,10 @@ class TicketCalendar
             " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
             "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date->format('Y-m-d')."'", OBJECT );
 
-        return ($found_events[0]) ? : false;
+        if (array_key_exists(0, $found_events)) {
+            return $found_events[0];
+        }
+        return false;
     }
 
     /**
@@ -73,7 +76,6 @@ class TicketCalendar
 
         $today = new DateTime();
         $total_days_in_month = (int) $date->format('t');
-        $color = $color ? : '';
         $calendar .= '<table class="calendar">';
         $calendar .= '<thead>';
         $calendar .= '<tr class="calendar-title">';

@@ -6,11 +6,12 @@ class TicketBuilder {
 
     public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
         $journeytype, $ticketselections, $ticketsallocated) {
-        global $wpdb, $railticket_timezone;
+        global $wpdb;
+        $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
         $this->today = new DateTime();
-        $this->today->setTimezone($railticket_timezone);
+        $this->today->setTimezone($this->railticket_timezone);
         $this->tomorrow = new DateTime();
-        $this->tomorrow->setTimezone($railticket_timezone);
+        $this->tomorrow->setTimezone($this->railticket_timezone);
         $this->tomorrow->modify('+1 day');
         $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC");
 
@@ -127,7 +128,7 @@ class TicketBuilder {
                 $testfirst = false;
                 continue;
             }
-            $canbook = $this->is_train_bookable($ret, $this->$tostation, $direction);
+            $canbook = $this->is_train_bookable($ret, $this->tostation, $direction);
             $bookable['ret'][] = array('dep' => $ret, 'depdisp' => strftime($fmt, strtotime($ret)),
                 'arr' => $retarrs[$index], 'arrdisp' => strftime($fmt, strtotime($retarrs[$index])), 
                 'bookable' => $canbook);
@@ -393,7 +394,6 @@ class TicketBuilder {
 
         return "\n<script type='text/javascript'>\n".
             "var ajaxurl = '".admin_url( 'admin-ajax.php', 'relative' )."';\n".
-            "\nvar stations = ".json_encode($stations).";\n".
             "var today = '".$this->today->format('Y-m-d')."'\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
@@ -453,14 +453,14 @@ class TicketBuilder {
             "<h3>Choose Stations</h3>".
             "<p class='railticket_help'>Tap or click the stations to select</p>".
             "<div class='railticket_container'>".
-            "<div class='railticket_listselect_left'><div class='inner'><h3>From</h3>".$this->station_radio($stations, "fromstation", true)."</div></div>".
-            "<div class='railticket_listselect_right'><div class='inner'><h3>To</h3>".$this->station_radio($stations, "tostation", false)."</div></div>".
+            "<div class='railticket_listselect_left'><div class='inner'><h3>From</h3>".$this->station_radio("fromstation", true)."</div></div>".
+            "<div class='railticket_listselect_right'><div class='inner'><h3>To</h3>".$this->station_radio("tostation", false)."</div></div>".
             "</div></div>";
 
         return $str;
     }
 
-    private function station_radio($stations, $name, $from) {
+    private function station_radio($name, $from) {
         $str="<ul>";
         foreach ($this->stations as $station) {
             $str .= "<li><input type='radio' name='".$name."' id='".$name.$station->id."' value='".$station->id.
@@ -504,7 +504,7 @@ class TicketBuilder {
     }
 
     private function get_addtocart() {
-        $str .= "<div id='addtocart' class='railticket_stageblock'>".
+        $str = "<div id='addtocart' class='railticket_stageblock'>".
             "<input type='hidden' name='ticketselections' />".
             "<input type='hidden' name='ticketallocations' />".
             "<div class='railticket_container'>".
