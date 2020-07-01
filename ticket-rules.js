@@ -323,6 +323,7 @@ function travellersChanged() {
 }
 
 function allocateTickets() {
+    showTicketStages('tickets', false);
     var capacitydiv = document.getElementById('ticket_capacity');
     capacitydiv.style.display = 'none';
     var allocation = new Array();
@@ -346,12 +347,15 @@ function allocateTickets() {
         minstr = "<p>All purchases are currently subject to a minimum booking price of £"+minprice+". If your booking is below £"+
            minprice+" a supplement will be added to make up the difference.</p>";
     }
-
+    var confirm = document.getElementById('confirmchoices');
     var summary = document.getElementById('ticket_summary');
     if (allocationTotal == 0) {
         summary.innerHTML = '<h4>No Tickets Chosen</h4>'+minstr;
+        confirm.style.display = 'none';
         return;
     }
+
+    confirm.style.display = 'inline';
 
     var count = 0;
     while (allocationTotal > 0) {
@@ -394,6 +398,7 @@ function allocateTickets() {
         total += parseInt(tkt.price) * ticketsAllocated[i];
     }
     var supplement = 0;
+
     if (total < minprice) {
         supplement = minprice - total;
         str += '<tr>'+
@@ -408,13 +413,6 @@ function allocateTickets() {
     str += "<tr><td></td><td><span>Total</span></td><td><span>"+formatter.format(total)+"</span></td><td></td></tr>";
     str += '</table></div>';
     summary.innerHTML = str;
-
-    var confirm = document.getElementById('confirmchoices');
-    if (total > 0) {
-        confirm.style.display = 'inline';
-    } else {
-        confirm.style.display = 'none';
-    }
 }
 
 const formatter = new Intl.NumberFormat('en-GB', {
@@ -430,7 +428,6 @@ function checkCapacity() {
 }
 
 function showCapacity(response) {
-    console.log(response);
     var capacitydiv = document.getElementById('ticket_capacity');
     var str = "<div class='railticket_travellers_table_container' >";
     if (response.ok) {
