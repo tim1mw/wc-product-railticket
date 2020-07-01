@@ -227,9 +227,9 @@ function trainTimeChanged(index, type, skip) {
         }
         tt[t].disabled = d;
 
-        if (typeof(tt[t].id) !== 'undefined') {
-            continue;
-        }
+        //if (typeof(tt[t].id) !== 'undefined') {
+        //    continue;
+        //}
         var li = document.getElementById("li"+tt[t].id);
         if (d) {
             tt[t].checked = false;
@@ -386,10 +386,11 @@ function allocateTickets() {
         str += '<tr>'+
             '<td><span>'+ticketsAllocated[i]+'&nbspx</span></td>'+
             '<td><span>'+tkt.name+'</span><br />'+tkt.description+'</td>'+
-            '<td><span>'+formatter.format(tkt.price)+'</span></td>'+
+            '<td><span>'+formatter.format(tkt.price * ticketsAllocated[i])+'</span></td>'+
             '<td><img src="'+tkt.image+'" class="railticket_image" /></td>'+
             '</tr>';
-        total += parseInt(tkt.price);
+        console.log(ticketsAllocated);
+        total += parseInt(tkt.price) * ticketsAllocated[i];
     }
     var supplement = 0;
     if (total < minprice) {
