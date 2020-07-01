@@ -200,11 +200,6 @@ class TicketBuilder {
 
         $seatsreq = $this->count_seats();
 
-        //if ($seatsreq > 12) {
-        //    $allocatedbays->tobig = true;
-        //    return $allocatedbays;
-        //}
-
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
         $totalseats = 0;
         foreach ($bays as $baysize => $numleft) {
@@ -215,64 +210,51 @@ class TicketBuilder {
             return $allocatedbays;
         }
 
-        // Deal with the easy ones, aka a group that fits in a single bay
-        $seatsleft = $seatsreq;
+        $allocatesm = $this->getBays($seatsreq, $bays, false);
+        $allocatelg = $this->getBays($seatsreq, $bays, true);
+
+        if (!$allocatesm && !$allocatelg) {
+            $allocatedbays->error = true;
+            return $allocatedbays;
+        }
+
+        $allocatedbays->ok = true;
+        if ($allocatesm[0] > $allocatelg[0]) {
+            $allocatedbays->bays = $allocatelg[1];
+        } else {
+            $allocatedbays->bays = $allocatesm[1];
+        }
+
+        return $allocatedbays;
+    }
+
+    private function getBays($seatsleft, $bays, $largest) {
         $allocatesm = array();
         $smcount = 0;
         while ($seatsleft > 0) {
             $baychoice = $this->findBay($seatsleft, $bays);
             if (!$baychoice) {
-                $baychoice = $this->findSmallest($bays);
+                if ($largest) {
+                    $baychoice = $this->findLargest($bays);
+                } else {
+                    $baychoice = $this->findSmallest($bays);
+                }
             }
             $seatsleft = $seatsleft - $baychoice;
-            $bays[$smallest]--;
+            $bays[$baychoice]--;
 
             if (array_key_exists($baychoice, $allocatesm)) {
                 $allocatesm[$baychoice] ++;
             } else {
                 $allocatesm[$baychoice] = 1;
             }
-            $smcount += $baychoice;
+            $smcount ++;
             // Bail out here, something is wrong....
-            if ($count > 100) {
-                $allocatedbay->error = true;
-                return $allocatedbays;
+            if ($smcount > 100) {
+                return false;
             }
         }
-
-        $seatsleft = $seatsreq;
-        $allocatelg = array();
-        $lgcount = 0;
-        while ($seatsleft > 0) {
-            $baychoice = $this->findBay($seatsleft, $bays);
-            if (!$baychoice) {
-                $baychoice = $this->findLargest($bays);
-            }
-            $seatsleft = $seatsleft - $baychoice;
-            $bays[$baychoice]--;
-
-            if (array_key_exists($baychoice, $allocatelg)) {
-                $allocatelg[$baychoice] ++;
-            } else {
-                $allocatelg[$baychoice] = 1;
-            }
-            $lgcount += $baychoice;
-
-            // Bail out here, something is wrong....
-            if ($lgcount > 100) {
-                $allocatedbay->error = true;
-                return $allocatedbays;
-            }
-        }
-
-        $allocatedbays->ok = true;
-        if ($smcount > $lgcount) {
-            $allocatedbays->bays = $allocatelg;
-
-        } else {
-            $allocatedbays->bays = $allocatesm;
-        }
-        return $allocatedbays;
+        return array($smcount, $allocatesm);
     }
 
     private function findSmallest($bays) {
