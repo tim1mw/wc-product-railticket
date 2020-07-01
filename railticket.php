@@ -192,6 +192,16 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
             'value'     => $cart_item['tickettimes']['totalseats']
         );
 
+        $item_data[] = array(
+            'key'       => "Outboud Seating bays",
+            'value'     => $cart_item['tickettimes']['outbays']
+        );
+
+        $item_data[] = array(
+            'key'       => "Return Seating bays",
+            'value'     => $cart_item['tickettimes']['retbays']
+        );
+
         if ($cart_item['tickettimes']['pricesupplement'] > 0) {
             $item_data[] = array(
                 'key'       => "Minimum Price Supplement",
@@ -326,6 +336,16 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                             $tostationindex = $index;
                             $retmeta[$index] = $fm;
                         }
+                        break;
+                    case 'outbays':
+                        $fm->display_key = 'Outboud Seating bays';
+                        $fm->display_value = '<p>'.$fm->value.'</p>';
+                        $retmeta[$index] = $fm;
+                        break;
+                    case 'retbays':
+                        $fm->display_key = 'Return Seating bays';
+                        $fm->display_value = '<p>'.$fm->value.'</p>';
+                        $retmeta[$index] = $fm;
                         break;
                 }
                 break;

@@ -33,7 +33,8 @@ class TicketBuilder {
             $this->get_deptimes().
             $this->get_ticket_choices().
             $this->get_addtocart().'</form>'.
-            '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>';
+            '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>'.
+            '<div id="railticket_error" class="railticket_stageblock" ></div>';
     }
 
     public function is_date_bookable($date) {
@@ -257,10 +258,6 @@ class TicketBuilder {
         return $allocatedbays;
     }
 
-    private function getBestBays() {
-
-    }
-
     private function getBays($seatsleft, $bays, $largest) {
         $allocatesm = array();
         $smcount = 0;
@@ -328,6 +325,14 @@ class TicketBuilder {
         global $woocommerce, $wpdb;
         $purchase = new stdclass();
 
+        // Check we still have capacity
+        $allocatedbays = $this->get_capacity();
+
+        if (!$allocatedbays->ok) {
+            $purchase->ok = false;
+            return $purchase;
+        }
+
         $custom_price = 0;
         foreach ($this->ticketsallocated as $ttype => $qty) {
             $price = $wpdb->get_var("SELECT price FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."'");
@@ -340,13 +345,15 @@ class TicketBuilder {
             $mprice=intval($mprice);
             $supplement = $mprice - $custom_price;
             $custom_price = $mprice;
-        }
+        } 
 
         $data = array(
             'fromstation' => $this->fromstation,
             'tostation' => $this->tostation,
             'outtime' => $this->outtime,
+            'outbays' => $this->baystring($allocatedbays->outbays),
             'rettime' => $this->rettime,
+            'retbays' => $this->baystring($allocatedbays->retbays),
             'dateoftravel' => $this->dateoftravel,
             'journeytype' => $this->journeytype,
             'totalseats' => $this->count_seats(),
@@ -362,8 +369,16 @@ class TicketBuilder {
         $woocommerce->cart->set_session();
         $woocommerce->cart->maybe_set_cart_cookies();
 
-
+        $purchase->ok = true;
         return $purchase;
+    }
+
+    private function bayString($bays) {
+        $str = '';
+        foreach ($bays as $baysize => $num) {
+            $str .= $num.'x '.$baysize.' seat bay, ';
+        }
+        return substr($str, 0, strlen($str)-2);
     }
 
     private function count_seats() {

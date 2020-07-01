@@ -31,8 +31,8 @@ function setupTickets() {
 
 function railTicketAjax(datareq, spinner, callback) {
     if (spinner) {
-        var spinner = document.getElementById('pleasewait');
-        spinner.style.display = 'block';
+        var spinnerdiv = document.getElementById('pleasewait');
+        spinnerdiv.style.display = 'block';
     }
 
     var request = new XMLHttpRequest();
@@ -40,7 +40,8 @@ function railTicketAjax(datareq, spinner, callback) {
     request.onload = function () {
         if (request.status >= 200 && request.status < 400) {
             callback(JSON.parse(request.responseText).data);
-            spinner.style.display = 'none';
+            var spinnerdiv = document.getElementById('pleasewait');
+            spinnerdiv.style.display = 'none';
         }
     };
 
@@ -428,7 +429,6 @@ function checkCapacity() {
 }
 
 function showCapacity(response) {
-    console.log(response);
     var capacitydiv = document.getElementById('ticket_capacity');
     var str = "<div class='railticket_travellers_table_container' >";
     if (response.ok) {
@@ -505,7 +505,13 @@ function termsClicked() {
 
 function cartTickets() {
     railTicketAjax('purchase', false, function(response) {
-        window.location.replace('/basket');
+        if (response.ok) {
+            window.location.replace('/basket');
+        } else {
+            var errordiv = document.getElementById('railticket_error');
+            errordiv.innerHTML = "<p>Sorry, we were unable to reserve your tickets for you because somebody else has just purchased some or all of your selections. Please reload this page to try an alternative date or service.</p>";
+            errordiv.style.display='block';
+        }
     });
 }
 

@@ -182,6 +182,15 @@
     display:none;
 }
 
+#railticket_error{
+    margin-top:8px;
+    overflow: auto;
+    font-size:large;
+    color:#880000;
+    font-weight:bold;
+    display:none;
+}
+
 .railticket_travellers_numbers label {
     font-size:x-large;
     font-weight:bold;
