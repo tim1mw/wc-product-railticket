@@ -189,44 +189,76 @@ class TicketBuilder {
             "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
 
         $rec = $wpdb->get_results($sql)[0];
-        $bays = (array) json_decode($rec->bays);
-        ksort($bays);
+        $basebays = (array) json_decode($rec->bays);
+        ksort($basebays);
 
         $allocatedbays = new stdclass();
         $allocatedbays->ok = false;
         $allocatedbays->tobig = false;
         $allocatedbays->error = false;
-        //TODO Reduce the bay totals using the booking records before allocation, remove sold out bay sizes.
-
 
         $seatsreq = $this->count_seats();
 
+        //TODO Reduce the bay totals using the booking records before allocation, remove sold out bay sizes.
+        $outbays = $basebays;
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
-        $totalseats = 0;
-        foreach ($bays as $baysize => $numleft) {
-            $totalseats += $baysize*$numleft;
+        $outtotalseats = 0;
+        foreach ($outbays as $baysize => $numleft) {
+            $outtotalseats += $baysize*$numleft;
         }
-        $allocatedbays->seatsleft = $totalseats;
-        if ($totalseats < $seatsreq) {
+        $allocatedbays->outseatsleft = $outtotalseats;
+        if ($outtotalseats < $seatsreq) {
             return $allocatedbays;
         }
 
-        $allocatesm = $this->getBays($seatsreq, $bays, false);
-        $allocatelg = $this->getBays($seatsreq, $bays, true);
+        if ($this->journeytype == 'return') {
+            //TODO Reduce the bay totals using the booking records before allocation, remove sold out bay sizes.
+            $retbays = $basebays;
 
-        if (!$allocatesm && !$allocatelg) {
-            $allocatedbays->error = true;
-            return $allocatedbays;
+            $rettotalseats = 0;
+            foreach ($retbays as $baysize => $numleft) {
+                $rettotalseats += $baysize*$numleft;
+            }
+            $allocatedbays->retseatsleft = $rettotalseats;
+            if ($rettotalseats < $seatsreq) {
+                return $allocatedbays;
+            }
+
+            $retallocatesm = $this->getBays($seatsreq, $retbays, false);
+            $retallocatelg = $this->getBays($seatsreq, $retbays, true);
+
+            if (!$retallocatesm && !$retallocatelg) {
+                $allocatedbays->error = true;
+                return $allocatedbays;
+            }
+
+            if ($retallocatesm[0] > $retallocatelg[0]) {
+                $allocatedbays->retbays = $retallocatelg[1];
+            } else {
+                $allocatedbays->retbays = $retallocatesm[1];
+            }
+        }
+
+        $outallocatesm = $this->getBays($seatsreq, $outbays, false);
+        $outallocatelg = $this->getBays($seatsreq, $outbays, true);
+
+        if (!$outallocatesm && !$outallocatelg) {
+            $outallocatedbays->error = true;
+            return $outallocatedbays;
         }
 
         $allocatedbays->ok = true;
-        if ($allocatesm[0] > $allocatelg[0]) {
-            $allocatedbays->bays = $allocatelg[1];
+        if ($outallocatesm[0] > $outallocatelg[0]) {
+            $allocatedbays->outbays = $outallocatelg[1];
         } else {
-            $allocatedbays->bays = $allocatesm[1];
+            $allocatedbays->outbays = $outallocatesm[1];
         }
 
         return $allocatedbays;
+    }
+
+    private function getBestBays() {
+
     }
 
     private function getBays($seatsleft, $bays, $largest) {

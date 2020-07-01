@@ -428,19 +428,31 @@ function checkCapacity() {
 }
 
 function showCapacity(response) {
+    console.log(response);
     var capacitydiv = document.getElementById('ticket_capacity');
     var str = "<div class='railticket_travellers_table_container' >";
     if (response.ok) {
-        for (i in response.bays) {
-            str += response.bays[i]+"x "+i+" seat bay<br />";
+        str = "Socially distanced seating bay(s) are available for your journey:<br /><table class='railticket_travellers_table'><tr><td>Outbound</td><td>";
+        for (i in response.outbays) {
+            str += response.outbays[i]+"x "+i+" seat bay &nbsp&nbsp;";
         }
-        str += "Socially distanced seating bay(s) are available for your journey";
+        str += "</td></tr>";
+        var journeytype = document.railticketbooking['journeytype'].value;
+        if (journeytype == "return") {
+            str += "<tr><td>Return</td><td>";
+            for (i in response.retbays) {
+                str += response.retbays[i]+"x "+i+" seat bay&nbsp&nbsp;";
+            }
+            str += "</td></tr>";
+        }
+        str +="</table>";
+
         showTicketStages('addtocart', false);
     } else {
         if (response.tobig) {
             str += "Parties with more than 12 members are requested to make seperate booking, or call to make a group booking.";
         } else {
-            str += "Sorry, but we do not have space for a party of this size, there are "+response.seatsleft+" seats left on your selected service.";
+            str += "Sorry, but we do not have space for a party of this size";
         }
         showTicketStages('tickets', false);
     }
