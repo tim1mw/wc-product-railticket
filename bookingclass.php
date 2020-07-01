@@ -181,10 +181,133 @@ class TicketBuilder {
 
     public function get_capacity() {
         global $wpdb;
-        
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
+            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$this->dateoftravel."' AND ".
+            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
 
-        return array();
+        $rec = $wpdb->get_results($sql)[0];
+        $bays = (array) json_decode($rec->bays);
+        ksort($bays);
+
+        $allocatedbays = new stdclass();
+        $allocatedbays->ok = false;
+        $allocatedbays->tobig = false;
+        $allocatedbays->error = false;
+        //TODO Reduce the bay totals using the booking records before allocation, remove sold out bay sizes.
+
+
+        $seatsreq = $this->count_seats();
+
+        //if ($seatsreq > 12) {
+        //    $allocatedbays->tobig = true;
+        //    return $allocatedbays;
+        //}
+
+        // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
+        $totalseats = 0;
+        foreach ($bays as $baysize => $numleft) {
+            $totalseats += $baysize*$numleft;
+        }
+        $allocatedbays->seatsleft = $totalseats;
+        if ($totalseats < $seatsreq) {
+            return $allocatedbays;
+        }
+
+        // Deal with the easy ones, aka a group that fits in a single bay
+        $seatsleft = $seatsreq;
+        $allocatesm = array();
+        $smcount = 0;
+        while ($seatsleft > 0) {
+            $baychoice = $this->findBay($seatsleft, $bays);
+            if (!$baychoice) {
+                $baychoice = $this->findSmallest($bays);
+            }
+            $seatsleft = $seatsleft - $baychoice;
+            $bays[$smallest]--;
+
+            if (array_key_exists($baychoice, $allocatesm)) {
+                $allocatesm[$baychoice] ++;
+            } else {
+                $allocatesm[$baychoice] = 1;
+            }
+            $smcount += $baychoice;
+            // Bail out here, something is wrong....
+            if ($count > 100) {
+                $allocatedbay->error = true;
+                return $allocatedbays;
+            }
+        }
+
+        $seatsleft = $seatsreq;
+        $allocatelg = array();
+        $lgcount = 0;
+        while ($seatsleft > 0) {
+            $baychoice = $this->findBay($seatsleft, $bays);
+            if (!$baychoice) {
+                $baychoice = $this->findLargest($bays);
+            }
+            $seatsleft = $seatsleft - $baychoice;
+            $bays[$baychoice]--;
+
+            if (array_key_exists($baychoice, $allocatelg)) {
+                $allocatelg[$baychoice] ++;
+            } else {
+                $allocatelg[$baychoice] = 1;
+            }
+            $lgcount += $baychoice;
+
+            // Bail out here, something is wrong....
+            if ($lgcount > 100) {
+                $allocatedbay->error = true;
+                return $allocatedbays;
+            }
+        }
+
+        $allocatedbays->ok = true;
+        if ($smcount > $lgcount) {
+            $allocatedbays->bays = $allocatelg;
+
+        } else {
+            $allocatedbays->bays = $allocatesm;
+        }
+        return $allocatedbays;
     }
+
+    private function findSmallest($bays) {
+        $num = 100;
+        foreach ($bays as $baysize => $numleft) {
+            if ($numleft > 0) {
+                if ($baysize < $num) {
+                    $num = $baysize;
+                }
+            }
+        }
+        return intval($num);
+    }
+
+    private function findLargest($bays) {
+        $num = 0;
+        foreach ($bays as $baysize => $numleft) {
+            if ($numleft > 0) {
+                if ($baysize > $num) {
+                    $num = $baysize;
+                }
+            }
+        }
+        return intval($num);
+    }
+
+    private function findBay($seatsreq, $bays) {
+        foreach ($bays as $baysize => $numleft) {
+            if ($seatsreq <= $baysize) {
+                return intval($baysize);
+            }
+        }
+        return false;
+    }
+
 
     public function do_purchase() {
         global $woocommerce, $wpdb;
@@ -223,6 +346,7 @@ class TicketBuilder {
         $woocommerce->cart->calculate_totals();
         $woocommerce->cart->set_session();
         $woocommerce->cart->maybe_set_cart_cookies();
+
 
         return $purchase;
     }
@@ -389,8 +513,9 @@ class TicketBuilder {
             "  <div id='ticket_travellers' class='railticket_container'>".
             "  </div>".
             "  <div id='ticket_summary' class='railticket_container'></div>".
-            "  <div id='ticket_summary' class='railticket_container'>".
+            "  <div id='ticket_capbutton' class='railticket_container'>".
             "  <input type='button' value='Confirm Choices' onclick='checkCapacity()' id='confirmchoices' /></div>".
+            "  <div id='ticket_capacity' class='railticket_container'></div>".
             "</div>";
 
         return $str;

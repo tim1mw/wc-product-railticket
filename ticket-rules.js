@@ -26,7 +26,7 @@ function setupTickets() {
         tostation[i].addEventListener('click', toStationChanged);
     }
 
-    showTicketStages('date');
+    showTicketStages('date', true);
 }
 
 function railTicketAjax(datareq, spinner, callback) {
@@ -65,7 +65,7 @@ function setBookingDate(bdate) {
     railTicketAjax('bookable_stations', true, function(response) {
         enableStations('from', response);
         enableStations('to', response);
-        showTicketStages('stations');
+        showTicketStages('stations', true);
     });
 }
 
@@ -86,12 +86,12 @@ function enableStations(type, response) {
 
 function notBookable(bdate) {
     setChosenDate("Not available to book yet", bdate);
-    showTicketStages('date');
+    showTicketStages('date', true);
 }
 
 function soldOut(bdate) {
    setChosenDate("Sold out", bdate);
-   showTicketStages('date');
+   showTicketStages('date', true);
 }
 
 function setChosenDate(text, bdate) {
@@ -160,7 +160,7 @@ function getDepTimes() {
             str += "</ul>";
         }
         document.getElementById('ticket_type').innerHTML = str;
-        showTicketStages('deptimes');
+        showTicketStages('deptimes', true);
     });
 }
 
@@ -275,7 +275,7 @@ function showTicketSelector() {
         document.railticketbooking['journeytype'].value == "return") ) {
         railTicketAjax('tickets', true, renderTicketSelector);  
     } else {
-        showTicketStages('deptimes');
+        showTicketStages('deptimes', true);
     }
 
 }
@@ -287,7 +287,7 @@ function renderTicketSelector(response) {
         document.getElementById('ticket_type').style.display = "none";
         document.getElementById('ticket_numbers').style.display = "none";
         document.getElementById('ticket_summary').innerHTML = "<h3>Sorry, no tickets were found for this journey</h3>";
-        showTicketStages('tickets');
+        showTicketStages('tickets', true);
         return;
     }
 
@@ -315,7 +315,7 @@ function renderTicketSelector(response) {
     tn.innerHTML = travellers;
     travellersChanged();
 
-    showTicketStages('tickets');
+    showTicketStages('tickets', true);
 }
 
 function travellersChanged() {
@@ -323,6 +323,8 @@ function travellersChanged() {
 }
 
 function allocateTickets() {
+    var capacitydiv = document.getElementById('ticket_capacity');
+    capacitydiv.style.display = 'none';
     var allocation = new Array();
     allocationTotal = 0;
     ticketsAllocated = {};
@@ -389,7 +391,6 @@ function allocateTickets() {
             '<td><span>'+formatter.format(tkt.price * ticketsAllocated[i])+'</span></td>'+
             '<td><img src="'+tkt.image+'" class="railticket_image" /></td>'+
             '</tr>';
-        console.log(ticketsAllocated);
         total += parseInt(tkt.price) * ticketsAllocated[i];
     }
     var supplement = 0;
@@ -424,9 +425,33 @@ const formatter = new Intl.NumberFormat('en-GB', {
 
 function checkCapacity() {
     railTicketAjax('capacity', true, function(response) {
-        showTicketStages('addtocart');
+        showCapacity(response);
     });
 }
+
+function showCapacity(response) {
+    console.log(response);
+    var capacitydiv = document.getElementById('ticket_capacity');
+    var str = "<div class='railticket_travellers_table_container' >";
+    if (response.ok) {
+        for (i in response.bays) {
+            str += response.bays[i]+"x "+i+" seat bay<br />";
+        }
+        str += "Socially distanced seating bay(s) are available for your journey";
+        showTicketStages('addtocart', false);
+    } else {
+        if (response.tobig) {
+            str += "Parties with more than 12 members are requested to make seperate booking, or call to make a group booking.";
+        } else {
+            str += "Sorry, but we do not have space for a party of this size, there are "+response.seatsleft+" seats left on your selected service.";
+        }
+        showTicketStages('tickets', false);
+    }
+    capacitydiv.innerHTML = str+"</div>";
+    capacitydiv.style.display = 'block';
+}
+
+
 
 
 function matchTicket(allocation) {
@@ -476,7 +501,7 @@ function cartTickets() {
 }
 
 
-function showTicketStages(stage) {
+function showTicketStages(stage, doscroll) {
     var display = 'block';
     
     var scroll = null;
@@ -527,7 +552,7 @@ function showTicketStages(stage) {
     var tickets = document.getElementById('addtocart');
     addtocart.style.display = display;
 
-    if (scroll !=null && stage != laststage) {
+    if (scroll !=null && stage != laststage && doscroll) {
         scroll.scrollIntoView(true);
         if (window.innerWidth >= 1010) {
             window.scrollBy(0, -80); 
