@@ -509,7 +509,11 @@ function cartTickets() {
             window.location.replace('/basket');
         } else {
             var errordiv = document.getElementById('railticket_error');
-            errordiv.innerHTML = "<p>Sorry, we were unable to reserve your tickets for you because somebody else has just purchased some or all of your selections. Please reload this page to try an alternative date or service.</p>";
+            if (response.duplicate) {
+                errordiv.innerHTML = "<p>Sorry, but you already have a ticket selection in your shopping cart, you can only have one ticket selection per order. Please remove the existing ticket selection if you wish to create a new one, or complete the purchase for the existing one.</p>";
+            } else {
+                errordiv.innerHTML = "<p>Sorry, we were unable to reserve your tickets for you because somebody else has just purchased some or all of your selections. Please reload this page to try an alternative date or service.</p>";
+            }
             errordiv.style.display='block';
         }
     });

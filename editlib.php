@@ -45,7 +45,7 @@ function railticket_options() {
             <td><input type="text" size='60' id="wc_product_railticket_termspage" name="wc_product_railticket_termspage" value="<?php echo get_option('wc_product_railticket_termspage'); ?>" /></td>
         </tr>
         <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking Grace (minutes)</label></th>
+            <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overtun period (minutes)</label></th>
             <td><input type="text" size='2' id="wc_product_railticketbookinggrace" name="wc_product_railticket_bookinggrace" value="<?php echo get_option('wc_product_railticket_bookinggrace'); ?>" /></td>
         </tr>
         <tr valign="top">

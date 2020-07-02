@@ -26,6 +26,11 @@ class TicketBuilder {
     }
 
     public function render() {
+        if ($this->checkDuplicate()) {
+            
+            return '<p>Sorry, but you already have a ticket selection in your shopping cart, you can only have one ticket selection per order. Please remove the existing ticket selection if you wish to create a new one, or complete the purchase for the existing one.</p>';
+        }
+
         return $this->get_javascript().
             $this->get_datepick().
             '<form action="post" name="railticketbooking">'.
@@ -338,16 +343,35 @@ class TicketBuilder {
         return false;
     }
 
+    private function checkDuplicate() {
+        global $woocommerce, $wpdb;
+        $items = $woocommerce->cart->get_cart();
+        $ticketid = get_option('wc_product_railticket_woocommerce_product');
+        $items = $woocommerce->cart->get_cart();
+        foreach($items as $item => $values) { 
+            if ($ticketid == $values['data']->get_id()) {
+                if (count($bookingids) === 0) {
+                    return true;
+                }
+            }
+        } 
+        return false;
+    }
 
     public function do_purchase() {
         global $woocommerce, $wpdb;
         $purchase = new stdclass();
+        $purchase->ok = false;
+        $purchase->duplicate = false;
+        if ($this->checkDuplicate()) {
+            $purchase->duplicate = true;
+            return $purchase;
+        }
 
         // Check we still have capacity
         $allocatedbays = $this->get_capacity();
 
         if (!$allocatedbays->ok) {
-            $purchase->ok = false;
             return $purchase;
         }
 
