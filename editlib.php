@@ -173,11 +173,10 @@ function railticket_updatebookable() {
         $bk = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable WHERE dateid = ".$id);
 
         if (count($bk) > 0) {
-            $bays = railticket_process_bays($bk[0]->composition, false);
-            $specialbays = railticket_process_bays($bk[0]->composition, false);
+            $bays = railticket_process_bays($bk[0]->composition);
             //$data = array('bookable' => $bk, 'bays' => $bays);
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable",
-                array('bookable' => $bookable, 'bays' => $bays, 'specialbays' => $specialbays),
+                array('bookable' => $bookable, 'bays' => $bays),
                 array('dateid' => $bk[0]->dateid),
                 array('%d', '%s'),
                 array('%d')
@@ -187,8 +186,7 @@ function railticket_updatebookable() {
                 $data = array(
                     'dateid' => $id,
                     'composition' => get_option('wc_product_railticket_defaultcoaches'),
-                    'bays' => railticket_process_bays(get_option('wc_product_railticket_defaultcoaches'), false),
-                    'specialbays' => railticket_process_bays(get_option('wc_product_railticket_defaultcoaches'), true),
+                    'bays' => railticket_process_bays(get_option('wc_product_railticket_defaultcoaches')),
                     'bookclose' => railticket_get_booking_grace($bk[0]->dateid),
                     'limits' => get_option('wc_product_railticket_bookinglimits'),
                     'bookable' => 1,
@@ -208,7 +206,7 @@ function railticket_get_booking_grace($dateid) {
     return "{}";
 }
 
-function railticket_process_bays($json, $special) {
+function railticket_process_bays($json) {
    global $wpdb;
    $data = array();
    $parsed = json_decode($json);
@@ -222,9 +220,7 @@ function railticket_process_bays($json, $special) {
 //print_r($bays);
 //echo "<br />";
        foreach ($bays as $bay) {
-           if ($bay->special == $special) {
-               $data[$bay->baysize] += $bay->quantity * $count;
-           }
+           $data[$bay->baysize] += $bay->quantity * $count;
        }
 
    }
