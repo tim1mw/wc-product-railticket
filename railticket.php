@@ -367,8 +367,8 @@ function railticket_cart_updated($cart_item_key, $cart) {
 }
 add_action( 'woocommerce_remove_cart_item', 'railticket_cart_updated', 10, 2 );
 
-add_action('woocommerce_checkout_create_order_line_item', 'save_cart_item_key_as_custom_order_item_metadata', 10, 4 );
-function save_cart_item_key_as_custom_order_item_metadata( $item, $cart_item_key, $values, $order ) {
+add_action('woocommerce_checkout_create_order_line_item', 'railticket_cart_order_item_metadata', 10, 4 );
+function railticket_cart_order_item_metadata( $item, $cart_item_key, $values, $order ) {
     // Save the cart item key as hidden order item meta data
     $item->update_meta_data( '_cart_item_key', $cart_item_key );
 }
@@ -395,7 +395,7 @@ function railticket_cart_complete($order_id) {
             if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
                 $key = $item->get_meta( '_cart_item_key' );
                 $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-                    array('wooorderid' => $order_id, 'woocartitem' => '', 'wooorderitem' => $item_id),
+                    array('wooorderid' => $order_id, 'woocartitem' => '', 'woocartid' => '', 'wooorderitem' => $item_id),
                     array('woocartitem' => $key));
             }
         }
@@ -405,6 +405,59 @@ function railticket_cart_complete($order_id) {
 
 }
 
+// Add a new interval of 120 seconds
+// See http://codex.wordpress.org/Plugin_API/Filter_Reference/cron_schedules
+add_filter( 'cron_schedules', 'railticket_add_every_two_minutes' );
+function railticket_add_every_two_minutes( $schedules ) {
+    $schedules['every_two_minutes'] = array(
+            'interval'  => 120,
+            'display'   => __( 'Every 2 Minutes', 'textdomain' )
+    );
+    return $schedules;
+}
+
+// Schedule an action if it's not already scheduled
+if ( ! wp_next_scheduled( 'railticket_add_every_two_minutes' ) ) {
+    wp_schedule_event( time(), 'every_two_minutes', 'railticket_add_every_two_minutes' );
+}
+
+// Hook into that action that'll fire every three minutes
+add_action( 'railticket_add_every_two_minutes', 'railticket_every_two_minutes_event_func' );
+function railticket_every_two_minutes_event_func() {
+    global $wpdb;
+    $expiretime = time() - intval(get_option('wc_product_railticket_reservetime'))*60;
+
+    $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem != '' AND created < ".$expiretime;
+    $bookingids = $wpdb->get_results($sql);
+    foreach ($bookingids as $bookingid) {
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $bookingid->id));
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $bookingid->id));
+    }
+}
+
+add_action('woocommerce_before_checkout_form', 'railticket_cart_check_cart');
+add_action('woocommerce_before_cart', 'railticket_cart_check_cart');
+
+/**
+ * Check any rail tickets are still valid
+ *
+ */
+function railticket_cart_check_cart() {
+	global $woocommerce, $wpdb;
+    $items = $woocommerce->cart->get_cart();
+    $ticketid = get_option('wc_product_railticket_woocommerce_product');
+    $items = $woocommerce->cart->get_cart();
+    foreach($items as $item => $values) { 
+        if ($ticketid == $values['data']->get_id()) {
+            $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$item."'";
+            $bookingids = $wpdb->get_results($sql);
+            if (count($bookingids) === 0) {
+                $woocommerce->cart->remove_cart_item($item);
+                echo "<p>Your rail journey tickets have expired and have been removed from the basket. Sorry.</p>";
+            }
+        }
+    } 
+}
 
 function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');

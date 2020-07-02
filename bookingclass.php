@@ -409,7 +409,8 @@ class TicketBuilder {
             'seats' => $totalseats,
             'usebays' => 1,
             'originstation' => $fromstation,
-            'origintime' => $time
+            'origintime' => $time,
+            'created' => time()
         );
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
         $id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".
@@ -608,6 +609,8 @@ class TicketBuilder {
             "<div class='railticket_container'>".
             "<p class='railticket_terms'><input type='checkbox' name='terms' onclick='termsClicked()'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
             "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
+            "<p class='railticket_terms'>Your tickets will be reserved for ".get_option('wc_product_railticket_reservetime')." minutes after you click add to cart".
+            " please complete your purchases within that time.</p>".
             "<p><input type='button' value='Add To Cart' onclick='cartTickets()' id='addticketstocart' /></p></div>".
             "</div>";
 
