@@ -379,6 +379,9 @@ class TicketBuilder {
 
     private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays) {
         global $wpdb;
+        // TODO originstation and origintime reflect the station this train originally started from. Right now
+        // with end to end bookings only this will always be the same as fromstation and time. Needs to be set properly
+        // when intermediate stops are added. The aim is to allow the entire inventory for this service to be retrieved.
         $dbdata = array(
             'woocartitem' => $itemkey,
             'date' => $this->dateoftravel,
@@ -386,7 +389,9 @@ class TicketBuilder {
             'fromstation' => $fromstation,
             'tostation' => $tostation,
             'seats' => $totalseats,
-            'usebays' => 1
+            'usebays' => 1,
+            'originstation' => $fromstation,
+            'origintime' => $time
         );
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
         $id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".
