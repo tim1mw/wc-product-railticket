@@ -459,6 +459,18 @@ function railticket_cart_check_cart() {
     } 
 }
 
+add_action('woocommerce_order_status_refunded', 'railticket_order_cancel_refund');
+add_action('woocommerce_order_status_cancelled', 'railticket_order_cancel_refund');
+function railticket_order_cancel_refund($order_id) {
+global $wpdb;
+    $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = ".$order_id;
+    $bookingids = $wpdb->get_results($sql);
+    foreach ($bookingids as $bookingid) {
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $bookingid->id));
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $bookingid->id));
+    }
+}
+
 function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');
     $fromstation = railticket_getpostfield('fromstation');
