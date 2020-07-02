@@ -395,7 +395,7 @@ function railticket_cart_complete($order_id) {
             if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
                 $key = $item->get_meta( '_cart_item_key' );
                 $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-                    array('wooorderid' => $order_id, 'woocartitem' => '', 'woocartid' => '', 'wooorderitem' => $item_id),
+                    array('wooorderid' => $order_id, 'woocartitem' => '', 'wooorderitem' => $item_id),
                     array('woocartitem' => $key));
             }
         }
