@@ -357,6 +357,16 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     return $retmeta;
 }
 
+function railticket_cart_updated($cart_item_key, $cart) {
+    global $wpdb;
+    $bookingids = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$cart_item_key."'");
+    foreach ($bookingids as $bookingid) {
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $bookingid->id));
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $bookingid->id));
+    }
+}
+add_action( 'woocommerce_remove_cart_item', 'railticket_cart_updated', 10, 2 );
+
 
 function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');

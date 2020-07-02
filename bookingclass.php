@@ -331,7 +331,7 @@ class TicketBuilder {
 
     private function findBay($seatsreq, $bays) {
         foreach ($bays as $baysize => $numleft) {
-            if ($seatsreq <= $baysize) {
+            if ($seatsreq <= $baysize && $numleft > 0) {
                 return intval($baysize);
             }
         }
