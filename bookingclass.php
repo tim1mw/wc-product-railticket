@@ -346,7 +346,7 @@ class TicketBuilder {
             $supplement = $mprice - $custom_price;
             $custom_price = $mprice;
         } 
-
+        $totalseats = $this->count_seats();
         $data = array(
             'fromstation' => $this->fromstation,
             'tostation' => $this->tostation,
@@ -356,7 +356,7 @@ class TicketBuilder {
             'retbays' => $this->baystring($allocatedbays->retbays),
             'dateoftravel' => $this->dateoftravel,
             'journeytype' => $this->journeytype,
-            'totalseats' => $this->count_seats(),
+            'totalseats' => $totalseats,
             'pricesupplement' => $supplement
         );
 
@@ -369,8 +369,36 @@ class TicketBuilder {
         $woocommerce->cart->set_session();
         $woocommerce->cart->maybe_set_cart_cookies();
 
+        $this->insertBooking($itemkey, $this->outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays);
+        if ($this->journeytype == 'return') {
+            $this->insertBooking($itemkey, $this->rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays);
+        }
         $purchase->ok = true;
         return $purchase;
+    }
+
+    private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays) {
+        global $wpdb;
+        $dbdata = array(
+            'woocartitem' => $itemkey,
+            'date' => $this->dateoftravel,
+            'time' => $time,
+            'fromstation' => $fromstation,
+            'tostation' => $tostation,
+            'seats' => $totalseats,
+            'usebays' => 1
+        );
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
+        $id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".
+            " fromstation = '".$fromstation."' AND tostation = '".$tostation."'");
+        foreach ($allocatedbays->outbays as $baysize => $num) {
+            $bdata = array(
+                'bookingid' => $id,
+                'num' => $num,
+                'baysize' => $baysize
+            );
+            $wpdb->insert("{$wpdb->prefix}wc_railticket_booking_bays", $bdata);
+        }
     }
 
     private function bayString($bays) {
