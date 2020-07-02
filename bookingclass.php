@@ -235,8 +235,14 @@ class TicketBuilder {
         $allocatedbays->ok = false;
         $allocatedbays->tobig = false;
         $allocatedbays->error = false;
+        $allocatedbays->outspecialbays = array();
+        $allocatedbays->retspecialbays = array();
+        $allocatedbays->outbays = array();
+        $allocatedbays->retbays = array();
 
         $seatsreq = $this->count_seats();
+        $specialbaysout = 0;
+        $speciabaysret = 0;
 
         $outbays = $this->get_service_inventory($this->dateoftravel, $this->outtime, $this->fromstation, $this->tostation);
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
@@ -247,13 +253,14 @@ class TicketBuilder {
                 return $allocatedbays;
             }
             // Merge special seats into the normal allocation
-            foreach ($outbays->special as $baysize => $number) {
-                if (array_key_exists($baysize, $outbays->bays)) {
-                    $outbays->bays[$baysize] += $number;
-                } else {
-                    $outbays->bays[$baysize] = $number;
-                }
-            }
+            //foreach ($outbays->special as $baysize => $number) {
+            //    if (array_key_exists($baysize, $outbays->bays)) {
+            //        $outbays->bays[$baysize] += $number;
+            //    } else {
+            //        $outbays->bays[$baysize] = $number;
+            //    }
+            //}
+            $specialbaysout = 1;
         }
 
         if ($this->journeytype == 'return') {
@@ -266,43 +273,70 @@ class TicketBuilder {
                     return $allocatedbays;
                 }
                 // Merge special seats into the normal allocation
-                foreach ($retbays->special as $baysize => $number) {
-                    if (array_key_exists($baysize, $retbays->bays)) {
-                        $retbays->bays[$baysize] += $number;
-                    } else {
-                        $retbays->bays[$baysize] = $number;
-                    }
+                //foreach ($retbays->special as $baysize => $number) {
+                //    if (array_key_exists($baysize, $retbays->bays)) {
+                //        $retbays->bays[$baysize] += $number;
+                //    } else {
+                //        $retbays->bays[$baysize] = $number;
+                //    }
+                //}
+                $speciabaysret = 1;
+            }
+            $rseatsreq = $seatsreq;
+            if ($speciabaysret > 0) {
+                $allocatedbays->retspecialbays = $this->getBays($speciabaysret, $retbays->special, false);
+                if (!$allocatedbays->retspecialbays) {
+                    $allocatedbays->error = true;
+                    return $allocatedbays;
+                }
+                foreach ($allocatedbays->retspecialbays as $baysize => $number) {
+                    $rseatsreq = $rseatsreq - ($baysize * $number);
                 }
             }
 
-            $retallocatesm = $this->getBays($seatsreq, $retbays->bays, false);
-            $retallocatelg = $this->getBays($seatsreq, $retbays->bays, true);
+            if ($rseatsreq > 0) {
+                $retallocatesm = $this->getBays($rseatsreq, $retbays->bays, false);
+                $retallocatelg = $this->getBays($rseatsreq, $retbays->bays, true);
 
-            if (!$retallocatesm && !$retallocatelg) {
+                if (!$retallocatesm && !$retallocatelg) {
+                    $allocatedbays->error = true;
+                    return $allocatedbays;
+                }
+
+                if ($retallocatesm[0] > $retallocatelg[0]) {
+                    $allocatedbays->retbays = $retallocatelg[1];
+                } else {
+                    $allocatedbays->retbays = $retallocatesm[1];
+                }
+            }
+        }
+
+        if ($specialbaysout > 0) {
+            $allocatedbays->outspecialbays = $this->getBays($speciabaysout, $outbays->special, false);
+            if (!$allocatedbays->outspecialbays) {
                 $allocatedbays->error = true;
                 return $allocatedbays;
             }
-
-            if ($retallocatesm[0] > $retallocatelg[0]) {
-                $allocatedbays->retbays = $retallocatelg[1];
-            } else {
-                $allocatedbays->retbays = $retallocatesm[1];
+            foreach ($allocatedbays->outspecialbays as $baysize => $number) {
+                $seatsreq = $seatsreq - ($baysize * $number);
             }
         }
 
-        $outallocatesm = $this->getBays($seatsreq, $outbays->bays, false);
-        $outallocatelg = $this->getBays($seatsreq, $outbays->bays, true);
+        if ($seatsreq > 0) {
+            $outallocatesm = $this->getBays($seatsreq, $outbays->bays, false);
+            $outallocatelg = $this->getBays($seatsreq, $outbays->bays, true);
 
-        if (!$outallocatesm && !$outallocatelg) {
-            $outallocatedbays->error = true;
-            return $outallocatedbays;
-        }
+            if (!$outallocatesm && !$outallocatelg) {
+                $outallocatedbays->error = true;
+                return $outallocatedbays;
+            }
 
-        $allocatedbays->ok = true;
-        if ($outallocatesm[0] > $outallocatelg[0]) {
-            $allocatedbays->outbays = $outallocatelg[1];
-        } else {
-            $allocatedbays->outbays = $outallocatesm[1];
+            $allocatedbays->ok = true;
+            if ($outallocatesm[0] > $outallocatelg[0]) {
+                $allocatedbays->outbays = $outallocatelg[1];
+            } else {
+                $allocatedbays->outbays = $outallocatesm[1];
+            }
         }
 
         return $allocatedbays;
