@@ -192,6 +192,7 @@ class TicketBuilder {
         $rec = $wpdb->get_results($sql)[0];
         $basebays = (array) json_decode($rec->bays);
         ksort($basebays);
+        $specialbays = (array) json_decode($rec->specialbays);
 
         // Get the bookings we need to subtract from this formation. Not using tostation, we'll want that for intermediate stops though.
         $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
@@ -205,18 +206,27 @@ class TicketBuilder {
 
         $bookings = $wpdb->get_results($sql);
         foreach ($bookings as $booking) {
-            $basebays[$booking->baysize] = $basebays[$booking->baysize] - $booking->num;
+            if ($booking->special) {
+                $specialbays[$booking->baysize] = $specialbays[$booking->baysize] - $booking->num;
+            } else {
+                $basebays[$booking->baysize] = $basebays[$booking->baysize] - $booking->num;
+            }
         }
 
         $totalseats = 0;
         foreach ($basebays as $baysize => $numleft) {
             $totalseats += $baysize*$numleft;
         }
+        $tspecialseats = 0;
+        foreach ($specialbays as $baysize => $numleft) {
+            $tspecialseats += $baysize*$numleft;
+        }
 
         $bays = new stdclass();
         $bays->bays = $basebays;
         $bays->totalseats = $totalseats;
-        $bays->special = array();
+        $bays->special = $specialbays;
+        $bays->tspecialseats = $tspecialseats;
         return $bays;
     }
 
@@ -232,7 +242,18 @@ class TicketBuilder {
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
         $allocatedbays->outseatsleft = $outbays->totalseats;
         if ($outbays->totalseats < $seatsreq) {
-            return $allocatedbays;
+            // Add in the special seats that are only used last for normal passengers
+            if ($outbays->totalseats + $outbays->tspecialseats < $seatsreq) {
+                return $allocatedbays;
+            }
+            // Merge special seats into the normal allocation
+            foreach ($outbays->special as $baysize => $number) {
+                if (array_key_exists($baysize, $outbays->bays)) {
+                    $outbays->bays[$baysize] += $number;
+                } else {
+                    $outbays->bays[$baysize] = $number;
+                }
+            }
         }
 
         if ($this->journeytype == 'return') {
@@ -240,7 +261,18 @@ class TicketBuilder {
             // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
             $allocatedbays->retseatsleft = $retbays->totalseats;
             if ($retbays->totalseats < $seatsreq) {
-                return $allocatedbays;
+                // Add in the special seats that are only used last for normal passengers
+                if ($retbays->totalseats + $retbays->tspecialseats < $seatsreq) {
+                    return $allocatedbays;
+                }
+                // Merge special seats into the normal allocation
+                foreach ($retbays->special as $baysize => $number) {
+                    if (array_key_exists($baysize, $retbays->bays)) {
+                        $retbays->bays[$baysize] += $number;
+                    } else {
+                        $retbays->bays[$baysize] = $number;
+                    }
+                }
             }
 
             $retallocatesm = $this->getBays($seatsreq, $retbays->bays, false);
@@ -287,6 +319,9 @@ class TicketBuilder {
                 } else {
                     $baychoice = $this->findSmallest($bays);
                 }
+                if ($baychoice == 0 || $baychoice == 100) {
+                    return false;
+                }
             }
             $seatsleft = $seatsleft - $baychoice;
             $bays[$baychoice]--;
@@ -331,7 +366,7 @@ class TicketBuilder {
 
     private function findBay($seatsreq, $bays) {
         foreach ($bays as $baysize => $numleft) {
-            if ($seatsreq <= $baysize) {
+            if ($seatsreq <= $baysize && $numleft > 0) {
                 return intval($baysize);
             }
         }
