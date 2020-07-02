@@ -367,6 +367,44 @@ function railticket_cart_updated($cart_item_key, $cart) {
 }
 add_action( 'woocommerce_remove_cart_item', 'railticket_cart_updated', 10, 2 );
 
+add_action('woocommerce_checkout_create_order_line_item', 'save_cart_item_key_as_custom_order_item_metadata', 10, 4 );
+function save_cart_item_key_as_custom_order_item_metadata( $item, $cart_item_key, $values, $order ) {
+    // Save the cart item key as hidden order item meta data
+    $item->update_meta_data( '_cart_item_key', $cart_item_key );
+}
+
+add_action('woocommerce_thankyou', 'railticket_cart_complete', 10, 1);
+function railticket_cart_complete($order_id) {
+    global $wpdb;
+    if ( ! $order_id )
+        return;
+
+    // Allow code execution only once 
+    if( ! get_post_meta( $order_id, '_railticket_thankyou_action_done', true ) ) {
+
+        // Get an instance of the WC_Order object
+        $order = wc_get_order( $order_id );
+
+        // Loop through order items
+        foreach ( $order->get_items() as $item_id => $item ) {
+            // Get the product object
+            $product = $item->get_product();
+
+            // Get the product Id
+            $product_id = $product->get_id();
+            if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
+                $key = $item->get_meta( '_cart_item_key' );
+                $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
+                    array('wooorderid' => $order_id, 'woocartitem' => '', 'wooorderitem' => $item_id),
+                    array('woocartitem' => $key));
+            }
+        }
+        $order->update_meta_data( '_railticket_thankyou_action_done', true );
+        $order->save();
+    }
+
+}
+
 
 function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');

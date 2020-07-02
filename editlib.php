@@ -10,6 +10,7 @@ function railticket_register_settings() {
    add_option('wc_product_railticket_woocommerce_product', '');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_woocommerce_product'); 
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_min_price');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_reservetime');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termspage');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
