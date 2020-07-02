@@ -193,6 +193,21 @@ class TicketBuilder {
         $basebays = (array) json_decode($rec->bays);
         ksort($basebays);
 
+        // Get the bookings we need to subtract from this formation. Not using tostation, we'll want that for intermediate stops though.
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
+            "{$wpdb->prefix}wc_railticket_bookings ".
+            " LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
+            " {$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
+            " WHERE ".
+            "{$wpdb->prefix}wc_railticket_bookings.fromstation = '".$fromstation."' AND ".
+            "{$wpdb->prefix}wc_railticket_bookings.date = '".$date."' AND ".
+            "{$wpdb->prefix}wc_railticket_bookings.time = '".$time."' ";
+
+        $bookings = $wpdb->get_results($sql);
+        foreach ($bookings as $booking) {
+            $basebays[$booking->baysize] = $basebays[$booking->baysize] - $booking->num;
+        }
+
         $totalseats = 0;
         foreach ($basebays as $baysize => $numleft) {
             $totalseats += $baysize*$numleft;
@@ -228,8 +243,8 @@ class TicketBuilder {
                 return $allocatedbays;
             }
 
-            $retallocatesm = $this->getBays($seatsreq, $retbays, false);
-            $retallocatelg = $this->getBays($seatsreq, $retbays, true);
+            $retallocatesm = $this->getBays($seatsreq, $retbays->bays, false);
+            $retallocatelg = $this->getBays($seatsreq, $retbays->bays, true);
 
             if (!$retallocatesm && !$retallocatelg) {
                 $allocatedbays->error = true;
@@ -243,8 +258,8 @@ class TicketBuilder {
             }
         }
 
-        $outallocatesm = $this->getBays($seatsreq, $outbays, false);
-        $outallocatelg = $this->getBays($seatsreq, $outbays, true);
+        $outallocatesm = $this->getBays($seatsreq, $outbays->bays, false);
+        $outallocatelg = $this->getBays($seatsreq, $outbays->bays, true);
 
         if (!$outallocatesm && !$outallocatelg) {
             $outallocatedbays->error = true;
@@ -266,7 +281,7 @@ class TicketBuilder {
         $smcount = 0;
         while ($seatsleft > 0) {
             $baychoice = $this->findBay($seatsleft, $bays);
-            if (!$baychoice) {
+            if ($baychoice === false) {
                 if ($largest) {
                     $baychoice = $this->findLargest($bays);
                 } else {
@@ -274,7 +289,7 @@ class TicketBuilder {
                 }
             }
             $seatsleft = $seatsleft - $baychoice;
-            $bays->bays[$baychoice]--;
+            $bays[$baychoice]--;
 
             if (array_key_exists($baychoice, $allocatesm)) {
                 $allocatesm[$baychoice] ++;
@@ -292,7 +307,7 @@ class TicketBuilder {
 
     private function findSmallest($bays) {
         $num = 100;
-        foreach ($bays->bays as $baysize => $numleft) {
+        foreach ($bays as $baysize => $numleft) {
             if ($numleft > 0) {
                 if ($baysize < $num) {
                     $num = $baysize;
@@ -304,7 +319,7 @@ class TicketBuilder {
 
     private function findLargest($bays) {
         $num = 0;
-        foreach ($bays->bays as $baysize => $numleft) {
+        foreach ($bays as $baysize => $numleft) {
             if ($numleft > 0) {
                 if ($baysize > $num) {
                     $num = $baysize;
@@ -315,7 +330,7 @@ class TicketBuilder {
     }
 
     private function findBay($seatsreq, $bays) {
-        foreach ($bays->bays as $baysize => $numleft) {
+        foreach ($bays as $baysize => $numleft) {
             if ($seatsreq <= $baysize) {
                 return intval($baysize);
             }
