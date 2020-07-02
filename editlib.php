@@ -14,7 +14,6 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
-   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_coachtypes');
 }
 
 function railticket_add_pages() {
@@ -55,10 +54,6 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_bookinglimits">Booking limits</label></th>
             <td><textarea rows='10' cols='60' id="wc_product_railticket_bookinglimits" name="wc_product_railticket_bookinglimits"><?php echo get_option('wc_product_railticket_bookinglimits'); ?></textarea></td>
-        </tr>
-        <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_coachtypes">Coach Types</label></th>
-            <td><textarea rows='10' cols='60' id="wc_product_railticket_coachtypes" name="wc_product_railticket_coachtypes"><?php echo get_option('wc_product_railticket_coachtypes'); ?></textarea></td>
         </tr>
     </table>
     <?php submit_button(); ?>
