@@ -181,7 +181,7 @@ class TicketBuilder {
         return $tickets;
     }
 
-    public function get_capacity() {
+    private function get_service_inventory($date, $time, $fromstation, $tostation) {
         global $wpdb;
         $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
@@ -193,6 +193,19 @@ class TicketBuilder {
         $basebays = (array) json_decode($rec->bays);
         ksort($basebays);
 
+        $totalseats = 0;
+        foreach ($basebays as $baysize => $numleft) {
+            $totalseats += $baysize*$numleft;
+        }
+
+        $bays = new stdclass();
+        $bays->bays = $basebays;
+        $bays->totalseats = $totalseats;
+        $bays->special = array();
+        return $bays;
+    }
+
+    public function get_capacity() {
         $allocatedbays = new stdclass();
         $allocatedbays->ok = false;
         $allocatedbays->tobig = false;
@@ -200,28 +213,18 @@ class TicketBuilder {
 
         $seatsreq = $this->count_seats();
 
-        //TODO Reduce the bay totals using the booking records before allocation, remove sold out bay sizes.
-        $outbays = $basebays;
+        $outbays = $this->get_service_inventory($this->dateoftravel, $this->outtime, $this->fromstation, $this->tostation);
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
-        $outtotalseats = 0;
-        foreach ($outbays as $baysize => $numleft) {
-            $outtotalseats += $baysize*$numleft;
-        }
-        $allocatedbays->outseatsleft = $outtotalseats;
-        if ($outtotalseats < $seatsreq) {
+        $allocatedbays->outseatsleft = $outbays->totalseats;
+        if ($outbays->totalseats < $seatsreq) {
             return $allocatedbays;
         }
 
         if ($this->journeytype == 'return') {
-            //TODO Reduce the bay totals using the booking records before allocation, remove sold out bay sizes.
-            $retbays = $basebays;
-
-            $rettotalseats = 0;
-            foreach ($retbays as $baysize => $numleft) {
-                $rettotalseats += $baysize*$numleft;
-            }
-            $allocatedbays->retseatsleft = $rettotalseats;
-            if ($rettotalseats < $seatsreq) {
+            $retbays = $this->get_service_inventory($this->dateoftravel, $this->rettime, $this->tostation, $this->fromstation);
+            // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
+            $allocatedbays->retseatsleft = $retbays->totalseats;
+            if ($retbays->totalseats < $seatsreq) {
                 return $allocatedbays;
             }
 
@@ -271,7 +274,7 @@ class TicketBuilder {
                 }
             }
             $seatsleft = $seatsleft - $baychoice;
-            $bays[$baychoice]--;
+            $bays->bays[$baychoice]--;
 
             if (array_key_exists($baychoice, $allocatesm)) {
                 $allocatesm[$baychoice] ++;
@@ -289,7 +292,7 @@ class TicketBuilder {
 
     private function findSmallest($bays) {
         $num = 100;
-        foreach ($bays as $baysize => $numleft) {
+        foreach ($bays->bays as $baysize => $numleft) {
             if ($numleft > 0) {
                 if ($baysize < $num) {
                     $num = $baysize;
@@ -301,7 +304,7 @@ class TicketBuilder {
 
     private function findLargest($bays) {
         $num = 0;
-        foreach ($bays as $baysize => $numleft) {
+        foreach ($bays->bays as $baysize => $numleft) {
             if ($numleft > 0) {
                 if ($baysize > $num) {
                     $num = $baysize;
@@ -312,7 +315,7 @@ class TicketBuilder {
     }
 
     private function findBay($seatsreq, $bays) {
-        foreach ($bays as $baysize => $numleft) {
+        foreach ($bays->bays as $baysize => $numleft) {
             if ($seatsreq <= $baysize) {
                 return intval($baysize);
             }
