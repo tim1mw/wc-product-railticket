@@ -114,7 +114,7 @@ class TicketCalendar
                     if ($timetable->bookable && !$timetable->soldout) {
                         $style .= "background:#".$timetable->background.";color:#".$timetable->colour.";";
                     } else {
-                        $style .= "opacity:0.7;background:#".$timetable->background.";color:#".$timetable->colour.";";
+                        $style .= "opacity:0.4;background:#".$timetable->background.";color:#".$timetable->colour.";";
                     }
                 }
             }
