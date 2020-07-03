@@ -140,6 +140,7 @@ function toStationChanged(evt) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
+console.log(response);
         showTimes(response['out'], 'out', "Outbound");
         showTimes(response['ret'], 'ret', "Return");
         var str = "";
@@ -172,6 +173,7 @@ function showTimes(times, type, header) {
     }
     str += '<ul>';
     var countenabled = 0;
+
     for (index in times) {
         if (times[index].length == 0) {
             str += "<li><div class='timespacer'></div></li>";     

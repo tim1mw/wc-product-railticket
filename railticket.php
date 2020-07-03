@@ -217,7 +217,7 @@ function railticket_product_format_date($date) {
     // Wordpress is failing to set the timezone, so force it here.
     //date_default_timezone_set(get_option('timezone_string'));
     $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
-    $jdate = DateTime::createFromFormat('Y-m-d', $date, $railticket_timezone);
+    $jdate = DateTime::createFromFormat('Y-m-d', $date);
     return strftime(get_option('railtimetable_date_format'), $jdate->getTimeStamp());
 }
 
@@ -225,7 +225,7 @@ function railticket_product_format_time($time) {
     // Wordpress is failing to set the timezone, so force it here.
     //date_default_timezone_set(get_option('timezone_string'));
     $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
-    $dtime = DateTime::createFromFormat('H.i', $time, $railticket_timezone);
+    $dtime = DateTime::createFromFormat('H.i', $time);
     return strftime(get_option('railtimetable_time_format'), $dtime->getTimeStamp());
 }
 

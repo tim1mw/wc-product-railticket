@@ -65,21 +65,24 @@ class TicketBuilder {
 
     public function is_train_bookable($time, $stn, $direction) {
         // Dates which are in the past should never show on the calendar, so if it's not today, return true
-        if (date('Y-m-d') != $this->dateoftravel) {
-            return true;
+        if (time() > strtotime($this->dateoftravel)) {
+            return false;
         }
 
         if (strtotime($time) < time()) {
             return false;
         }
+        $cap = $this->get_capacity($time, 'single', $stn);
 
-        return true;
+        if ($cap->ok) {
+            return true;
+        }
+
+        return false;
     }
 
     public function get_bookable_stations() {
         $bookable = array();
-        //$bookable['from'] = array(0 => true, 1 => false, 2 => true);
-        //$bookable['to'] = array(0 => true, 1 => false, 2 => true);
         $bookable['from'] = array();
         $bookable['to'] = array();
         $bookinglimits = json_decode(get_option('wc_product_railticket_bookinglimits'));
@@ -96,6 +99,16 @@ class TicketBuilder {
             }
         }
         return $bookable;
+    }
+
+    private function timefunc($fmt, $time) {
+        $tz = date_default_timezone_get();
+        date_default_timezone_set($this->railticket_timezone->getName());
+
+        $result = strftime($fmt, strtotime($time));
+
+        date_default_timezone_set($tz);
+        return $result;
     }
 
     public function get_bookable_trains() {
@@ -254,7 +267,17 @@ class TicketBuilder {
         return $bays;
     }
 
-    public function get_capacity() {
+    public function get_capacity($outtime = null, $journeytype = null, $fromstation = null) {
+        if ($outtime == null) {
+            $outtime = $this->outtime;
+        }
+        if ($journeytype == null) {
+            $journeytype = $this->journeytype;
+        }
+        if ($fromstation == null) {
+            $fromstation = $this->fromstation;
+        }
+
         $allocatedbays = new stdclass();
         $allocatedbays->ok = false;
         $allocatedbays->tobig = false;
@@ -262,15 +285,15 @@ class TicketBuilder {
 
         $seatsreq = $this->count_seats();
 
-        $outbays = $this->get_service_inventory($this->dateoftravel, $this->outtime, $this->fromstation, $this->tostation);
+        $outbays = $this->get_service_inventory($this->dateoftravel, $outtime, $fromstation, $this->tostation);
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
         $allocatedbays->outseatsleft = $outbays->totalseats;
         if ($outbays->totalseats < $seatsreq) {
             return $allocatedbays;
         }
 
-        if ($this->journeytype == 'return') {
-            $retbays = $this->get_service_inventory($this->dateoftravel, $this->rettime, $this->tostation, $this->fromstation);
+        if ($journeytype == 'return') {
+            $retbays = $this->get_service_inventory($this->dateoftravel, $this->rettime, $this->tostation, $fromstation);
             // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
             $allocatedbays->retseatsleft = $retbays->totalseats;
             if ($retbays->totalseats < $seatsreq) {
@@ -389,6 +412,11 @@ class TicketBuilder {
 
     public function do_purchase() {
         global $woocommerce, $wpdb;
+
+        // Compensate for WordPresse's inconsistent timezone handling
+        //$tz = date_default_timezone_get();
+        //date_default_timezone_set($this->railticket_timezone->getName());
+
         $purchase = new stdclass();
         $purchase->ok = false;
         $purchase->duplicate = false;
@@ -445,9 +473,26 @@ class TicketBuilder {
             $this->insertBooking($itemkey, $this->rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays);
         }
         $purchase->ok = true;
+
+        //date_default_timezone_set($tz);
         return $purchase;
     }
 
+/*
+    private function setSoldOut($dateoftravel, $fromstation, $tostation) {
+        $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
+            "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
+            " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
+            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$this->dateoftravel."'", OBJECT );
+
+        $outbays = $this->get_service_inventory($dateoftravel, $outtime, $fromstation, $tostation);
+        if ($outbays->totalseats == 0) {
+
+        }
+    }
+*/
     private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays) {
         global $wpdb;
         // TODO originstation and origintime reflect the station this train originally started from. Right now
@@ -633,7 +678,7 @@ class TicketBuilder {
         $str =
             "<div id='deptimes' class='railticket_stageblock railticket_listselect'>".
             "  <h3>Choose a Departure</h3>".
-            "  <p class='railticket_help'>Tap or click the times and ticket type to select</p>";
+            "  <p class='railticket_help'>Tap or click the times and ticket type to select. Services which are greyed out cannot be booked on line.</p>";
         
         if (get_option('wc_product_railticket_sameservicereturn') == 'on') {
             $str .= "<p class='railticket_help'>You are currently required to return on the same train you started on, so only one return time will be shown.</p>";
