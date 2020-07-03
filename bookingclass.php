@@ -50,7 +50,7 @@ class TicketBuilder {
         }
 
         $rec = $this->get_bookable_record($date);
-        if ($rec > 0) {
+        if ($rec) {
             return true;
         } else {
             return false;
@@ -100,7 +100,8 @@ class TicketBuilder {
         $bookable = array();
         $bookable['from'] = array();
         $bookable['to'] = array();
-        $bookinglimits = json_decode(get_option('wc_product_railticket_bookinglimits'));
+        $bookinglimits = json_decode($this->get_bookable_record($this->dateoftravel)->limits);
+        //$bookinglimits = json_decode(get_option('wc_product_railticket_bookinglimits'));
         foreach ($bookinglimits as $limit) {
             if ($limit->enableout) {
                 $bookable['from'][$limit->station] = true;
