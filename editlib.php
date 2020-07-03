@@ -42,12 +42,13 @@ function railticket_options() {
             <td><input size='6'  type="text" id="wc_product_railticket_reservetime" name="wc_product_railticket_reservetime" value="<?php echo get_option('wc_product_railticket_reservetime'); ?>" /> minutes</td>
         </tr>
         <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_sameservicereturn">Travellers must return on the same service</label></th>
-            <td><input type="checkbox" id="wc_product_railticket_sameservicereturn" name="wc_product_railticket_sameservicereturn" <?php if (get_option('wc_product_railticket_sameservicereturn')) {echo " checked";} ?> /></td>
-        </tr>
-        <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_termspage">Ticket Terms Page</label></th>
             <td><input type="text" size='60' id="wc_product_railticket_termspage" name="wc_product_railticket_termspage" value="<?php echo get_option('wc_product_railticket_termspage'); ?>" /></td>
+        </tr>
+        <tr><td colspan="2"><h3>Defaults for new bookable days<h3></td></tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_sameservicereturn">Travellers must return on the same service</label></th>
+            <td><input type="checkbox" id="wc_product_railticket_sameservicereturn" name="wc_product_railticket_sameservicereturn" <?php if (get_option('wc_product_railticket_sameservicereturn')) {echo " checked";} ?> /></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overtun period (minutes)</label></th>
