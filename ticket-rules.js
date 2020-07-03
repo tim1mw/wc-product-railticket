@@ -106,7 +106,10 @@ function setChosenDate(text, bdate) {
 }
 
 function fromStationChanged(evt) {
+
     var to = document.getElementById('tostation'+evt.target.value);
+    var from = document.getElementById('fromstation'+evt.target.value);
+
     if (to.checked) {
         to.checked = false;
         if (lastfrom!=-1 && lastfrom!=evt.target.value) {
@@ -117,13 +120,16 @@ function fromStationChanged(evt) {
     }
     lastfrom=evt.target.value;
 
-    if (lastto!=-1) {
+    if (document.railticketbooking['fromstation'].value != '' && document.railticketbooking['tostation'].value != '') {
         getDepTimes();
     }
 }
 
 function toStationChanged(evt) {
+
     var from = document.getElementById('fromstation'+evt.target.value);
+    var to = document.getElementById('tostation'+evt.target.value);
+
     if (from.checked) {
         from.checked = false;
         if (lastto!=-1 && lastto!=evt.target.value) {
@@ -132,15 +138,16 @@ function toStationChanged(evt) {
             lastfrom=lastto;
         }  
     }
+    
     lastto=evt.target.value;
-    if (lastfrom!=-1) {
+    if (document.railticketbooking['tostation'].value != '' && document.railticketbooking['fromstation'].value != '') {
         getDepTimes();
     }
 }
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-console.log(response);
+
         showTimes(response['out'], 'out', "Outbound");
         showTimes(response['ret'], 'ret', "Return");
         var str = "";
