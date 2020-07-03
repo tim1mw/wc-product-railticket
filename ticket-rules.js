@@ -157,6 +157,10 @@ function getDepTimes() {
             str += "<h4>Sorry, no services can be booked on line for these choices. Please try a different selection.</h4>"+
                 "<input type='hidden' name='journeytype' />";
         } else {
+            sameservicereturn = response['sameservicereturn'];
+            if (sameservicereturn) {
+                str += "  <p class='railticket_help'>Services today require you to return on the same train you started on.</p>";
+            }
             str += "<ul>";
             for (index in response['tickets']) {
                 var selected ="";

@@ -51,7 +51,7 @@ function railticket_options() {
             <td><input type="checkbox" id="wc_product_railticket_sameservicereturn" name="wc_product_railticket_sameservicereturn" <?php if (get_option('wc_product_railticket_sameservicereturn')) {echo " checked";} ?> /></td>
         </tr>
         <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overtun period (minutes)</label></th>
+            <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overrun period (minutes)</label></th>
             <td><input type="text" size='2' id="wc_product_railticketbookinggrace" name="wc_product_railticket_bookinggrace" value="<?php echo get_option('wc_product_railticket_bookinggrace'); ?>" /></td>
         </tr>
         <tr valign="top">
@@ -198,7 +198,8 @@ function railticket_updatebookable() {
                     'limits' => get_option('wc_product_railticket_bookinglimits'),
                     'bookable' => 1,
                     'soldout' => 0,
-                    'override' => randomString()
+                    'override' => randomString(),
+                    'sameservicereturn' => get_option('wc_product_railticket_sameservicereturn')
                 );
                 $wpdb->insert("{$wpdb->prefix}wc_railticket_bookable", $data);
             }

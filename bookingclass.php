@@ -45,19 +45,11 @@ class TicketBuilder {
     }
 
     public function is_date_bookable($date) {
-        global $wpdb;
-
-        if ($date instanceof DateTime) {
-            $date = $date->format('Y-m-d');
+        if ($date < $this->today) {
+            return false;
         }
 
-        $sql = "SELECT COUNT(*) FROM {$wpdb->prefix}railtimetable_dates ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
-
-        $rec = $wpdb->get_var($sql );
+        $rec = $this->get_bookable_record($date);
         if ($rec > 0) {
             return true;
         } else {
@@ -81,8 +73,27 @@ class TicketBuilder {
         if ($cap->outseatsleft > 0) {
             return true;
         }
-
         return false;
+    }
+
+    private function get_bookable_record($date) {
+        global $wpdb;
+        if ($date instanceof DateTime) {
+            $date = $date->format('Y-m-d');
+        }
+
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
+            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date."' AND ".
+            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
+
+        $rec = $wpdb->get_results($sql);
+        if (count($rec) > 0) {
+            return $rec[0];
+        } else {
+            return false;
+        }
     }
 
     public function get_bookable_stations() {
@@ -175,9 +186,13 @@ class TicketBuilder {
                 $intotal ++;
             }
         }
+
+        $bk = $this->get_bookable_record($this->dateoftravel);
+        $bookable['sameservicereturn'] = $bk->sameservicereturn;
+
         $bookable['tickets'] = array();
         if ($outtotal > 0) {
-            if ($this->can_sell_journeytype('single')) {
+            if ($this->can_sell_journeytype('single') && $bookable['sameservicereturn'] == false) {
                 $bookable['tickets'][] = 'single';
             }
             if ($intotal > 0 && $this->can_sell_journeytype('return')) {
@@ -604,7 +619,6 @@ class TicketBuilder {
         return "\n<script type='text/javascript'>\n".
             "var ajaxurl = '".admin_url( 'admin-ajax.php', 'relative' )."';\n".
             "var today = '".$this->today->format('Y-m-d')."'\n".
-            "var sameservicereturn = ".$sameservicereturn.";\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
             "var dateFormat = '".get_option('railtimetable_date_format')."';".
@@ -687,10 +701,7 @@ class TicketBuilder {
             "<div id='deptimes' class='railticket_stageblock railticket_listselect'>".
             "  <h3>Choose a Departure</h3>".
             "  <p class='railticket_help'>Tap or click the times and ticket type to select. Services which are greyed out cannot be booked on line.</p>";
-        
-        if (get_option('wc_product_railticket_sameservicereturn') == 'on') {
-            $str .= "<p class='railticket_help'>You are currently required to return on the same train you started on, so only one return time will be shown.</p>";
-        }
+
 
         $str .= "  <div id='deptimes_data' class='railticket_container'>".
             "    <div id='deptimes_data_out' class='railticket_listselect_left'>".
