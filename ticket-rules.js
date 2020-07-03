@@ -88,7 +88,6 @@ function doStations() {
         enableStations('to', response);
         showTicketStages('stations', true);
         overridecode = response['override'];
-        console.log(overridecode);
     });
 }
 
@@ -212,6 +211,8 @@ function showTimes(times, type, header) {
     str += '<ul>';
     var countenabled = 0;
 
+    var nowdate = new Date();
+    var nowtotal = (nowdate.getHours()*60)+nowdate.getMinutes();
     for (index in times) {
         if (times[index].length == 0) {
             str += "<li><div class='timespacer'></div></li>";     
@@ -225,12 +226,21 @@ function showTimes(times, type, header) {
                 tclass = '';
                 //title = "Sorry, this train cannot be booked online";
             }
+            var lateclass = "";
+
+            if (document.getElementById('dateoftravel').value == today) {
+                var depparts = times[index]['dep'].split(".");
+                var deptotal = (parseInt(depparts[0])*60)+parseInt(depparts[1]);
+                if (nowtotal > deptotal && disabled == '') {
+                    lateclass = "class='railticket_late'";
+                }
+            }
 
             str += "<li id='lidep"+type+index+"' title='"+title+"'><input type='radio' name='"+type+"time' id='dep"+
                 type+index+"' class='"+tclass+"' "+
                 "value='"+times[index]['dep']+"' "+
                 "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" />"+
-                "<label for='dep"+type+index+"'>"+times[index]['depdisp']+
+                "<label "+lateclass+" for='dep"+type+index+"'>"+times[index]['depdisp']+
                 "<div class='railticket_arrtime'>(arrives: "+times[index]['arrdisp']+")</div></label></li>";
         }
     }

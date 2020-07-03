@@ -110,6 +110,11 @@
     border-color: #880000;
 }
 
+.railticket_late {
+    background-color:#ff535b !important;
+    text-decoration: line-through;
+}
+
 .railticket_caplitalise {
     text-transform:capitalize;
 }
@@ -246,6 +251,7 @@
     text-align:left;
     margin-left:20px;
 }
+
 
 /* Force Chrome to show the up/down number buttons */
 input[type=number]::-webkit-inner-spin-button {
