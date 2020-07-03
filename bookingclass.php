@@ -145,13 +145,27 @@ class TicketBuilder {
         }
         $bookable['tickets'] = array();
         if ($outtotal > 0) {
-            $bookable['tickets'][] = 'single';
-            if ($intotal > 0) {
+            if ($this->can_sell_journeytype('single')) {
+                $bookable['tickets'][] = 'single';
+            }
+            if ($intotal > 0 && $this->can_sell_journeytype('return')) {
                 $bookable['tickets'][] = 'return';
             }
         }
 
         return $bookable;
+    }
+
+    private function can_sell_journeytype($type) {
+        global $wpdb;
+        $jt = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_prices WHERE journeytype = '".$type."' AND ".
+            "((stationone = ".$this->fromstation." AND stationtwo = ".$this->tostation.") OR ".
+            "(stationone = ".$this->tostation." AND stationtwo = ".$this->fromstation.")) AND disabled = 0");
+        if (count($jt)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function get_tickets() {

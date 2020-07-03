@@ -140,6 +140,7 @@ function toStationChanged(evt) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
+        console.log(response);
         showTimes(response['out'], 'out', "Outbound");
         showTimes(response['ret'], 'ret', "Return");
         var str = "";
