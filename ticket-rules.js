@@ -369,14 +369,16 @@ function allocateTickets() {
         return;
     }
 
-    confirm.style.display = 'inline';
-
     var count = 0;
     while (allocationTotal > 0) {
         // See if we can find a ticket to match the travellers we have
         var tkt = matchTicket(allocation);
         // Allocate the actual ticket if we found one
         if (tkt !== false) {
+            if (tkt == 2) {
+                allocationTotal --;
+            }
+            
             for (i in allocation) {
                 allocation[i] = allocation[i] - tkt.composition[i];
                 allocationTotal = allocationTotal - tkt.composition[i];
@@ -395,7 +397,8 @@ function allocateTickets() {
             return;
         }
     }
-
+    
+    confirm.style.display = 'inline';
     // Now show off what we have
     var str = "<div class='railticket_travellers_table_container'><h4>My Tickets</h4>"+
         minstr+
@@ -501,6 +504,7 @@ function matchTicket(allocation) {
                    return tkt;
                }
            }
+           return "2";
        }
    }
 
