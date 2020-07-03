@@ -8,7 +8,10 @@ class TicketBuilder {
         $journeytype, $ticketselections, $ticketsallocated) {
         global $wpdb;
         $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
+        $this->now = new DateTime();
+        $this->now->setTimezone($this->railticket_timezone);
         $this->today = new DateTime();
+        $this->today->setTime(0,0,0);
         $this->today->setTimezone($this->railticket_timezone);
         $this->tomorrow = new DateTime();
         $this->tomorrow->setTimezone($this->railticket_timezone);
@@ -27,7 +30,6 @@ class TicketBuilder {
 
     public function render() {
         if ($this->checkDuplicate()) {
-            
             return '<p>Sorry, but you already have a ticket selection in your shopping cart, you can only have one ticket selection per order. Please remove the existing ticket selection if you wish to create a new one, or complete the purchase for the existing one.</p>';
         }
 
@@ -64,17 +66,19 @@ class TicketBuilder {
     }
 
     public function is_train_bookable($time, $stn, $direction) {
-        // Dates which are in the past should never show on the calendar, so if it's not today, return true
-        if (time() > strtotime($this->dateoftravel)) {
-            //return false;
-        }
-
-        if (strtotime($time) < time()) {
+        // Dates which are in the past should never show on the calendar
+        $doj = new DateTime($this->dateoftravel);
+        if ($doj < $this->today) {
             return false;
         }
+
+        //if (strtotime($time) < time()) {
+           // return false;
+        //}
+
         $cap = $this->get_capacity($time, 'single', $stn);
 
-        if ($cap->ok) {
+        if ($cap->outseatsleft > 0) {
             return true;
         }
 
@@ -267,7 +271,7 @@ class TicketBuilder {
         return $bays;
     }
 
-    public function get_capacity($outtime = null, $journeytype = null, $fromstation = null) {
+    public function get_capacity($outtime = null, $journeytype = null, $fromstation = null, $caponly = false) {
         if ($outtime == null) {
             $outtime = $this->outtime;
         }
@@ -289,6 +293,9 @@ class TicketBuilder {
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
         $allocatedbays->outseatsleft = $outbays->totalseats;
         if ($outbays->totalseats < $seatsreq) {
+            return $allocatedbays;
+        }
+        if ($caponly) {
             return $allocatedbays;
         }
 
@@ -600,6 +607,7 @@ class TicketBuilder {
             "var sameservicereturn = ".$sameservicereturn.";\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
+            "var dateFormat = '".get_option('railtimetable_date_format')."';".
             "</script>";
     }
 
