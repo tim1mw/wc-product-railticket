@@ -478,6 +478,7 @@ function railticket_getticketbuilder() {
     $outtime = railticket_getpostfield('outtime');
     $rettime = railticket_getpostfield('rettime');
     $journeytype = railticket_getpostfield('journeytype');
+    $overridevalid = railticket_getpostfield('overridevalid');
     $ticketselections = null;
     if (array_key_exists('ticketselections', $_REQUEST)) {
         $ticketselections = json_decode(stripslashes($_REQUEST['ticketselections']));
@@ -489,7 +490,7 @@ function railticket_getticketbuilder() {
     $tickets = array();
 
     return new TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated);
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid);
 }
 
 function railticket_getpostfield($field) {

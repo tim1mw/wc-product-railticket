@@ -215,7 +215,7 @@
     font-size:large;
     color:#880000;
     margin:4px;  
-    font-wright:bold;
+    font-weight:bold;
 }
 
 .railticket_terms input[type="checkbox"] {
@@ -231,7 +231,20 @@
 #addticketstocart {
     font-size:x-large;
     width:100%;
-    display:none
+    display:none;
+}
+
+.railticket_overridecode {
+    font-size:large;
+    color:#880000; 
+    font-weight:bold;
+    display:none;
+}
+
+.railticket_overridedesc {
+    font-size:small;
+    text-align:left;
+    margin-left:20px;
 }
 
 /* Force Chrome to show the up/down number buttons */

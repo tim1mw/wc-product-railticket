@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
 var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
+var overridevalid = 0, overridecode = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -58,17 +59,36 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('journeytype', document.railticketbooking['journeytype'].value);
     data.append('ticketselections', JSON.stringify(ticketSelections));
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
+    data.append('overridevalid', overridevalid);
 
     request.send(data);
 }
 
+function validateOverride() {
+    var odiv = document.getElementById('overridevalid');
+    if (overridecode != false &&
+        document.getElementById('overrideval').value.trim() == overridecode) {
+        overridevalid = 1;
+        odiv.innerHTML='<p>Override code valid - booking options unlocked.</p>';
+        doStations();
+    } else {
+        overridevalid = 0;
+        odiv.innerHTML='<p>Override code invalid - please try again.</p>';
+    }
+}
+
 function setBookingDate(bdate) {
     setChosenDate("Date of Travel", bdate);
+    doStations();
+}
 
+function doStations() {
     railTicketAjax('bookable_stations', true, function(response) {
         enableStations('from', response);
         enableStations('to', response);
         showTicketStages('stations', true);
+        overridecode = response['override'];
+        console.log(overridecode);
     });
 }
 
@@ -105,6 +125,12 @@ function setChosenDate(text, bdate) {
     dot.value = bdate;
     lastto = -1;
     lastfrom = -1;
+    var over = document.getElementById('overridecodediv');
+    if (bdate == today) {
+        over.style.display = 'block';
+    } else {
+        over.style.display = 'none';
+    }
 }
 
 function fromStationChanged(evt) {
@@ -470,12 +496,17 @@ function showCapacity(response) {
 
         showTicketStages('addtocart', false);
     } else {
-        if (response.tobig) {
-            str += "Parties with more than 12 members are requested to make seperate booking, or call to make a group booking.";
+        if (overridevalid) {
+            str = "Please take seats as directed by the guard";
+            showTicketStages('addtocart', false);
         } else {
-            str += "Sorry, but we do not have space for a party of this size";
+            if (response.tobig) {
+                str += "Parties with more than 12 members are requested to make seperate booking, or call to make a group booking.";
+            } else {
+                str += "Sorry, but we do not have space for a party of this size";
+            }
+            showTicketStages('tickets', false);
         }
-        showTicketStages('tickets', false);
     }
     capacitydiv.innerHTML = str+"</div>";
     capacitydiv.style.display = 'block';

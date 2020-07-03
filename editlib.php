@@ -45,14 +45,14 @@ function railticket_options() {
             <th scope="row"><label for="wc_product_railticket_termspage">Ticket Terms Page</label></th>
             <td><input type="text" size='60' id="wc_product_railticket_termspage" name="wc_product_railticket_termspage" value="<?php echo get_option('wc_product_railticket_termspage'); ?>" /></td>
         </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overrun period (minutes)</label></th>
+            <td><input type="text" size='2' id="wc_product_railticketbookinggrace" name="wc_product_railticket_bookinggrace" value="<?php echo get_option('wc_product_railticket_bookinggrace'); ?>" /></td>
+        </tr>
         <tr><td colspan="2"><h3>Defaults for new bookable days<h3></td></tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_sameservicereturn">Travellers must return on the same service</label></th>
             <td><input type="checkbox" id="wc_product_railticket_sameservicereturn" name="wc_product_railticket_sameservicereturn" <?php if (get_option('wc_product_railticket_sameservicereturn')) {echo " checked";} ?> /></td>
-        </tr>
-        <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overrun period (minutes)</label></th>
-            <td><input type="text" size='2' id="wc_product_railticketbookinggrace" name="wc_product_railticket_bookinggrace" value="<?php echo get_option('wc_product_railticket_bookinggrace'); ?>" /></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_defaultcoaches">Default Coaches</label></th>
@@ -184,10 +184,7 @@ function railticket_updatebookable() {
             //$data = array('bookable' => $bk, 'bays' => $bays);
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable",
                 array('bookable' => $bookable, 'bays' => $bays),
-                array('dateid' => $bk[0]->dateid),
-                array('%d', '%s'),
-                array('%d')
-            );
+                array('dateid' => $bk[0]->dateid));
         } else {
             if ($bookable) {
                 $data = array(
@@ -221,20 +218,15 @@ function railticket_process_bays($json) {
 
    $coachset = (array) $parsed->coachset;
    foreach ($coachset as $coach => $count) {
-//echo $coach."   ";
-       $comp = $wpdb->get_var("SELECT composition FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$coach."'");
 
+       $comp = $wpdb->get_var("SELECT composition FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$coach."'");
        $bays = json_decode(stripslashes($comp));
-//print_r($bays);
-//echo "<br />";
        foreach ($bays as $bay) {
            $data[$bay->baysize] += $bay->quantity * $count;
        }
 
    }
 
-   //print_r($data);
-//echo "<br />";
    return wp_json_encode($data);
 }
 

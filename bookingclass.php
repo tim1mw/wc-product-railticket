@@ -5,7 +5,7 @@ class TicketBuilder {
     private $today, $tomorrow, $stations;
 
     public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated) {
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid) {
         global $wpdb;
         $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
         $this->now = new DateTime();
@@ -26,6 +26,7 @@ class TicketBuilder {
         $this->journeytype = $journeytype;
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
+        $this->overridevalid = $overridevalid;
     }
 
     public function render() {
@@ -100,20 +101,23 @@ class TicketBuilder {
         $bookable = array();
         $bookable['from'] = array();
         $bookable['to'] = array();
-        $bookinglimits = json_decode($this->get_bookable_record($this->dateoftravel)->limits);
-        //$bookinglimits = json_decode(get_option('wc_product_railticket_bookinglimits'));
+        $bkrec = $this->get_bookable_record($this->dateoftravel);
+        $bookinglimits = json_decode($bkrec->limits);
+
+        $bookable['override'] = $bkrec->override;
         foreach ($bookinglimits as $limit) {
-            if ($limit->enableout) {
+            if ($limit->enableout || $this->overridevalid == 1) {
                 $bookable['from'][$limit->station] = true;
             } else {
                 $bookable['from'][$limit->station] = false;
             }
-            if ($limit->enableret) {
+            if ($limit->enableret || $this->overridevalid == 1) {
                 $bookable['to'][$limit->station] = true;
             } else {
                 $bookable['to'][$limit->station] = false;
             }
         }
+
         return $bookable;
     }
 
@@ -147,7 +151,11 @@ class TicketBuilder {
         $firstdep = false;
         $outtotal = 0;
         foreach ($deptimes as $index => $dep) {
-            $canbook = $this->is_train_bookable($dep, $this->fromstation, $direction);
+            if ($this->overridevalid == 1) {
+                $canbook = true;
+            } else {
+                $canbook = $this->is_train_bookable($dep, $this->fromstation, $direction);
+            }
             $bookable['out'][] = array('dep' => $dep, 'depdisp' => strftime($fmt, strtotime($dep)),
                 'arr' => $deparrs[$index],  'arrdisp' => strftime($fmt, strtotime($deparrs[$index])),
                 'bookable' => $canbook);
@@ -178,7 +186,11 @@ class TicketBuilder {
                 $testfirst = false;
                 continue;
             }
-            $canbook = $this->is_train_bookable($ret, $this->tostation, $direction);
+            if ($this->overridevalid == 1) {
+                $canbook = true;
+            } else {
+                $canbook = $this->is_train_bookable($ret, $this->tostation, $direction);
+            }
             $bookable['ret'][] = array('dep' => $ret, 'depdisp' => strftime($fmt, strtotime($ret)),
                 'arr' => $retarrs[$index], 'arrdisp' => strftime($fmt, strtotime($retarrs[$index])), 
                 'bookable' => $canbook);
@@ -454,8 +466,16 @@ class TicketBuilder {
         // Check we still have capacity
         $allocatedbays = $this->get_capacity();
 
-        if (!$allocatedbays->ok) {
+        if (!$allocatedbays->ok && $this->overridevalid == 0) {
             return $purchase;
+        }
+
+        if ($this->overridevalid == 1 && !$allocatedbays->ok ) {
+            $retbays = "As directed by the guard";
+            $outbays = "As directed by the guard";
+        } else {
+            $outbays = $this->baystring($allocatedbays->outbays);
+            $retbays = $this->baystring($allocatedbays->retbays);
         }
 
         $custom_price = 0;
@@ -476,9 +496,9 @@ class TicketBuilder {
             'fromstation' => $this->fromstation,
             'tostation' => $this->tostation,
             'outtime' => $this->outtime,
-            'outbays' => $this->baystring($allocatedbays->outbays),
+            'outbays' => $outbays,
             'rettime' => $this->rettime,
-            'retbays' => $this->baystring($allocatedbays->retbays),
+            'retbays' => $retbays,
             'dateoftravel' => $this->dateoftravel,
             'journeytype' => $this->journeytype,
             'totalseats' => $totalseats,
@@ -672,7 +692,14 @@ class TicketBuilder {
         }
         $str .= "</form></div>".
             "<div id='datechosen' class='railticket_container'>Tap or click a date to choose</div>".
-            "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' /></div>";
+            "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' />".
+            "  <div id='overridecodediv' class='railticket_overridecode railticket_container'>".
+            "  <label for='override'>Override code</label>&nbsp;&nbsp;<input id='overrideval' type='text' size='6' name='override' />".
+            "  <input type='button' value='Validate' onclick='validateOverride()' /> ".
+            "  <div id='overridevalid'>".
+            "  <p class='railticket_overridedesc'>The override code can be used to unlock services not available for booking below, ".
+            "  eg if a train is running late. The code, if needed can be obtained from the guard once the train has arrived.</p>".
+            "  </div></div></div>";
 
         return $str;
     }
