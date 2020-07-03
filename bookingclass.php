@@ -188,8 +188,11 @@ class TicketBuilder {
         }
 
         $bk = $this->get_bookable_record($this->dateoftravel);
-        $bookable['sameservicereturn'] = $bk->sameservicereturn;
-
+        if ($bk->sameservicereturn == 0) {
+            $bookable['sameservicereturn'] = false;
+        } else {
+            $bookable['sameservicereturn'] = true;
+        }
         $bookable['tickets'] = array();
         if ($outtotal > 0) {
             if ($this->can_sell_journeytype('single') && $bookable['sameservicereturn'] == false) {
