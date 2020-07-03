@@ -59,15 +59,15 @@ class TicketBuilder {
     }
 
     public function is_train_bookable($time, $stn, $direction) {
-        // Dates which are in the past should never show on the calendar
-        $doj = new DateTime($this->dateoftravel);
-        if ($doj < $this->today) {
+        // Dates which are in the past are not allowed
+        $parts = explode('.', $time);
+        $deptime = DateTime::createFromFormat("Y-m-d", $this->dateoftravel, $this->railticket_timezone);
+        $deptime->setTime($parts[0], $parts[1], 0);
+        $deptime->modify('+'.get_option('wc_product_railticket_bookinggrace').' minutes');
+
+        if ($this->now > $deptime) {
             return false;
         }
-
-        //if (strtotime($time) < time()) {
-           // return false;
-        //}
 
         $cap = $this->get_capacity($time, 'single', $stn);
 
