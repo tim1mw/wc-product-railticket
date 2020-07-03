@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", setupTickets);
 var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
+const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 
 function setupTickets() {
     var todaybutton = document.getElementById('todaybutton');
@@ -98,7 +100,7 @@ function soldOut(bdate) {
 function setChosenDate(text, bdate) {
     var ele = document.getElementById('datechosen');
     var ddate = new Date(bdate);
-    ele.innerHTML = text+": "+ddate.toLocaleDateString();
+    ele.innerHTML = text+": "+ddate.getDate() + "-" + months[ddate.getMonth()] + "-" + ddate.getFullYear();
     var dot = document.getElementById('dateoftravel');
     dot.value = bdate;
     lastto = -1;
