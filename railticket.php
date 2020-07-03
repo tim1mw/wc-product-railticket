@@ -511,6 +511,7 @@ add_action( 'woocommerce_product_options_general_product_data', function(){
 add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
 add_action( 'wp_enqueue_scripts', 'railticket_style' );
+add_action( 'wp_ajax_nopriv_railticket_ajax', 'railticket_ajax_request');
 add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
 
 add_action( 'woocommerce_before_calculate_totals', 'railticket_custom_price_to_cart_item', 99 );

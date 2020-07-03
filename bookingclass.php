@@ -66,7 +66,7 @@ class TicketBuilder {
     public function is_train_bookable($time, $stn, $direction) {
         // Dates which are in the past should never show on the calendar, so if it's not today, return true
         if (time() > strtotime($this->dateoftravel)) {
-            return false;
+            //return false;
         }
 
         if (strtotime($time) < time()) {
