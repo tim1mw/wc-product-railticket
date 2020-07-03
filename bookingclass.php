@@ -78,8 +78,23 @@ class TicketBuilder {
 
     public function get_bookable_stations() {
         $bookable = array();
-        $bookable['from'] = array(0 => true, 1 => false, 2 => true);
-        $bookable['to'] = array(0 => true, 1 => false, 2 => true);
+        //$bookable['from'] = array(0 => true, 1 => false, 2 => true);
+        //$bookable['to'] = array(0 => true, 1 => false, 2 => true);
+        $bookable['from'] = array();
+        $bookable['to'] = array();
+        $bookinglimits = json_decode(get_option('wc_product_railticket_bookinglimits'));
+        foreach ($bookinglimits as $limit) {
+            if ($limit->enableout) {
+                $bookable['from'][$limit->station] = true;
+            } else {
+                $bookable['from'][$limit->station] = false;
+            }
+            if ($limit->enableret) {
+                $bookable['to'][$limit->station] = true;
+            } else {
+                $bookable['to'][$limit->station] = false;
+            }
+        }
         return $bookable;
     }
 
