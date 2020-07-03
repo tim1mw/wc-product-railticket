@@ -529,9 +529,15 @@ class TicketBuilder {
             $minprice = $opt;
         }
 
+        $sameservicereturn = 'false';
+        if (get_option('wc_product_railticket_sameservicereturn')) {
+            $sameservicereturn = 'true';
+        }
+
         return "\n<script type='text/javascript'>\n".
             "var ajaxurl = '".admin_url( 'admin-ajax.php', 'relative' )."';\n".
             "var today = '".$this->today->format('Y-m-d')."'\n".
+            "var sameservicereturn = ".$sameservicereturn.";\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
             "</script>";
@@ -612,8 +618,13 @@ class TicketBuilder {
         $str =
             "<div id='deptimes' class='railticket_stageblock railticket_listselect'>".
             "  <h3>Choose a Departure</h3>".
-            "  <p class='railticket_help'>Tap or click the times and ticket type to select</p>".
-            "  <div id='deptimes_data' class='railticket_container'>".
+            "  <p class='railticket_help'>Tap or click the times and ticket type to select</p>";
+        
+        if (get_option('wc_product_railticket_sameservicereturn') == 'on') {
+            $str .= "<p class='railticket_help'>You are currently required to return on the same train you started on, so only one return time will be shown.</p>";
+        }
+
+        $str .= "  <div id='deptimes_data' class='railticket_container'>".
             "    <div id='deptimes_data_out' class='railticket_listselect_left'>".
             "    <input type='hidden' name='outtime' value='' /></div>".
             "    <div id='deptimes_data_ret' class='railticket_listselect_right'>".
