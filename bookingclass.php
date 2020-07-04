@@ -881,8 +881,8 @@ class TicketBuilder {
             "<div class='railticket_container'>".
             "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
             "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
-            "<p class='railticket_terms'>Your tickets will be reserved for ".get_option('wc_product_railticket_reservetime')." minutes after you click add to cart".
-            " please complete your purchases within that time.</p>".
+            "<p class='railticket_terms'>Your tickets will be reserved for ".get_option('wc_product_railticket_reservetime')." minutes after you click add to cart.".
+            " Please complete your purchases within that time.</p>".
             "<p><input type='button' value='Add To Cart' id='addticketstocart' /></p></div>".
             "</div>";
 
