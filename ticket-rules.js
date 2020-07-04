@@ -29,7 +29,18 @@ function setupTickets() {
         tostation[i].addEventListener('click', toStationChanged);
     }
 
+    // Add listeners for all the stuff in the main form
+    railTicketAddListener('validateOverrideIn', 'click', validateOverride);
+    railTicketAddListener('confirmchoices', 'click', checkCapacity);
+    railTicketAddListener('termsinput', 'click', termsClicked);
+    railTicketAddListener('addticketstocart', 'click', cartTickets);
+
     showTicketStages('date', true);
+}
+
+function railTicketAddListener(id, type, func) {
+    var ele = document.getElementById(id);
+    ele.addEventListener(type, func);
 }
 
 function railTicketAjax(datareq, spinner, callback) {

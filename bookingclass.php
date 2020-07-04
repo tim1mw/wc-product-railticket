@@ -693,7 +693,7 @@ class TicketBuilder {
             "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' />".
             "  <div id='overridecodediv' class='railticket_overridecode railticket_container'>".
             "  <label for='override'>Override code</label>&nbsp;&nbsp;<input id='overrideval' type='text' size='6' name='override' />".
-            "  <input type='button' value='Validate' onclick='validateOverride()' /> ".
+            "  <input type='button' value='Validate' id='validateOverrideIn' /> ".
             "  <div id='overridevalid'>".
             "  <p class='railticket_overridedesc'>The override code can be used to unlock services not available for booking below, ".
             "  eg if a train is running late. The code, if needed can be obtained from the guard once the train has arrived.</p>".
@@ -753,7 +753,7 @@ class TicketBuilder {
             "  </div>".
             "  <div id='ticket_summary' class='railticket_container'></div>".
             "  <div id='ticket_capbutton' class='railticket_container'>".
-            "  <input type='button' value='Confirm Choices' onclick='checkCapacity()' id='confirmchoices' /></div>".
+            "  <input type='button' value='Confirm Choices' id='confirmchoices' /></div>".
             "  <div id='ticket_capacity' class='railticket_container'></div>".
             "</div>";
 
@@ -765,11 +765,11 @@ class TicketBuilder {
             "<input type='hidden' name='ticketselections' />".
             "<input type='hidden' name='ticketallocations' />".
             "<div class='railticket_container'>".
-            "<p class='railticket_terms'><input type='checkbox' name='terms' onclick='termsClicked()'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
+            "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput''/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
             "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
             "<p class='railticket_terms'>Your tickets will be reserved for ".get_option('wc_product_railticket_reservetime')." minutes after you click add to cart".
             " please complete your purchases within that time.</p>".
-            "<p><input type='button' value='Add To Cart' onclick='cartTickets()' id='addticketstocart' /></p></div>".
+            "<p><input type='button' value='Add To Cart' id='addticketstocart' /></p></div>".
             "</div>";
 
         return $str;
