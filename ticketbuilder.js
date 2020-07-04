@@ -524,17 +524,19 @@ function showCapacity(response) {
             if (desc[1] == 'priority') {
                 str += ' (with disabled space)';   
             }
+            str += '<br />';
         }
         str += "</td></tr>";
         var journeytype = document.railticketbooking['journeytype'].value;
         if (journeytype == "return") {
             str += "<tr><td>Return</td><td>";
             for (i in response.retbays) {
+                var desc = i.split('_');
                 str += response.retbays[i]+"x "+desc[0]+" seat bay";
                 if (desc[1] == 'priority') {
-                    str += ' (with disabled space)';   
+                    str += ' (with disabled space)<br />';   
                 }
-                str += "&nbsp&nbsp; ";
+                str += '<br />';
             }
             str += "</td></tr>";
         }

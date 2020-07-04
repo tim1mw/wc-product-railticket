@@ -405,39 +405,62 @@ class TicketBuilder {
         return array($smcount, $allocatesm);
     }
 
-    private function findSmallest($bays) {
+    private function findSmallest($bays, $allowpriority=false) {
         $chosen = false;
         foreach ($bays as $bay => $numleft) {
             if ($numleft > 0) {
                 $bayd = $this->getBayDetails($bay);
+                if ($allowpriority === false && $bayd[1] == 'priority') {
+                    continue;
+                }
                 if ($chosen === false || $bayd[0] < $chosen[0]) {
                     $chosen = $bayd;
                 }
             }
         }
+        if ($chosen === false && $allowpriority === false) {
+            return $this->findSmallest($bays, true);
+        }
+
         return $chosen;
     }
 
-    private function findLargest($bays) {
+    private function findLargest($bays, $allowpriority=false) {
         $chosen = false;
         foreach ($bays as $bay => $numleft) {
             if ($numleft > 0) {
                 $bayd = $this->getBayDetails($bay);
+                if ($allowpriority === false && $bayd[1] == 'priority') {
+                    continue;
+                }
                 if ($chosen === false || $bayd[0] > $chosen[0]) {
                     $chosen = $bayd;
                 }
             }
         }
+
+        if ($chosen === false && $allowpriority === false) {
+            return $this->findLargest($bays, true);
+        }
+
         return $chosen;
     }
 
-    private function findBay($seatsreq, $bays) {
+    private function findBay($seatsreq, $bays, $allowpriority=false) {
         foreach ($bays as $bay => $numleft) {
             $bayd = $this->getBayDetails($bay);
+            if ($allowpriority === false && $bayd[1] == 'priority') {
+                continue;
+            }
             if ($seatsreq <= $bayd[0] && $numleft > 0) {
                 return $bayd;
             }
         }
+
+        if ($allowpriority === false) {
+            return $this->findBay($seatsreq, $bays, true);
+        }
+
         return false;
     }
 
