@@ -71,6 +71,7 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('ticketselections', JSON.stringify(ticketSelections));
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
     data.append('overridevalid', overridevalid);
+    data.append('disabledrequest', document.getElementById('disabledrequest').checked);
 
     request.send(data);
 }
@@ -534,13 +535,18 @@ function showCapacity(response) {
                 var desc = i.split('_');
                 str += response.retbays[i]+"x "+desc[0]+" seat bay";
                 if (desc[1] == 'priority') {
-                    str += ' (with disabled space)<br />';   
+                    str += ' (with disabled space)';   
                 }
                 str += '<br />';
             }
             str += "</td></tr>";
         }
         str +="</table>";
+
+        if (response.disablewarn) {
+            str += "<p class='railticketwarn'>WARNING: We could not allocate wheelchair space for all or part of your journey. "+
+                "You may continue with the selection shown, or try an alternative service.</p>";
+        }
 
         showTicketStages('addtocart', false);
     } else {

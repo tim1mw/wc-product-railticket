@@ -5,7 +5,7 @@ class TicketBuilder {
     private $today, $tomorrow, $stations;
 
     public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid) {
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest) {
         global $wpdb;
         $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
         $this->now = new DateTime();
@@ -27,6 +27,11 @@ class TicketBuilder {
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
         $this->overridevalid = $overridevalid;
+        if ($disabledrequest == 'true') {
+            $this->disabledrequest = true;
+        } else {
+            $this->disabledrequest = false;
+        }
     }
 
     public function render() {
@@ -286,10 +291,16 @@ class TicketBuilder {
 
         $bookings = $wpdb->get_results($sql);
         foreach ($bookings as $booking) {
-            $basebays[$booking->baysize] = $basebays[$booking->baysize] - $booking->num;
+            if ($booking->priority) {
+                $i = $booking->baysize.'_priority';
+            } else {
+                $i = $booking->baysize.'_normal';
+            }
+            $basebays[$i] = $basebays[$i] - $booking->num;
         }
 
         $totalseats = 0;
+        $priorityonly = array();
         foreach ($basebays as $bay => $numleft) {
             $bayd = $this->getBayDetails($bay);
             $totalseats += $bayd[0]*$numleft;
@@ -298,7 +309,6 @@ class TicketBuilder {
         $bays = new stdclass();
         $bays->bays = $basebays;
         $bays->totalseats = $totalseats;
-        $bays->special = array();
         return $bays;
     }
 
@@ -317,6 +327,7 @@ class TicketBuilder {
         $allocatedbays->ok = false;
         $allocatedbays->tobig = false;
         $allocatedbays->error = false;
+        $allocatedbays->disablewarn = false;
 
         $seatsreq = $this->count_seats();
 
@@ -348,8 +359,14 @@ class TicketBuilder {
 
             if ($retallocatesm[0] > $retallocatelg[0]) {
                 $allocatedbays->retbays = $retallocatelg[1];
+                if (!$retallocatelg[2]) {
+                    $allocatedbays->disablewarn = true;
+                }
             } else {
                 $allocatedbays->retbays = $retallocatesm[1];
+                if (!$retallocatesm[2]) {
+                    $allocatedbays->disablewarn = true;
+                }
             }
         }
 
@@ -362,10 +379,17 @@ class TicketBuilder {
         }
 
         $allocatedbays->ok = true;
+        $dis = false;
         if ($outallocatesm[0] > $outallocatelg[0]) {
             $allocatedbays->outbays = $outallocatelg[1];
+            if (!$outallocatelg[2]) {
+                $allocatedbays->disablewarn = true;
+            }
         } else {
             $allocatedbays->outbays = $outallocatesm[1];
+            if (!$outallocatesm[2]) {
+                $allocatedbays->disablewarn = true;
+            }
         }
 
         return $allocatedbays;
@@ -374,18 +398,46 @@ class TicketBuilder {
     private function getBays($seatsleft, $bays, $largest) {
         $allocatesm = array();
         $smcount = 0;
+        $prioritydone = false;
         while ($seatsleft > 0) {
-            $baychoice = $this->findBay($seatsleft, $bays);
+            $baychoice = false;
+
+            if ($this->disabledrequest && $prioritydone === false) {
+                $prioritybays = array();
+                foreach ($bays as $bay => $numleft) {
+                    $bayd = $this->getBayDetails($bay);
+                    if ($bayd[1] == 'priority') {
+                        $priorityonly[$bay] = $numleft;
+                     }
+                }
+
+                if ($baychoice === false) {
+                    if ($largest) {
+                        $baychoice = $this->findLargest($priorityonly, true);
+                    } else {
+                        $baychoice = $this->findSmallest($priorityonly, true);
+                    }
+                }
+            }
+
+            if ($baychoice === false) {
+                $baychoice = $this->findBay($seatsleft, $bays, false);
+            }
+
             if ($baychoice === false) {
                 if ($largest) {
-                    $baychoice = $this->findLargest($bays);
+                    $baychoice = $this->findLargest($bays, false);
                 } else {
-                    $baychoice = $this->findSmallest($bays);
+                    $baychoice = $this->findSmallest($bays, false);
                 }
                 // Bail out here, something is wrong....
                 if ($baychoice === false) {
                     return false;
                 }
+            }
+
+            if ($baychoice && $baychoice[1] == 'priority') {
+                $prioritydone = true;
             }
 
             $seatsleft = $seatsleft - $baychoice[0];
@@ -402,7 +454,7 @@ class TicketBuilder {
                 return false;
             }
         }
-        return array($smcount, $allocatesm);
+        return array($smcount, $allocatesm, $prioritydone);
     }
 
     private function findSmallest($bays, $allowpriority=false) {
@@ -595,11 +647,18 @@ class TicketBuilder {
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
         $id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".
             " fromstation = '".$fromstation."' AND tostation = '".$tostation."'");
-        foreach ($allocatedbays->outbays as $baysize => $num) {
+        foreach ($allocatedbays->outbays as $bay => $num) {
+            $bayd = $this->getBayDetails($bay);
+            if ($bayd[1] == 'priority') {
+                $pr = true;
+            } else {
+                $pr = false;
+            }
             $bdata = array(
                 'bookingid' => $id,
                 'num' => $num,
-                'baysize' => $baysize
+                'baysize' => $bayd[0],
+                'priority' => $pr
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_booking_bays", $bdata);
         }
@@ -607,8 +666,13 @@ class TicketBuilder {
 
     private function bayString($bays) {
         $str = '';
-        foreach ($bays as $baysize => $num) {
-            $str .= $num.'x '.$baysize.' seat bay, ';
+        foreach ($bays as $bay => $num) {
+            $bayd = $this->getBayDetails($bay);
+            $str .= $num.'x '.$bayd[0].' seat bay';
+            if ($bayd[1] == 'priority') {
+                $str .= ' (with disabled space)';
+            }
+            $str .=', ';
         }
         return substr($str, 0, strlen($str)-2);
     }
@@ -793,6 +857,7 @@ class TicketBuilder {
             "  </div>".
             "  <div id='ticket_summary' class='railticket_container'></div>".
             "  <div id='ticket_capbutton' class='railticket_container'>".
+            "  <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>&nbsp;&nbsp;&nbsp;Request space for wheelchair user</p>".
             "  <input type='button' value='Confirm Choices' id='confirmchoices' /></div>".
             "  <div id='ticket_capacity' class='railticket_container'></div>".
             "</div>";
@@ -805,7 +870,7 @@ class TicketBuilder {
             "<input type='hidden' name='ticketselections' />".
             "<input type='hidden' name='ticketallocations' />".
             "<div class='railticket_container'>".
-            "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput''/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
+            "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
             "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
             "<p class='railticket_terms'>Your tickets will be reserved for ".get_option('wc_product_railticket_reservetime')." minutes after you click add to cart".
             " please complete your purchases within that time.</p>".

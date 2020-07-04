@@ -464,6 +464,9 @@ function railticket_getticketbuilder() {
     $rettime = railticket_getpostfield('rettime');
     $journeytype = railticket_getpostfield('journeytype');
     $overridevalid = railticket_getpostfield('overridevalid');
+    $disabledrequest = railticket_getpostfield('disabledrequest');
+file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt", $disabledrequest);
+
     $ticketselections = null;
     if (array_key_exists('ticketselections', $_REQUEST)) {
         $ticketselections = json_decode(stripslashes($_REQUEST['ticketselections']));
@@ -475,14 +478,14 @@ function railticket_getticketbuilder() {
     $tickets = array();
 
     return new TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid);
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest);
 }
 
 function railticket_getpostfield($field) {
     if (array_key_exists($field, $_REQUEST)) {
         return sanitize_text_field($_REQUEST[$field]);
     }
-    return null;
+    return false;
 }
 
 add_action('init', 'register_railticket_product_type');
