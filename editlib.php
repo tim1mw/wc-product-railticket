@@ -140,7 +140,7 @@ function railticket_showcalendaredit($year, $month) {
             $bookable = false;
         } else {
             $bookable = $bk[0]->bookable;
-        }
+        
 
         echo "<input type='checkbox' value='1' name='bookable_".$ct->id."' ";
         if ($bookable == 1) {
@@ -153,7 +153,7 @@ function railticket_showcalendaredit($year, $month) {
         foreach ($coachset as $c => $v) {
             echo $v."x ".$c.", ";
         }
-        
+        }
         echo "</td></tr>\n";
         $ids[] = $ct->id;
     }
