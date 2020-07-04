@@ -77,21 +77,6 @@ function railticket_selector() {
     return $ticketbuilder->render();
 }
 
-
-function railticket_script()
-{
-    wp_register_script('railticket_script', plugins_url('wc-product-railticket/ticketbuilder.js'));
-    wp_enqueue_script('railticket_script');
-}
-
-function railticket_style()
-{
-    global $wpdb;
-    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
-    wp_enqueue_style('railticket_style');
-}
-
-
 function railticket_ajax_request() {
     $ticketbuilder = railticket_getticketbuilder();
     $function = railticket_getpostfield('function');
@@ -511,7 +496,6 @@ add_action( 'woocommerce_product_options_general_product_data', function(){
 
 add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
-add_action( 'wp_enqueue_scripts', 'railticket_style' );
 add_action( 'wp_ajax_nopriv_railticket_ajax', 'railticket_ajax_request');
 add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
 

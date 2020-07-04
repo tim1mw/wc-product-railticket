@@ -624,8 +624,10 @@ class TicketBuilder {
 
     private function get_javascript() {
 
-        wp_register_script('railticket_script', plugins_url('wc-product-railticket/ticket-rules.js'));
+        wp_register_script('railticket_script', plugins_url('wc-product-railticket/ticketbuilder.js'));
         wp_enqueue_script('railticket_script');
+        wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+        wp_enqueue_style('railticket_style');
 
         $minprice = 'false';
         $opt = get_option('wc_product_railticket_min_price');
