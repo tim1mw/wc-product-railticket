@@ -180,9 +180,9 @@ function railticket_updatebookable() {
         $bk = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable WHERE dateid = ".$id);
 
         if (count($bk) > 0) {
-            $bays = railticket_process_bays($bk[0]->composition);
+            //$bays = railticket_process_bays($bk[0]->composition);
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable",
-                array('bookable' => $bookable, 'bays' => $bays),
+                array('bookable' => $bookable),
                 array('dateid' => $bk[0]->dateid));
         } else {
             if ($bookable) {
