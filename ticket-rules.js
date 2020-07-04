@@ -158,7 +158,11 @@ function fromStationChanged(evt) {
     }
     lastfrom=evt.target.value;
 
-    if (document.railticketbooking['fromstation'].value != '' && document.railticketbooking['tostation'].value != '') {
+    if (document.railticketbooking['fromstation'].value != '' && 
+        document.railticketbooking['tostation'].value != '' &&
+        document.railticketbooking['fromstation'].value != 'undefined' && 
+        document.railticketbooking['tostation'].value != 'undefined')
+    {
         getDepTimes();
     }
 }
@@ -176,9 +180,13 @@ function toStationChanged(evt) {
             lastfrom=lastto;
         }  
     }
-    
+
     lastto=evt.target.value;
-    if (document.railticketbooking['tostation'].value != '' && document.railticketbooking['fromstation'].value != '') {
+    if (document.railticketbooking['fromstation'].value != '' && 
+        document.railticketbooking['tostation'].value != '' &&
+        document.railticketbooking['fromstation'].value != 'undefined' && 
+        document.railticketbooking['tostation'].value != 'undefined')
+    {
         getDepTimes();
     }
 }
@@ -191,6 +199,7 @@ function getDepTimes() {
         if (response['tickets'].length == 0) {
             str += "<h4>Sorry, no services can be booked on line for these choices. Please try a different selection.</h4>"+
                 "<input type='hidden' name='journeytype' />";
+            document.getElementById('ticket_type').innerHTML = str;
         } else {
             sameservicereturn = response['sameservicereturn'];
             if (sameservicereturn) {
@@ -204,12 +213,17 @@ function getDepTimes() {
                 }
                 var type = response['tickets'][index];
                 str += "<li class='railticket_hlist'><input type='radio' name='journeytype' id='journeytype"+
-                    type+"' "+selected+" onclick='journeyTypeChanged(\""+type+"\")' value='"+type+"' /><label class='railticket_caplitalise' for='journeytype"+
+                    type+"' "+selected+" value='"+type+"' /><label class='railticket_caplitalise' for='journeytype"+
                     type+"'>"+type+"</label></li>";
             }
             str += "</ul>";
+
+            document.getElementById('ticket_type').innerHTML = str;
+            for (index in response['tickets']) {
+                var type = response['tickets'][index];
+                railTicketAddListener('journeytype'+type, 'click', journeyTypeChanged);
+            }
         }
-        document.getElementById('ticket_type').innerHTML = str;
         showTicketStages('deptimes', true);
     });
 }
@@ -253,6 +267,7 @@ function showTimes(times, type, header) {
                 "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" />"+
                 "<label "+lateclass+" for='dep"+type+index+"'>"+times[index]['depdisp']+
                 "<div class='railticket_arrtime'>(arrives: "+times[index]['arrdisp']+")</div></label></li>";
+
         }
     }
     str += "</ul>";
@@ -307,7 +322,9 @@ function trainTimeChanged(index, type, skip) {
     showTicketSelector();
 }
 
-function journeyTypeChanged(type) {
+function journeyTypeChanged(evt) {
+    type = evt.target.value;
+
     if (type == 'return') {
         var ot = document.getElementsByClassName('journeytypeout');
         lastout = -1;
