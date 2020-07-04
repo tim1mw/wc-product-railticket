@@ -484,7 +484,7 @@ function allocateTickets() {
             '<td><span>'+formatter.format(tkt.price * ticketsAllocated[i])+'</span></td>'+
             '<td><img src="'+tkt.image+'" class="railticket_image" /></td>'+
             '</tr>';
-        total += parseInt(tkt.price) * ticketsAllocated[i];
+        total += parseFloat(tkt.price) * ticketsAllocated[i];
     }
     var supplement = 0;
 

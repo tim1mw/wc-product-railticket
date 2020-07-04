@@ -559,24 +559,33 @@ class TicketBuilder {
         }
 
         if ($this->overridevalid == 1 && !$allocatedbays->ok ) {
-            $retbays = "As directed by the guard";
             $outbays = "As directed by the guard";
+            if ($this->journeytype == 'return') {
+                $retbays = "As directed by the guard";
+            } else {
+                $retbays = "n/a";
+            }
         } else {
             $outbays = $this->baystring($allocatedbays->outbays);
-            $retbays = $this->baystring($allocatedbays->retbays);
+            if ($this->journeytype == 'return') {
+                $retbays = $this->baystring($allocatedbays->retbays);
+            } else {
+                $retbays = "n/a";
+            }
         }
 
         $custom_price = 0;
         foreach ($this->ticketsallocated as $ttype => $qty) {
-            $price = $wpdb->get_var("SELECT price FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."'");
-            $custom_price += $price*$qty;
+            $price = $wpdb->get_var("SELECT price FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".
+                "journeytype = '".$this->journeytype."' ");
+            $custom_price += floatval($price)*floatval($qty);
         }
 
         $mprice = get_option('wc_product_railticket_min_price');
         $supplement = 0;
         if (strlen($mprice) > 0 && $custom_price < $mprice) {
-            $mprice=intval($mprice);
-            $supplement = $mprice - $custom_price;
+            $mprice=floatval($mprice);
+            $supplement = floatval($mprice) - floatval($custom_price);
             $custom_price = $mprice;
         } 
         $totalseats = $this->count_seats();

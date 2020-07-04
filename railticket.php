@@ -181,11 +181,12 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
             'key'       => "Outbound Seating bays",
             'value'     => $cart_item['tickettimes']['outbays']
         );
-
-        $item_data[] = array(
-            'key'       => "Return Seating bays",
-            'value'     => $cart_item['tickettimes']['retbays']
-        );
+        if ($cart_item['tickettimes']['journeytype'] == 'return') {
+            $item_data[] = array(
+                'key'       => "Return Seating bays",
+                'value'     => $cart_item['tickettimes']['retbays']
+            );
+        }
 
         if ($cart_item['tickettimes']['pricesupplement'] > 0) {
             $item_data[] = array(
