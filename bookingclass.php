@@ -273,7 +273,6 @@ class TicketBuilder {
 
         $rec = $wpdb->get_results($sql)[0];
         $basebays = (array) json_decode($rec->bays);
-        ksort($basebays);
 
         // Get the bookings we need to subtract from this formation. Not using tostation, we'll want that for intermediate stops though.
         $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
@@ -291,8 +290,9 @@ class TicketBuilder {
         }
 
         $totalseats = 0;
-        foreach ($basebays as $baysize => $numleft) {
-            $totalseats += $baysize*$numleft;
+        foreach ($basebays as $bay => $numleft) {
+            $bayd = $this->getBayDetails($bay);
+            $totalseats += $bayd[0]*$numleft;
         }
 
         $bays = new stdclass();
@@ -382,14 +382,19 @@ class TicketBuilder {
                 } else {
                     $baychoice = $this->findSmallest($bays);
                 }
+                // Bail out here, something is wrong....
+                if ($baychoice === false) {
+                    return false;
+                }
             }
-            $seatsleft = $seatsleft - $baychoice;
-            $bays[$baychoice]--;
 
-            if (array_key_exists($baychoice, $allocatesm)) {
-                $allocatesm[$baychoice] ++;
+            $seatsleft = $seatsleft - $baychoice[0];
+            $bays[$baychoice[2]]--;
+
+            if (array_key_exists($baychoice[2], $allocatesm)) {
+                $allocatesm[$baychoice[2]] ++;
             } else {
-                $allocatesm[$baychoice] = 1;
+                $allocatesm[$baychoice[2]] = 1;
             }
             $smcount ++;
             // Bail out here, something is wrong....
@@ -401,36 +406,46 @@ class TicketBuilder {
     }
 
     private function findSmallest($bays) {
-        $num = 100;
-        foreach ($bays as $baysize => $numleft) {
+        $chosen = false;
+        foreach ($bays as $bay => $numleft) {
             if ($numleft > 0) {
-                if ($baysize < $num) {
-                    $num = $baysize;
+                $bayd = $this->getBayDetails($bay);
+                if ($chosen === false || $bayd[0] < $chosen[0]) {
+                    $chosen = $bayd;
                 }
             }
         }
-        return intval($num);
+        return $chosen;
     }
 
     private function findLargest($bays) {
-        $num = 0;
-        foreach ($bays as $baysize => $numleft) {
+        $chosen = false;
+        foreach ($bays as $bay => $numleft) {
             if ($numleft > 0) {
-                if ($baysize > $num) {
-                    $num = $baysize;
+                $bayd = $this->getBayDetails($bay);
+                if ($chosen === false || $bayd[0] > $chosen[0]) {
+                    $chosen = $bayd;
                 }
             }
         }
-        return intval($num);
+        return $chosen;
     }
 
     private function findBay($seatsreq, $bays) {
-        foreach ($bays as $baysize => $numleft) {
-            if ($seatsreq <= $baysize && $numleft > 0) {
-                return intval($baysize);
+        foreach ($bays as $bay => $numleft) {
+            $bayd = $this->getBayDetails($bay);
+            if ($seatsreq <= $bayd[0] && $numleft > 0) {
+                return $bayd;
             }
         }
         return false;
+    }
+
+    private function getBayDetails($bay) {
+        $parts = explode('_', $bay);
+        $parts[0] = intval($parts[0]);
+        $parts[2] = $bay;
+        return $parts;
     }
 
     private function checkDuplicate() {

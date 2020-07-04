@@ -181,7 +181,6 @@ function railticket_updatebookable() {
 
         if (count($bk) > 0) {
             $bays = railticket_process_bays($bk[0]->composition);
-            //$data = array('bookable' => $bk, 'bays' => $bays);
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable",
                 array('bookable' => $bookable, 'bays' => $bays),
                 array('dateid' => $bk[0]->dateid));
@@ -218,15 +217,17 @@ function railticket_process_bays($json) {
 
    $coachset = (array) $parsed->coachset;
    foreach ($coachset as $coach => $count) {
-
        $comp = $wpdb->get_var("SELECT composition FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$coach."'");
        $bays = json_decode(stripslashes($comp));
        foreach ($bays as $bay) {
-           $data[$bay->baysize] += $bay->quantity * $count;
+           if ($bay->priority) {
+               $data[$bay->baysize.'_priority'] += $bay->quantity * $count;
+           } else {
+               $data[$bay->baysize.'_normal'] += $bay->quantity * $count;
+           }
        }
-
    }
-
+   ksort($data);
    return wp_json_encode($data);
 }
 

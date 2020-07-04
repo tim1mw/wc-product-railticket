@@ -519,14 +519,22 @@ function showCapacity(response) {
     if (response.ok) {
         str = "Socially distanced seating bay(s) are available for your journey:<br /><table class='railticket_travellers_table'><tr><td>Outbound</td><td>";
         for (i in response.outbays) {
-            str += response.outbays[i]+"x "+i+" seat bay &nbsp&nbsp;";
+            var desc = i.split('_');
+            str += response.outbays[i]+"x "+desc[0]+" seat bay";
+            if (desc[1] == 'priority') {
+                str += ' (with disabled space)';   
+            }
         }
         str += "</td></tr>";
         var journeytype = document.railticketbooking['journeytype'].value;
         if (journeytype == "return") {
             str += "<tr><td>Return</td><td>";
             for (i in response.retbays) {
-                str += response.retbays[i]+"x "+i+" seat bay&nbsp&nbsp;";
+                str += response.retbays[i]+"x "+desc[0]+" seat bay";
+                if (desc[1] == 'priority') {
+                    str += ' (with disabled space)';   
+                }
+                str += "&nbsp&nbsp; ";
             }
             str += "</td></tr>";
         }
@@ -548,6 +556,10 @@ function showCapacity(response) {
     }
     capacitydiv.innerHTML = str+"</div>";
     capacitydiv.style.display = 'block';
+    capacitydiv.scrollIntoView(true);
+    if (window.innerWidth >= 1010) {
+        window.scrollBy(0, -80); 
+    }
 }
 
 
