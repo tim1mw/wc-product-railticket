@@ -359,12 +359,12 @@ class TicketBuilder {
 
             if ($retallocatesm[0] > $retallocatelg[0]) {
                 $allocatedbays->retbays = $retallocatelg[1];
-                if (!$retallocatelg[2]) {
+                if (!$retallocatelg[2] && $this->disabledrequest) {
                     $allocatedbays->disablewarn = true;
                 }
             } else {
                 $allocatedbays->retbays = $retallocatesm[1];
-                if (!$retallocatesm[2]) {
+                if (!$retallocatesm[2] && $this->disabledrequest) {
                     $allocatedbays->disablewarn = true;
                 }
             }
@@ -382,12 +382,12 @@ class TicketBuilder {
         $dis = false;
         if ($outallocatesm[0] > $outallocatelg[0]) {
             $allocatedbays->outbays = $outallocatelg[1];
-            if (!$outallocatelg[2]) {
+            if (!$outallocatelg[2] && $this->disabledrequest) {
                 $allocatedbays->disablewarn = true;
             }
         } else {
             $allocatedbays->outbays = $outallocatesm[1];
-            if (!$outallocatesm[2]) {
+            if (!$outallocatesm[2] && $this->disabledrequest) {
                 $allocatedbays->disablewarn = true;
             }
         }

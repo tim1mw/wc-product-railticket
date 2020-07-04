@@ -447,6 +447,8 @@ function allocateTickets() {
         if (tkt !== false) {
             if (tkt == 2) {
                 allocationTotal --;
+                summary.innerHTML='<h4>This type of ticket cannot be bought alone.</h4>';
+                return;
             }
             
             for (i in allocation) {
@@ -463,7 +465,7 @@ function allocateTickets() {
         // Get out of here if stuck
         count++;
         if (count > 1000) {
-            summary.innerHTML='<p>Something has gone badly wrong.... Please give us call or email.</p>';
+            summary.innerHTML='<h4>Something has gone badly wrong.... Please give us call or email.</h4>';
             return;
         }
     }
@@ -574,6 +576,7 @@ function showCapacity(response) {
 
 
 function matchTicket(allocation) {
+   var ret = false;
    for (i in ticketdata.prices) {
        var tkt = ticketdata.prices[i];
        var matches = 0;
@@ -598,11 +601,11 @@ function matchTicket(allocation) {
                    return tkt;
                }
            }
-           return "2";
+           var ret = 2;
        }
    }
 
-   return false;
+   return ret;
 }
 
 function termsClicked() {

@@ -178,7 +178,7 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
         );
 
         $item_data[] = array(
-            'key'       => "Outboud Seating bays",
+            'key'       => "Outbound Seating bays",
             'value'     => $cart_item['tickettimes']['outbays']
         );
 
