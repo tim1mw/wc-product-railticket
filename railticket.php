@@ -324,7 +324,7 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                         }
                         break;
                     case 'outbays':
-                        $fm->display_key = 'Outboud Seating bays';
+                        $fm->display_key = 'Outbound Seating bays';
                         $fm->display_value = '<p>'.$fm->value.'</p>';
                         $retmeta[$index] = $fm;
                         break;
