@@ -440,9 +440,7 @@ class TicketBuilder {
         $items = $woocommerce->cart->get_cart();
         foreach($items as $item => $values) { 
             if ($ticketid == $values['data']->get_id()) {
-                if (count($bookingids) === 0) {
-                    return true;
-                }
+                return true;
             }
         } 
         return false;
