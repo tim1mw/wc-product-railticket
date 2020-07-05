@@ -491,7 +491,9 @@ function railticket_show_departure() {
     echo "<h3>Bay Usage (one way to destination)</h3><div class='railticket_trainbookings'>".
         "<table border='1'><th>Bay</th><th>Total</th><th>Used</th><th>Empty</th></tr>";
     foreach ($basebays as $bay => $space) {
-        echo "<td>".str_replace('_', ' seat ', $bay)."</td><td>".$space."</td><td>".
+        $bayd = str_replace('_', ' seat ', $bay);
+        $bayd = str_replace('priority', 'disabled', $bayd);
+        echo "<td>".$bayd."</td><td>".$space."</td><td>".
             ($space-$capused->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
     }
     echo "</table></div>"
