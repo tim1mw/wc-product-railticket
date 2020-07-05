@@ -179,22 +179,26 @@ function railticket_updatebookable() {
         $bk = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable WHERE dateid = ".$id);
 
         if (count($bk) > 0) {
-            //$bays = railticket_process_bays($bk[0]->composition);
+            $bays = railticket_process_bays($bk[0]->composition);
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable",
-                array('bookable' => $bookable),
+                array('bookable' => $bookable, 'bays' => $bays),
                 array('dateid' => $bk[0]->dateid));
         } else {
             if ($bookable) {
+                $ssr = false;
+                if (get_option('wc_product_railticket_sameservicereturn') == 'on') {
+                    $ssr = true;
+                }
                 $data = array(
                     'dateid' => $id,
                     'composition' => get_option('wc_product_railticket_defaultcoaches'),
                     'bays' => railticket_process_bays(get_option('wc_product_railticket_defaultcoaches')),
-                    'bookclose' => railticket_get_booking_grace($bk[0]->dateid),
+                    'bookclose' => '{}',
                     'limits' => get_option('wc_product_railticket_bookinglimits'),
                     'bookable' => 1,
                     'soldout' => 0,
                     'override' => randomString(),
-                    'sameservicereturn' => get_option('wc_product_railticket_sameservicereturn')
+                    'sameservicereturn' => $ssr
                 );
                 $wpdb->insert("{$wpdb->prefix}wc_railticket_bookable", $data);
             }
@@ -220,9 +224,14 @@ function railticket_process_bays($json) {
        $bays = json_decode(stripslashes($comp));
        foreach ($bays as $bay) {
            if ($bay->priority) {
-               $data[$bay->baysize.'_priority'] += $bay->quantity * $count;
+               $key = $bay->baysize.'_priority';
            } else {
-               $data[$bay->baysize.'_normal'] += $bay->quantity * $count;
+               $key = $bay->baysize.'_normal';
+           }
+           if (array_key_exists($key, $data)) {
+               $data[$key] += $bay->quantity * $count;
+           } else {
+               $data[$key] = $bay->quantity * $count;
            }
        }
    }
