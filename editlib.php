@@ -137,22 +137,21 @@ function railticket_showcalendaredit($year, $month) {
 
         $bk = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable WHERE dateid = ".$ct->id);
         if (count($bk) == 0) {
-            $bookable = false;
+            echo "<input type='checkbox' value='1' name='bookable_".$ct->id."' />";
         } else {
             $bookable = $bk[0]->bookable;
         
+            echo "<input type='checkbox' value='1' name='bookable_".$ct->id."' ";
+            if ($bookable == 1) {
+                echo "checked ";
+            }
+            echo "/><td>";
+            $comp = json_decode($bk[0]->composition);
 
-        echo "<input type='checkbox' value='1' name='bookable_".$ct->id."' ";
-        if ($bookable == 1) {
-            echo "checked ";
-        }
-        echo "/><td>";
-        $comp = json_decode($bk[0]->composition);
-
-        $coachset = (array) $comp->coachset;
-        foreach ($coachset as $c => $v) {
-            echo $v."x ".$c.", ";
-        }
+            $coachset = (array) $comp->coachset;
+            foreach ($coachset as $c => $v) {
+                echo $v."x ".$c.", ";
+            }
         }
         echo "</td></tr>\n";
         $ids[] = $ct->id;
