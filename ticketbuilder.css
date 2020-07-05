@@ -411,6 +411,10 @@ input[type=number]::-webkit-inner-spin-button {
     font-size:x-large;
 }
 
+.railticket_editdate input[type="number"] {
+    font-size:x-large;
+}
+
 .railticket_trainbookings {
     font-size:large;
     text-align:center;
@@ -424,5 +428,10 @@ input[type=number]::-webkit-inner-spin-button {
 
 .railticket_trainbookings input[type="submit"] {
     font-size:xx-large;
+}
+
+.railticket_meta {
+    font-size:large;
+    text-align:left;
 }
 

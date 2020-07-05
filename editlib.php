@@ -20,9 +20,9 @@ function railticket_register_settings() {
 }
 
 function railticket_add_pages() {
-    add_menu_page('Rail Ticket', 'Rail Ticket', 'manage_options', 'railticket-top-level-handle', 'railticket_options' );
+    add_menu_page('Rail Ticket', 'Rail Ticket', 'manage_options', 'railticket-top-level-handle', 'railticket_view_bookings' );
+    add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
-    add_submenu_page('railticket-top-level-handle', "View Bookings", "View Bookings", 'manage_options', 'railticket-view-bookings', 'railticket_view_bookings');
 }
 
 function railticket_options() {
@@ -257,12 +257,17 @@ function randomString()
 }
 
 function railticket_view_bookings() {
-    ?><h1>Heritage Railway Tickets</h1><h1>Bookings</h1><?php
+    ?>
+    <h1>Heritage Railway Tickets</h1>    
+    <?php
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
 
     if (array_key_exists('action', $_REQUEST)) {
         switch($_REQUEST['action']) {
+            case 'showorder':
+                railticket_show_order();
+                break;
             case 'showdep':
                 railticket_show_departure();
                 break;
@@ -308,10 +313,13 @@ function railticket_summary_selector() {
         $date->setDate($chosenyear, $chosenmonth, $chosenday);
         $dateofjourney = $date->format('Y-m-d');
     }
+    railticket_show_order_form();
    ?>
+    <hr />
+    <h2>Service Summaries</h2>
     <div class='railticket_editdate'>
     <form method='post' action=''>
-        <input type='hidden' name='action' value='filterookings' />    
+        <input type='hidden' name='action' value='filterbookings' />    
         <table><tr>
             <td>Day</td>
             <td><?php echo railticket_getdayselect($chosenday);?></td>
@@ -333,6 +341,24 @@ function railticket_summary_selector() {
     railticket_show_bookings_summary($dateofjourney);
 }
 
+function railticket_show_order_form() {
+    ?>
+    <h2>Lookup Oneline Order<h2>
+    <div class='railticket_editdate'>
+    <form method='post' action=''>
+        <input type='hidden' name='action' value='showorder' />    
+        <table><tr>
+            <td>Order ID</td>
+            <td><input style='width:200px;' type='number' max='1000000' name='orderid' required /></td>
+        </tr><tr>
+            <td></td>
+            <td><input type='submit' value='Find Booking' /></td>
+        </tr></table>
+    </form>
+    </div>
+    <?php
+}
+
 function railticket_getdayselect($chosenday) {
     $sel = "<select name='day'>";
     for($m=1; $m<=31; ++$m){
@@ -349,7 +375,8 @@ function railticket_getdayselect($chosenday) {
 
 function findTimetable($dateoftravel) {
     global $wpdb;
-    $sql = "SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
+    $sql = "SELECT {$wpdb->prefix}railtimetable_timetables.*,{$wpdb->prefix}wc_railticket_bookable.override ".
+        "FROM {$wpdb->prefix}railtimetable_dates ".
         "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
         " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
         "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
@@ -372,6 +399,8 @@ function railticket_show_bookings_summary($dateofjourney) {
         echo "<h3>No trains or bookings today</h3>";
         return;
     }
+
+    echo "<h2 style='font-size:xx-large;line-height:120%;'>Booking override code:<span style='color:red'>".$timetable->override."</span></h2>";
 
     $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
     foreach ($stations as $station) {
@@ -462,7 +491,7 @@ function railticket_show_departure() {
     echo "<h3>Bay Usage (one way to destination)</h3><div class='railticket_trainbookings'>".
         "<table border='1'><th>Bay</th><th>Total</th><th>Used</th><th>Empty</th></tr>";
     foreach ($basebays as $bay => $space) {
-        echo "<td>".str_replace('_', ' ', $bay)."</td><td>".$space."</td><td>".
+        echo "<td>".str_replace('_', ' seat ', $bay)."</td><td>".$space."</td><td>".
             ($space-$capused->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
     }
     echo "</table></div>"
@@ -476,7 +505,7 @@ function railticket_show_departure() {
             <th>Order</th>
             <th>To</th>
             <th>Seats</th>
-            <th>Disabled</th>
+            <th>Bays</th>
             <th>Collected</th>
         </tr>
     <?php
@@ -485,16 +514,25 @@ function railticket_show_departure() {
         if ($booking->manual) {
             echo "<td>".$booking->id." (M)</td>";
         } else {
-            echo "<td>".$booking->wooorderid."</td>";
+            echo "<td><form action='' method='post'>".
+                "<input type='hidden' name='action' value='showorder' />".
+                "<input type='hidden' name='orderid' value='".$booking->wooorderid."' />".
+                "<input type='submit' value='".$booking->wooorderid."' />".
+                "</form></td>";
         }
         echo "<td>".$booking->name."</td>".
-            "<td>".$booking->seats."</td>";
+            "<td>".$booking->seats."</td>".
+            "<td>";
 
-        if ($booking->priority) {
-            echo "<td>Y</td>";   
-        } else {
-            echo "<td>N</td>";  
+        $bays = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$booking->id);
+        foreach ($bays as $bay) {
+            echo $bay->baysize;
+            if ($bay->priority) {
+                echo "d";
+            }
+            echo "X".$bay->num." ";
         }
+        echo "</td>";
 
         if ($booking->collected) {
             echo "<td>Y</td>";   
@@ -527,4 +565,105 @@ function railticket_show_departure() {
     </form>
     </div>
     <?php
+}
+
+
+function railticket_show_order() {
+    global $wpdb, $woocommerce;
+
+    if (strlen($_POST['orderid']) == 0) {
+        echo "<p>No order number entered.</p>";
+        railticket_summary_selector();
+        return;
+    }
+
+    $order = wc_get_order($_POST['orderid']);
+
+    if (!$order) {
+        echo "<p>Order not found.</p>";
+        railticket_summary_selector();
+        return;
+    }
+
+    $order_item = false;
+    foreach ( $order->get_items() as $item_id => $item ) {
+        // Get the product object
+        $product = $item->get_product();
+
+        // Get the product Id
+        $product_id = $product->get_id();
+        if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
+            $order_item = $item;
+            break;
+        }
+    }
+
+    if (!$order_item) {
+        echo "<p>No tickets were purchased with this order.</p>";
+        railticket_summary_selector();
+        return;
+    }
+    $formatted_meta_data = $item->get_formatted_meta_data( '_', true );
+
+    ?>
+    <div class='railticket_editdate'>
+    <table border='1'>
+        <tr><th>Order ID</th><td class='railticket_meta'><?php echo $_POST['orderid']; ?></td></tr>
+        <tr><th>Name</th><td class='railticket_meta'><?php echo $order->get_formatted_billing_full_name(); ?></td></tr>
+        <tr><th>Postcode</th><td class='railticket_meta'><?php echo $order->get_billing_postcode(); ?></td></tr>
+        <tr><th>Paid</th><td class='railticket_meta'><?php if ($order->is_paid()) {echo "Yes";} else {echo "No";} ?></td></tr>
+    <?php
+    $fromstation = false;
+    $tostation = false;
+    $journeytype = false;
+    foreach ($formatted_meta_data as $meta) {
+        switch ($meta->key) {
+            case 'tickettimes-outbays':
+            case 'tickettimes-retbays':
+            case 'tickettimes-pricesupplement':
+                continue 2;
+            case 'tickettimes-fromstation':
+                $fromstation = $meta->value;
+                break;
+            case 'tickettimes-tostation':
+                $tostation = $meta->value;
+                break;
+            case 'tickettimes-journeytype':
+                $journeytype = 'return';
+                break;
+        }
+        echo "<tr><th>".$meta->display_key."</th><td class='railticket_meta'>".strip_tags($meta->display_value)."</td></tr>";
+    }
+    $booking = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = ".$_POST['orderid'].
+        " AND fromstation = ".$fromstation)[0];
+    railticket_show_bays($booking->id, $fromstation, 'Outbound bays');
+    if ($journeytype == 'return') {
+        railticket_show_bays($booking->id, $tostation, 'Return bays');
+    }
+    echo "<tr><th>Collected</th><td class='railticket_meta'>";
+    if ($booking->collected) {
+        echo "Yes";
+    } else {
+        echo "No";
+    }
+    echo "</td></tr>";
+    ?>
+    </table>
+    </div>
+    <?php
+}
+
+function railticket_show_bays($bookingid, $fromstation, $jt) {
+    global $wpdb;
+    $frombays = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$bookingid);
+    $fb = '';
+    foreach ($frombays as $bay) {
+        $fb .= $bay->baysize. " seat ";
+        if ($bay->priority) {
+            $fb.= " disabled ";
+        }
+        $fb.= " bay x".$bay->num.", ";
+    }
+    $fb = substr($fb, 0, strlen($fb)-2);
+    echo "<tr><th>".$jt."</th><td class='railticket_meta'>".$fb."</td></tr>";
 }
