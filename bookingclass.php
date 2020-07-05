@@ -651,7 +651,8 @@ class TicketBuilder {
             'usebays' => 1,
             'originstation' => $fromstation,
             'origintime' => $time,
-            'created' => time()
+            'created' => time(),
+            'expiring' => 0
         );
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
         $id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".

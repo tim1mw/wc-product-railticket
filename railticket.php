@@ -381,7 +381,7 @@ function railticket_cart_complete($order_id) {
             if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
                 $key = $item->get_meta( '_cart_item_key' );
                 $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-                    array('wooorderid' => $order_id, 'woocartitem' => '', 'wooorderitem' => $item_id),
+                    array('wooorderid' => $order_id, 'woocartitem' => '', 'wooorderitem' => $item_id, 'expiring' => 0),
                     array('woocartitem' => $key));
             }
         }
@@ -412,12 +412,19 @@ add_action( 'railticket_add_every_two_minutes', 'railticket_every_two_minutes_ev
 function railticket_every_two_minutes_event_func() {
     global $wpdb;
     $expiretime = time() - intval(get_option('wc_product_railticket_reservetime'))*60;
+    $releasetime = $expiretime - intval(get_option('wc_product_railticket_releaseinventory'))*60;
 
-    $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem != '' AND created < ".$expiretime;
+    $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem != '' AND expiring = 1 AND created < ".$releasetime;
     $bookingids = $wpdb->get_results($sql);
     foreach ($bookingids as $bookingid) {
         $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $bookingid->id));
         $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $bookingid->id));
+    }
+
+    $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem != '' AND expiring = 0 AND created < ".$expiretime;
+    $bookingids = $wpdb->get_results($sql);
+    foreach ($bookingids as $bookingid) {
+        $wpdb->update("{$wpdb->prefix}wc_railticket_bookings", array('expiring' => 1), array('id' => $bookingid->id));
     }
 }
 
@@ -435,7 +442,7 @@ function railticket_cart_check_cart() {
     $items = $woocommerce->cart->get_cart();
     foreach($items as $item => $values) { 
         if ($ticketid == $values['data']->get_id()) {
-            $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$item."'";
+            $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$item."' AND expiring = 0";
             $bookingids = $wpdb->get_results($sql);
             if (count($bookingids) === 0) {
                 $woocommerce->cart->remove_cart_item($item);

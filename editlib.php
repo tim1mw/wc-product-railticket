@@ -11,6 +11,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_woocommerce_product'); 
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_min_price');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_reservetime');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_releaseinventory');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_sameservicereturn');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termspage');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
@@ -40,6 +41,10 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_reservetime">Reserve basket tickets for</label></th>
             <td><input size='6'  type="text" id="wc_product_railticket_reservetime" name="wc_product_railticket_reservetime" value="<?php echo get_option('wc_product_railticket_reservetime'); ?>" /> minutes</td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_releaseinventory">Release inventory when expired after</label></th>
+            <td><input size='6'  type="text" id="wc_product_railticket_releaseinventory" name="wc_product_railticket_releaseinventory" value="<?php echo get_option('wc_product_railticket_releaseinventory'); ?>" /> minutes</td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_termspage">Ticket Terms Page</label></th>
