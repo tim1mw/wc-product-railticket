@@ -641,12 +641,22 @@ class TicketBuilder {
         // TODO originstation and origintime reflect the station this train originally started from. Right now
         // with end to end bookings only this will always be the same as fromstation and time. Needs to be set properly
         // when intermediate stops are added. The aim is to allow the entire inventory for this service to be retrieved.
+
+        $fs = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$fromstation);
+        $ts = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$tostation);
+        if ($fs > $ts) {
+            $direction = 'up';
+        } else {
+            $direction = 'down';
+        }
+
         $dbdata = array(
             'woocartitem' => $itemkey,
             'date' => $this->dateoftravel,
             'time' => $time,
             'fromstation' => $fromstation,
             'tostation' => $tostation,
+            'direction' => $direction,
             'seats' => $totalseats,
             'usebays' => 1,
             'originstation' => $fromstation,
