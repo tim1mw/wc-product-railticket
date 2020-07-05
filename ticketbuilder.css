@@ -386,3 +386,43 @@ input[type=number]::-webkit-inner-spin-button {
     transform: rotate(360deg);
   }
 }
+
+/** Editor styles **/
+
+.railticket_inlinedeplist ul li{
+    display:inline-block;
+}
+
+.railticket_inlinedeplist input[type="submit"] {
+    font-size:xx-large;
+}
+
+.railticket_editdate {
+    margin-left:auto;
+    margin-right:auto;
+    font-size:large;
+}
+
+.railticket_editdate td select {
+    font-size:x-large;
+}
+
+.railticket_editdate input[type="submit"] {
+    font-size:x-large;
+}
+
+.railticket_trainbookings {
+    font-size:large;
+    text-align:center;
+}
+
+.railticket_trainbookings td {
+    font-size:x-large;
+    text-align:center;
+    line-height:36px;
+}
+
+.railticket_trainbookings input[type="submit"] {
+    font-size:xx-large;
+}
+

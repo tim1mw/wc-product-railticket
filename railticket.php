@@ -473,7 +473,6 @@ function railticket_getticketbuilder() {
     $journeytype = railticket_getpostfield('journeytype');
     $overridevalid = railticket_getpostfield('overridevalid');
     $disabledrequest = railticket_getpostfield('disabledrequest');
-file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt", $disabledrequest);
 
     $ticketselections = null;
     if (array_key_exists('ticketselections', $_REQUEST)) {

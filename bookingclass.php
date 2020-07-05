@@ -268,7 +268,7 @@ class TicketBuilder {
         return $tickets;
     }
 
-    private function get_service_inventory($date, $time, $fromstation, $tostation) {
+    public function get_service_inventory($time, $fromstation, $tostation, $baseonly = false) {
         global $wpdb;
         $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
@@ -278,6 +278,9 @@ class TicketBuilder {
 
         $rec = $wpdb->get_results($sql)[0];
         $basebays = (array) json_decode($rec->bays);
+        if ($baseonly) {
+            return $basebays;
+        }
 
         // Get the bookings we need to subtract from this formation. Not using tostation, we'll want that for intermediate stops though.
         $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
@@ -286,7 +289,7 @@ class TicketBuilder {
             " {$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
             " WHERE ".
             "{$wpdb->prefix}wc_railticket_bookings.fromstation = '".$fromstation."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookings.date = '".$date."' AND ".
+            "{$wpdb->prefix}wc_railticket_bookings.date = '".$this->dateoftravel."' AND ".
             "{$wpdb->prefix}wc_railticket_bookings.time = '".$time."' ";
 
         $bookings = $wpdb->get_results($sql);
@@ -331,7 +334,7 @@ class TicketBuilder {
 
         $seatsreq = $this->count_seats();
 
-        $outbays = $this->get_service_inventory($this->dateoftravel, $outtime, $fromstation, $this->tostation);
+        $outbays = $this->get_service_inventory($outtime, $fromstation, $this->tostation);
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
         $allocatedbays->outseatsleft = $outbays->totalseats;
         if ($outbays->totalseats < $seatsreq) {
@@ -342,7 +345,7 @@ class TicketBuilder {
         }
 
         if ($journeytype == 'return') {
-            $retbays = $this->get_service_inventory($this->dateoftravel, $this->rettime, $this->tostation, $fromstation);
+            $retbays = $this->get_service_inventory($this->rettime, $this->tostation, $fromstation);
             // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
             $allocatedbays->retseatsleft = $retbays->totalseats;
             if ($retbays->totalseats < $seatsreq) {

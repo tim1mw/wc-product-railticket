@@ -20,8 +20,9 @@ function railticket_register_settings() {
 }
 
 function railticket_add_pages() {
-    add_submenu_page('railtimetable-top-level-handle', "Railticket", "Railticket", 'manage_options', 'railticket-options', 'railticket_options');
-    add_submenu_page('railtimetable-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
+    add_menu_page('Rail Ticket', 'Rail Ticket', 'manage_options', 'railticket-top-level-handle', 'railticket_options' );
+    add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
+    add_submenu_page('railticket-top-level-handle', "View Bookings", "View Bookings", 'manage_options', 'railticket-view-bookings', 'railticket_view_bookings');
 }
 
 function railticket_options() {
@@ -76,7 +77,7 @@ function railticket_options() {
 
 function railticket_bookable_days() {
     ?>
-    <h1>Heritage Railway Ticket Sales - Set bookable dates</h1>
+    <h1>Heritage Railway Tickets - Set bookable dates</h1>
     <form method='post' action=''>
         <input type='hidden' name='action' value='filterbookable' />    
         <table><tr>
@@ -255,3 +256,275 @@ function randomString()
     return $randstring;
 }
 
+function railticket_view_bookings() {
+    ?><h1>Heritage Railway Tickets</h1><h1>Bookings</h1><?php
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch($_REQUEST['action']) {
+            case 'showdep':
+                railticket_show_departure();
+                break;
+            case 'filterbookings':
+            default:
+                railticket_summary_selector();
+                break;
+        }
+    } else {
+        railticket_summary_selector();
+    }
+
+}
+
+
+function railticket_summary_selector() {
+    if (array_key_exists('dateofjourney', $_REQUEST)) {
+        $dateofjourney = $_REQUEST['dateofjourney'];
+        $parts = explode('-', $dateofjourney);
+        $chosenyear = $parts[0];
+        $chosenmonth = $parts[1];
+        $chosenday =  $parts[2];
+    } else {
+        if (array_key_exists('year', $_REQUEST)) {
+            $chosenyear = $_REQUEST['year'];
+        } else {
+            $chosenyear = intval(date("Y"));
+        }
+
+        if (array_key_exists('month', $_REQUEST)) {
+            $chosenmonth = intval($_REQUEST['month']);
+        } else {
+            $chosenmonth = intval(date("n"));
+        }
+    
+        if (array_key_exists('day', $_REQUEST)) {
+            $chosenday = intval($_REQUEST['day']);
+        } else {
+            $chosenday = intval(date("j"));
+        }
+
+        $date = new DateTime();
+        $date->setDate($chosenyear, $chosenmonth, $chosenday);
+        $dateofjourney = $date->format('Y-m-d');
+    }
+   ?>
+    <div class='railticket_editdate'>
+    <form method='post' action=''>
+        <input type='hidden' name='action' value='filterookings' />    
+        <table><tr>
+            <td>Day</td>
+            <td><?php echo railticket_getdayselect($chosenday);?></td>
+          </tr><tr>
+            <td>Month</td>
+            <td><?php echo railtimetable_getmonthselect($chosenmonth);?></td>
+          </tr><tr>
+            <td>Year</td>
+            <td><?php echo railtimetable_getyearselect($chosenyear);?></td>
+        </tr><tr>
+            <td></td>
+            <td><input type='submit' value='Show Departures' /></td>
+        </tr></table>
+    </form>
+    </div>
+    <hr />
+    <?php
+
+    railticket_show_bookings_summary($dateofjourney);
+}
+
+function railticket_getdayselect($chosenday) {
+    $sel = "<select name='day'>";
+    for($m=1; $m<=31; ++$m){
+        if ($m == $chosenday) {
+            $s = ' selected="selected" ';
+        } else {
+            $s = '';
+        }
+        $sel .= "<option value='".$m."'".$s.">".$m."</option>";
+    }
+    $sel .= "</select>";
+    return $sel;
+}
+
+function findTimetable($dateoftravel) {
+    global $wpdb;
+    $sql = "SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
+        "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
+        " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+        "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
+        " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
+        "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$dateoftravel."'";
+    $timetable = $wpdb->get_results($sql, OBJECT );
+
+    if (count($timetable) > 0) {
+        return $timetable[0];
+    } else {
+        return false;
+    }
+}
+
+
+function railticket_show_bookings_summary($dateofjourney) {
+    global $wpdb;
+    $timetable = findTimetable($dateofjourney);
+    if (!$timetable) {
+        echo "<h3>No trains or bookings today</h3>";
+        return;
+    }
+
+    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
+    foreach ($stations as $station) {
+        railticket_show_station_summary($dateofjourney, $station, $timetable);
+    }
+}
+
+function railticket_show_station_summary($dateofjourney, $station, $timetable) {
+    global $wpdb;
+    $deptimes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = ".$station->id." AND timetableid = ".$timetable->id)[0];
+
+    if (strlen($deptimes->down_deps) > 0) {
+        echo "\n<h3>Down Departures from ".$station->name."</h3>\n";
+        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $deptimes, "down");
+    }
+
+    if (strlen($deptimes->up_deps) > 0) {
+        echo "\n<h3>Up Departures from ".$station->name."</h3>\n";
+        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $deptimes, "up");
+    }
+}
+
+function railticket_show_dep_buttons($dateofjourney, $station, $timetable, $deptimes, $direction) {
+    global $wpdb;
+    $key = $direction.'_deps';
+    $alltimes = explode(',', $deptimes->$key);
+
+    if ($direction == 'up') {
+        $destination = $wpdb->get_var("SELECT id FROM `wp_railtimetable_stations` ORDER BY SEQUENCE ASC LIMIT 1");
+    } else {
+        $destination = $wpdb->get_var("SELECT id FROM `wp_railtimetable_stations` ORDER BY SEQUENCE DESC LIMIT 1");
+    }
+
+    echo "<div class='railticket_inlinedeplist'><ul>";
+    foreach ($alltimes as $t) {
+        ?>
+        <li><form method='post' action=''>
+            <input type='hidden' name='action' value='showdep' />
+            <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+            <input type='hidden' name='station' value='<?php echo $station->id; ?>' />
+            <input type='hidden' name='destination' value='<?php echo $destination; ?>' />
+            <input type='hidden' name='direction' value='<?php echo $direction ?>' />
+            <input type='hidden' name='deptime' value='<?php echo $t ?>' />
+            <input type='submit' name='submit' value='<?php echo $t ?>' />
+        </form></li>
+        <?php
+    }
+
+    echo "</ul></div>";
+}
+
+function railticket_show_departure() {
+    global $wpdb;
+
+    $dateofjourney = $_REQUEST['dateofjourney'];
+    $station =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id =".$_REQUEST['station'], OBJECT)[0];
+    $destination =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id =".$_REQUEST['destination'], OBJECT)[0];
+    $direction = $_REQUEST['direction'];
+    $deptime = $_REQUEST['deptime'];
+
+    $bookings = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_bookings.*, {$wpdb->prefix}railtimetable_stations.name ".
+        "FROM {$wpdb->prefix}wc_railticket_bookings ".
+        "LEFT JOIN {$wpdb->prefix}railtimetable_stations ON ".
+        "{$wpdb->prefix}railtimetable_stations.id = {$wpdb->prefix}wc_railticket_bookings.tostation ".
+        "WHERE date='".$dateofjourney."' AND ".
+        "time = '".$deptime."' AND fromstation = ".$station->id." AND direction = '".$direction."' ");
+
+    $seats = 0;
+    foreach ($bookings as $booking) {
+        $seats += $booking->seats;
+    }
+
+    $tk = new TicketBuilder($dateofjourney, $station->id, $destination->id, $deptime, false, 'single', false, false, false, false, false);
+    $basebays = $tk->get_service_inventory($deptime, $station->id, $destination->id, true);
+    $capused = $tk->get_service_inventory($deptime, $station->id, $destination->id);
+
+    echo "<div class='railticket_editdate'><h3>Service summary</h3><table border='1'>".
+        "<tr><th>Station</th><th>".$station->name."</th></tr>".
+        "<tr><th>Destination</th><th>".$destination->name."</th></tr>".
+        "<tr><th>Date</td><th>".$dateofjourney."</th></tr>".
+        "<tr><th>Time</td><th>".$deptime."</th></tr>".
+        "<tr><th>Direction</th><th>".$direction."</th></tr>".
+        "<tr><th>Total Orders</th><th>".count($bookings)."</th></tr>".
+        "<tr><th>Seats Used</th><th>".$seats."</th></tr>".
+        "<tr><th>Seats Available</th><th>".$capused->totalseats."</th></tr>".
+        "</table></div><br />";
+
+    echo "<h3>Bay Usage (one way to destination)</h3><div class='railticket_trainbookings'>".
+        "<table border='1'><th>Bay</th><th>Total</th><th>Used</th><th>Empty</th></tr>";
+    foreach ($basebays as $bay => $space) {
+        echo "<td>".str_replace('_', ' ', $bay)."</td><td>".$space."</td><td>".
+            ($space-$capused->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
+    }
+    echo "</table></div>"
+
+    ?>
+    <br />
+    <h3>Booking summary</h3>
+    <div class='railticket_trainbookings'>
+    <table border='1'>
+        <tr>
+            <th>Order</th>
+            <th>To</th>
+            <th>Seats</th>
+            <th>Disabled</th>
+            <th>Collected</th>
+        </tr>
+    <?php
+    foreach ($bookings as $booking) {
+        echo "<tr>";
+        if ($booking->manual) {
+            echo "<td>".$booking->id." (M)</td>";
+        } else {
+            echo "<td>".$booking->wooorderid."</td>";
+        }
+        echo "<td>".$booking->name."</td>".
+            "<td>".$booking->seats."</td>";
+
+        if ($booking->priority) {
+            echo "<td>Y</td>";   
+        } else {
+            echo "<td>N</td>";  
+        }
+
+        if ($booking->collected) {
+            echo "<td>Y</td>";   
+        } else {
+            echo "<td>N</td>";  
+        }
+        
+        echo "</tr>";
+    }
+
+    ?>
+    </table>
+
+    <br />
+    </div>
+    <div class='railticket_editdate'>
+    <form action='' method='post'>
+        <input type='hidden' name='action' value='showdep' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='hidden' name='station' value='<?php echo $station->id; ?>' />
+        <input type='hidden' name='direction' value='<?php echo $direction ?>' />
+        <input type='hidden' name='deptime' value='<?php echo $deptime ?>' />
+        <input type='hidden' name='destination' value='<?php echo $destination->id ?>' />
+        <input type='submit' name='submit' value='Refresh Display' />
+    </form><br />
+    <form action='' method='post'>
+        <input type='hidden' name='filterbookings' value='showdep' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Back to Services' />
+    </form>
+    </div>
+    <?php
+}
