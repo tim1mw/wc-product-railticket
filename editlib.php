@@ -4,7 +4,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 // Hook for adding admin menus
 add_action('admin_menu', 'railticket_add_pages');
 add_action('admin_init', 'railticket_register_settings' );
-
+add_shortcode('railticket_manager', 'railticket_view_bookings');
 
 function railticket_register_settings() {
    add_option('wc_product_railticket_woocommerce_product', '');
@@ -20,10 +20,32 @@ function railticket_register_settings() {
 }
 
 function railticket_add_pages() {
-    add_menu_page('Rail Ticket', 'Rail Ticket', 'manage_options', 'railticket-top-level-handle', 'railticket_view_bookings' );
+    add_menu_page('Rail Ticket', 'Rail Ticket', 'manage_tickets', 'railticket-top-level-handle', 'railticket_view_bookings' );
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
 }
+
+function railticket_roles() {
+    // Gets the simple_role role object.
+    $role = get_role( 'administrator' );
+    // Add a new capability.
+    $role->add_cap( 'manage_tickets', true );
+
+    $role = get_role( 'shop_manager' );
+    // Add a new capability.
+    $role->add_cap( 'manage_tickets', true );
+    add_role(
+        'guard',
+        'Guard',
+        [
+            'read'         => true,
+            'manage_tickets'   => true,
+        ]
+    );
+}
+ 
+// Add simple_role capabilities, priority must be after the initial role definition.
+add_action( 'init', 'railticket_roles', 11 );
 
 function railticket_options() {
     ?>
@@ -76,9 +98,10 @@ function railticket_options() {
 
 
 function railticket_bookable_days() {
+    global $wp;
     ?>
     <h1>Heritage Railway Tickets - Set bookable dates</h1>
-    <form method='post' action=''>
+    <form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='filterbookable' />    
         <table><tr>
             <td>Select Year</td>
@@ -106,12 +129,12 @@ function railticket_bookable_days() {
 
 
 function railticket_showcalendaredit($year, $month) {
-    global $wpdb;
+    global $wpdb, $wp;
 
     $daysinmonth = intval(date("t", mktime(0, 0, 0, $month, 1, $year)));
     $timetables = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_timetables");
     ?>
-    <form method='post' action=''>
+    <form method='post' action='<?php echo railticket_get_page_url() ?>'>
     <input type='hidden' name='action' value='updatebookable' />
     <input type='hidden' name='year' value='<?php echo $year; ?>' />
     <input type='hidden' name='month' value='<?php echo $month; ?>' />
@@ -282,6 +305,11 @@ function railticket_view_bookings() {
 
 }
 
+function railticket_get_page_url() {
+    global $wp;
+    //return home_url( add_query_arg( array(), $wp->request ) )."/";
+    return '';
+}
 
 function railticket_summary_selector() {
     if (array_key_exists('dateofjourney', $_REQUEST)) {
@@ -318,7 +346,7 @@ function railticket_summary_selector() {
     <hr />
     <h2>Service Summaries</h2>
     <div class='railticket_editdate'>
-    <form method='post' action=''>
+    <form method='post' action='<?php echo railticket_get_page_url(); ?>'>
         <input type='hidden' name='action' value='filterbookings' />    
         <table><tr>
             <td>Day</td>
@@ -330,8 +358,7 @@ function railticket_summary_selector() {
             <td>Year</td>
             <td><?php echo railtimetable_getyearselect($chosenyear);?></td>
         </tr><tr>
-            <td></td>
-            <td><input type='submit' value='Show Departures' /></td>
+            <td colspan='2'><input type='submit' value='Show Departures' /></td>
         </tr></table>
     </form>
     </div>
@@ -342,17 +369,17 @@ function railticket_summary_selector() {
 }
 
 function railticket_show_order_form() {
+    global $wp;
     ?>
-    <h2>Lookup Oneline Order<h2>
+    <h2>Lookup Online Order<h2>
     <div class='railticket_editdate'>
-    <form method='post' action=''>
+    <form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='showorder' />    
         <table><tr>
             <td>Order ID</td>
             <td><input style='width:200px;' type='number' max='1000000' name='orderid' required /></td>
         </tr><tr>
-            <td></td>
-            <td><input type='submit' value='Find Booking' /></td>
+            <td colspan='2'><input type='submit' value='Find Booking' /></td>
         </tr></table>
     </form>
     </div>
@@ -424,7 +451,7 @@ function railticket_show_station_summary($dateofjourney, $station, $timetable) {
 }
 
 function railticket_show_dep_buttons($dateofjourney, $station, $timetable, $deptimes, $direction) {
-    global $wpdb;
+    global $wpdb, $wp;
     $key = $direction.'_deps';
     $alltimes = explode(',', $deptimes->$key);
 
@@ -437,7 +464,7 @@ function railticket_show_dep_buttons($dateofjourney, $station, $timetable, $dept
     echo "<div class='railticket_inlinedeplist'><ul>";
     foreach ($alltimes as $t) {
         ?>
-        <li><form method='post' action=''>
+        <li><form method='post' action='<?php echo railticket_get_page_url() ?>'>
             <input type='hidden' name='action' value='showdep' />
             <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
             <input type='hidden' name='station' value='<?php echo $station->id; ?>' />
@@ -453,7 +480,7 @@ function railticket_show_dep_buttons($dateofjourney, $station, $timetable, $dept
 }
 
 function railticket_show_departure() {
-    global $wpdb;
+    global $wpdb, $wp;
 
     $dateofjourney = $_REQUEST['dateofjourney'];
     $station =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id =".$_REQUEST['station'], OBJECT)[0];
@@ -516,7 +543,7 @@ function railticket_show_departure() {
         if ($booking->manual) {
             echo "<td>".$booking->id." (M)</td>";
         } else {
-            echo "<td><form action='' method='post'>".
+            echo "<td><form action='".home_url( $wp->request )."' method='post'>".
                 "<input type='hidden' name='action' value='showorder' />".
                 "<input type='hidden' name='orderid' value='".$booking->wooorderid."' />".
                 "<input type='submit' value='".$booking->wooorderid."' />".
@@ -551,7 +578,7 @@ function railticket_show_departure() {
     <br />
     </div>
     <div class='railticket_editdate'>
-    <form action='' method='post'>
+    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
         <input type='hidden' name='action' value='showdep' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='hidden' name='station' value='<?php echo $station->id; ?>' />
@@ -560,7 +587,7 @@ function railticket_show_departure() {
         <input type='hidden' name='destination' value='<?php echo $destination->id ?>' />
         <input type='submit' name='submit' value='Refresh Display' />
     </form><br />
-    <form action='' method='post'>
+    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
         <input type='hidden' name='filterbookings' value='showdep' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Back to Services' />

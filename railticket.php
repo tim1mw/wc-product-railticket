@@ -510,3 +510,5 @@ add_action( 'wp_ajax_nopriv_railticket_ajax', 'railticket_ajax_request');
 add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
 
 add_action( 'woocommerce_before_calculate_totals', 'railticket_custom_price_to_cart_item', 99 );
+add_filter( 'woocommerce_prevent_admin_access', '__return_false' );
+add_filter( 'woocommerce_disable_admin_bar', '__return_false' );
