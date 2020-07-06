@@ -554,7 +554,7 @@ function showCapacity(response) {
             str += "<p class='railticketwarn'>WARNING: The services you have chosen are busy, we have been unable to allocate "+
                 "you to the same type(s) of bay for the out and return trips. If you are returning on the same service that you depart on, "+
                 "you will have to change seats for the return train. "+
-                "If you are ok with this, you may continue with the selection shown, otherewise, please try an alternative service.</p>";
+                "If you are ok with this, you may continue with the selection shown, otherwise, please try an alternative service.</p>";
         }
 
         showTicketStages('addtocart', false);
