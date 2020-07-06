@@ -8,18 +8,11 @@ const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "O
 
 
 function setupTickets() {
-    var todaybutton = document.getElementById('todaybutton');
-    if (todaybutton != null) {
-        todaybutton.addEventListener('click', function () {
-            setBookingDate(today);
-        });
-    }
-
-    var tomorrowbutton = document.getElementById('tomorrowbutton');
-    if (tomorrowbutton !=null) {
-        tomorrowbutton.addEventListener('click', function () {
-            setBookingDate(tomorrow);
-        });
+    var dbuttons = document.getElementsByClassName("railticket_datebuttons");
+    for (var i = 0; i < dbuttons.length; i++) {
+        dbuttons[i].addEventListener('click', function(evt) {
+            setBookingDate(evt.target.getAttribute('data'));
+        });   
     }
 
     var fromstation = document.getElementsByClassName("railticket_fromstation");

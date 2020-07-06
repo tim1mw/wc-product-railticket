@@ -82,6 +82,26 @@ class TicketBuilder {
         return false;
     }
 
+    private function get_next_bookable($date, $num) {
+        global $wpdb;
+        if ($date instanceof DateTime) {
+            $date = $date->format('Y-m-d');
+        }
+
+        $sql = "SELECT {$wpdb->prefix}railtimetable_dates.* FROM {$wpdb->prefix}railtimetable_dates ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
+            "WHERE {$wpdb->prefix}railtimetable_dates.date > '".$date."' AND ".
+            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0 LIMIT ".$num;
+
+        $rec = $wpdb->get_results($sql);
+        if (count($rec) > 0) {
+            return $rec;
+        } else {
+            return false;
+        }
+    }
+
     private function get_bookable_record($date) {
         global $wpdb;
         if ($date instanceof DateTime) {
@@ -823,15 +843,38 @@ class TicketBuilder {
         $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3></div>".
             "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
 
-        $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>";
+        $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>".
+            "<p class='railticket_help'>Choose a date from the calendar above, or use the buttons below</p>";
+        $toshow = 6;
+        $act = false;
         if ($this->today->format('H') < 19 && $this->is_date_bookable($this->today)) { 
-             $str .= "<input type='button' value='Travel Today' id='todaybutton' title='Click to travel today' class='railticket_datebuttons' />&nbsp;";
+             $str .= "<input type='button' value='Today: ".$this->today->format('j-M-Y')."' id='todaybutton' title='Click to travel today' ".
+                 "class='railticket_datebuttons'  data='".$this->tomorrow->format("Y-m-d")."' />&nbsp;";
+             $toshow--;
+             $act = !$act;
         }
 
         if ($this->is_date_bookable($this->tomorrow)) {
-            $str .= "<input type='button' value='Travel Tomorrow' id='tomorrowbutton' title='Click to travel tomorrow' ".
-                "class='railticket_datebuttons' />";
+            $str .= "<input type='button' value='Tomorrow: ".$this->tomorrow->format('j-M-Y')."' id='tomorrowbutton' title='Click to travel tomorrow' ".
+                "class='railticket_datebuttons' data='".$this->tomorrow->format("Y-m-d")."' />";
+            $toshow--;
+            $act = !$act;
         }
+
+        $nexttrains = $this->get_next_bookable($this->today, $toshow);
+
+        foreach ($nexttrains as $t) {
+            $date = DateTime::createFromFormat("Y-m-d", $t->date);
+            $str .= "<input type='button' value='".$date->format('j-M-Y')."' title='Click to travel tomorrow' ".
+                "class='railticket_datebuttons' data='".$date->format("Y-m-d")."' />";
+            if ($act == false) {
+                $str .= '&nbsp;';
+            } else {
+                $str .= '<br />';
+            }
+            $act = !$act;
+        }
+
         $str .= "</form></div>".
             "<div id='datechosen' class='railticket_container'>Tap or click a date to choose</div>".
             "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' />".
