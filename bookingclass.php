@@ -847,9 +847,10 @@ class TicketBuilder {
             "<p class='railticket_help'>Choose a date from the calendar above, or use the buttons below</p>";
         $toshow = 6;
         $act = false;
-        if ($this->today->format('H') < 19 && $this->is_date_bookable($this->today)) { 
+
+        if (intval($this->now->format('G')) < 19 && $this->is_date_bookable($this->today)) { 
              $str .= "<input type='button' value='Today: ".$this->today->format('j-M-Y')."' id='todaybutton' title='Click to travel today' ".
-                 "class='railticket_datebuttons'  data='".$this->tomorrow->format("Y-m-d")."' />&nbsp;";
+                 "class='railticket_datebuttons'  data='".$this->tomorrow->format("Y-m-d")."' />&nbsp";
              $toshow--;
              $act = !$act;
         }
@@ -857,6 +858,11 @@ class TicketBuilder {
         if ($this->is_date_bookable($this->tomorrow)) {
             $str .= "<input type='button' value='Tomorrow: ".$this->tomorrow->format('j-M-Y')."' id='tomorrowbutton' title='Click to travel tomorrow' ".
                 "class='railticket_datebuttons' data='".$this->tomorrow->format("Y-m-d")."' />";
+            if ($act == false) {
+                $str .= '&nbsp;';
+            } else {
+                $str .= '<br />';
+            }
             $toshow--;
             $act = !$act;
         }
