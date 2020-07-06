@@ -395,6 +395,23 @@ class TicketBuilder {
             }
         }
 
+        $allocatedbays->match = true;
+        if ($journeytype == 'return') {
+            ksort($allocatedbays->outbays);
+            ksort($allocatedbays->retbays);
+
+            foreach ($allocatedbays->outbays as $bay => $num) {
+                if (!array_key_exists($bay, $allocatedbays->retbays)) {
+                    $allocatedbays->match = false;
+                    break;
+                }
+                if ($allocatedbays->retbays[$bay] != $num) {
+                    $allocatedbays->match = false;
+                    break;
+                }
+            }
+        }
+
         return $allocatedbays;
     }
 
