@@ -144,7 +144,7 @@ function railticket_showcalendaredit($year, $month) {
     <input type='hidden' name='year' value='<?php echo $year; ?>' />
     <input type='hidden' name='month' value='<?php echo $month; ?>' />
     <table border="1">
-    <tr><th>Day</th><th>Date</th><th>Timetable</th><th>Bookable</th><th>Sell Reserve</th><th>Sold Out</th><th>Formation</th></tr>
+    <tr><th>Day</th><th>Date</th><th>Timetable</th><th>Bookable</th><th>Sold Out</th><th>Formation</th><th>Sell Reserve</th><th>Reserve</th></tr>
     <?php
     $ids = array();
     for ($day = 1; $day < $daysinmonth + 1; $day++) {
@@ -180,11 +180,6 @@ function railticket_showcalendaredit($year, $month) {
                 echo "checked ";
             }
             echo "/><td>";
-            echo "<input type='checkbox' value='1' name='reserve_".$ct->id."' ";
-            if ($bk[0]->sellreserve == 1) {
-                echo "checked ";
-            }
-            echo "/><td>";
             echo "<input type='checkbox' value='1' name='soldout_".$ct->id."' ";
             if ($bk[0]->soldout == 1) {
                 echo "checked ";
@@ -197,6 +192,22 @@ function railticket_showcalendaredit($year, $month) {
             foreach ($coachset as $c => $v) {
                 echo $v."x ".$c.", ";
             }
+            echo "</td><td>";
+            echo "<input type='checkbox' value='1' name='reserve_".$ct->id."' ";
+            if ($bk[0]->sellreserve == 1) {
+                echo "checked ";
+            }
+            echo "/><td>";
+            if (strlen($bk[0]->reserve) > 0) {
+                $reserve = (array) json_decode($bk[0]->reserve);
+                foreach ($reserve as $i => $num) {
+                    if ($num > 0) {
+                        echo $i." x".$num.", ";
+                    }
+                }
+            }
+
+            echo "</td>";
         }
 
         echo "</td></tr>\n";
