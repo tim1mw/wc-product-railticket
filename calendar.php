@@ -18,6 +18,13 @@ class TicketCalendar
      */
     private $date;
 
+    public function __construct() {
+        $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
+        $this->today = new DateTime();
+        $this->today->setTime(0,0,0);
+        $this->today->setTimezone($this->railticket_timezone);
+    }
+
     /**
      * Find the timetable from the database
      * @param  DateTime $date The date to match a timetable for.
@@ -31,7 +38,8 @@ class TicketCalendar
             " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
             " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date->format('Y-m-d')."'", OBJECT );
+            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date->format('Y-m-d')."' ".
+            "AND {$wpdb->prefix}railtimetable_dates.date >= '".$this->today->format('Y-m-d')."'", OBJECT );
 
         if (array_key_exists(0, $found_events)) {
             return $found_events[0];
