@@ -119,8 +119,12 @@ class TicketCalendar
             if ($timetable) {
                 $timetabledate = new DateTime($timetable->date);
                 if ($timetabledate > $yesterday) {
-                    if ($timetable->bookable && !$timetable->soldout) {
-                        $style .= "background:#".$timetable->background.";color:#".$timetable->colour.";";
+                    if ($timetable->bookable) {
+                        if ($timetable->soldout) {
+                            $style .= "background:#".$timetable->background.";color:#".$timetable->colour.";font-weight:bold;";
+                        } else {
+                            $style .= "background:#".$timetable->background.";color:#".$timetable->colour.";";
+                        }
                     } else {
                         $style .= "opacity:0.4;background:#".$timetable->background.";color:#".$timetable->colour.";";
                     }
@@ -149,16 +153,16 @@ class TicketCalendar
             if ($timetable) {
                 if ($timetable->bookable) {
                     if ($timetable->soldout) {
-                        $calendar .= "<a style='".$style."'  href=\"javascript:soldOut('".$running_day->format("Y-m-d")."');\">";
-                        $calendar .= $running_day->format('j');
+                        $calendar .= "<a style='".$style."' title='Sold Out' href=\"javascript:soldOut('".$running_day->format("Y-m-d")."');\">";
+                        $calendar .= 'X';
                         $calendar .= '</a>';
                     } else {
-                        $calendar .= "<a style='".$style."'  href=\"javascript:setBookingDate('".$running_day->format("Y-m-d")."');\">";
+                        $calendar .= "<a style='".$style."'title='Click to select this date' href=\"javascript:setBookingDate('".$running_day->format("Y-m-d")."');\">";
                         $calendar .= $running_day->format('j');
                         $calendar .= '</a>';
                     }
                 } else {
-                    $calendar .= "<a style='".$style."'  href=\"javascript:notBookable('".$running_day->format("Y-m-d")."');\">";
+                    $calendar .= "<a style='".$style."' title='Not available to book on line' href=\"javascript:notBookable('".$running_day->format("Y-m-d")."');\">";
                     $calendar .= $running_day->format('j');
                     $calendar .= '</a>';
                 }

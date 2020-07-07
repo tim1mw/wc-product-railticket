@@ -853,7 +853,7 @@ class TicketBuilder {
             "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
 
         $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>".
-            "<p class='railticket_help'>Choose a date from the calendar above, or use the buttons below</p>";
+            "<p class='railticket_help'>Choose a date from the calendar above, or use the buttons below.<br />Dates marked with an X are sold out.</p>";
         $toshow = 6;
         $act = false;
 
@@ -880,7 +880,7 @@ class TicketBuilder {
 
         foreach ($nexttrains as $t) {
             $date = DateTime::createFromFormat("Y-m-d", $t->date);
-            $str .= "<input type='button' value='".$date->format('j-M-Y')."' title='Click to travel tomorrow' ".
+            $str .= "<input type='button' value='".$date->format('j-M-Y')."' title='Click to travel on ".$date->format('j-M-Y')."' ".
                 "class='railticket_datebuttons' data='".$date->format("Y-m-d")."' />";
             if ($act == false) {
                 $str .= '&nbsp;';
