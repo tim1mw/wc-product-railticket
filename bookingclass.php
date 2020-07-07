@@ -322,8 +322,17 @@ class TicketBuilder {
             $basebays[$i] = $basebays[$i] - $booking->num;
         }
 
+        // Take out the booking reserve
+        if ($rec->sellreserve == 0 && strlen($rec->reserve) > 0) {
+            $reserve = (array) json_decode($rec->reserve);
+            foreach ($reserve as $i => $num) {
+                if (array_key_exists($i, $basebays)) {
+                    $basebays[$i] = $basebays[$i] - $num;
+                }
+            }
+        }
+
         $totalseats = 0;
-        $priorityonly = array();
         foreach ($basebays as $bay => $numleft) {
             $bayd = $this->getBayDetails($bay);
             $totalseats += $bayd[0]*$numleft;

@@ -16,6 +16,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termspage');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultreserve');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
 }
 
@@ -87,6 +88,10 @@ function railticket_options() {
             <td><textarea rows='10' cols='60' id="wc_product_railticket_defaultcoaches" name="wc_product_railticket_defaultcoaches"><?php echo get_option('wc_product_railticket_defaultcoaches'); ?></textarea></td>
         </tr>
         <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_defaultreserve">Default Reserve Capacity</label></th>
+            <td><textarea rows='10' cols='60' id="wc_product_railticket_defaultreserve" name="wc_product_railticket_defaultreserve"><?php echo get_option('wc_product_railticket_defaultreserve'); ?></textarea></td>
+        </tr>
+        <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_bookinglimits">Booking limits</label></th>
             <td><textarea rows='10' cols='60' id="wc_product_railticket_bookinglimits" name="wc_product_railticket_bookinglimits"><?php echo get_option('wc_product_railticket_bookinglimits'); ?></textarea></td>
         </tr>
@@ -139,7 +144,7 @@ function railticket_showcalendaredit($year, $month) {
     <input type='hidden' name='year' value='<?php echo $year; ?>' />
     <input type='hidden' name='month' value='<?php echo $month; ?>' />
     <table border="1">
-    <tr><th>Day</th><th>Date</th><th>Timetable</th><th>Bookable</th><th>Formation</th></tr>
+    <tr><th>Day</th><th>Date</th><th>Timetable</th><th>Bookable</th><th>Sell Reserve</th><th>Sold Out</th><th>Formation</th></tr>
     <?php
     $ids = array();
     for ($day = 1; $day < $daysinmonth + 1; $day++) {
@@ -175,6 +180,17 @@ function railticket_showcalendaredit($year, $month) {
                 echo "checked ";
             }
             echo "/><td>";
+            echo "<input type='checkbox' value='1' name='reserve_".$ct->id."' ";
+            if ($bk[0]->sellreserve == 1) {
+                echo "checked ";
+            }
+            echo "/><td>";
+            echo "<input type='checkbox' value='1' name='soldout_".$ct->id."' ";
+            if ($bk[0]->soldout == 1) {
+                echo "checked ";
+            }
+            echo "/><td>";
+
             $comp = json_decode($bk[0]->composition);
 
             $coachset = (array) $comp->coachset;
@@ -182,6 +198,7 @@ function railticket_showcalendaredit($year, $month) {
                 echo $v."x ".$c.", ";
             }
         }
+
         echo "</td></tr>\n";
         $ids[] = $ct->id;
     }
@@ -207,10 +224,22 @@ function railticket_updatebookable() {
         }
         $bk = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable WHERE dateid = ".$id);
 
+        if (array_key_exists("reserve_".$id, $_POST) && $_POST["reserve_".$id] == '1') {
+            $reserve = 1;
+        } else {
+            $reserve = 0;
+        }
+
+        if (array_key_exists("soldout_".$id, $_POST) && $_POST["soldout_".$id] == '1') {
+            $soldout = 1;
+        } else {
+            $soldout = 0;
+        }
+
         if (count($bk) > 0) {
             $bays = railticket_process_bays($bk[0]->composition);
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable",
-                array('bookable' => $bookable, 'bays' => $bays),
+                array('bookable' => $bookable, 'bays' => $bays, 'sellreserve' => $reserve, 'soldout' => $soldout),
                 array('dateid' => $bk[0]->dateid));
         } else {
             if ($bookable) {
@@ -227,7 +256,9 @@ function railticket_updatebookable() {
                     'bookable' => 1,
                     'soldout' => 0,
                     'override' => randomString(),
-                    'sameservicereturn' => $ssr
+                    'sameservicereturn' => $ssr,
+                    'reserve' => get_option('wc_product_railticket_defaultreserve'),
+                    'sellreserve' => 0
                 );
                 $wpdb->insert("{$wpdb->prefix}wc_railticket_bookable", $data);
             }
@@ -293,6 +324,9 @@ function railticket_view_bookings() {
                 break;
             case 'showdep':
                 railticket_show_departure();
+                break;
+            case 'createmanual':
+                railticket_create_manual();
                 break;
             case 'filterbookings':
             default:
@@ -588,9 +622,18 @@ function railticket_show_departure() {
         <input type='submit' name='submit' value='Refresh Display' />
     </form><br />
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
-        <input type='hidden' name='filterbookings' value='showdep' />
+        <input type='hidden' name='action' value='showdep' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Back to Services' />
+    </form><br />
+    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+        <input type='hidden' name='action' value='createmanual' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='hidden' name='station' value='<?php echo $station->id; ?>' />
+        <input type='hidden' name='direction' value='<?php echo $direction ?>' />
+        <input type='hidden' name='deptime' value='<?php echo $deptime ?>' />
+        <input type='hidden' name='destination' value='<?php echo $destination->id ?>' />
+        <input type='submit' name='submit' value='Add Manual Booking' />
     </form>
     </div>
     <?php
@@ -695,4 +738,8 @@ function railticket_show_bays($bookingid, $fromstation, $jt) {
     }
     $fb = substr($fb, 0, strlen($fb)-2);
     echo "<tr><th>".$jt."</th><td class='railticket_meta'>".$fb."</td></tr>";
+}
+
+function railticket_create_manual() {
+
 }
