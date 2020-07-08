@@ -25,10 +25,23 @@ function setupTickets() {
     // Add listeners for all the stuff in the main form
     railTicketAddListener('validateOverrideIn', 'click', validateOverride);
     railTicketAddListener('confirmchoices', 'click', checkCapacity);
-    railTicketAddListener('termsinput', 'click', termsClicked);
-    railTicketAddListener('addticketstocart', 'click', cartTickets);
 
-    showTicketStages('date', true);
+    if (guard) {
+        railTicketAddListener('createbooking', 'click', cartTickets);
+    } else {
+        railTicketAddListener('termsinput', 'click', termsClicked);
+        railTicketAddListener('addticketstocart', 'click', cartTickets);
+    }
+    if (guard) {
+        overridevalid = 1;
+        var odiv = document.getElementById('overridevalid');
+        odiv.innerHTML='<p>Guard options unlocked</p>';
+    }
+    if (a_dateofjourney !== false) {
+        setBookingDate(a_dateofjourney);
+    } else {
+        showTicketStages('date', true);
+    }
 }
 
 function railTicketAddListener(id, type, func) {
@@ -512,7 +525,7 @@ function checkCapacity() {
 function showCapacity(response) {
     var capacitydiv = document.getElementById('ticket_capacity');
     var str = "<div class='railticket_travellers_table_container' >";
-    if (response.ok) {
+    if (response.ok || guard) {
         str = "Socially distanced seating bay(s) are available for your journey:<br /><table class='railticket_travellers_table'><tr><td>Outbound</td><td>";
         for (i in response.outbays) {
             var desc = i.split('_');
@@ -620,7 +633,11 @@ function termsClicked() {
 function cartTickets() {
     railTicketAjax('purchase', false, function(response) {
         if (response.ok) {
-            window.location.replace('/basket');
+            if (guard) {
+                window.location.replace('/wp-admin/admin.php?page=railticket-top-level-handle');
+            } else {
+                window.location.replace('/basket');
+            }
         } else {
             var errordiv = document.getElementById('railticket_error');
             if (response.duplicate) {

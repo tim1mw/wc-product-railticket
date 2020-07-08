@@ -546,8 +546,8 @@ function railticket_show_departure() {
     }
 
     $tk = new TicketBuilder($dateofjourney, $station->id, $destination->id, $deptime, false, 'single', false, false, false, false, false);
-    $basebays = $tk->get_service_inventory($deptime, $station->id, $destination->id, true);
-    $capused = $tk->get_service_inventory($deptime, $station->id, $destination->id);
+    $basebays = $tk->get_service_inventory($deptime, $station->id, $destination->id, true, true);
+    $capused = $tk->get_service_inventory($deptime, $station->id, $destination->id, false, true);
 
     echo "<div class='railticket_editdate'><h3>Service summary</h3><table border='1'>".
         "<tr><th>Station</th><th>".$station->name."</th></tr>".
@@ -637,13 +637,13 @@ function railticket_show_departure() {
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Back to Services' />
     </form><br />
-    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+    <form action='/book/' method='post'>
         <input type='hidden' name='action' value='createmanual' />
-        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='hidden' name='station' value='<?php echo $station->id; ?>' />
-        <input type='hidden' name='direction' value='<?php echo $direction ?>' />
-        <input type='hidden' name='deptime' value='<?php echo $deptime ?>' />
-        <input type='hidden' name='destination' value='<?php echo $destination->id ?>' />
+        <input type='hidden' name='a_dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='hidden' name='a_station' value='<?php echo $station->id; ?>' />
+        <input type='hidden' name='a_direction' value='<?php echo $direction ?>' />
+        <input type='hidden' name='a_deptime' value='<?php echo $deptime ?>' />
+        <input type='hidden' name='a_destination' value='<?php echo $destination->id ?>' />
         <input type='submit' name='submit' value='Add Manual Booking' />
     </form>
     </div>
@@ -751,6 +751,56 @@ function railticket_show_bays($bookingid, $fromstation, $jt) {
     echo "<tr><th>".$jt."</th><td class='railticket_meta'>".$fb."</td></tr>";
 }
 
-function railticket_create_manual() {
+function railticket_create_manualold() {
+   $tkt = new TicketBuilder();
+   echo $tkt->render();
+}
 
+function railticket_create_manual($id = false) {
+    global $wpdb;
+    $dateofjourney = $_POST['dateofjourney'];
+    $station = $_POST['station'];
+    $deptime = $_POST['deptime'];
+    $direction = $_POST['direction'];
+    $destination = $_POST['destination'];
+    
+    if ($id !== false) {
+        $rec = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id=".$id)[0];
+    } else {
+        $rec = new stdclass();
+        $rec->id = false;
+        $rec->journeytype = 'return';
+        $rec->bookingout = false;
+        $rec->bookingret = false;
+        $rec->price = false;
+        $rec->seats = false;
+        $rec->travellers = "{}";
+        $rec->tickets = "{}";
+        $rec->notes = "";
+    }
+    ?>
+    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+    <input type='hidden' name='action' value='savemanual' />
+    <p>Date of Journey: <?php echo $dateofjourney; ?></p>
+    <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+    <p>Departure station: 
+    <?php
+    $stns = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ", OBJECT);
+    echo $stns[$station]->name;
+    ?>
+    </p>
+    <p>Destination station: <?php echo $stns[$destination]; ?></p>
+    <?php
+    $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
+        "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
+        " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+        "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
+        " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
+        "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$dateoftravel."'", OBJECT );
+
+    
+    ?>
+    <input type='submit' value='Create Booking' />
+    </form>
+    <?php
 }

@@ -26,12 +26,29 @@ class TicketBuilder {
         $this->journeytype = $journeytype;
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
-        $this->overridevalid = $overridevalid;
+
+        if ($this->is_guard()) {
+            $this->overridevalid = true;
+        } else {
+            $this->overridevalid = $overridevalid;
+        }
         if ($disabledrequest == 'true') {
             $this->disabledrequest = true;
         } else {
             $this->disabledrequest = false;
         }
+    }
+
+    private function is_guard() {
+        if( is_user_logged_in() ) {
+            $user = wp_get_current_user();
+            $roles = ( array ) $user->roles;
+            if (in_array('guard', $roles) || in_array('administrator', $roles)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function render() {
@@ -288,7 +305,7 @@ class TicketBuilder {
         return $tickets;
     }
 
-    public function get_service_inventory($time, $fromstation, $tostation, $baseonly = false) {
+    public function get_service_inventory($time, $fromstation, $tostation, $baseonly = false, $noreserve = false) {
         global $wpdb;
         $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
@@ -323,7 +340,7 @@ class TicketBuilder {
         }
 
         // Take out the booking reserve
-        if ($rec->sellreserve == 0 && strlen($rec->reserve) > 0) {
+        if ($noreserve == false && $rec->sellreserve == 0 && strlen($rec->reserve) > 0) {
             $reserve = (array) json_decode($rec->reserve);
             foreach ($reserve as $i => $num) {
                 if (array_key_exists($i, $basebays)) {
@@ -363,7 +380,7 @@ class TicketBuilder {
 
         $seatsreq = $this->count_seats();
 
-        $outbays = $this->get_service_inventory($outtime, $fromstation, $this->tostation);
+        $outbays = $this->get_service_inventory($outtime, $fromstation, $this->tostation, false, $this->is_guard());
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
         $allocatedbays->outseatsleft = $outbays->totalseats;
         if ($outbays->totalseats < $seatsreq) {
@@ -638,31 +655,48 @@ class TicketBuilder {
             $custom_price = $mprice;
         } 
         $totalseats = $this->count_seats();
-        $data = array(
-            'fromstation' => $this->fromstation,
-            'tostation' => $this->tostation,
-            'outtime' => $this->outtime,
-            'outbays' => $outbays,
-            'rettime' => $this->rettime,
-            'retbays' => $retbays,
-            'dateoftravel' => $this->dateoftravel,
-            'journeytype' => $this->journeytype,
-            'totalseats' => $totalseats,
-            'pricesupplement' => $supplement
-        );
 
-        $cart_item_data = array('custom_price' => $custom_price, 'ticketselections' => $this->ticketselections,
-            'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data);
 
-        $bridge_product = get_option('wc_product_railticket_woocommerce_product');
-        $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
-        $woocommerce->cart->calculate_totals();
-        $woocommerce->cart->set_session();
-        $woocommerce->cart->maybe_set_cart_cookies();
+        if ($this->is_guard()) {
+            $data = array(
+                'journeytype' => $this->journeytype,
+                'price' => $custom_price,
+                'seats' => $totalseats,
+                'travellers' => json_encode($this->ticketselections),
+                'tickets' => json_encode($this->ticketsallocated)
+            );
+            $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
+            $mid = $wpdb->insert_id;
+            $this->insertBooking("", $this->outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, $mid);
+            if ($this->journeytype == 'return') {
+                $this->insertBooking("", $this->rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, $mid);
+            }
+        } else {
+            $data = array(
+                'fromstation' => $this->fromstation,
+                'tostation' => $this->tostation,
+                'outtime' => $this->outtime,
+                'outbays' => $outbays,
+                'rettime' => $this->rettime,
+                'retbays' => $retbays,
+                'dateoftravel' => $this->dateoftravel,
+                'journeytype' => $this->journeytype,
+                'totalseats' => $totalseats,
+                'pricesupplement' => $supplement
+            );
+            $cart_item_data = array('custom_price' => $custom_price, 'ticketselections' => $this->ticketselections,
+                'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data);
 
-        $this->insertBooking($itemkey, $this->outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays);
-        if ($this->journeytype == 'return') {
-            $this->insertBooking($itemkey, $this->rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays);
+            $bridge_product = get_option('wc_product_railticket_woocommerce_product');
+            $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
+            $woocommerce->cart->calculate_totals();
+            $woocommerce->cart->set_session();
+            $woocommerce->cart->maybe_set_cart_cookies();
+
+            $this->insertBooking($itemkey, $this->outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, 0);
+            if ($this->journeytype == 'return') {
+                $this->insertBooking($itemkey, $this->rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, 0);
+            }
         }
         $purchase->ok = true;
 
@@ -685,7 +719,7 @@ class TicketBuilder {
         }
     }
 */
-    private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays) {
+    private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays, $manual) {
         global $wpdb;
         // TODO originstation and origintime reflect the station this train originally started from. Right now
         // with end to end bookings only this will always be the same as fromstation and time. Needs to be set properly
@@ -711,11 +745,13 @@ class TicketBuilder {
             'originstation' => $fromstation,
             'origintime' => $time,
             'created' => time(),
-            'expiring' => 0
+            'expiring' => 0,
+            'manual' => $manual
         );
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
-        $id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".
-            " fromstation = '".$fromstation."' AND tostation = '".$tostation."'");
+        //$id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".
+        //    " fromstation = '".$fromstation."' AND tostation = '".$tostation."'");
+        $id = $wpdb->insert_id;
         foreach ($allocatedbays->outbays as $bay => $num) {
             $bayd = $this->getBayDetails($bay);
             if ($bayd[1] == 'priority') {
@@ -811,13 +847,28 @@ class TicketBuilder {
             $sameservicereturn = 'true';
         }
 
-        return "\n<script type='text/javascript'>\n".
+        $str = "\n<script type='text/javascript'>\n".
             "var ajaxurl = '".admin_url( 'admin-ajax.php', 'relative' )."';\n".
             "var today = '".$this->today->format('Y-m-d')."'\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
-            "var dateFormat = '".get_option('railtimetable_date_format')."';".
-            "</script>";
+            "var dateFormat = '".get_option('railtimetable_date_format')."';";
+
+        if (array_key_exists('a_dateofjourney', $_POST)) {
+            $str .= 'var a_dateofjourney = "'.$_POST['a_dateofjourney'].'";';
+        } else {
+            $str .= 'var a_dateofjourney = false;';
+        }
+
+        if ($this->is_guard()) {
+            $str .= 'var guard=true;';
+        } else {
+            $str .= 'var guard=false;';
+        }
+
+        $str .= "</script>";
+
+        return $str;
     }
 
     private function get_datepick() {
@@ -967,13 +1018,19 @@ class TicketBuilder {
         $str = "<div id='addtocart' class='railticket_stageblock'>".
             "<input type='hidden' name='ticketselections' />".
             "<input type='hidden' name='ticketallocations' />".
-            "<div class='railticket_container'>".
-            "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
-            "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
-            "<p class='railticket_terms'>Your tickets will be reserved for ".get_option('wc_product_railticket_reservetime')." minutes after you click add to cart.".
-            " Please complete your purchases within that time.</p>".
-            "<p><input type='button' value='Add To Cart' id='addticketstocart' /></p></div>".
-            "</div>";
+            "<div class='railticket_container'>";
+
+        if ($this->is_guard()) {
+            $str .= "<p><input type='button' value='Create Booking' id='createbooking' /></p>";
+        } else {
+            $str .= "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
+                "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
+                "<p class='railticket_terms'>Your tickets will be reserved for ".get_option('wc_product_railticket_reservetime')." minutes after you click add to cart.".
+                " Please complete your purchases within that time.</p>".
+                "<p><input type='button' value='Add To Cart' id='addticketstocart' /></p></div>";
+        }
+
+        $str .= "</div>";
 
         return $str;
     }
