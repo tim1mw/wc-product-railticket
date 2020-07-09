@@ -748,6 +748,10 @@ class TicketBuilder {
             'expiring' => 0,
             'manual' => $manual
         );
+        if ($manual) {
+            $dbdata['collected'] = true;
+        }
+
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
         //$id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".
         //    " fromstation = '".$fromstation."' AND tostation = '".$tostation."'");

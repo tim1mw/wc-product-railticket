@@ -330,6 +330,8 @@ function railticket_view_bookings() {
 
     if (array_key_exists('action', $_REQUEST)) {
         switch($_REQUEST['action']) {
+            case 'collected':
+                railticket_mark_collected();
             case 'showorder':
                 railticket_show_order();
                 break;
@@ -588,7 +590,7 @@ function railticket_show_departure() {
         if ($booking->manual) {
             echo "<td>".$booking->id." (M)</td>";
         } else {
-            echo "<td><form action='".home_url( $wp->request )."' method='post'>".
+            echo "<td><form action='".railticket_get_page_url()."' method='post'>".
                 "<input type='hidden' name='action' value='showorder' />".
                 "<input type='hidden' name='orderid' value='".$booking->wooorderid."' />".
                 "<input type='submit' value='".$booking->wooorderid."' />".
@@ -611,7 +613,7 @@ function railticket_show_departure() {
         if ($booking->collected) {
             echo "<td>Y</td>";   
         } else {
-            echo "<td>N</td>";  
+            echo "<td>N</td>";
         }
         
         echo "</tr>";
@@ -633,7 +635,7 @@ function railticket_show_departure() {
         <input type='submit' name='submit' value='Refresh Display' />
     </form><br />
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
-        <input type='hidden' name='action' value='showdep' />
+        <input type='hidden' name='action' value='filterbookings' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Back to Services' />
     </form><br />
@@ -648,6 +650,15 @@ function railticket_show_departure() {
     </form>
     </div>
     <?php
+}
+
+
+function railticket_mark_collected() {
+    global $wpdb;
+    $orderid = $_POST['orderid'];
+    $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
+                array('collected' => true),
+                array('wooorderid' => $orderid));
 }
 
 
@@ -712,26 +723,35 @@ function railticket_show_order() {
                 $tostation = $meta->value;
                 break;
             case 'tickettimes-journeytype':
-                $journeytype = 'return';
+                $journeytype = $meta->value;
                 break;
         }
         echo "<tr><th>".$meta->display_key."</th><td class='railticket_meta'>".strip_tags($meta->display_value)."</td></tr>";
     }
     $booking = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = ".$_POST['orderid'].
-        " AND fromstation = ".$fromstation)[0];
-    railticket_show_bays($booking->id, $fromstation, 'Outbound bays');
+        " AND fromstation = ".$fromstation);
+    railticket_show_bays($booking[0]->id, $fromstation, 'Outbound bays');
     if ($journeytype == 'return') {
-        railticket_show_bays($booking->id, $tostation, 'Return bays');
+        $rbooking = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = ".$_POST['orderid'].
+            " AND fromstation = ".$tostation);
+        railticket_show_bays($rbooking[0]->id, $tostation, 'Return bays');
     }
     echo "<tr><th>Collected</th><td class='railticket_meta'>";
-    if ($booking->collected) {
+    if ($booking[0]->collected) {
         echo "Yes";
     } else {
         echo "No";
     }
-    echo "</td></tr>";
+    echo "</td></tr></table>";
+
+    if (!$booking[0]->collected) {
+        echo "<form action='".railticket_get_page_url()."' method='post'>".
+            "<input type='hidden' name='action' value='collected' />".
+            "<input type='hidden' name='orderid' value='".$_POST['orderid']."' />".
+            "<input type='submit' value='Mark Collected' />".
+            "</form>";
+    }
     ?>
-    </table>
     </div>
     <?php
 }
