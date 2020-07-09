@@ -330,8 +330,12 @@ function railticket_view_bookings() {
 
     if (array_key_exists('action', $_REQUEST)) {
         switch($_REQUEST['action']) {
+            case 'cancelcollected';
+                railticket_mark_collected(false);
+                railticket_show_order();
+                break;
             case 'collected':
-                railticket_mark_collected();
+                railticket_mark_collected(true);
             case 'showorder':
                 railticket_show_order();
                 break;
@@ -653,11 +657,11 @@ function railticket_show_departure() {
 }
 
 
-function railticket_mark_collected() {
+function railticket_mark_collected($val) {
     global $wpdb;
     $orderid = $_POST['orderid'];
     $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-                array('collected' => true),
+                array('collected' => $val),
                 array('wooorderid' => $orderid));
 }
 
@@ -749,6 +753,12 @@ function railticket_show_order() {
             "<input type='hidden' name='action' value='collected' />".
             "<input type='hidden' name='orderid' value='".$_POST['orderid']."' />".
             "<input type='submit' value='Mark Collected' />".
+            "</form>";
+    } else {
+        echo "<form action='".railticket_get_page_url()."' method='post'>".
+            "<input type='hidden' name='action' value='cancelcollected' />".
+            "<input type='hidden' name='orderid' value='".$_POST['orderid']."' />".
+            "<input type='submit' value='Cancel Collected' />".
             "</form>";
     }
     ?>
