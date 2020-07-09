@@ -11,8 +11,8 @@ class TicketBuilder {
         $this->now = new DateTime();
         $this->now->setTimezone($this->railticket_timezone);
         $this->today = new DateTime();
-        $this->today->setTime(0,0,0);
         $this->today->setTimezone($this->railticket_timezone);
+        $this->today->setTime(0,0,0);
         $this->tomorrow = new DateTime();
         $this->tomorrow->setTimezone($this->railticket_timezone);
         $this->tomorrow->modify('+1 day');
@@ -108,7 +108,7 @@ class TicketBuilder {
         $sql = "SELECT {$wpdb->prefix}railtimetable_dates.* FROM {$wpdb->prefix}railtimetable_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
             " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date > '".$date."' AND ".
+            "WHERE {$wpdb->prefix}railtimetable_dates.date >= '".$date."' AND ".
             "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0 LIMIT ".$num;
 
         $rec = $wpdb->get_results($sql);
@@ -911,7 +911,7 @@ class TicketBuilder {
             "<p class='railticket_help'>Choose a date from the calendar above, or use the buttons below.<br />Dates marked with an X are sold out.</p>";
         $toshow = 6;
         $act = false;
-
+/*
         if (intval($this->now->format('G')) < 19 && $this->is_date_bookable($this->today)) { 
              $str .= "<input type='button' value='Today: ".$this->today->format('j-M-Y')."' id='todaybutton' title='Click to travel today' ".
                  "class='railticket_datebuttons'  data='".$this->tomorrow->format("Y-m-d")."' />&nbsp";
@@ -930,7 +930,7 @@ class TicketBuilder {
             $toshow--;
             $act = !$act;
         }
-
+*/
         $nexttrains = $this->get_next_bookable($this->today, $toshow);
 
         foreach ($nexttrains as $t) {
