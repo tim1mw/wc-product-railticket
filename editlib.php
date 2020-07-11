@@ -859,59 +859,18 @@ function railticket_get_waybill() {
     $f = fopen('php://output', 'w');
     fputcsv($f, array('Journey', 'Journey Type', 'Ticket Type', 'Number', 'Fare', 'Total'));
 
-    //$prices = $wpdb->get_results("SELECT * {$wpdb->prefix}railtimetable_prices ORDER BY stationone ASC, journeytype ASC, price DESC");
-    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$date."'");
+    $totalsdata = railticket_get_waybill_data($date);
+
     $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
-    $stns = array();
+    $stn = array();
     foreach ($stations as $station) {
         $stn[$station->id] = $station->name;
     }
-    $processed = array();
-    $totals = array();
-    foreach ($bookings as $booking) {
-        if ($booking->wooorderid > 0 && !in_array($booking->wooorderid, $processed)) {
-            //$order_item = railticket_get_ticket_item($order);
-            $data_store = WC_Data_Store::load( 'order-item' );
-            //$ticketselections = $data_store->get_metadata($booking->wooorderitem, "ticketselections", true);
-            //$ticketsallocated = $data_store->get_metadata($booking->wooorderitem, "ticketsallocated", true);
-            $totalseats = $data_store->get_metadata($booking->wooorderitem, "ticketsallocated", true);
-            $journeytype = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
-
-            $ticketsallocated = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id = ".$booking->wooorderitem.
-                " AND meta_key LIKE 'ticketsallocated-%'");
-
-            //$ticketselections = json_decode($ticketselections);
-            //$ticketsallocated = (array) json_decode($ticketsallocated);
-
-            if (!array_key_exists($booking->fromstation, $totals)) {
-                $totals[$booking->fromstation] = array();
-            }
-            if (!array_key_exists($booking->tostation, $totals[$booking->fromstation])) {
-                $totals[$booking->fromstation][$booking->tostation] = array();
-            }
-            if (!array_key_exists($journeytype, $totals[$booking->fromstation][$booking->tostation])) {
-                $totals[$booking->fromstation][$booking->tostation][$journeytype] = array();
-            }
-            foreach ($ticketsallocated as $ticket) {
-                $tparts = explode('-', $ticket->meta_key);
-                if (!array_key_exists($tparts[1], $totals[$booking->fromstation][$booking->tostation][$journeytype])) {
-                    $totals[$booking->fromstation][$booking->tostation][$journeytype][$tparts[1]] = intval($ticket->meta_value);
-                } else {
-                    $totals[$booking->fromstation][$booking->tostation][$journeytype][$tparts[1]] += intval($ticket->meta_value);
-                }
-            }
-            $processed[] = $booking->wooorderid;
-            continue;
-        }
-        if ($booking->manual > 0 && !in_array($booking->wooorderid, $processed)) {
-
-        }
-    }
-
-
-    foreach ($totals as $stationone => $dataone) {
+    $revenue = 0;
+    foreach ($totalsdata->totals as $stationone => $dataone) {
         foreach ($dataone as $stationtwo => $datatwo) {
             foreach ($datatwo as $journeytype => $datathree) {
+                ksort($datathree);
                 foreach ($datathree as $tickettype => $qty) {
 
                     $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
@@ -934,11 +893,77 @@ function railticket_get_waybill() {
                         $ticketdata[0]->price,
                         $qty*$ticketdata[0]->price
                     );
+
+                    $revenue += $qty*$ticketdata[0]->price;
                     fputcsv($f, $line);
                 }
             }
         }
     }
+    fputcsv($f,array());
+    fputcsv($f, array('Total Passengers', $totalsdata->totalseats));
+    fputcsv($f, array('Total Tickets', $totalsdata->totaltickets));
+    fputcsv($f, array('Total Revenue', $revenue));
     fclose($f);
 }
 
+function railticket_get_waybill_data($date) {
+    global $wpdb;
+
+    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$date."'");
+
+    $processed = array();
+    $totals = array();
+    $totalseats = 0;
+    $totaltickets = 0;
+    foreach ($bookings as $booking) {
+        if ($booking->wooorderid > 0 && !in_array($booking->wooorderid, $processed)) {
+            $data_store = WC_Data_Store::load( 'order-item' );
+            $totalseats += $data_store->get_metadata($booking->wooorderitem, "tickettimes-totalseats", true);
+            $journeytype = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
+
+            $ta = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id = ".$booking->wooorderitem.
+                " AND meta_key LIKE 'ticketsallocated-%'");
+            $ticketsallocated = array();
+            foreach ($ta as $ticket) {
+                $tparts = explode('-', $ticket->meta_key);
+                $ticketsallocated[$tparts[1]] = intval($ticket->meta_value);
+            }
+            $processed[] = $booking->wooorderid;
+        } elseif ($booking->manual > 0 && !in_array($booking->manual.'M', $processed)) {
+            $processed[] = $booking->manual.'M';
+            $mb = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$booking->manual)[0];
+            $totalseats += $mb->seats;
+            $journeytype = $mb->journeytype;
+            $ticketsallocated = (array) json_decode($mb->tickets);
+            $processed[] = $booking->manual.'M';
+        } else {
+            //Bookings should all be manual or woocommerce
+            continue;
+        }
+        if (!array_key_exists($booking->fromstation, $totals)) {
+            $totals[$booking->fromstation] = array();
+        }
+        if (!array_key_exists($booking->tostation, $totals[$booking->fromstation])) {
+            $totals[$booking->fromstation][$booking->tostation] = array();
+        }
+        if (!array_key_exists($journeytype, $totals[$booking->fromstation][$booking->tostation])) {
+            $totals[$booking->fromstation][$booking->tostation][$journeytype] = array();
+        }
+        foreach ($ticketsallocated as $ticket => $qty) {
+            $totaltickets += $qty;
+            if (!array_key_exists($ticket, $totals[$booking->fromstation][$booking->tostation][$journeytype])) {
+                $totals[$booking->fromstation][$booking->tostation][$journeytype][$ticket] = $qty;
+            } else {
+                $totals[$booking->fromstation][$booking->tostation][$journeytype][$ticket] += $qty;
+            }
+        }
+
+    }
+
+    $r = new Stdclass();
+    $r->totals = $totals;
+    $r->totalseats = $totalseats;
+    $r->totaltickets = $totaltickets;
+    return $r;
+}
