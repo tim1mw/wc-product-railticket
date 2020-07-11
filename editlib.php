@@ -960,6 +960,10 @@ function railticket_get_waybill_data($date) {
     $totalwoo = 0;
     $totalmanual = 0;
     foreach ($bookings as $booking) {
+        if (strlen($booking->woocartitem) > 0) {
+            continue;
+        }
+
         if ($booking->wooorderid > 0 && !in_array($booking->wooorderid, $processed)) {
             $data_store = WC_Data_Store::load( 'order-item' );
             $totalseats += $data_store->get_metadata($booking->wooorderitem, "tickettimes-totalseats", true);
