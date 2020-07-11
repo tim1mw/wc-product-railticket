@@ -673,6 +673,7 @@ class TicketBuilder {
             $data = array(
                 'journeytype' => $this->journeytype,
                 'price' => $custom_price,
+                'supplement' => $supplement,
                 'seats' => $totalseats,
                 'travellers' => json_encode($this->ticketselections),
                 'tickets' => json_encode($this->ticketsallocated)
