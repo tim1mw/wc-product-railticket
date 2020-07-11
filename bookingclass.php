@@ -276,7 +276,15 @@ class TicketBuilder {
     public function get_tickets() {
         global $wpdb;
         $tickets = new stdClass();
-        $tickets->travellers = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers", OBJECT );
+
+        if (!$this->is_guard()) {
+            $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 ";
+            $guard = " AND {$wpdb->prefix}wc_railticket_tickettypes.guardonly = 0 ";
+        } else {
+            $guardtra = "";
+            $guard = "";
+        }
+        $tickets->travellers = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra, OBJECT );
 
         $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
             "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
@@ -291,7 +299,7 @@ class TicketBuilder {
             "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
             "WHERE ((stationone = ".$this->fromstation." AND stationtwo = ".$this->tostation.") OR ".
             "(stationone = ".$this->tostation." AND stationtwo = ".$this->fromstation.")) AND ".
-            "journeytype = '".$this->journeytype."' AND disabled = 0 ".
+            "journeytype = '".$this->journeytype."' AND disabled = 0 ".$guard.
             "ORDER BY {$wpdb->prefix}wc_railticket_tickettypes.sequence ASC";
         $ticketdata = $wpdb->get_results($sql, OBJECT);
 
@@ -650,9 +658,13 @@ class TicketBuilder {
         $mprice = get_option('wc_product_railticket_min_price');
         $supplement = 0;
         if (strlen($mprice) > 0 && $custom_price < $mprice) {
-            $mprice=floatval($mprice);
-            $supplement = floatval($mprice) - floatval($custom_price);
-            $custom_price = $mprice;
+            if ($custom_price == 0 && $this->is_guard()) {
+                // We will want to record the price for "other" here at some point, but that's not happening now
+            } else {
+                $mprice=floatval($mprice);
+                $supplement = floatval($mprice) - floatval($custom_price);
+                $custom_price = $mprice;
+            }
         } 
         $totalseats = $this->count_seats();
 

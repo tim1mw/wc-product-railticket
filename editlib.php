@@ -941,3 +941,4 @@ function railticket_get_waybill() {
     }
     fclose($f);
 }
+

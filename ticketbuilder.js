@@ -494,7 +494,7 @@ function allocateTickets() {
     }
     var supplement = 0;
 
-    if (total < minprice) {
+    if (total < minprice && total != 0) {
         supplement = minprice - total;
         str += '<tr>'+
             '<td><span>&nbsp</span></td>'+
