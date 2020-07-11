@@ -345,9 +345,9 @@ function railticket_view_bookings() {
             case 'createmanual':
                 railticket_create_manual();
                 break;
-//            case 'waybill':
-//                railticket_get_waybill();
-//                break;
+            case 'viewwaybill':
+                railticket_get_waybill(false);
+                break;
             case 'filterbookings':
             default:
                 railticket_summary_selector();
@@ -489,11 +489,17 @@ function railticket_show_bookings_summary($dateofjourney) {
     }
 
     ?>
-    <form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+    <hr />
+    <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='action' value='viewwaybill' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='View Way Bill' />
+    </form></p>
+    <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='waybill.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Waybill' />
-    </form>
+        <input type='submit' name='submit' value='Get Way Bill as CSV file' />
+    </form></p>
     <?php
 }
 
@@ -849,16 +855,25 @@ function railticket_create_manual($id = false) {
     <?php
 }
 
-add_action ('admin_post_waybill.csv', 'railticket_get_waybill');
-function railticket_get_waybill() {
-    global $wpdb;
-    $date = $_GET['dateofjourney'];
-    header('Content-Type: application/csv');
-    header('Content-Disposition: attachment; filename="waybill-'.$date.'.csv";');
-    header('Pragma: no-cache');
-    $f = fopen('php://output', 'w');
-    fputcsv($f, array('Journey', 'Journey Type', 'Ticket Type', 'Number', 'Fare', 'Total'));
+add_action ('admin_post_waybill.csv', 'railticket_get_waybillcsv');
+function railticket_get_waybillcsv() {
+    railticket_get_waybill(true);
+}
 
+function railticket_get_waybill($iscsv) {
+    global $wpdb;
+    $date = $_REQUEST['dateofjourney'];
+    $header = array('Journey', 'Journey Type', 'Ticket Type', 'Number', 'Fare', 'Total');
+    if ($iscsv) {;
+        header('Content-Type: application/csv');
+        header('Content-Disposition: attachment; filename="waybill-'.$date.'.csv";');
+        header('Pragma: no-cache');
+        $f = fopen('php://output', 'w');
+        fputcsv($f, $header);
+    } else {
+        echo "<table border='1'>";
+        railticket_waybill_row($header);
+    }
     $totalsdata = railticket_get_waybill_data($date);
 
     $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
@@ -895,16 +910,33 @@ function railticket_get_waybill() {
                     );
 
                     $revenue += $qty*$ticketdata[0]->price;
-                    fputcsv($f, $line);
+                    if ($iscsv) {
+                        fputcsv($f, $line);
+                    } else {
+                        railticket_waybill_row($line);
+                    }
                 }
             }
         }
     }
-    fputcsv($f,array());
-    fputcsv($f, array('Total Passengers', $totalsdata->totalseats));
-    fputcsv($f, array('Total Tickets', $totalsdata->totaltickets));
-    fputcsv($f, array('Total Revenue', $revenue));
-    fclose($f);
+    $td = array('Date', $date);
+    $tp =  array('Total Passengers', $totalsdata->totalseats);
+    $tt = array('Total Tickets', $totalsdata->totaltickets);
+    $tr = array('Total Revenue', $revenue);
+
+    if ($iscsv) {
+        fputcsv($f, array());
+        fputcsv($f, $td);
+        fputcsv($f, $tp);
+        fputcsv($f, $tt);
+        fputcsv($f, $tr);
+        fclose($f);
+    } else {
+        railticket_waybill_row($td);
+        railticket_waybill_row($tp);
+        railticket_waybill_row($tt);
+        railticket_waybill_row($tr);
+    }
 }
 
 function railticket_get_waybill_data($date) {
@@ -966,4 +998,12 @@ function railticket_get_waybill_data($date) {
     $r->totalseats = $totalseats;
     $r->totaltickets = $totaltickets;
     return $r;
+}
+
+function railticket_waybill_row($rows) {
+    echo "<tr>";
+    foreach ($rows as $row) {
+        echo "<td>".$row."</td>";
+    }
+    echo "</tr>";
 }
