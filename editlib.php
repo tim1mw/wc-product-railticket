@@ -345,6 +345,9 @@ function railticket_view_bookings() {
             case 'createmanual':
                 railticket_create_manual();
                 break;
+//            case 'waybill':
+//                railticket_get_waybill();
+//                break;
             case 'filterbookings':
             default:
                 railticket_summary_selector();
@@ -484,6 +487,14 @@ function railticket_show_bookings_summary($dateofjourney) {
     foreach ($stations as $station) {
         railticket_show_station_summary($dateofjourney, $station, $timetable);
     }
+
+    ?>
+    <form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+        <input type='hidden' name='action' value='waybill.csv' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Get Waybill' />
+    </form>
+    <?php
 }
 
 function railticket_show_station_summary($dateofjourney, $station, $timetable) {
@@ -665,6 +676,20 @@ function railticket_mark_collected($val) {
                 array('wooorderid' => $orderid));
 }
 
+function railticket_get_ticket_item($order) {
+    foreach ( $order->get_items() as $item_id => $item ) {
+        // Get the product object
+        $product = $item->get_product();
+
+        // Get the product Id
+        $product_id = $product->get_id();
+        if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
+            return $item;
+            break;
+        }
+    }
+    return false;
+}
 
 function railticket_show_order() {
     global $wpdb, $woocommerce;
@@ -683,18 +708,7 @@ function railticket_show_order() {
         return;
     }
 
-    $order_item = false;
-    foreach ( $order->get_items() as $item_id => $item ) {
-        // Get the product object
-        $product = $item->get_product();
-
-        // Get the product Id
-        $product_id = $product->get_id();
-        if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
-            $order_item = $item;
-            break;
-        }
-    }
+    $order_item = railticket_get_ticket_item($order);
 
     if (!$order_item) {
         echo "<p>No tickets were purchased with this order.</p>";
@@ -833,4 +847,97 @@ function railticket_create_manual($id = false) {
     <input type='submit' value='Create Booking' />
     </form>
     <?php
+}
+
+add_action ('admin_post_waybill.csv', 'railticket_get_waybill');
+function railticket_get_waybill() {
+    global $wpdb;
+    $date = $_GET['dateofjourney'];
+    header('Content-Type: application/csv');
+    header('Content-Disposition: attachment; filename="waybill-'.$date.'.csv";');
+    header('Pragma: no-cache');
+    $f = fopen('php://output', 'w');
+    fputcsv($f, array('Journey', 'Journey Type', 'Ticket Type', 'Number', 'Fare', 'Total'));
+
+    //$prices = $wpdb->get_results("SELECT * {$wpdb->prefix}railtimetable_prices ORDER BY stationone ASC, journeytype ASC, price DESC");
+    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$date."'");
+    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
+    $stns = array();
+    foreach ($stations as $station) {
+        $stn[$station->id] = $station->name;
+    }
+    $processed = array();
+    $totals = array();
+    foreach ($bookings as $booking) {
+        if ($booking->wooorderid > 0 && !in_array($booking->wooorderid, $processed)) {
+            //$order_item = railticket_get_ticket_item($order);
+            $data_store = WC_Data_Store::load( 'order-item' );
+            //$ticketselections = $data_store->get_metadata($booking->wooorderitem, "ticketselections", true);
+            //$ticketsallocated = $data_store->get_metadata($booking->wooorderitem, "ticketsallocated", true);
+            $totalseats = $data_store->get_metadata($booking->wooorderitem, "ticketsallocated", true);
+            $journeytype = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
+
+            $ticketsallocated = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id = ".$booking->wooorderitem.
+                " AND meta_key LIKE 'ticketsallocated-%'");
+
+            //$ticketselections = json_decode($ticketselections);
+            //$ticketsallocated = (array) json_decode($ticketsallocated);
+
+            if (!array_key_exists($booking->fromstation, $totals)) {
+                $totals[$booking->fromstation] = array();
+            }
+            if (!array_key_exists($booking->tostation, $totals[$booking->fromstation])) {
+                $totals[$booking->fromstation][$booking->tostation] = array();
+            }
+            if (!array_key_exists($journeytype, $totals[$booking->fromstation][$booking->tostation])) {
+                $totals[$booking->fromstation][$booking->tostation][$journeytype] = array();
+            }
+            foreach ($ticketsallocated as $ticket) {
+                $tparts = explode('-', $ticket->meta_key);
+                if (!array_key_exists($tparts[1], $totals[$booking->fromstation][$booking->tostation][$journeytype])) {
+                    $totals[$booking->fromstation][$booking->tostation][$journeytype][$tparts[1]] = intval($ticket->meta_value);
+                } else {
+                    $totals[$booking->fromstation][$booking->tostation][$journeytype][$tparts[1]] += intval($ticket->meta_value);
+                }
+            }
+            $processed[] = $booking->wooorderid;
+            continue;
+        }
+        if ($booking->manual > 0 && !in_array($booking->wooorderid, $processed)) {
+
+        }
+    }
+
+
+    foreach ($totals as $stationone => $dataone) {
+        foreach ($dataone as $stationtwo => $datatwo) {
+            foreach ($datatwo as $journeytype => $datathree) {
+                foreach ($datathree as $tickettype => $qty) {
+
+                    $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
+                        "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
+                        "{$wpdb->prefix}wc_railticket_prices.price, ".
+                        "{$wpdb->prefix}wc_railticket_tickettypes.name ".
+                        "FROM {$wpdb->prefix}wc_railticket_prices ".
+                        "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
+                        "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
+                        "WHERE ((stationone = ".$stationone." AND stationtwo = ".$stationtwo.") OR ".
+                        "(stationone = ".$stationtwo." AND stationtwo = ".$stationone.")) AND ".
+                        "journeytype = '".$journeytype."' AND {$wpdb->prefix}wc_railticket_tickettypes.code ='".$tickettype."'";
+                    $ticketdata = $wpdb->get_results($sql, OBJECT);
+
+                    $line = array(
+                        $stn[$stationone]." - ".$stn[$stationtwo],
+                        $journeytype,
+                        $tickettype,
+                        $qty,
+                        $ticketdata[0]->price,
+                        $qty*$ticketdata[0]->price
+                    );
+                    fputcsv($f, $line);
+                }
+            }
+        }
+    }
+    fclose($f);
 }
