@@ -700,13 +700,13 @@ function railticket_get_ticket_item($order) {
 function railticket_show_order() {
     global $wpdb, $woocommerce;
 
-    if (strlen($_POST['orderid']) == 0) {
+    if (strlen($_REQUEST['orderid']) == 0) {
         echo "<p>No order number entered.</p>";
         railticket_summary_selector();
         return;
     }
 
-    $order = wc_get_order($_POST['orderid']);
+    $order = wc_get_order($_REQUEST['orderid']);
 
     if (!$order) {
         echo "<p>Order not found.</p>";
@@ -721,7 +721,7 @@ function railticket_show_order() {
         railticket_summary_selector();
         return;
     }
-    $formatted_meta_data = $item->get_formatted_meta_data( '_', true );
+    $formatted_meta_data = $order_item->get_formatted_meta_data( '_', true );
 
     ?>
     <div class='railticket_editdate'>
