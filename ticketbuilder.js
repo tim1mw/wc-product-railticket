@@ -305,7 +305,6 @@ function trainTimeChanged(index, type, skip) {
 
     var tt = document.getElementsByClassName('journeytyperet');
     var d = true;
-    console.log(tt);
     for (t in tt) { 
         if (t == index) {
             d = false;
