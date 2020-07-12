@@ -611,11 +611,15 @@ function railticket_show_departure() {
         if ($booking->manual) {
             echo "<td>".$booking->id." (M)</td>";
         } else {
+           if (strlen($booking->woocartitem) > 0) {
+            echo "<td>In Cart</td>";
+           } else {
             echo "<td><form action='".railticket_get_page_url()."' method='post'>".
                 "<input type='hidden' name='action' value='showorder' />".
                 "<input type='hidden' name='orderid' value='".$booking->wooorderid."' />".
                 "<input type='submit' value='".$booking->wooorderid."' />".
                 "</form></td>";
+           }
         }
         echo "<td>".$booking->name."</td>".
             "<td>".$booking->seats."</td>".
