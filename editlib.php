@@ -738,6 +738,7 @@ function railticket_show_order() {
     $fromstation = false;
     $tostation = false;
     $journeytype = false;
+    $dateofjourney = false;
     foreach ($formatted_meta_data as $meta) {
         switch ($meta->key) {
             case 'tickettimes-outbays':
@@ -753,6 +754,8 @@ function railticket_show_order() {
             case 'tickettimes-journeytype':
                 $journeytype = $meta->value;
                 break;
+            case 'tickettimes-dateoftravel':
+                $dateofjourney = $meta->value;
         }
         echo "<tr><th>".$meta->display_key."</th><td class='railticket_meta'>".strip_tags($meta->display_value)."</td></tr>";
     }
@@ -786,6 +789,12 @@ function railticket_show_order() {
             "</form>";
     }
     ?>
+    <br /><br />
+    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+        <input type='hidden' name='action' value='filterbookings' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Back to Services' />
+    </form>
     </div>
     <?php
 }
