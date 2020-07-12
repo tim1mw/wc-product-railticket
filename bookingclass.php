@@ -916,7 +916,7 @@ class TicketBuilder {
 
         $cal .= '<script type="text/javascript">var baseurl = "'.railtimetable_currentlang()."/".get_site_url().'";var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
 
-        $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3>".
+        $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3>";
         $str .= "<p>Please note: We have a mix of coach types on our services, some are fully enclosed, others are open-sided. Your seat allocation guarantees you a socially distanced bay for your group, but we cannot guarantee that all travellers will be seated in enclosed coach on days when the weather is wet.</p><div>".
             "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
 
