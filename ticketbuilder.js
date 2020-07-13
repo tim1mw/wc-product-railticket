@@ -396,10 +396,14 @@ function journeyTypeChanged(evt) {
 
 function showTicketSelector() {
 
-    if ( (document.railticketbooking['outtime'].value != "" && document.railticketbooking['journeytype'].value == "single") ||
+    if ( (document.railticketbooking['outtime'].value != "" && 
+          document.railticketbooking['outtime'].value != "undefined" && 
+          document.railticketbooking['journeytype'].value == "single") ||
         (document.railticketbooking['outtime'].value != "" &&
-        document.railticketbooking['rettime'].value != "" &&
-        document.railticketbooking['journeytype'].value == "return") ) {
+          document.railticketbooking['rettime'].value != "" &&
+          document.railticketbooking['outtime'].value != "undefined" &&
+          document.railticketbooking['rettime'].value != "undefined" &&
+          document.railticketbooking['journeytype'].value == "return") ) {
         railTicketAjax('tickets', true, renderTicketSelector);  
     } else {
         showTicketStages('deptimes', true);
