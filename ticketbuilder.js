@@ -178,6 +178,9 @@ function fromStationChanged(evt) {
     }
     lastfrom=evt.target.value;
 
+    lastout=-1;
+    lastret=-1;
+
     if (document.railticketbooking['fromstation'].value != '' && 
         document.railticketbooking['tostation'].value != '' &&
         document.railticketbooking['fromstation'].value != 'undefined' && 
@@ -202,6 +205,10 @@ function toStationChanged(evt) {
     }
 
     lastto=evt.target.value;
+
+    lastout=-1;
+    lastret=-1;
+
     if (document.railticketbooking['fromstation'].value != '' && 
         document.railticketbooking['tostation'].value != '' &&
         document.railticketbooking['fromstation'].value != 'undefined' && 
