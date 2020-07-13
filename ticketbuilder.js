@@ -129,7 +129,7 @@ function enableStations(type, response, defstn) {
             stn.disabled = true;
             //stn.title = 'No tickets are available for this station';
         }
-        if (defstn !== false && defstn == stnid) {
+        if (defstn !== false && defstn == stnid && stn.disabled == false) {
             stn.checked = true;
         } else {
             stn.checked = false;
@@ -213,8 +213,9 @@ function toStationChanged(evt) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-        showTimes(response['out'], 'out', "Outbound", a_deptime);
+        var sindex = showTimes(response['out'], 'out', "Outbound", a_deptime);
         showTimes(response['ret'], 'ret', "Return", false);
+
         var str = "";
         if (response['tickets'].length == 0) {
             str += "<h4>Sorry, no services can be booked on line for these choices. Please try a different selection.</h4>"+
@@ -244,6 +245,11 @@ function getDepTimes() {
                 railTicketAddListener('journeytype'+type, 'click', journeyTypeChanged);
             }
         }
+        if (a_deptime !== false) {
+            console.log("Selected"+sindex);
+            updateTimesList(sindex, type, false);
+        }
+
         a_deptime = false;
         showTicketStages('deptimes', true);
     });
@@ -259,6 +265,7 @@ function showTimes(times, type, header, selecttime) {
 
     var nowdate = new Date();
     var nowtotal = (nowdate.getHours()*60)+nowdate.getMinutes();
+    var selected = false;
     for (index in times) {
         if (times[index].length == 0) {
             str += "<li><div class='timespacer'></div></li>";     
@@ -282,8 +289,9 @@ function showTimes(times, type, header, selecttime) {
             }
 
             var checked = "";
-            if (times[index]['dep'] == selecttime) {
+            if (times[index]['dep'] == selecttime && times[index]['bookable']) {
                 checked = " checked ";
+                selected = index;
             }
 
             str += "<li id='lidep"+type+index+"' title='"+title+"'><input type='radio' name='"+type+"time' id='dep"+
@@ -297,6 +305,7 @@ function showTimes(times, type, header, selecttime) {
     }
     str += "</ul>";
     document.getElementById('deptimes_data_'+type).innerHTML = str;
+    return index;
 }
 
 function trainTimeChanged(index, type, skip) {
@@ -321,7 +330,11 @@ function trainTimeChanged(index, type, skip) {
         showTicketSelector();
         return;
     }
+    updateTimesList(index, type, skip);
+    showTicketSelector();
+}
 
+function updateTimesList(index, type, skip) {
     var tt = document.getElementsByClassName('journeytyperet');
     var d = true;
     for (t in tt) { 
@@ -344,7 +357,6 @@ function trainTimeChanged(index, type, skip) {
             d = true;
         }
     }
-    showTicketSelector();
 }
 
 function journeyTypeChanged(evt) {
