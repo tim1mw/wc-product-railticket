@@ -39,6 +39,7 @@ function setupTickets() {
     }
     if (a_dateofjourney !== false) {
         setBookingDate(a_dateofjourney);
+        a_dateofjourney = false;
     } else {
         showTicketStages('date', true);
     }
@@ -102,14 +103,22 @@ function setBookingDate(bdate) {
 
 function doStations() {
     railTicketAjax('bookable_stations', true, function(response) {
-        enableStations('from', response);
-        enableStations('to', response);
-        showTicketStages('stations', true);
+        enableStations('from', response, a_station);
+        enableStations('to', response, a_destination);
+
         overridecode = response['override'];
+        if (a_station !== false && a_destination !== false) {
+            a_station = false;
+            a_destination = false;
+            getDepTimes();
+        } else {
+            showTicketStages('stations', true);
+        }
+        
     });
 }
 
-function enableStations(type, response) {
+function enableStations(type, response, defstn) {
     for (stnid in response[type]) {
         var stn = document.getElementById(type+'station'+stnid);
 
@@ -120,7 +129,11 @@ function enableStations(type, response) {
             stn.disabled = true;
             //stn.title = 'No tickets are available for this station';
         }
-        stn.checked = false;
+        if (defstn !== false && defstn == stnid) {
+            stn.checked = true;
+        } else {
+            stn.checked = false;
+        }
     }
 }
 
@@ -200,8 +213,8 @@ function toStationChanged(evt) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-        showTimes(response['out'], 'out', "Outbound");
-        showTimes(response['ret'], 'ret', "Return");
+        showTimes(response['out'], 'out', "Outbound", a_deptime);
+        showTimes(response['ret'], 'ret', "Return", false);
         var str = "";
         if (response['tickets'].length == 0) {
             str += "<h4>Sorry, no services can be booked on line for these choices. Please try a different selection.</h4>"+
@@ -231,11 +244,12 @@ function getDepTimes() {
                 railTicketAddListener('journeytype'+type, 'click', journeyTypeChanged);
             }
         }
+        a_deptime = false;
         showTicketStages('deptimes', true);
     });
 }
 
-function showTimes(times, type, header) {
+function showTimes(times, type, header, selecttime) {
     var str = "<h3>"+header+"</h3>";
     if (times.length == 0) {
         str += '<h4>No Trains</h4><input type="hidden" name="'+type+'time" value="" />';
@@ -267,10 +281,15 @@ function showTimes(times, type, header) {
                 }
             }
 
+            var checked = "";
+            if (times[index]['dep'] == selecttime) {
+                checked = " checked ";
+            }
+
             str += "<li id='lidep"+type+index+"' title='"+title+"'><input type='radio' name='"+type+"time' id='dep"+
                 type+index+"' class='"+tclass+"' "+
                 "value='"+times[index]['dep']+"' "+
-                "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" />"+
+                "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" "+checked+" />"+
                 "<label "+lateclass+" for='dep"+type+index+"'>"+times[index]['depdisp']+
                 "<div class='railticket_arrtime'>(arrives: "+times[index]['arrdisp']+")</div></label></li>";
 

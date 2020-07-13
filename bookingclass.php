@@ -870,11 +870,11 @@ class TicketBuilder {
             "var minprice = ".$minprice."\n".
             "var dateFormat = '".get_option('railtimetable_date_format')."';";
 
-        if (array_key_exists('a_dateofjourney', $_POST)) {
-            $str .= 'var a_dateofjourney = "'.$_POST['a_dateofjourney'].'";';
-        } else {
-            $str .= 'var a_dateofjourney = false;';
-        }
+        $str .= $this->preset_javascript('a_dateofjourney');
+        $str .= $this->preset_javascript('a_station');
+        $str .= $this->preset_javascript('a_destination');
+        $str .= $this->preset_javascript('a_direction');
+        $str .= $this->preset_javascript('a_deptime');
 
         if ($this->is_guard()) {
             $str .= 'var guard=true;';
@@ -885,6 +885,14 @@ class TicketBuilder {
         $str .= "</script>";
 
         return $str;
+    }
+
+    private function preset_javascript($key) {
+        if (array_key_exists('a_dateofjourney', $_POST)) {
+            return 'var '.$key.' = "'.$_POST[$key].'";';
+        } else {
+            return 'var '.$key.' = false;';
+        }
     }
 
     private function get_datepick() {
