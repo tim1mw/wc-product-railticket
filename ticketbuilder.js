@@ -414,7 +414,7 @@ function renderTicketSelector(response) {
     var travellers = "";
 
     for (i in response.travellers) {
-        var value = 0;
+        var value = '';
         var code = response.travellers[i].code;
         if (code in ticketSelections) {
            value = ticketSelections[ticketdata.travellers[i].code];
@@ -453,12 +453,17 @@ function allocateTickets() {
     for (i in ticketdata.travellers) {
         var code = ticketdata.travellers[i].code;
         var v=document.getElementById("q_"+code);
-        if (v.value > -1) {
+
+        var tnum = 0;
+        if (v.value != '') {
+            tnum = v.value;
+        }
+        if (tnum > 0) {
             ticketSelections[code] = parseInt(v.value);
             allocation[code] = parseInt(v.value);
             allocationTotal += parseInt(v.value);
         } else {
-            v.value = 0;
+            v.value = '';
         }
     }
 
