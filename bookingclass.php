@@ -109,7 +109,7 @@ class TicketBuilder {
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
             " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
             "WHERE {$wpdb->prefix}railtimetable_dates.date >= '".$date."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0 LIMIT ".$num;
+            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0 ORDER BY date ASC LIMIT ".$num;
 
         $rec = $wpdb->get_results($sql);
         if (count($rec) > 0) {
@@ -924,27 +924,15 @@ class TicketBuilder {
             "<p class='railticket_help'>Choose a date from the calendar above, or use the buttons below.<br />Dates marked with an X are sold out.</p>";
         $toshow = 6;
         $act = false;
-/*
-        if (intval($this->now->format('G')) < 19 && $this->is_date_bookable($this->today)) { 
-             $str .= "<input type='button' value='Today: ".$this->today->format('j-M-Y')."' id='todaybutton' title='Click to travel today' ".
-                 "class='railticket_datebuttons'  data='".$this->tomorrow->format("Y-m-d")."' />&nbsp";
-             $toshow--;
-             $act = !$act;
-        }
 
-        if ($this->is_date_bookable($this->tomorrow)) {
-            $str .= "<input type='button' value='Tomorrow: ".$this->tomorrow->format('j-M-Y')."' id='tomorrowbutton' title='Click to travel tomorrow' ".
-                "class='railticket_datebuttons' data='".$this->tomorrow->format("Y-m-d")."' />";
-            if ($act == false) {
-                $str .= '&nbsp;';
-            } else {
-                $str .= '<br />';
-            }
-            $toshow--;
-            $act = !$act;
+        $nowtime = ($this->now->format('G')*60) + $this->now->format('i');
+        $et = explode(".", get_option("wc_product_railticket_enddaytime"));
+        $endtime = (intval($et[0])*60) + intval($et[1]);
+        if ($nowtime < $endtime || $this->is_guard()) {
+            $nexttrains = $this->get_next_bookable($this->today, $toshow);
+        } else {
+            $nexttrains = $this->get_next_bookable($this->tomorrow, $toshow);
         }
-*/
-        $nexttrains = $this->get_next_bookable($this->today, $toshow);
 
         foreach ($nexttrains as $t) {
             $date = DateTime::createFromFormat("Y-m-d", $t->date);
