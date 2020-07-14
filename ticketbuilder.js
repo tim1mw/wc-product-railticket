@@ -338,6 +338,18 @@ function trainTimeChanged(index, type, skip) {
         return;
     }
     updateTimesList(index, type, skip);
+
+    if (type == 'ret') {
+        if (document.railticketbooking['outtime'].value == '' || document.railticketbooking['outtime'].value == 'undefined') {
+            lastout = -1;
+        }
+    }
+    if (type == 'out') {
+        if (document.railticketbooking['rettime'].value == '' || document.railticketbooking['rettime'].value == 'undefined') {
+            lastret = -1;
+        }
+    }
+
     showTicketSelector();
 }
 
