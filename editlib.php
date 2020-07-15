@@ -9,6 +9,7 @@ add_shortcode('railticket_manager', 'railticket_view_bookings');
 function railticket_register_settings() {
    add_option('wc_product_railticket_woocommerce_product', '');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_woocommerce_product'); 
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_top_comment');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_min_price');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_reservetime');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_releaseinventory');
@@ -58,6 +59,10 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_woocommerce_product">Woocommerce Product ID</label></th>
             <td><input size='6' type="text" id="wc_product_railticket_woocommerce_product" name="wc_product_railticket_woocommerce_product" value="<?php echo get_option('wc_product_railticket_woocommerce_product'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_top_comment">Top Comment</label></th>
+            <td><textarea rows='10' cols='60' id="wc_product_railticket_top_comment" name="wc_product_railticket_top_comment"><?php echo get_option('wc_product_railticket_top_comment'); ?></textarea></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_min_price">Minimum Ticket Order Price</label></th>
