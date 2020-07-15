@@ -5,8 +5,9 @@ class TicketBuilder {
     private $today, $tomorrow, $stations;
 
     public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest) {
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $show) {
         global $wpdb;
+        $this->show = $show;
         $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
         $this->now = new DateTime();
         $this->now->setTimezone($this->railticket_timezone);
@@ -56,15 +57,54 @@ class TicketBuilder {
             return '<p>Sorry, but you already have a ticket selection in your shopping cart, you can only have one ticket selection per order. Please remove the existing ticket selection if you wish to create a new one, or complete the purchase for the existing one.</p>';
         }
 
-        return $this->get_javascript().
-            $this->get_datepick().
-            '<form action="post" name="railticketbooking">'.
-            $this->get_stations().
-            $this->get_deptimes().
-            $this->get_ticket_choices().
-            $this->get_addtocart().'</form>'.
-            '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>'.
-            '<div id="railticket_error" class="railticket_stageblock" ></div>';
+        wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+        wp_enqueue_style('railticket_style');
+
+        if ($this->show) {
+            return $this->get_javascript().
+                $this->get_datepick().
+                '<form action="post" name="railticketbooking">'.
+                $this->get_stations().
+                $this->get_deptimes().
+                $this->get_ticket_choices().
+                $this->get_addtocart().'</form>'.
+                '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>'.
+                '<div id="railticket_error" class="railticket_stageblock" ></div>';
+        }
+
+        global $wpdb;
+        $fstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC LIMIT 1", OBJECT);
+        $lstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence DESC LIMIT 1", OBJECT);
+
+        $str = "<div class='railticket_selector'>".
+            "<div class='railticket_container'>".
+            "<h4>Would you like to buy tickets for:</h4>";
+
+        $str .= "<form action='/book/' method='post'>".
+            "<input type='submit' value='Any date/train' />".
+            "<input type='hidden' name='show' value='1' />".
+            "</form><br />";
+
+        //$str .= $this->get_preset_form($desc, $fstation[0], $lstation[0]);
+        //$str .= $this->get_preset_form($desc, $lstation[0], $fstation[0]);
+
+        $str .= "</div></div>";
+
+        return $str;
+    }
+
+    private function get_preset_form($desc, $fstation, $tstation) {
+
+        $str .= "<form action='/book/' method='post'>".
+            "<input type='submit' value='A return on the next train from ".$fstation->name."' />".
+            "<input type='hidden' name='a_dateofjourney' value='".$this->today->format('Y-m-d')."' />".
+            "<input type='hidden' name='a_deptime' value='".$this->next_train_today()."' />".
+            "<input type='hidden' name='a_station' value='".$fstation->id."' />".
+            "<input type='hidden' name='a_destination' value='".$tstation->id."' />".
+            "<input type='hidden' name='show' value='1' />".
+            "</form><br />";
+
+        return $str;
     }
 
     public function is_date_bookable($date) {
@@ -97,6 +137,16 @@ class TicketBuilder {
             return true;
         }
         return false;
+    }
+
+    private function is_today_bookable() {
+    
+    }
+
+    private function next_train_today() {
+        $timetable = $this->findTimetable();
+        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$this->fromstation."' ".
+            " AND timetableid = ".$timetable->id)[0];
     }
 
     private function get_next_bookable($date, $num) {
@@ -673,6 +723,7 @@ class TicketBuilder {
             $data = array(
                 'journeytype' => $this->journeytype,
                 'price' => $custom_price,
+                'supplement' => $supplement,
                 'seats' => $totalseats,
                 'travellers' => json_encode($this->ticketselections),
                 'tickets' => json_encode($this->ticketsallocated)
@@ -849,18 +900,11 @@ class TicketBuilder {
 
         wp_register_script('railticket_script', plugins_url('wc-product-railticket/ticketbuilder.js'));
         wp_enqueue_script('railticket_script');
-        wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
-        wp_enqueue_style('railticket_style');
 
         $minprice = 'false';
         $opt = get_option('wc_product_railticket_min_price');
         if (strlen($opt) > 0) {
             $minprice = $opt;
-        }
-
-        $sameservicereturn = 'false';
-        if (get_option('wc_product_railticket_sameservicereturn')) {
-            $sameservicereturn = 'true';
         }
 
         $str = "\n<script type='text/javascript'>\n".

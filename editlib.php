@@ -671,6 +671,7 @@ function railticket_show_departure() {
     </form><br />
     <form action='/book/' method='post'>
         <input type='hidden' name='action' value='createmanual' />
+        <input type='hidden' name='show' value='1' />
         <input type='hidden' name='a_dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='hidden' name='a_station' value='<?php echo $station->id; ?>' />
         <input type='hidden' name='a_direction' value='<?php echo $direction ?>' />

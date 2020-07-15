@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
 var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
-var overridevalid = 0, overridecode = false;
+var overridevalid = 0, overridecode = false, sameservicereturn = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -253,7 +253,6 @@ function getDepTimes() {
             }
         }
         if (a_deptime !== false) {
-            console.log("Selected"+sindex);
             updateTimesList(sindex, type, false);
         }
 
@@ -487,6 +486,7 @@ function allocateTickets() {
             allocationTotal += parseInt(v.value);
         } else {
             v.value = '';
+            ticketSelections[code] = 0;
         }
     }
 
