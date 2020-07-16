@@ -80,12 +80,12 @@ class TicketBuilder {
             "<h4>Would you like to buy tickets for:</h4>";
 
         $str .= "<form action='/book/' method='post'>".
-            "<input type='submit' value='Any date/train' />".
+            "<input type='submit' value='Tickets for any date/train' />".
             "<input type='hidden' name='show' value='1' />".
             "</form><br />";
 
-        $str .= $this->get_preset_form($desc, $fstation, $lstation, $fdeptime);
-        $str .= $this->get_preset_form($desc, $lstation, $fstation, $ldeptime);
+        $str .= $this->get_preset_form($fstation, $lstation, $fdeptime, "down");
+        $str .= $this->get_preset_form($lstation, $fstation, $ldeptime, "up");
 
         $str .= "</div></div>";
 
@@ -104,13 +104,14 @@ class TicketBuilder {
            '<div id="railticket_error" class="railticket_stageblock" ></div>';
     }
 
-    private function get_preset_form($desc, $fstation, $tstation, $deptime) {
-        $str .= "<form action='/book/' method='post'>".
-            "<input type='submit' value='A return on the next train from ".$fstation->name."' />".
+    private function get_preset_form($fstation, $tstation, $deptime, $direction) {
+        $str = "<form action='/book/' method='post'>".
+            "<input type='submit' value='Return tickets for the next train from ".$fstation->name."' />".
             "<input type='hidden' name='a_dateofjourney' value='".$this->today->format('Y-m-d')."' />".
             "<input type='hidden' name='a_deptime' value='".$deptime."' />".
             "<input type='hidden' name='a_station' value='".$fstation->id."' />".
             "<input type='hidden' name='a_destination' value='".$tstation->id."' />".
+            "<input type='hidden' name='a_direction' value='".$direction."' />".
             "<input type='hidden' name='show' value='1' />".
             "</form><br />";
 
@@ -168,7 +169,7 @@ class TicketBuilder {
 
         $alldeps = explode(",", $deps);
         foreach ($alldeps as $dep) {
-            $t = explode(":", $dep);
+            $t = explode(".", $dep);
             $time = (intval($t[0])*60) + intval($t[1]) + intval(get_option("wc_product_railticket_bookinggrace"));
             if ($time > $nowtime) {
                 return $dep;
