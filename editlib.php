@@ -19,7 +19,6 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultreserve');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
-   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enddaytime');
 }
 
 function railticket_add_pages() {
@@ -83,10 +82,6 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overrun period (minutes)</label></th>
             <td><input type="text" size='2' id="wc_product_railticket_bookinggrace" name="wc_product_railticket_bookinggrace" value="<?php echo get_option('wc_product_railticket_bookinggrace'); ?>" /></td>
-        </tr>
-        <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_enddaytime">End of day time (in 24hr clock)</label></th>
-            <td><input type="text" size='2' id="wc_product_railticket_enddaytime" name="wc_product_railticket_enddaytime" value="<?php echo get_option('wc_product_railticket_enddaytime'); ?>" /></td>
         </tr>
         <tr><td colspan="2"><h3>Defaults for new bookable days<h3></td></tr>
         <tr valign="top">
