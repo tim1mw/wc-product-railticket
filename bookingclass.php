@@ -61,20 +61,19 @@ class TicketBuilder {
         wp_enqueue_style('railticket_style');
 
         if ($this->show) {
-            return $this->get_javascript().
-                $this->get_datepick().
-                '<form action="post" name="railticketbooking">'.
-                $this->get_stations().
-                $this->get_deptimes().
-                $this->get_ticket_choices().
-                $this->get_addtocart().'</form>'.
-                '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>'.
-                '<div id="railticket_error" class="railticket_stageblock" ></div>';
+            return $this->get_all_html();
         }
 
         global $wpdb;
-        $fstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC LIMIT 1", OBJECT);
-        $lstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence DESC LIMIT 1", OBJECT);
+        $fstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC LIMIT 1", OBJECT)[0];
+        $lstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence DESC LIMIT 1", OBJECT)[0];
+
+        $fdeptime = $this->next_train_today_from($fstation->id);
+        $ldeptime = $this->next_train_today_from($lstation->id);
+
+        if ($fdeptime === false && $ldeptime === false) {
+            return $this->get_all_html();
+        }
 
         $str = "<div class='railticket_selector'>".
             "<div class='railticket_container'>".
@@ -85,20 +84,31 @@ class TicketBuilder {
             "<input type='hidden' name='show' value='1' />".
             "</form><br />";
 
-        //$str .= $this->get_preset_form($desc, $fstation[0], $lstation[0]);
-        //$str .= $this->get_preset_form($desc, $lstation[0], $fstation[0]);
+        $str .= $this->get_preset_form($desc, $fstation, $lstation, $fdeptime);
+        $str .= $this->get_preset_form($desc, $lstation, $fstation, $ldeptime);
 
         $str .= "</div></div>";
 
         return $str;
     }
 
-    private function get_preset_form($desc, $fstation, $tstation) {
+    private function get_all_html() {
+        return $this->get_javascript().
+           $this->get_datepick().
+           '<form action="post" name="railticketbooking">'.
+           $this->get_stations().
+           $this->get_deptimes().
+           $this->get_ticket_choices().
+           $this->get_addtocart().'</form>'.
+           '<div id="pleasewait" class="railticket_loading">Fetching Ticket Data&#8230;</div>'.
+           '<div id="railticket_error" class="railticket_stageblock" ></div>';
+    }
 
+    private function get_preset_form($desc, $fstation, $tstation, $deptime) {
         $str .= "<form action='/book/' method='post'>".
             "<input type='submit' value='A return on the next train from ".$fstation->name."' />".
             "<input type='hidden' name='a_dateofjourney' value='".$this->today->format('Y-m-d')."' />".
-            "<input type='hidden' name='a_deptime' value='".$this->next_train_today()."' />".
+            "<input type='hidden' name='a_deptime' value='".$deptime."' />".
             "<input type='hidden' name='a_station' value='".$fstation->id."' />".
             "<input type='hidden' name='a_destination' value='".$tstation->id."' />".
             "<input type='hidden' name='show' value='1' />".
@@ -143,11 +153,29 @@ class TicketBuilder {
     
     }
 
-    private function next_train_today() {
+    private function next_train_today_from($from) {
         global $wpdb;
         $timetable = $this->findTimetable($this->today);
-        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$this->fromstation."' ".
+        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$from."' ".
             " AND timetableid = ".$timetable->id)[0];
+
+        if (strlen($deptimesdata->down_deps) > 0) {
+            $deps = $deptimesdata->down_deps;
+        } else {
+            $deps = $deptimesdata->up_deps;
+        }
+        $nowtime = ($this->now->format('G')*60) + $this->now->format('i');
+
+        $alldeps = explode(",", $deps);
+        foreach ($alldeps as $dep) {
+            $t = explode(":", $dep);
+            $time = (intval($t[0])*60) + intval($t[1]) + intval(get_option("wc_product_railticket_bookinggrace"));
+            if ($time > $nowtime) {
+                return $dep;
+            }
+        }
+
+        return false;
     }
 
     private function last_train_today() {
