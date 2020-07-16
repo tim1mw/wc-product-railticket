@@ -503,7 +503,7 @@ function railticket_show_bookings_summary($dateofjourney) {
     <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='waybill.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Way Bill as CSV file' />
+        <input type='submit' name='submit' value='Get Way Bill as Spreadsheet file' />
     </form></p>
     <?php
 }
@@ -883,15 +883,20 @@ function railticket_get_waybill($iscsv) {
     global $wpdb;
     $date = $_REQUEST['dateofjourney'];
     $header = array('Journey', 'Journey Type', 'Ticket Type', 'Number', 'Fare', 'Total');
+    $td = array('Date', $date);
     if ($iscsv) {;
         header('Content-Type: application/csv');
         header('Content-Disposition: attachment; filename="waybill-'.$date.'.csv";');
         header('Pragma: no-cache');
         $f = fopen('php://output', 'w');
+        fputcsv($f, $td);
+        fputcsv($f, array('', '', '', '', '', ''));
         fputcsv($f, $header);
     } else {
         echo "<table border='1'>";
-        railticket_waybill_row($header);
+        railticket_waybill_row($td);
+        railticket_waybill_row(array('', '', '', '', '', ''));
+        railticket_waybill_row($header, 'th');
     }
     $totalsdata = railticket_get_waybill_data($date);
 
@@ -937,32 +942,27 @@ function railticket_get_waybill($iscsv) {
             }
         }
     }
-    $td = array('Date', $date);
-    $tp = array('Total Passengers', $totalsdata->totalseats);
-    $tt = array('Total Tickets', $totalsdata->totaltickets);
-    $ts = array('Total Supplement Revenue', $totalsdata->totalsupplement);
-    $to = array('Total Manual Booking Revenue', $totalsdata->totalmanual);
-    $tm = array('Total Online Bookings Revenue', $totalsdata->totalwoo);
-    $tr = array('Total Revenue', $totalsdata->totalmanual+$totalsdata->totalwoo);
+
+    $summary = array();
+    $summary[] = array('Total Supplements', '', '', '', '', $totalsdata->totalsupplement);
+    $summary[] = array('Total Revenue', '', '', '', '', $totalsdata->totalmanual+$totalsdata->totalwoo);
+    $summary[] = array('', '', '', '', '', '');
+
+    $summary[] = array('Total Passengers', $totalsdata->totalseats);
+    $summary[] = array('Total Tickets', $totalsdata->totaltickets);
+    $summary[] = array('Total Manual Booking Revenue', $totalsdata->totalmanual);
+    $summary[] = array('Total Online Bookings Revenue', $totalsdata->totalwoo);
+
 
     if ($iscsv) {
-        fputcsv($f, array());
-        fputcsv($f, $td);
-        fputcsv($f, $tp);
-        fputcsv($f, $tt);
-        fputcsv($f, $ts);
-        fputcsv($f, $to);
-        fputcsv($f, $tm);
-        fputcsv($f, $tr);
+        foreach ($summary as $s) {
+            fputcsv($f, $s);
+        }
         fclose($f);
     } else {
-        railticket_waybill_row($td);
-        railticket_waybill_row($tp);
-        railticket_waybill_row($tt);
-        railticket_waybill_row($ts);
-        railticket_waybill_row($to);
-        railticket_waybill_row($tm);
-        railticket_waybill_row($tr);
+        foreach ($summary as $s) {
+            railticket_waybill_row($s);
+        }
     }
 }
 
@@ -1041,10 +1041,16 @@ function railticket_get_waybill_data($date) {
     return $r;
 }
 
-function railticket_waybill_row($rows) {
+function railticket_waybill_row($rows, $type = 'td') {
     echo "<tr>";
+    $first = true;
     foreach ($rows as $row) {
-        echo "<td>".$row."</td>";
+        if ($first) {
+            echo "<th>".$row."</th>";
+            $first = false;
+        } else {
+            echo "<".$type.">".$row."</".$type.">";
+        }
     }
     echo "</tr>";
 }
