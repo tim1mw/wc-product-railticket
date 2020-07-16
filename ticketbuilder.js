@@ -253,7 +253,7 @@ function getDepTimes() {
             }
         }
         if (a_deptime !== false) {
-            updateTimesList(sindex, type, false);
+            updateTimesList();
         }
 
         a_deptime = false;
@@ -336,7 +336,7 @@ function trainTimeChanged(index, type, skip) {
         showTicketSelector();
         return;
     }
-    updateTimesList(index, type, skip);
+    updateTimesList();
 
     if (type == 'ret') {
         if (document.railticketbooking['outtime'].value == '' || document.railticketbooking['outtime'].value == 'undefined') {
@@ -352,29 +352,35 @@ function trainTimeChanged(index, type, skip) {
     showTicketSelector();
 }
 
-function updateTimesList(index, type, skip) {
+function updateTimesList() {
+    var outtime = convertTime(document.railticketbooking['outtime'].value);
     var tt = document.getElementsByClassName('journeytyperet');
-    var d = true;
-    for (t in tt) { 
-        if (t == index) {
-            d = false;
-        }
-        tt[t].disabled = d;
+    var ct = 0;
 
-        //if (typeof(tt[t].id) !== 'undefined') {
-        //    continue;
-        //}
-        var li = document.getElementById("li"+tt[t].id);
-        if (d) {
-            tt[t].checked = false;
-            //li.title = "Only available with an earlier departure";
-        } else {
-            //li.title = "Click to book this train";
+    for (t in tt) {
+        if (typeof(tt[t].value) == 'undefined') {
+            continue;
         }
-        if (d == false && sameservicereturn) {
-            d = true;
+        if (sameservicereturn && ct > 0) {
+            tt[t].disabled = true;
+            tt[t].checked = false;
+            continue;
+        }
+
+        var tval = convertTime(tt[t].value);
+        if (tval > outtime) {
+            tt[t].disabled = false;
+            ct++;
+        } else {
+            tt[t].disabled = true;
+            tt[t].checked = false;
         }
     }
+}
+
+function convertTime(time) {
+   var parts = time.split(".");
+   return (parseInt(parts[0])*60)+parseInt(parts[1]);
 }
 
 function journeyTypeChanged(evt) {
