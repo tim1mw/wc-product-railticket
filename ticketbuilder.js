@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
 var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
-var overridevalid = 0, overridecode = false, sameservicereturn = false;
+var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array();
 var ticketSelections = {};
 var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -272,6 +272,9 @@ function showTimes(times, type, header, selecttime) {
     var nowdate = new Date();
     var nowtotal = (nowdate.getHours()*60)+nowdate.getMinutes();
     var selected = false;
+    if (type == 'out') {
+        outtimemap = new Array();
+    }
     for (index in times) {
         if (times[index].length == 0) {
             str += "<li><div class='timespacer'></div></li>";     
@@ -306,9 +309,12 @@ function showTimes(times, type, header, selecttime) {
                 "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" "+checked+" />"+
                 "<label "+lateclass+" for='dep"+type+index+"'>"+times[index]['depdisp']+
                 "<div class='railticket_arrtime'>(arrives: "+times[index]['arrdisp']+")</div></label></li>";
-
+            if (type == 'out') {
+                outtimemap[times[index]['dep']] = times[index]['arr'];
+            }
         }
     }
+    console.log(outtimemap);
     str += "</ul>";
     document.getElementById('deptimes_data_'+type).innerHTML = str;
     return index;
@@ -353,7 +359,9 @@ function trainTimeChanged(index, type, skip) {
 }
 
 function updateTimesList() {
-    var outtime = convertTime(document.railticketbooking['outtime'].value);
+    var outdeptime = document.railticketbooking['outtime'].value;
+    var outarrtime = outtimemap[outdeptime];
+    var outtime = convertTime(outarrtime);
     var tt = document.getElementsByClassName('journeytyperet');
     var ct = 0;
 
