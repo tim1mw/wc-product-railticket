@@ -1091,7 +1091,7 @@ function railticket_get_ordersummary($iscsv = false) {
     $td = array('Date', $date);
     if ($iscsv) {
         header('Content-Type: application/csv');
-        header('Content-Disposition: attachment; filename="waybill-'.$date.'.csv";');
+        header('Content-Disposition: attachment; filename="ordersummary-'.$date.'.csv";');
         header('Pragma: no-cache');
         $f = fopen('php://output', 'w');
         fputcsv($f, $td);
