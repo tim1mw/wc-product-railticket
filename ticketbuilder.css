@@ -271,6 +271,16 @@
     font-weight:bold;
 }
 
+.railticket_processing {
+    padding:4px;
+    font-size:large;
+    color:#880000;
+    background-color:#f2f0a6;
+    font-weight:bold;
+    display:none;
+    text-align:center;
+}
+
 
 /* Force Chrome to show the up/down number buttons */
 input[type=number]::-webkit-inner-spin-button {

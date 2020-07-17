@@ -705,6 +705,19 @@ function termsClicked() {
 }
 
 function cartTickets() {
+    if (guard) {
+       var b = document.getElementById('createbooking');
+       b.disabled = true;
+       b.style.display='none';
+    } else {
+       var b = document.getElementById('addtocart_button');
+       b.disabled = true;
+       b.style.display='none';
+    }
+
+    var p = document.getElementById('railticket_processing');
+    p.style.display = 'block';
+    
     railTicketAjax('purchase', false, function(response) {
         if (response.ok) {
             if (guard) {

@@ -1152,10 +1152,10 @@ class TicketBuilder {
                 "<div id='addticketstocart'><p class='railticket_terms'>Your tickets will be reserved for ".
                 get_option('wc_product_railticket_reservetime')." minutes after you click add to cart.".
                 " Please complete your purchases within that time.</p>".
-                "<p><input type='hidden' name='notes' value='' /><input type='button' value='Add To Cart' /></p></div></div>";
+                "<p><input type='hidden' name='notes' value='' /><input type='button' value='Add To Cart' id='addtocart_button' /></p></div></div>";
         }
 
-        $str .= "</div>";
+        $str .= "<div id='railticket_processing' class='railticket_processing'><p>Processing - Please wait</p></div></div>";
 
         return $str;
     }
