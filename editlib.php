@@ -776,13 +776,13 @@ function railticket_show_manualorder($orderid) {
         <tr><th>Journey Type</th><td class='railticket_meta'><?php echo $order->journeytype; ?></td></tr>
         <tr><th>Outbound Dep</th><td class='railticket_meta'>
             <?php echo $stns[$bookings[0]->fromstation]->name." ".date("g:i", strtotime($bookings[0]->time)); ?></td></tr>
-        <?php railticket_show_bays($bookings[0]->id, $bookings[0]->fromstation, $order->journeytype ); ?>
+        <?php railticket_show_bays($bookings[0]->id, $bookings[0]->fromstation, "Outbound Bays" ); ?>
         <?php
             if ($order->journeytype == 'return') {
                 ?>
         <tr><th>Return Dep</th><td class='railticket_meta'>
             <?php echo $stns[$bookings[1]->fromstation]->name." ".date("g:i", strtotime($bookings[1]->time)); ?></td></tr>
-            <?php railticket_show_bays($bookings[1]->id, $bookings[1]->fromstation, $order->journeytype );
+            <?php railticket_show_bays($bookings[1]->id, $bookings[1]->fromstation, "Return Bays" );
 
             }
         ?>
