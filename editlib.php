@@ -353,6 +353,9 @@ function railticket_view_bookings() {
             case 'viewwaybill':
                 railticket_get_waybill(false);
                 break;
+            case 'viewordersummary':
+                railticket_get_ordersummary(false);
+                break;
             case 'filterbookings':
             default:
                 railticket_summary_selector();
@@ -504,6 +507,16 @@ function railticket_show_bookings_summary($dateofjourney) {
         <input type='hidden' name='action' value='waybill.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Get Way Bill as Spreadsheet file' />
+    </form></p>
+    <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='action' value='viewordersummary' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='View Order Summary' />
+    </form></p>
+    <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+        <input type='hidden' name='action' value='ordersummary.csv' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Get Order Summary Spreadsheet file' />
     </form></p>
     <?php
 }
@@ -963,7 +976,9 @@ function railticket_get_waybill($iscsv) {
         foreach ($summary as $s) {
             railticket_waybill_row($s);
         }
+        echo "</table>";
     }
+
 }
 
 function railticket_get_waybill_data($date) {
@@ -978,6 +993,7 @@ function railticket_get_waybill_data($date) {
     $totalsupplement = 0;
     $totalwoo = 0;
     $totalmanual = 0;
+
     foreach ($bookings as $booking) {
         if (strlen($booking->woocartitem) > 0) {
             continue;
@@ -998,15 +1014,14 @@ function railticket_get_waybill_data($date) {
             }
             $processed[] = $booking->wooorderid;
             $totalwoo += $data_store->get_metadata($booking->wooorderitem, "_line_total", true);
-        } elseif ($booking->manual > 0 && !in_array($booking->manual.'M', $processed)) {
-            $processed[] = $booking->manual.'M';
+        } elseif ($booking->manual > 0 && !in_array('M'.$booking->manual, $processed)) {
+            $processed[] = 'M'.$booking->manual;
             $mb = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$booking->manual)[0];
             $totalseats += $mb->seats;
             $journeytype = $mb->journeytype;
             $ticketsallocated = (array) json_decode($mb->tickets);
             $totalmanual += $mb->price;
             $totalsupplement += $mb->supplement;
-            $processed[] = $booking->manual.'M';
         } else {
             //Bookings should all be manual or woocommerce
             continue;
@@ -1038,6 +1053,7 @@ function railticket_get_waybill_data($date) {
     $r->totalsupplement = $totalsupplement;
     $r->totalwoo = $totalwoo;
     $r->totalmanual = $totalmanual;
+    $r->bookings = $bookings;
     return $r;
 }
 
@@ -1053,4 +1069,105 @@ function railticket_waybill_row($rows, $type = 'td') {
         }
     }
     echo "</tr>";
+}
+
+
+add_action ('admin_post_ordersummary.csv', 'railticket_get_ordersummary_csv');
+function railticket_get_ordersummary_csv() {
+    railticket_get_ordersummary(true);
+}
+
+function railticket_get_ordersummary($iscsv = false) {
+    global $wpdb;
+    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
+    $stns = array();
+    foreach ($stations as $s) {
+        $stns[$s->id] = $s;
+    }
+
+
+    $date = $_REQUEST['dateofjourney'];
+    $header = array('Order ID', 'From', 'To', 'Journey Type', 'Tickets', 'Seats', 'Supplement', 'Total Price', 'Name', 'Email');
+    $td = array('Date', $date);
+    if ($iscsv) {
+        header('Content-Type: application/csv');
+        header('Content-Disposition: attachment; filename="waybill-'.$date.'.csv";');
+        header('Pragma: no-cache');
+        $f = fopen('php://output', 'w');
+        fputcsv($f, $td);
+        fputcsv($f, array('', '', '', '', '', ''));
+        fputcsv($f, $header);
+    } else {
+        echo "<table border='1'>";
+        railticket_waybill_row($td);
+        railticket_waybill_row(array('', '', '', '', '', ''));
+        railticket_waybill_row($header, 'th');
+    }
+
+    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$date."'");
+    $processed = array();
+
+    foreach ($bookings as $booking) {
+        if (strlen($booking->woocartitem) > 0) {
+            continue;
+        }
+
+        $line = array();
+        if ($booking->wooorderid > 0 && !in_array($booking->wooorderid, $processed)) {
+            $processed[] = $booking->wooorderid;
+            $order = wc_get_order($booking->wooorderid);
+            $data_store = WC_Data_Store::load( 'order-item' );
+            $line[] = $booking->wooorderid;
+            $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-tostation")]->name;
+            $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-fromstation")]->name;
+            $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
+
+            $ta = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id = ".$booking->wooorderitem.
+                " AND meta_key LIKE 'ticketsallocated-%'");
+            $ticketsallocated = '';
+            foreach ($ta as $ticket) {
+                $tparts = explode('-', $ticket->meta_key);
+                $ticketsallocated .= $tparts[1]." x".$ticket->meta_value.", ";
+            }
+            $line[] = $ticketsallocated;
+
+            $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-totalseats", true);
+            $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-pricesupplement", true);
+            $line[] = $data_store->get_metadata($booking->wooorderitem, "_line_total", true);
+            $line[] = $order->get_formatted_billing_full_name();
+            $line[] = $order->get_billing_email();
+        } elseif ($booking->manual > 0 && !in_array('M'.$booking->manual, $processed)) {
+            $processed[] = 'M'.$booking->manual;
+            $line[]  = 'M'.$booking->manual;
+            $mb = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$booking->manual)[0];
+            $booking = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$booking->manual)[0];
+            $line[] = $stns[$booking->fromstation]->name;
+            $line[] = $stns[$booking->tostation]->name;
+            $line[] = $mb->journeytype;
+            $ta = (array) json_decode($mb->tickets);
+            $ticketsallocated = '';
+            foreach ($ta as $ticket => $num) {
+                $ticketsallocated .= $ticket." x".$num.", ";
+            }
+            $line[] = $ticketsallocated;
+            $line[] = $mb->seats;
+            $line[] = $mb->supplement;
+            $line[] = $mb->price;
+        } else {
+            //Bookings should all be manual or woocommerce
+            continue;
+        }
+
+        if ($iscsv) {
+            fputcsv($f, $line);
+        } else {
+            railticket_waybill_row($line);
+        }
+    }
+
+    if ($iscsv) {
+        fclose($f);
+    } else {
+        echo "</table>";
+    }
 }
