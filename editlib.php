@@ -588,7 +588,7 @@ function railticket_show_departure() {
         $seats += $booking->seats;
     }
 
-    $tk = new TicketBuilder($dateofjourney, $station->id, $destination->id, $deptime, false, 'single', false, false, false, false, false);
+    $tk = new TicketBuilder($dateofjourney, $station->id, $destination->id, $deptime, false, 'single', false, false, false, false, '', false);
     $basebays = $tk->get_service_inventory($deptime, $station->id, $destination->id, true, true);
     $capused = $tk->get_service_inventory($deptime, $station->id, $destination->id, false, true);
 

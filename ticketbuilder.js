@@ -315,7 +315,7 @@ function showTimes(times, type, header, selecttime) {
             }
         }
     }
-    console.log(outtimemap);
+
     str += "</ul>";
     document.getElementById('deptimes_data_'+type).innerHTML = str;
     return index;
@@ -362,6 +362,7 @@ function trainTimeChanged(index, type, skip) {
 function updateTimesList() {
     var outdeptime = document.railticketbooking['outtime'].value;
     var outarrtime = outtimemap[outdeptime];
+
     var outtime = convertTime(outarrtime);
     var tt = document.getElementsByClassName('journeytyperet');
     var ct = 0;
