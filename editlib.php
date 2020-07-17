@@ -483,13 +483,15 @@ function findTimetable($dateoftravel) {
 
 function railticket_show_bookings_summary($dateofjourney) {
     global $wpdb;
+    ?><h1>Summary for <?php echo $dateofjourney; ?></h1><?php
+
     $timetable = findTimetable($dateofjourney);
     if (!$timetable) {
         echo "<h3>No trains or bookings today</h3>";
         return;
     }
 
-    echo "<h2 style='font-size:xx-large;line-height:120%;'>Booking override code:<span style='color:red'>".$timetable->override."</span></h2>";
+    echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$timetable->override."</span></h2>";
 
     $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
     foreach ($stations as $station) {
