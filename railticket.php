@@ -473,6 +473,7 @@ function railticket_getticketbuilder() {
     $journeytype = railticket_getpostfield('journeytype');
     $overridevalid = railticket_getpostfield('overridevalid');
     $disabledrequest = railticket_getpostfield('disabledrequest');
+    $notes = railticket_getpostfield('notes');
     $show = railticket_getpostfield('show');
 
     $ticketselections = null;
@@ -486,7 +487,7 @@ function railticket_getticketbuilder() {
     $tickets = array();
 
     return new TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $show);
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $show);
 }
 
 function railticket_getpostfield($field) {

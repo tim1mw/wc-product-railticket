@@ -5,7 +5,7 @@ class TicketBuilder {
     private $today, $tomorrow, $stations;
 
     public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $show) {
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $show) {
         global $wpdb;
         $this->show = $show;
         $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
@@ -27,6 +27,7 @@ class TicketBuilder {
         $this->journeytype = $journeytype;
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
+        $this->notes = $notes;
 
         if ($this->is_guard()) {
             $this->overridevalid = true;
@@ -764,7 +765,8 @@ class TicketBuilder {
                 'supplement' => $supplement,
                 'seats' => $totalseats,
                 'travellers' => json_encode($this->ticketselections),
-                'tickets' => json_encode($this->ticketsallocated)
+                'tickets' => json_encode($this->ticketsallocated),
+                'notes' => $this->notes
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
@@ -1125,14 +1127,15 @@ class TicketBuilder {
             "<div class='railticket_container'>";
 
         if ($this->is_guard()) {
-            $str .= "<p><input type='button' value='Create Booking' id='createbooking' /></p>";
+            $str .= "<p><label for='notes'>Guard's Notes:</label><br /><textarea id='notes' cols='40' rows='5' name='notes'></textarea></p>".
+                "<p><input type='button' value='Create Booking' id='createbooking' /></p>";
         } else {
             $str .= "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
                 "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
                 "<div id='addticketstocart'><p class='railticket_terms'>Your tickets will be reserved for ".
                 get_option('wc_product_railticket_reservetime')." minutes after you click add to cart.".
                 " Please complete your purchases within that time.</p>".
-                "<p><input type='button' value='Add To Cart'  /></p></div></div>";
+                "<p><input type='hidden' name='notes' value='' /><input type='button' value='Add To Cart' /></p></div></div>";
         }
 
         $str .= "</div>";

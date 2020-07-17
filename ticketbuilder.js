@@ -79,6 +79,7 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
     data.append('overridevalid', overridevalid);
     data.append('disabledrequest', document.getElementById('disabledrequest').checked);
+    data.append('notes', document.railticketbooking['notes'].value);
 
     request.send(data);
 }
