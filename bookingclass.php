@@ -798,12 +798,14 @@ class TicketBuilder {
                 'dateoftravel' => $this->dateoftravel,
                 'journeytype' => $this->journeytype,
                 'totalseats' => $totalseats,
-                'pricesupplement' => $supplement
+                'pricesupplement' => $supplement,
+                'unique' => uniqid()
             );
             $cart_item_data = array('custom_price' => $custom_price, 'ticketselections' => $this->ticketselections,
                 'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data);
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');
+            //$itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
             $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
             $woocommerce->cart->calculate_totals();
             $woocommerce->cart->set_session();
@@ -869,8 +871,7 @@ class TicketBuilder {
         }
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
-        //$id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$itemkey."' AND ".
-        //    " fromstation = '".$fromstation."' AND tostation = '".$tostation."'");
+
         $id = $wpdb->insert_id;
         foreach ($allocatedbays->outbays as $bay => $num) {
             $bayd = $this->getBayDetails($bay);
