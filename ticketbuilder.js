@@ -29,6 +29,7 @@ function setupTickets() {
     if (guard) {
         railTicketAddListener('createbooking', 'click', cartTickets);
         railTicketAddListener('nominimum', 'click', allocateTickets);
+        railTicketAddListener('bypass', 'click', allocateTickets);
     } else {
         railTicketAddListener('termsinput', 'click', termsClicked);
         railTicketAddListener('addticketstocart', 'click', cartTickets);
@@ -695,6 +696,10 @@ function matchTicket(allocation) {
                if (tkt.depends[di] in ticketsAllocated) {
                    return tkt;
                }
+           }
+           var bypass = document.getElementById('bypass');
+           if (bypass != 'undefined' && bypass.checked) {
+               return tkt;
            }
            var ret = 2;
        }

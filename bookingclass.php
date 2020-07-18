@@ -1138,6 +1138,7 @@ class TicketBuilder {
 
         if ($this->is_guard()) {
             $str .= "<p class='railticket_terms'><input type='checkbox' name='nominimum' id='nominimum'/>&nbsp;&nbsp;&nbsp;No Minimum Price</p>";
+            $str .= "<p class='railticket_terms'><input type='checkbox' name='bypass' id='bypass'/>&nbsp;&nbsp;&nbsp;Bypass Ticket Restrictions</p>";
         } else {
             $str .= "<input type='hidden' name='nominimum' id='nominimum' value='0' />";
         }
