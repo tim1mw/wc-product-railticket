@@ -5,7 +5,7 @@ class TicketBuilder {
     private $today, $tomorrow, $stations;
 
     public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $show) {
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
         global $wpdb;
         $this->show = $show;
         $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
@@ -28,6 +28,7 @@ class TicketBuilder {
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
         $this->notes = $notes;
+        $this->nominimum = $nominimum;
 
         if ($this->is_guard()) {
             $this->overridevalid = true;
@@ -757,9 +758,13 @@ class TicketBuilder {
             if ($custom_price == 0 && $this->is_guard()) {
                 // We will want to record the price for "other" here at some point, but that's not happening now
             } else {
-                $mprice=floatval($mprice);
-                $supplement = floatval($mprice) - floatval($custom_price);
-                $custom_price = $mprice;
+                if ($this->is_guard() && $this->nominimum) {
+                    $supplement = 0;
+                } else {
+                    $mprice=floatval($mprice);
+                    $supplement = floatval($mprice) - floatval($custom_price);
+                    $custom_price = $mprice;
+                }
             }
         } 
         $totalseats = $this->count_seats();
@@ -1129,8 +1134,15 @@ class TicketBuilder {
             "  </div>".
             "  <div id='ticket_summary' class='railticket_container'></div>".
             "  <div id='ticket_capbutton' class='railticket_container'>".
-            "  <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>&nbsp;&nbsp;&nbsp;Request space for wheelchair user</p>".
-            "  <input type='button' value='Confirm Choices' id='confirmchoices' /></div>".
+            "  <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>&nbsp;&nbsp;&nbsp;Request space for wheelchair user</p>";
+
+        if ($this->is_guard()) {
+            $str .= "<p class='railticket_terms'><input type='checkbox' name='nominimum' id='nominimum'/>&nbsp;&nbsp;&nbsp;No Minimum Price</p>";
+        } else {
+            $str .= "<input type='hidden' name='nominimum' id='nominimum' value='0' />";
+        }
+
+        $str.= "  <input type='button' value='Confirm Choices' id='confirmchoices' /></div>".
             "  <div id='ticket_capacity' class='railticket_container'></div>".
             "</div>";
 

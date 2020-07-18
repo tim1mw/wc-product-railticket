@@ -28,6 +28,7 @@ function setupTickets() {
 
     if (guard) {
         railTicketAddListener('createbooking', 'click', cartTickets);
+        railTicketAddListener('nominimum', 'click', allocateTickets);
     } else {
         railTicketAddListener('termsinput', 'click', termsClicked);
         railTicketAddListener('addticketstocart', 'click', cartTickets);
@@ -80,6 +81,7 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('overridevalid', overridevalid);
     data.append('disabledrequest', document.getElementById('disabledrequest').checked);
     data.append('notes', document.railticketbooking['notes'].value);
+    data.append('nominimum', document.getElementById('nominimum').checked);
 
     request.send(data);
 }
@@ -569,14 +571,20 @@ function allocateTickets() {
     var supplement = 0;
 
     if (total < minprice && total != 0) {
-        supplement = minprice - total;
+        var nm = document.getElementById('nominimum');
+        if (guard && nm.checked == true) {
+            supplement = 0;
+        } else {
+            supplement = minprice - total;
+            total = minprice;
+        }
+        
         str += '<tr>'+
             '<td><span>&nbsp</span></td>'+
             '<td><span>Minimum price supplement</td>'+
             '<td><span>'+formatter.format(supplement)+'</span></td>'+
             '<td></td>'+
             '</tr>';
-        total = minprice
     }
 
     str += "<tr><td></td><td><span>Total</span></td><td><span>"+formatter.format(total)+"</span></td><td></td></tr>";
