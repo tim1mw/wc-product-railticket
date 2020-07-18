@@ -786,6 +786,7 @@ class TicketBuilder {
             if ($this->journeytype == 'return') {
                 $this->insertBooking("", $this->rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, $mid);
             }
+            $purchase->id = 'M'.$mid;
         } else {
             $data = array(
                 'fromstation' => $this->fromstation,

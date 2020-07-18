@@ -734,7 +734,11 @@ function cartTickets() {
     railTicketAjax('purchase', false, function(response) {
         if (response.ok) {
             if (guard) {
-                window.location.replace('/wp-admin/admin.php?page=railticket-top-level-handle');
+                //window.location.replace('/wp-admin/admin.php?page=railticket-top-level-handle');
+                var ele = document.getElementById('railticket_processing');
+                ele.innerHTML = 'Booking created with reference: "'+response.id+'"'+
+                    '<br />'+
+                    '<a href="/wp-admin/admin.php?page=railticket-top-level-handle">Tap or Click here to return to service summary</a>';
             } else {
                 window.location.replace('/basket');
             }
