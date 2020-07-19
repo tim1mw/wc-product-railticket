@@ -218,8 +218,11 @@ function fromStationChanged(evt) {
     lastfrom=evt.target.value;
     lastout=-1;
     lastret=-1;
-    uncheckAll('railticket_specials');
-    specialSelected = false;
+    if (specialSelected) {
+        uncheckAll('railticket_specials');
+        specialSelected = false;
+        showTicketStages('stations', false)
+    }
 
     if (document.railticketbooking['fromstation'].value != '' && 
         document.railticketbooking['tostation'].value != '' &&
@@ -247,8 +250,11 @@ function toStationChanged(evt) {
     lastto=evt.target.value;
     lastout=-1;
     lastret=-1;
-    uncheckAll('railticket_specials');
-    specialSelected = false;
+    if (specialSelected) {
+        uncheckAll('railticket_specials');
+        specialSelected = false;
+        showTicketStages('stations', false)
+    }
 
     if (document.railticketbooking['fromstation'].value != '' && 
         document.railticketbooking['tostation'].value != '' &&
