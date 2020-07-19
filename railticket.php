@@ -208,6 +208,14 @@ function railticket_product_format_date($date) {
 }
 
 function railticket_product_format_time($time) {
+    global $wpdb;
+    // Check if this is a special
+    if (strpos($time, 's:') !== false) {
+        $parts = explode(":", $time);
+        $special = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_specials WHERE id = ".$parts[1]);
+        return $special;
+    }
+
     // Wordpress is failing to set the timezone, so force it here.
     //date_default_timezone_set(get_option('timezone_string'));
     $railticket_timezone = new DateTimeZone(get_option('timezone_string'));

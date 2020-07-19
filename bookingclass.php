@@ -22,9 +22,18 @@ class TicketBuilder {
         $this->dateoftravel = $dateoftravel;
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
-        $this->outtime = $outtime;
-        $this->rettime = $rettime;
         $this->journeytype = $journeytype;
+        if (strpos($outtime, 's:') === false) {
+            $this->special = false;
+            $this->outtime = $outtime;
+            $this->rettime = $rettime;
+        } else {
+            $parts = explode(":", $outtime);
+            $this->special = true;
+            $this->outtime = $parts[1];
+            $this->rettime = $parts[1];
+            $this->journeytype = 'return';
+        }
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
         $this->notes = $notes;
@@ -236,6 +245,7 @@ class TicketBuilder {
     }
 
     public function get_bookable_stations() {
+        global $wpdb;
         $bookable = array();
         $bookable['from'] = array();
         $bookable['to'] = array();
@@ -255,6 +265,17 @@ class TicketBuilder {
                 $bookable['to'][$limit->station] = false;
             }
         }
+
+        // Are their any specials today?
+
+        $specials = $wpdb->get_results("SELECT id, name, description, fromstation, tostation FROM {$wpdb->prefix}wc_railticket_specials".
+            " WHERE date = '".$this->dateoftravel."' AND onsale = 1");
+        if ($specials && count($specials) > 0) {
+            $bookable['specials'] = $specials;
+        } else {
+            $bookable['specials'] = false;
+        }
+
 
         return $bookable;
     }
@@ -380,7 +401,47 @@ class TicketBuilder {
             $guardtra = "";
             $guard = "";
         }
-        $tickets->travellers = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra, OBJECT );
+
+        if ($this->special) {
+            $t = $wpdb->get_results("SELECT id, tickettypes FROM {$wpdb->prefix}wc_railticket_specials WHERE ".
+                "id = ".$this->outtime)[0];
+            $specialval = " AND special = 1 AND (";
+            $tkts = json_decode($t->tickettypes);
+            $first = true;
+            $tickets->travellers = array();
+            foreach ($tkts as $tkt) {
+                if (!$first) {
+                    $specialval .= " OR ";
+                }
+                $first = false;
+                $specialval .= " tickettype = '".$tkt."' ";
+                $tkttypes =  $wpdb->get_results("SELECT id, composition FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE ".
+                "code = '".$tkt."'")[0];
+                $tktcomp = (array) json_decode($tkttypes->composition);
+                $done = array();
+                foreach ($tktcomp as $code => $num) {
+                    if ($num == 0) {
+                        continue;
+                    } else {
+                        if (!in_array($code, $done)) {
+                            $done[] = $code;
+
+                            if (!$this->is_guard()) {
+                                $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 AND ";
+                            } else {
+                                $guardtra = " WHERE ";
+                            }
+                            $tickets->travellers[] = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra." ".
+                                " code = '".$code."'", OBJECT )[0];
+                        }
+                    }
+                }
+            }
+            $specialval .= ")";
+        } else {
+            $specialval = " AND special = 0 ";
+            $tickets->travellers = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra, OBJECT );
+        }
 
         $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
             "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
@@ -395,11 +456,13 @@ class TicketBuilder {
             "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
             "WHERE ((stationone = ".$this->fromstation." AND stationtwo = ".$this->tostation.") OR ".
             "(stationone = ".$this->tostation." AND stationtwo = ".$this->fromstation.")) AND ".
-            "journeytype = '".$this->journeytype."' AND disabled = 0 ".$guard.
+            "journeytype = '".$this->journeytype."' AND disabled = 0 ".$specialval." ".$guard.
             "ORDER BY {$wpdb->prefix}wc_railticket_tickettypes.sequence ASC";
+
         $ticketdata = $wpdb->get_results($sql, OBJECT);
 
         $tickets->prices = array();
+
         foreach($ticketdata as $ticketd) {
             $ticketd->composition = json_decode($ticketd->composition);
             $ticketd->depends = json_decode($ticketd->depends);
@@ -769,6 +832,13 @@ class TicketBuilder {
         } 
         $totalseats = $this->count_seats();
 
+        if ($this->special) {
+            $outtime = "s:".$this->outtime;
+            $rettime = "s:".$this->rettime;
+        } else {
+            $outtime = $this->outtime;
+            $rettime = $this->rettime;
+        }
 
         if ($this->is_guard()) {
             $data = array(
@@ -782,18 +852,18 @@ class TicketBuilder {
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
-            $this->insertBooking("", $this->outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, $mid);
+            $this->insertBooking("", $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, $mid);
             if ($this->journeytype == 'return') {
-                $this->insertBooking("", $this->rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, $mid);
+                $this->insertBooking("", $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, $mid);
             }
             $purchase->id = 'M'.$mid;
         } else {
             $data = array(
                 'fromstation' => $this->fromstation,
                 'tostation' => $this->tostation,
-                'outtime' => $this->outtime,
+                'outtime' => $outtime,
                 'outbays' => $outbays,
-                'rettime' => $this->rettime,
+                'rettime' => $rettime,
                 'retbays' => $retbays,
                 'dateoftravel' => $this->dateoftravel,
                 'journeytype' => $this->journeytype,
@@ -811,9 +881,9 @@ class TicketBuilder {
             $woocommerce->cart->set_session();
             $woocommerce->cart->maybe_set_cart_cookies();
 
-            $this->insertBooking($itemkey, $this->outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, 0);
+            $this->insertBooking($itemkey, $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, 0);
             if ($this->journeytype == 'return') {
-                $this->insertBooking($itemkey, $this->rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, 0);
+                $this->insertBooking($itemkey, $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, 0);
             }
         }
         $purchase->ok = true;
@@ -1092,7 +1162,9 @@ class TicketBuilder {
             "<div class='railticket_container'>".
             "<div class='railticket_listselect_left'><div class='inner'><h3>From</h3>".$this->station_radio("fromstation", true)."</div></div>".
             "<div class='railticket_listselect_right'><div class='inner'><h3>To</h3>".$this->station_radio("tostation", false)."</div></div>".
-            "</div></div>";
+            "</div>".
+            "<div class='railticket_container' id='railticket_specials'></div>".
+            "</div>";
 
         return $str;
     }

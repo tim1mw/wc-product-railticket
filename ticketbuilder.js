@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
 var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
-var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array();
+var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array(), hasSpecials = false, specialSelected = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -74,8 +74,13 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('dateoftravel', document.getElementById('dateoftravel').value);
     data.append('fromstation', document.railticketbooking['fromstation'].value);
     data.append('tostation', document.railticketbooking['tostation'].value);
-    data.append('outtime', document.railticketbooking['outtime'].value);
-    data.append('rettime', document.railticketbooking['rettime'].value);
+    if (specialSelected) {
+        data.append('outtime', "s:"+document.railticketbooking['specials'].value);
+        data.append('rettime', "s:"+document.railticketbooking['specials'].value);
+    } else {
+        data.append('outtime', document.railticketbooking['outtime'].value);
+        data.append('rettime', document.railticketbooking['rettime'].value);
+    }
     data.append('journeytype', document.railticketbooking['journeytype'].value);
     data.append('ticketselections', JSON.stringify(ticketSelections));
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
@@ -139,6 +144,26 @@ function enableStations(type, response, defstn) {
             stn.checked = false;
         }
     }
+
+    if (response['specials']) {
+        hasSpecials = true;
+        str = "<h3>Or choose one of todays specials:</h3><ul>";
+        for (index in response['specials']) {
+           var special = response['specials'][index];
+           var selected = '';
+
+           str += "<li class='railticket_hlist'><input class='railticket_specials' type='radio' name='specials' id='specials"+
+               special.id+"' "+selected+" value='"+special.id+"' onclick='specialClicked("+special.id+", \""+special.fromstation+"\", \""+special.tostation+"\")' />"+
+               "<label class='railticket_caplitalise' for='specials"+
+               special.id+"'>"+special.name+"<div class='railticket_arrtime'>"+special.description+"</div></label></li>";
+        }
+        str += "</ul>";
+        document.getElementById('railticket_specials').innerHTML = str;
+    } else {
+        hasSpecials = false;
+        document.getElementById('railticket_specials').innerHTML = '';
+    }
+            
 }
 
 function notBookable(bdate) {
@@ -180,10 +205,12 @@ function fromStationChanged(evt) {
             lastto=lastfrom;
         }
     }
-    lastfrom=evt.target.value;
 
+    lastfrom=evt.target.value;
     lastout=-1;
     lastret=-1;
+    uncheckAll('railticket_specials');
+    specialSelected = false;
 
     if (document.railticketbooking['fromstation'].value != '' && 
         document.railticketbooking['tostation'].value != '' &&
@@ -209,9 +236,10 @@ function toStationChanged(evt) {
     }
 
     lastto=evt.target.value;
-
     lastout=-1;
     lastret=-1;
+    uncheckAll('railticket_specials');
+    specialSelected = false;
 
     if (document.railticketbooking['fromstation'].value != '' && 
         document.railticketbooking['tostation'].value != '' &&
@@ -221,6 +249,26 @@ function toStationChanged(evt) {
         getDepTimes();
     }
 }
+
+function specialClicked(index, fromstation, tostation) {
+    specialSelected = true;
+    document.getElementById("fromstation"+fromstation).checked = true;
+    document.getElementById("tostation"+tostation).checked = true;
+    
+    railTicketAjax('tickets', true, renderTicketSelector);
+}
+
+
+function uncheckAll(classname) {
+    var tt = document.getElementsByClassName(classname);
+    for (t in tt) {
+        if (typeof(tt[t].value) == 'undefined') {
+            continue;
+        }
+        tt[t].checked = false;
+    }
+}
+
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
@@ -264,6 +312,7 @@ function getDepTimes() {
         showTicketStages('deptimes', true);
     });
 }
+
 
 function showTimes(times, type, header, selecttime) {
     var str = "<h3>"+header+"</h3>";
@@ -443,7 +492,6 @@ function showTicketSelector() {
 
 function renderTicketSelector(response) {
     ticketdata = response;
-
     if (response.length == 0) {
         document.getElementById('ticket_type').style.display = "none";
         document.getElementById('ticket_numbers').style.display = "none";
@@ -453,7 +501,6 @@ function renderTicketSelector(response) {
     }
 
     var travellers = "";
-
     for (i in response.travellers) {
         var value = '';
         var code = response.travellers[i].code;
@@ -465,9 +512,11 @@ function renderTicketSelector(response) {
             "<div class='railticket_travellers_numbers woocommerce'><div class='quantity'>"+
             " <input type='number' id='q_"+code+"' name='q_"+code+"' "+
             " class='input-text qty text' min='0' max='99' value='"+value+"' oninput='travellersChanged()'> "+
-            " <label for='q_"+code+"'>"+response.travellers[i].name+"</label> "+
-            " <span>("+response.travellers[i].description+")</span>"+
-            "</div>"+
+            " <label for='q_"+code+"'>"+response.travellers[i].name+"</label> ";
+        if (response.travellers[i].description.length > 0) {
+            travellers += " <span>("+response.travellers[i].description+")</span>";
+        }
+        travellers += "</div>"+
             "</div>";
     }
 
@@ -782,9 +831,13 @@ function showTicketStages(stage, doscroll) {
         scroll = datechoosen;
     }
 
+    // Deptimes aren't shown for specials
     var deptimes = document.getElementById('deptimes');
-    deptimes.style.display = display;
-
+    if (specialSelected) {
+        deptimes.style.display = 'none';
+    } else {
+        deptimes.style.display = display;
+    }
     // If there is only one bookable train, pre-select the only time available and skip this step.
     if (skipDepTimes()) {
         stage = 'tickets';
