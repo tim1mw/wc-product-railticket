@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
 var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
-var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array(), hasSpecials = false, specialSelected = false;
+var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array(), hasSpecials = false, specialSelected = false, specialsData = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -154,6 +154,7 @@ function enableStations(type, response, defstn) {
     }
 
     if (response['specials']) {
+        specialsData = response['specials'];
         hasSpecials = true;
         str = "<h3>Or choose one of today's specials:</h3><ul>";
         for (index in response['specials']) {
@@ -509,6 +510,20 @@ function showTicketSelector() {
 
 function renderTicketSelector(response) {
     ticketdata = response;
+    var summary = document.getElementById('railticket_summary_service');
+    if (specialSelected) {
+        var special = false;
+        for (index in specialsData) {
+            if (specialsData[index].id == document.railticketbooking['specials'].value) {
+                special = specialsData[index];
+            }
+        }
+        var ddate = new Date(document.getElementById('dateoftravel').value);
+        summary.innerHTML = "<p>"+special.name+" - "+ddate.getDate()+"-"+months[ddate.getMonth()]+"-"+ddate.getFullYear()+"</p>";
+    } else {
+        summary.innerHTML = '';
+    }
+
     if (response.length == 0) {
         document.getElementById('ticket_type').style.display = "none";
         document.getElementById('ticket_numbers').style.display = "none";

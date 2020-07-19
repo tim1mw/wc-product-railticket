@@ -1203,6 +1203,7 @@ class TicketBuilder {
     private function get_ticket_choices() {
         $str = "<div id='tickets' class='railticket_stageblock'>".
             "<h3>Choose Tickets</h3>".
+            "<div class='railicket_selected_service' id='railticket_summary_service'></div>".
             "<p class='railticket_help'>Use the boxes on the left to enter the number of tickets required</p>".
             "  <div id='ticket_travellers' class='railticket_container'>".
             "  </div>".
