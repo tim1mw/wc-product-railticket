@@ -1050,7 +1050,8 @@ class TicketBuilder {
             "var today = '".$this->today->format('Y-m-d')."'\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
-            "var dateFormat = '".get_option('railtimetable_date_format')."';";
+            "var dateFormat = '".get_option('railtimetable_date_format')."';\n".
+            "var stationData = ".json_encode(railticket_get_stations_map())."\n";
 
         $str .= $this->preset_javascript('a_dateofjourney');
         $str .= $this->preset_javascript('a_station');

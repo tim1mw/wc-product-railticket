@@ -287,7 +287,7 @@ function uncheckAll(classname) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-        console.log('getDeptimes');
+
         if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
             showTimes(response['out'], 'out', "Outbound", false);
         } else {
@@ -433,9 +433,6 @@ function trainTimeChanged(index, type, skip) {
 
 function updateTimesList() {
     var outdeptime = document.railticketbooking['outtime'].value;
-console.log(outdeptime);
-console.log(outtimemap);
-console.log(a_deptime);
     var outarrtime = outtimemap[outdeptime];
 
     var outtime = convertTime(outarrtime);
@@ -464,7 +461,6 @@ console.log(a_deptime);
 }
 
 function convertTime(time) {
-console.log(time);
    var parts = time.split(".");
    return (parseInt(parts[0])*60)+parseInt(parts[1]);
 }
@@ -514,9 +510,17 @@ function showTicketSelector() {
 
 }
 
+function convert24hour(time) {
+    var parts = time.split(".");
+    var twelve = (parts[0] % 12) || 12;
+    return twelve+"."+parts[1];
+}
+
 function renderTicketSelector(response) {
     ticketdata = response;
     var summary = document.getElementById('railticket_summary_service');
+    var ddate = new Date(document.getElementById('dateoftravel').value);
+    var tdate = ddate.getDate()+"-"+months[ddate.getMonth()]+"-"+ddate.getFullYear();
     if (specialSelected) {
         var special = false;
         for (index in specialsData) {
@@ -524,10 +528,29 @@ function renderTicketSelector(response) {
                 special = specialsData[index];
             }
         }
-        var ddate = new Date(document.getElementById('dateoftravel').value);
-        summary.innerHTML = "<p>"+special.name+" - "+ddate.getDate()+"-"+months[ddate.getMonth()]+"-"+ddate.getFullYear()+"</p>";
+
+        summary.innerHTML = "<p>"+special.name+" - "+tdate+"</p>";
     } else {
-        summary.innerHTML = '';
+        var fromindex = document.railticketbooking['fromstation'].value;
+        var toindex = document.railticketbooking['tostation'].value;
+        var f='', t='';
+        for (si in stationData) {
+            if (stationData[si].id == fromindex) {
+                f = stationData[si].name;
+            }
+            if (stationData[si].id == toindex) {
+                t = stationData[si].name;
+            }
+        }
+
+        document.railticketbooking['rettime'].value;
+        var str = "<p>"+tdate+", Outbound:"+convert24hour(document.railticketbooking['outtime'].value)+" from "+f;
+        if (document.railticketbooking['journeytype'].value == 'return') {
+            str += ", Return: "+convert24hour(document.railticketbooking['rettime'].value+" from "+t);
+        }
+        str += "</p>";
+
+        summary.innerHTML = str;
     }
 
     if (response.length == 0) {
