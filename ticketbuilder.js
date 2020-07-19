@@ -114,6 +114,15 @@ function doStations() {
     railTicketAjax('bookable_stations', true, function(response) {
         enableStations('from', response, a_station);
         enableStations('to', response, a_destination);
+        if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
+            specialSeleted = true;
+            var sp = a_deptime.split(':');
+            document.getElementById('specials'+sp[1]).checked = true;
+            specialClicked(sp[1], a_station, a_destination);
+            a_station = false;
+            a_destination = false;
+            a_deptime = false;
+        }
 
         overridecode = response['override'];
         if (a_station !== false && a_destination !== false) {
@@ -123,7 +132,6 @@ function doStations() {
         } else {
             showTicketStages('stations', true);
         }
-        
     });
 }
 
@@ -147,7 +155,7 @@ function enableStations(type, response, defstn) {
 
     if (response['specials']) {
         hasSpecials = true;
-        str = "<h3>Or choose one of todays specials:</h3><ul>";
+        str = "<h3>Or choose one of today's specials:</h3><ul>";
         for (index in response['specials']) {
            var special = response['specials'][index];
            var selected = '';
@@ -272,7 +280,12 @@ function uncheckAll(classname) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-        var sindex = showTimes(response['out'], 'out', "Outbound", a_deptime);
+        console.log('getDeptimes');
+        if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
+            showTimes(response['out'], 'out', "Outbound", false);
+        } else {
+            showTimes(response['out'], 'out', "Outbound", a_deptime);
+        }
         showTimes(response['ret'], 'ret', "Return", false);
 
         var str = "";
@@ -413,6 +426,9 @@ function trainTimeChanged(index, type, skip) {
 
 function updateTimesList() {
     var outdeptime = document.railticketbooking['outtime'].value;
+console.log(outdeptime);
+console.log(outtimemap);
+console.log(a_deptime);
     var outarrtime = outtimemap[outdeptime];
 
     var outtime = convertTime(outarrtime);
@@ -441,6 +457,7 @@ function updateTimesList() {
 }
 
 function convertTime(time) {
+console.log(time);
    var parts = time.split(".");
    return (parseInt(parts[0])*60)+parseInt(parts[1]);
 }
@@ -747,7 +764,7 @@ function matchTicket(allocation) {
                }
            }
            var bypass = document.getElementById('bypass');
-           if (bypass != 'undefined' && bypass.checked) {
+           if (bypass != 'undefined' && bypass != null && bypass.checked) {
                return tkt;
            }
            var ret = 2;

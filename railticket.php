@@ -506,6 +506,36 @@ function railticket_getpostfield($field) {
     return false;
 }
 
+function railticket_get_special_button($attr) {
+    global $wpdb;
+
+    $specials = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_specials".
+        " WHERE date = '".$attr['date']."' AND id = ".$attr['id']);
+
+    if (!$specials || count($specials) == 0) {
+        echo "Event not found";
+        return;
+    }
+    $special = $specials[0];
+
+    $evtdate = Datetime::createFromFormat('Y-m-d', $attr['date']);
+    $date = strftime(get_option('railtimetable_date_format'), $evtdate->getTimestamp());
+
+    if ($special->onsale == 0) {
+        echo "Sorry, the \"".$special->name."\" on ".$evtdate." is not currently on sale";
+    }
+
+    echo "<form action='/book/' method='post'>".
+        "<input type='submit' value='Click or Tap to buy tickets for the ".$special->name." on ".$date."' />".
+        "<input type='hidden' name='a_dateofjourney' value='".$attr['date']."' />".
+        "<input type='hidden' name='a_deptime' value='s:".$attr['id']."' />".
+        "<input type='hidden' name='a_station' value='".$special->fromstation."' />".
+        "<input type='hidden' name='a_destination' value='".$special->tostation."' />".
+        "<input type='hidden' name='a_direction' value='' />".
+        "<input type='hidden' name='show' value='1' />".
+        "</form><br />";
+}
+
 add_action('init', 'register_railticket_product_type');
 add_filter('product_type_selector', 'add_railticket_product');
 add_action('woocommerce_after_single_product_summary', 'railticket_product_front');
@@ -517,6 +547,7 @@ add_action( 'woocommerce_product_options_general_product_data', function(){
 
 add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
+add_shortcode('railticket_special', 'railticket_get_special_button');
 add_action( 'wp_ajax_nopriv_railticket_ajax', 'railticket_ajax_request');
 add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
 
