@@ -1070,8 +1070,8 @@ class TicketBuilder {
     }
 
     private function preset_javascript($key) {
-        if (array_key_exists('a_dateofjourney', $_POST)) {
-            return 'var '.$key.' = "'.$_POST[$key].'";';
+        if (array_key_exists('a_dateofjourney', $_REQUEST)) {
+            return 'var '.$key.' = "'.$_REQUEST[$key].'";';
         } else {
             return 'var '.$key.' = false;';
         }
