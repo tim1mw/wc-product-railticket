@@ -529,7 +529,7 @@ function renderTicketSelector(response) {
             }
         }
 
-        summary.innerHTML = "<p>"+special.name+" - "+tdate+"</p>";
+        summary.innerHTML = "<p>"+special.name+" - "+tdate+"</p><p class='railticket_arrtime'>"+special.description+"</p>";
     } else {
         var fromindex = document.railticketbooking['fromstation'].value;
         var toindex = document.railticketbooking['tostation'].value;
