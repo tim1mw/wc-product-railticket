@@ -852,13 +852,13 @@ class TicketBuilder {
                 'seats' => $totalseats,
                 'travellers' => json_encode($this->ticketselections),
                 'tickets' => json_encode($this->ticketsallocated),
-                'notes' => $this->notes,
+                'notes' => $this->notes
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
-            $this->insertBooking("", $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, $mid, 1);
+            $this->insertBooking("", $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, $mid);
             if ($this->journeytype == 'return') {
-                $this->insertBooking("", $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, $mid, 1);
+                $this->insertBooking("", $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, $mid);
             }
             $purchase->id = 'M'.$mid;
         } else {
@@ -911,7 +911,7 @@ class TicketBuilder {
         }
     }
 */
-    private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays, $manual, $collected = 0) {
+    private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays, $manual) {
         global $wpdb;
         // TODO originstation and origintime reflect the station this train originally started from. Right now
         // with end to end bookings only this will always be the same as fromstation and time. Needs to be set properly
@@ -938,8 +938,7 @@ class TicketBuilder {
             'origintime' => $time,
             'created' => time(),
             'expiring' => 0,
-            'manual' => $manual,
-            'collected' => $collected
+            'manual' => $manual
         );
         if ($manual) {
             $dbdata['collected'] = true;
