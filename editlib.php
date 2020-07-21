@@ -1032,6 +1032,7 @@ function railticket_get_waybill($iscsv) {
 
     $summary[] = array('Total Passengers', $totalsdata->totalseats);
     $summary[] = array('Total Tickets', $totalsdata->totaltickets);
+    $summary[] = array('Total One Way Journeys', $totalsdata->totaljourneys); 
     $summary[] = array('Total Manual Booking Revenue', $totalsdata->totalmanual);
     $summary[] = array('Total Online Bookings Revenue', $totalsdata->totalwoo);
 
@@ -1062,6 +1063,7 @@ function railticket_get_waybill_data($date) {
     $totalsupplement = 0;
     $totalwoo = 0;
     $totalmanual = 0;
+    $totaljourneys = 0;
 
     foreach ($bookings as $booking) {
         if (strlen($booking->woocartitem) > 0) {
@@ -1073,7 +1075,11 @@ function railticket_get_waybill_data($date) {
             $totalseats += $data_store->get_metadata($booking->wooorderitem, "tickettimes-totalseats", true);
             $journeytype = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
             $totalsupplement += $data_store->get_metadata($booking->wooorderitem, "tickettimes-pricesupplement", true);
-
+            if ($journeytype == 'single') {
+                $totaljourneys += $data_store->get_metadata($booking->wooorderitem, "tickettimes-totalseats", true);
+            } else {
+                $totaljourneys += ($data_store->get_metadata($booking->wooorderitem, "tickettimes-totalseats", true) * 2);
+            }
             $ta = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id = ".$booking->wooorderitem.
                 " AND meta_key LIKE 'ticketsallocated-%'");
             $ticketsallocated = array();
@@ -1088,6 +1094,11 @@ function railticket_get_waybill_data($date) {
             $mb = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$booking->manual)[0];
             $totalseats += $mb->seats;
             $journeytype = $mb->journeytype;
+            if ($journeytype == 'single') {
+                $totaljourneys += $mb->seats;
+            } else {
+                $totaljourneys += ($mb->seats * 2);
+            }
             $ticketsallocated = (array) json_decode($mb->tickets);
             $totalmanual += $mb->price;
             $totalsupplement += $mb->supplement;
@@ -1123,6 +1134,7 @@ function railticket_get_waybill_data($date) {
     $r->totalwoo = $totalwoo;
     $r->totalmanual = $totalmanual;
     $r->bookings = $bookings;
+    $r->totaljourneys = $totaljourneys;
     return $r;
 }
 
