@@ -591,6 +591,7 @@ function railticket_show_departure() {
     $tk = new TicketBuilder($dateofjourney, $station->id, $destination->id, $deptime, false, 'single', false, false, false, false, '',false, false);
     $basebays = $tk->get_service_inventory($deptime, $station->id, $destination->id, true, true);
     $capused = $tk->get_service_inventory($deptime, $station->id, $destination->id, false, true);
+    $capcollected = $tk->get_service_inventory($deptime, $station->id, $destination->id, false, true, true);
 
     echo "<div class='railticket_editdate'><h3>Service summary</h3><table border='1'>".
         "<tr><th>Station</th><th>".$station->name."</th></tr>".
@@ -604,12 +605,12 @@ function railticket_show_departure() {
         "</table></div><br />";
 
     echo "<h3>Bay Usage (one way to destination)</h3><div class='railticket_trainbookings'>".
-        "<table border='1'><th>Bay</th><th>Total</th><th>Used</th><th>Empty</th></tr>";
+        "<table border='1'><th>Bay</th><th>Total</th><th>Sold</th><th>Collected</th><th>Empty</th></tr>";
     foreach ($basebays as $bay => $space) {
         $bayd = str_replace('_', ' seat ', $bay);
         $bayd = str_replace('priority', 'disabled', $bayd);
         echo "<td>".$bayd."</td><td>".$space."</td><td>".
-            ($space-$capused->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
+            ($space-$capused->bays[$bay])."</td><td>".($space-$capcollected->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
     }
     echo "</table></div>"
 

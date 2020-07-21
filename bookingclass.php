@@ -472,7 +472,7 @@ class TicketBuilder {
         return $tickets;
     }
 
-    public function get_service_inventory($time, $fromstation, $tostation, $baseonly = false, $noreserve = false) {
+    public function get_service_inventory($time, $fromstation, $tostation, $baseonly = false, $noreserve = false, $onlycollected = false) {
         global $wpdb;
         $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
@@ -496,6 +496,10 @@ class TicketBuilder {
             "{$wpdb->prefix}wc_railticket_bookings.fromstation = '".$fromstation."' AND ".
             "{$wpdb->prefix}wc_railticket_bookings.date = '".$this->dateoftravel."' AND ".
             "{$wpdb->prefix}wc_railticket_bookings.time = '".$time."' ";
+
+        if ($onlycollected) {
+            $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ";
+        }
 
         $bookings = $wpdb->get_results($sql);
         foreach ($bookings as $booking) {
