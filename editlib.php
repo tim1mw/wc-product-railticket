@@ -1047,6 +1047,19 @@ function railticket_get_waybill($iscsv) {
             railticket_waybill_row($s);
         }
         echo "</table>";
+        ?>
+        <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='action' value='viewwaybill' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $date; ?>' />
+        <input type='submit' name='submit' value='Refresh Data' />
+        </form><br />
+        <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+        <input type='hidden' name='action' value='filterbookings' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $date; ?>' />
+        <input type='submit' name='submit' value='Back to Services' />
+        </form>
+        </p>
+        <?php
     }
 
 }
@@ -1255,5 +1268,18 @@ function railticket_get_ordersummary($iscsv = false) {
         fclose($f);
     } else {
         echo "</table>";
+        ?>
+        <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='action' value='viewordersummary' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $date; ?>' />
+        <input type='submit' name='submit' value='Refresh Data' />
+        </form><br />
+        <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+        <input type='hidden' name='action' value='filterbookings' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $date; ?>' />
+        <input type='submit' name='submit' value='Back to Services' />
+        </form>
+        </p>
+        <?php
     }
 }
