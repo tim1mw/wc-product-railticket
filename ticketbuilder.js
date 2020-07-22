@@ -749,13 +749,6 @@ function showCapacity(response) {
                 "You may continue with the selection shown, or try a different train.</p>";
         }
 
-        if (!response.match) {
-            str += "<p class='railticketwarn'>WARNING: The services you have chosen are busy, we have been unable to allocate "+
-                "you to the same type(s) of bay for the out and return trips. If you are returning on the same service that you depart on, "+
-                "you will have to change seats for the return train. "+
-                "If you are ok with this, you may continue with the selection shown, otherwise, please try a different train.</p>";
-        }
-
         showTicketStages('addtocart', false);
     } else {
         if (overridevalid) {

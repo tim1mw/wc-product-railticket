@@ -336,11 +336,22 @@ function railticket_view_bookings() {
     if (array_key_exists('action', $_REQUEST)) {
         switch($_REQUEST['action']) {
             case 'cancelcollected';
-                railticket_mark_collected(false);
+                railticket_mark_ticket(false, 'collected');
                 railticket_show_order();
                 break;
             case 'collected':
-                railticket_mark_collected(true);
+                railticket_mark_ticket(true, 'collected');
+            case 'showorder':
+                railticket_show_order();
+                break;
+            case 'cancelreturned';
+                railticket_mark_ticket(false, 'returned');
+                railticket_show_order();
+                break;
+            case 'returned':
+                railticket_mark_ticket(true, 'returned');
+                railticket_show_order();
+                break;
             case 'showorder':
                 railticket_show_order();
                 break;
@@ -709,11 +720,11 @@ function railticket_get_bookingbays_display($bookingid) {
     return $str;
 }
 
-function railticket_mark_collected($val) {
+function railticket_mark_ticket($val, $field) {
     global $wpdb;
     $orderid = $_POST['orderid'];
     $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-                array('collected' => $val),
+                array($field => $val),
                 array('wooorderid' => $orderid));
 }
 
@@ -763,7 +774,7 @@ function railticket_show_manualorder($orderid) {
     $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$order->id);
     $stns = railticket_get_stations_map();
 
-    ?><table border='1'>
+    ?><div class='railticket_editdate'><table border='1'>
         <tr><th>Order ID</th><td class='railticket_meta'><?php echo $orderid; ?></td></tr>
         <tr><th>Total Paid</th><td class='railticket_meta'>£<?php echo $order->price; ?></td></tr>
         <tr><th>Fare Supplement</th><td class='railticket_meta'>£<?php echo $order->supplement; ?></td></tr>
@@ -788,9 +799,57 @@ function railticket_show_manualorder($orderid) {
             }
         ?>
         <tr><th>Notes</th><td class='railticket_meta'><?php echo $order->notes; ?></td></tr>
-    </table>
     <?php
+
+    echo "<tr><th>Collected</th><td class='railticket_meta'>";
+    if ($bookings[0]->collected) {
+        echo "Yes";
+    } else {
+        echo "No";
+    }
+    echo "</td></tr>";
+    if ($order->journeytype != 'single') {
+        echo "<tr><th>Returned</th><td class='railticket_meta'>";
+        if ($bookings[0]->returned) {
+            echo "Yes";
+        } else {
+            echo "No";
+        }
+        echo "</td></tr>";
+    }
+    echo "</table>";
+
+    if (!$bookings[0]->collected) {
+        echo "<p><form action='".railticket_get_page_url()."' method='post'>".
+            "<input type='hidden' name='action' value='collected' />".
+            "<input type='hidden' name='orderid' value='".$orderid."' />".
+            "<input type='submit' value='Mark Collected' />".
+            "</form></p>";
+    } else {
+        echo "<p><form action='".railticket_get_page_url()."' method='post'>".
+            "<input type='hidden' name='action' value='cancelcollected' />".
+            "<input type='hidden' name='orderid' value='".$orderid."' />".
+            "<input type='submit' value='Cancel Collected' />".
+            "</form></p>";
+    }
+
+    if ($order->journeytype != 'single') {
+        if (!$bookings[0]->returned) {
+            echo "<p><form action='".railticket_get_page_url()."' method='post'>".
+                "<input type='hidden' name='action' value='returned' />".
+                "<input type='hidden' name='orderid' value='".$orderid."' />".
+                "<input type='submit' value='Mark Returned' />".
+                "</form></p>";
+        } else {
+            echo "<p><form action='".railticket_get_page_url()."' method='post'>".
+                "<input type='hidden' name='action' value='cancelreturned' />".
+                "<input type='hidden' name='orderid' value='".$orderid."' />".
+                "<input type='submit' value='Cancel Returned' />".
+                "</form></p>";
+        }
+    }
     railticket_show_back_to_services($bookings[0]->date);
+    echo "</div>";
 }
 
 function railticket_show_wooorder($orderid) {
@@ -858,22 +917,49 @@ function railticket_show_wooorder($orderid) {
     } else {
         echo "No";
     }
-    echo "</td></tr></table>";
+    echo "</td></tr>";
+    if ($journeytype != 'single') {
+        echo "<tr><th>Returned</th><td class='railticket_meta'>";
+        if ($booking[0]->returned) {
+            echo "Yes";
+        } else {
+            echo "No";
+        }
+        echo "</td></tr>";
+    }
+    echo "</table>";
 
     if (!$booking[0]->collected) {
-        echo "<form action='".railticket_get_page_url()."' method='post'>".
+        echo "<p><form action='".railticket_get_page_url()."' method='post'>".
             "<input type='hidden' name='action' value='collected' />".
             "<input type='hidden' name='orderid' value='".$_POST['orderid']."' />".
             "<input type='submit' value='Mark Collected' />".
-            "</form>";
+            "</form></p>";
     } else {
-        echo "<form action='".railticket_get_page_url()."' method='post'>".
+        echo "<p><form action='".railticket_get_page_url()."' method='post'>".
             "<input type='hidden' name='action' value='cancelcollected' />".
             "<input type='hidden' name='orderid' value='".$_POST['orderid']."' />".
             "<input type='submit' value='Cancel Collected' />".
-            "</form>";
+            "</form></p>";
+    }
+
+    if ($journeytype != 'single') {
+        if (!$booking[0]->returned) {
+            echo "<p><form action='".railticket_get_page_url()."' method='post'>".
+                "<input type='hidden' name='action' value='returned' />".
+                "<input type='hidden' name='orderid' value='".$_POST['orderid']."' />".
+                "<input type='submit' value='Mark Returned' />".
+                "</form></p>";
+        } else {
+            echo "<p><form action='".railticket_get_page_url()."' method='post'>".
+                "<input type='hidden' name='action' value='cancelreturned' />".
+                "<input type='hidden' name='orderid' value='".$_POST['orderid']."' />".
+                "<input type='submit' value='Cancel Returned' />".
+                "</form></p>";
+        }
     }
     railticket_show_back_to_services($dateofjourney);
+    echo "</div>";
 }
 
 function railticket_show_back_to_services($dateofjourney) {
@@ -884,7 +970,6 @@ function railticket_show_back_to_services($dateofjourney) {
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Back to Services' />
     </form>
-    </div>
     <?php
 }
 
