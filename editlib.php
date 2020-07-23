@@ -1302,7 +1302,15 @@ function railticket_get_ordersummary($iscsv = false) {
             $processed[] = $booking->wooorderid;
             $order = wc_get_order($booking->wooorderid);
             $data_store = WC_Data_Store::load( 'order-item' );
-            $line[] = $booking->wooorderid;
+            if ($iscsv) {
+                $line[] = $booking->wooorderid;
+            } else {
+                 $line[] = "<form action='".railticket_get_page_url()."' method='post'>".
+                "<input type='hidden' name='action' value='showorder' />".
+                "<input type='hidden' name='orderid' value='".$booking->wooorderid."' />".
+                "<input type='submit' value='".$booking->wooorderid."' />".
+                "</form>";
+            }
             $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-tostation")]->name;
             $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-fromstation")]->name;
             $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
@@ -1323,7 +1331,15 @@ function railticket_get_ordersummary($iscsv = false) {
             $line[] = $order->get_billing_email();
         } elseif ($booking->manual > 0 && !in_array('M'.$booking->manual, $processed)) {
             $processed[] = 'M'.$booking->manual;
-            $line[]  = 'M'.$booking->manual;
+            if ($iscsv) {
+                $line[]  = 'M'.$booking->manual;
+            } else {
+                 $line[] = "<form action='".railticket_get_page_url()."' method='post'>".
+                "<input type='hidden' name='action' value='showorder' />".
+                "<input type='hidden' name='orderid' value='M".$booking->manual."' />".
+                "<input type='submit' value='M".$booking->manual."' />".
+                "</form>";
+            }
             $mb = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$booking->manual)[0];
             $booking = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$booking->manual)[0];
             $line[] = $stns[$booking->fromstation]->name;
