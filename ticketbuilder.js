@@ -720,27 +720,35 @@ function showCapacity(response) {
     var str = "<div class='railticket_travellers_table_container' >";
     if (response.ok || guard) {
         str = "Socially distanced seating bay(s) are available for your journey:<br /><table class='railticket_travellers_table'><tr><td>Outbound</td><td>";
-        for (i in response.outbays) {
-            var desc = i.split('_');
-            str += response.outbays[i]+"x "+desc[0]+" seat bay";
-            if (desc[1] == 'priority') {
-                str += ' (with disabled space)';   
-            }
-            str += '<br />';
-        }
-        str += "</td></tr>";
-        var journeytype = document.railticketbooking['journeytype'].value;
-        if (journeytype == "return") {
-            str += "<tr><td>Return</td><td>";
-            for (i in response.retbays) {
+        if (typeof(response.outbays) == 'undefined' || response.outbays.length == 0 ) {
+            str += "Insufficient space";
+        } else {
+            for (i in response.outbays) {
                 var desc = i.split('_');
-                str += response.retbays[i]+"x "+desc[0]+" seat bay";
+                str += response.outbays[i]+"x "+desc[0]+" seat bay";
                 if (desc[1] == 'priority') {
                     str += ' (with disabled space)';   
                 }
                 str += '<br />';
             }
-            str += "</td></tr>";
+        }
+        str += "</td></tr>";
+        var journeytype = document.railticketbooking['journeytype'].value;
+        if (journeytype == "return") {
+            str += "<tr><td>Return</td><td>";
+            if (typeof(response.retbays) == 'undefined' || response.retbays.length == 0 ) {
+                str += "Insufficient space";
+            } else {
+                for (i in response.retbays) {
+                    var desc = i.split('_');
+                    str += response.retbays[i]+"x "+desc[0]+" seat bay";
+                    if (desc[1] == 'priority') {
+                        str += ' (with disabled space)';   
+                    }
+                    str += '<br />';
+                }
+                str += "</td></tr>";
+            }
         }
         str +="</table>";
 
