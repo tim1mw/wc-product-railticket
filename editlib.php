@@ -752,7 +752,7 @@ function railticket_show_order() {
         return;
     }
 
-    if (strpos($_REQUEST['orderid'], 'M') === false) {
+    if (strpos($_REQUEST['orderid'], 'M') === false && strpos($_REQUEST['orderid'], 'm')) {
         railticket_show_wooorder($_REQUEST['orderid']);
     } else {
         railticket_show_manualorder($_REQUEST['orderid']);
