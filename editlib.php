@@ -822,13 +822,13 @@ function railticket_show_manualorder($orderid) {
     if (!$bookings[0]->collected) {
         echo "<p><form action='".railticket_get_page_url()."' method='post'>".
             "<input type='hidden' name='action' value='collected' />".
-            "<input type='hidden' name='orderid' value='".$orderid."' />".
+            "<input type='hidden' name='orderid' value='M".$orderid."' />".
             "<input type='submit' value='Mark Collected' />".
             "</form></p>";
     } else {
         echo "<p><form action='".railticket_get_page_url()."' method='post'>".
             "<input type='hidden' name='action' value='cancelcollected' />".
-            "<input type='hidden' name='orderid' value='".$orderid."' />".
+            "<input type='hidden' name='orderid' value='M".$orderid."' />".
             "<input type='submit' value='Cancel Collected' />".
             "</form></p>";
     }
@@ -837,13 +837,13 @@ function railticket_show_manualorder($orderid) {
         if (!$bookings[0]->returned) {
             echo "<p><form action='".railticket_get_page_url()."' method='post'>".
                 "<input type='hidden' name='action' value='returned' />".
-                "<input type='hidden' name='orderid' value='".$orderid."' />".
+                "<input type='hidden' name='orderid' value='M".$orderid."' />".
                 "<input type='submit' value='Mark Returned' />".
                 "</form></p>";
         } else {
             echo "<p><form action='".railticket_get_page_url()."' method='post'>".
                 "<input type='hidden' name='action' value='cancelreturned' />".
-                "<input type='hidden' name='orderid' value='".$orderid."' />".
+                "<input type='hidden' name='orderid' value='M".$orderid."' />".
                 "<input type='submit' value='Cancel Returned' />".
                 "</form></p>";
         }
