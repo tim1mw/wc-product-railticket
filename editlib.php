@@ -511,15 +511,11 @@ function railticket_show_bookings_summary($dateofjourney) {
 
     ?>
     <hr />
+    <div class='railticket_editdate'>
     <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewwaybill' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='View Way Bill' />
-    </form></p>
-    <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
-        <input type='hidden' name='action' value='waybill.csv' />
-        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Way Bill as Spreadsheet file' />
     </form></p>
     <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewordersummary' />
@@ -527,10 +523,17 @@ function railticket_show_bookings_summary($dateofjourney) {
         <input type='submit' name='submit' value='View Order Summary' />
     </form></p>
     <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+        <input type='hidden' name='action' value='waybill.csv' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Get Way Bill as Spreadsheet file' />
+    </form></p>
+    <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='ordersummary.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Get Order Summary Spreadsheet file' />
     </form></p>
+    </ul>
+    </div>
     <?php
 }
 
