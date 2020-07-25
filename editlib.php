@@ -1314,8 +1314,8 @@ function railticket_get_ordersummary($iscsv = false) {
                 "<input type='submit' value='".$booking->wooorderid."' />".
                 "</form>";
             }
-            $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-tostation")]->name;
             $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-fromstation")]->name;
+            $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-tostation")]->name;
             $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
 
             $ta = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE order_item_id = ".$booking->wooorderitem.
