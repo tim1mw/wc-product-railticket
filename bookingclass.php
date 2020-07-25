@@ -563,7 +563,7 @@ class TicketBuilder {
         }
 
         if ($journeytype == 'return') {
-            $retbays = $this->get_service_inventory($this->rettime, $this->tostation, $fromstation);
+            $retbays = $this->get_service_inventory($this->rettime, $this->tostation, $fromstation, false, $this->is_guard());
             // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
             $allocatedbays->retseatsleft = $retbays->totalseats;
             if ($retbays->totalseats < $seatsreq) {
@@ -856,9 +856,9 @@ class TicketBuilder {
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
-            $this->insertBooking("", $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, $mid);
+            $this->insertBooking("", $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays->outbays, $mid);
             if ($this->journeytype == 'return') {
-                $this->insertBooking("", $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, $mid);
+                $this->insertBooking("", $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays->retbays, $mid);
             }
             $purchase->id = 'M'.$mid;
         } else {
@@ -885,9 +885,9 @@ class TicketBuilder {
             $woocommerce->cart->set_session();
             $woocommerce->cart->maybe_set_cart_cookies();
 
-            $this->insertBooking($itemkey, $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays, 0);
+            $this->insertBooking($itemkey, $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays->outbays, 0);
             if ($this->journeytype == 'return') {
-                $this->insertBooking($itemkey, $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays, 0);
+                $this->insertBooking($itemkey, $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays->retbays, 0);
             }
         }
         $purchase->ok = true;
@@ -947,7 +947,7 @@ class TicketBuilder {
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
 
         $id = $wpdb->insert_id;
-        foreach ($allocatedbays->outbays as $bay => $num) {
+        foreach ($allocatedbays as $bay => $num) {
             $bayd = $this->getBayDetails($bay);
             if ($bayd[1] == 'priority') {
                 $pr = true;
