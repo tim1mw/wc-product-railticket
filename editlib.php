@@ -149,7 +149,7 @@ function railticket_showcalendaredit($year, $month) {
     <input type='hidden' name='year' value='<?php echo $year; ?>' />
     <input type='hidden' name='month' value='<?php echo $month; ?>' />
     <table border="1">
-    <tr><th>Day</th><th>Date</th><th>Timetable</th><th>Bookable</th><th>Sold Out</th><th>Formation</th><th>Sell Reserve</th><th>Reserve</th></tr>
+    <tr><th>Day</th><th>Date</th><th>Timetable</th><th>Bookable</th><th>Specials Only</th><th>Sold Out</th><th>Formation</th><th>Sell Reserve</th><th>Reserve</th></tr>
     <?php
     $ids = array();
     for ($day = 1; $day < $daysinmonth + 1; $day++) {
@@ -184,12 +184,17 @@ function railticket_showcalendaredit($year, $month) {
             if ($bookable == 1) {
                 echo "checked ";
             }
-            echo "/><td>";
+            echo "/></td><td>";
+            echo "<input type='checkbox' value='1' name='specialonly_".$ct->id."' ";
+            if ($bk[0]->specialonly == 1) {
+                echo "checked ";
+            }
+            echo "/></td><td>";
             echo "<input type='checkbox' value='1' name='soldout_".$ct->id."' ";
             if ($bk[0]->soldout == 1) {
                 echo "checked ";
             }
-            echo "/><td>";
+            echo "/></td><td>";
 
             $comp = json_decode($bk[0]->composition);
 
@@ -240,6 +245,12 @@ function railticket_updatebookable() {
         }
         $bk = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable WHERE dateid = ".$id);
 
+        if (array_key_exists("specialonly_".$id, $_POST) && $_POST["specialonly_".$id] == '1') {
+            $specialonly = 1;
+        } else {
+            $specialonly = 0;
+        }
+
         if (array_key_exists("reserve_".$id, $_POST) && $_POST["reserve_".$id] == '1') {
             $reserve = 1;
         } else {
@@ -255,7 +266,7 @@ function railticket_updatebookable() {
         if (count($bk) > 0) {
             $bays = railticket_process_bays($bk[0]->composition);
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable",
-                array('bookable' => $bookable, 'bays' => $bays, 'sellreserve' => $reserve, 'soldout' => $soldout),
+                array('bookable' => $bookable, 'bays' => $bays, 'sellreserve' => $reserve, 'soldout' => $soldout, 'specialonly' => $specialonly),
                 array('dateid' => $bk[0]->dateid));
         } else {
             if ($bookable) {
@@ -274,7 +285,8 @@ function railticket_updatebookable() {
                     'override' => randomString(),
                     'sameservicereturn' => $ssr,
                     'reserve' => get_option('wc_product_railticket_defaultreserve'),
-                    'sellreserve' => 0
+                    'sellreserve' => 0,
+                    'specialonly' => 0
                 );
                 $wpdb->insert("{$wpdb->prefix}wc_railticket_bookable", $data);
             }

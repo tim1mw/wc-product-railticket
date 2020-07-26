@@ -158,6 +158,7 @@ class TicketBuilder {
         if ($cap->outseatsleft > 0) {
             return true;
         }
+
         return false;
     }
 
@@ -275,7 +276,7 @@ class TicketBuilder {
         } else {
             $bookable['specials'] = false;
         }
-
+        $bookable['specialonly'] = $bkrec->specialonly;
 
         return $bookable;
     }
@@ -1055,7 +1056,7 @@ class TicketBuilder {
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
             "var dateFormat = '".get_option('railtimetable_date_format')."';\n".
-            "var stationData = ".json_encode(railticket_get_stations_map())."\n";
+            "var stationData = ".json_encode(railticket_get_stations_map()).";\n";
 
         $str .= $this->preset_javascript('a_dateofjourney');
         $str .= $this->preset_javascript('a_station');
@@ -1162,12 +1163,13 @@ class TicketBuilder {
 
     private function get_stations() {
         $str = "<div id='stations' class='railticket_stageblock railticket_listselect'>".
+            "<div id='stations_container'>".
             "<h3>Choose Stations</h3>".
             "<p class='railticket_help'>Tap or click the stations to select</p>".
             "<div class='railticket_container'>".
             "<div class='railticket_listselect_left'><div class='inner'><h3>From</h3>".$this->station_radio("fromstation", true)."</div></div>".
             "<div class='railticket_listselect_right'><div class='inner'><h3>To</h3>".$this->station_radio("tostation", false)."</div></div>".
-            "</div>".
+            "</div></div>".
             "<div class='railticket_container' id='railticket_specials'></div>".
             "</div>";
 
