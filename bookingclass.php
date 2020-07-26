@@ -178,6 +178,9 @@ class TicketBuilder {
         if (strlen($deptimesdata->down_deps) > 0) {
             $deps = $deptimesdata->down_deps;
         } else {
+            if (strlen($deptimesdata->up_deps) == 0) {
+                return false;
+            }
             $deps = $deptimesdata->up_deps;
         }
         $nowtime = ($this->now->format('G')*60) + $this->now->format('i');
@@ -1181,7 +1184,8 @@ class TicketBuilder {
         foreach ($this->stations as $station) {
             $str .= "<li><input type='radio' name='".$name."' id='".$name.$station->id."' value='".$station->id.
                 "' class='railticket_".$name." railticket_notbookable' disabled />\n".
-                "<label for='".$name.$station->id."'>".$station->name."</label></li>";
+                "<label for='".$name.$station->id."'>".$station->name."<br />".
+                "<div class='railticket_stndesc'>".$station->description."</div></label></li>";
         }
         $str.="</ul>";
         return $str;

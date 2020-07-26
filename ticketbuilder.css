@@ -134,6 +134,10 @@
     font-size:small;
 }
 
+.railticket_stndesc {
+    font-size:x-small;
+}
+
 .railticket_travellers_numbers {
     background-color:#f2f0a6;
     text-align:left;
