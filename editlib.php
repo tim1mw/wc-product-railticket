@@ -368,6 +368,7 @@ function railticket_view_bookings() {
                 railticket_show_order();
                 break;
             case 'showdep':
+            case 'showspecial':
                 railticket_show_departure();
                 break;
             case 'createmanual':
@@ -520,6 +521,27 @@ function railticket_show_bookings_summary($dateofjourney) {
     foreach ($stations as $station) {
         railticket_show_station_summary($dateofjourney, $station, $timetable);
     }
+
+    $specials = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$dateofjourney."'");
+    if (count($specials) > 0) {
+        echo "<h3>Specials</h3>";
+        echo "<div class='railticket_inlinedeplist'><ul>";
+        foreach ($specials as $special) {
+            ?>
+            <li><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+                <input type='hidden' name='action' value='showspecial' />
+                <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+                <input type='hidden' name='station' value='<?php echo $special->fromstation; ?>' />
+                <input type='hidden' name='destination' value='<?php echo $special->tostation ?>' />
+                <input type='hidden' name='direction' value='down' />
+                <input type='hidden' name='deptime' value='s:<?php echo  $special->id ?>' />
+                <input type='submit' name='submit' value='<?php echo $special->name ?>' />
+            </form></li>
+            <?php
+        }
+        echo "</ul></div>";
+    }
+
 
     ?>
     <hr />
