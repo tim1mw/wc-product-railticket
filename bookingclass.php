@@ -408,7 +408,7 @@ class TicketBuilder {
 
         if ($this->special) {
             $t = $wpdb->get_results("SELECT id, tickettypes FROM {$wpdb->prefix}wc_railticket_specials WHERE ".
-                "id = ".$this->outtime)[0];
+                "id = ".$this->outtime." AND onsale = '1'")[0];
             $specialval = " AND special = 1 AND (";
             $tkts = json_decode($t->tickettypes);
             $first = true;
@@ -478,6 +478,11 @@ class TicketBuilder {
 
     public function get_service_inventory($time, $fromstation, $tostation, $baseonly = false, $noreserve = false, $onlycollected = false) {
         global $wpdb;
+
+        if ($this->special && strpos($time, ':') === false) {
+            $time = "s:".$time;
+        }
+
         $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
             " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
@@ -506,6 +511,7 @@ class TicketBuilder {
         }
 
         $bookings = $wpdb->get_results($sql);
+
         foreach ($bookings as $booking) {
             if ($booking->priority) {
                 $i = $booking->baysize.'_priority';

@@ -624,6 +624,13 @@ function railticket_show_departure() {
     $direction = $_REQUEST['direction'];
     $deptime = $_REQUEST['deptime'];
 
+    if ($_REQUEST['action'] == 'showspecial') {
+        $parts = explode(':',  $_REQUEST['deptime']);
+        $depname = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_specials WHERE id = ".$parts[1]);
+    } else {
+        $depname = $deptime;
+    }
+
     $bookings = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_bookings.*, {$wpdb->prefix}railtimetable_stations.name ".
         "FROM {$wpdb->prefix}wc_railticket_bookings ".
         "LEFT JOIN {$wpdb->prefix}railtimetable_stations ON ".
@@ -645,7 +652,7 @@ function railticket_show_departure() {
         "<tr><th>Station</th><th>".$station->name."</th></tr>".
         "<tr><th>Destination</th><th>".$destination->name."</th></tr>".
         "<tr><th>Date</td><th>".$dateofjourney."</th></tr>".
-        "<tr><th>Time</td><th>".$deptime."</th></tr>".
+        "<tr><th>Time</td><th>".$depname."</th></tr>".
         "<tr><th>Direction</th><th>".$direction."</th></tr>".
         "<tr><th>Total Orders</th><th>".count($bookings)."</th></tr>".
         "<tr><th>Seats Used</th><th>".$seats."</th></tr>".
@@ -716,7 +723,7 @@ function railticket_show_departure() {
     </div>
     <div class='railticket_editdate'>
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
-        <input type='hidden' name='action' value='showdep' />
+        <input type='hidden' name='action' value='<?php echo $_REQUEST['action']; ?>' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='hidden' name='station' value='<?php echo $station->id; ?>' />
         <input type='hidden' name='direction' value='<?php echo $direction ?>' />
