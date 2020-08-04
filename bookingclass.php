@@ -64,6 +64,14 @@ class TicketBuilder {
     }
 
     public function render() {
+
+        $ua = htmlentities($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, 'UTF-8');
+        if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; rv:11.0') !== false)) {
+            return "<p>Sorry, the ticket booking system isn't supported on Internet Explorer. If you are using Windows 10, then please swtich to ".
+                "the Microsoft Edge browser which has replaced Internet Explorer to continue your purchase. Users of older Windows versions ".
+                "will need to use Chrome or Firefox.</p>";
+        }
+
         if ($this->checkDuplicate()) {
             return '<p>Sorry, but you already have a ticket selection in your shopping cart, you can only have one ticket selection per order. Please remove the existing ticket selection if you wish to create a new one, or complete the purchase for the existing one.</p>';
         }
