@@ -462,8 +462,23 @@ input[type=number]::-webkit-inner-spin-button {
     font-size:xx-large;
 }
 
+#addtocart_button {
+    width:100%;
+}
+
 .railticket_meta {
     font-size:large;
     text-align:left;
 }
 
+/* Stop iOS trying to override form styles */
+
+textarea,
+input.text,
+input[type="text"],
+input[type="button"],
+input[type="submit"],
+.input-checkbox {
+-webkit-appearance: none;
+border-radius: 0;
+}
