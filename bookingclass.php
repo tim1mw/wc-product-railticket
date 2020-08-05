@@ -1180,7 +1180,7 @@ class TicketBuilder {
         $str = "<div id='stations' class='railticket_stageblock railticket_listselect'>".
             "<div id='stations_container'>".
             "<h3>Choose Stations</h3>".
-            "<p class='railticket_help'>Tap or click the stations to select</p>".
+            "<p class='railticket_help'>Tap or click the stations to select. Departure times and single or return journeys are chosen in the next section.</p>".
             "<div class='railticket_container'>".
             "<div class='railticket_listselect_left'><div class='inner'><h3>From</h3>".$this->station_radio("fromstation", true)."</div></div>".
             "<div class='railticket_listselect_right'><div class='inner'><h3>To</h3>".$this->station_radio("tostation", false)."</div></div>".
