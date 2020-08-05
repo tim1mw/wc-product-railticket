@@ -52,9 +52,18 @@ function railTicketAddListener(id, type, func) {
     ele.addEventListener(type, func);
 }
 
+function railTicketoffset(el) {
+    var rect = el.getBoundingClientRect(),
+    scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+    scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+}
+
 function railTicketAjax(datareq, spinner, callback) {
     if (spinner) {
         var spinnerdiv = document.getElementById('pleasewait');
+        var pos = ((window.scrollY - railTicketoffset(spinnerdiv.parentElement).top) + (window.innerHeight/2)) - 50;
+        spinnerdiv.style.paddingTop = pos+"px";
         spinnerdiv.style.display = 'block';
     }
 
@@ -858,7 +867,6 @@ function cartTickets() {
     railTicketAjax('purchase', false, function(response) {
         if (response.ok) {
             if (guard) {
-                //window.location.replace('/wp-admin/admin.php?page=railticket-top-level-handle');
                 var ele = document.getElementById('railticket_processing');
                 ele.innerHTML = 'Booking created with reference: "'+response.id+'"'+
                     '<br />'+
