@@ -427,32 +427,10 @@ class TicketBuilder {
                 }
                 $first = false;
                 $specialval .= " tickettype = '".$tkt."' ";
-                $tkttypes =  $wpdb->get_results("SELECT id, composition FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE ".
-                "code = '".$tkt."'")[0];
-                $tktcomp = (array) json_decode($tkttypes->composition);
-                $done = array();
-                foreach ($tktcomp as $code => $num) {
-                    if ($num == 0) {
-                        continue;
-                    } else {
-                        if (!in_array($code, $done)) {
-                            $done[] = $code;
-
-                            if (!$this->is_guard()) {
-                                $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 AND ";
-                            } else {
-                                $guardtra = " WHERE ";
-                            }
-                            $tickets->travellers[] = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra." ".
-                                " code = '".$code."'", OBJECT )[0];
-                        }
-                    }
-                }
             }
             $specialval .= ")";
         } else {
             $specialval = " AND special = 0 ";
-            $tickets->travellers = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra, OBJECT );
         }
 
         $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
@@ -474,11 +452,31 @@ class TicketBuilder {
         $ticketdata = $wpdb->get_results($sql, OBJECT);
 
         $tickets->prices = array();
+        $tickets->travellers = array();
+        $done = array();
 
         foreach($ticketdata as $ticketd) {
             $ticketd->composition = json_decode($ticketd->composition);
             $ticketd->depends = json_decode($ticketd->depends);
             $tickets->prices[$ticketd->tickettype] = $ticketd;
+
+            foreach ($ticketd->composition as $code => $num) {
+                if ($num == 0) {
+                    continue;
+                } else {
+                    if (!in_array($code, $done)) {
+                        $done[] = $code;
+
+                        if (!$this->is_guard()) {
+                            $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 AND ";
+                        } else {
+                            $guardtra = " WHERE ";
+                        }
+                        $tickets->travellers[] = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra." ".
+                            " code = '".$code."'", OBJECT )[0];
+                    }
+                }
+            }
         }
 
         return $tickets;
