@@ -57,6 +57,10 @@
     border-radius: 4px;
 }
 
+.railticket_container ul {
+    margin-left:0px !important;   
+}
+
 .railticket_listselect_left {
     float:left;
     width:50%;
