@@ -1281,12 +1281,12 @@ function railticket_get_waybill_data($date) {
     return $r;
 }
 
-function railticket_waybill_row($rows, $type = 'td') {
+function railticket_waybill_row($rows, $type = 'td', $cola = 'th') {
     echo "<tr>";
     $first = true;
     foreach ($rows as $row) {
         if ($first) {
-            echo "<th>".$row."</th>";
+            echo "<".$cola.">".$row."</".$cola.">";
             $first = false;
         } else {
             echo "<".$type.">".$row."</".$type.">";
@@ -1316,7 +1316,7 @@ function railticket_get_ordersummary($iscsv = false) {
 
     $stns = railticket_get_stations_map();
     $date = $_REQUEST['dateofjourney'];
-    $header = array('Order ID', 'From', 'To', 'Journey Type', 'Tickets', 'Seats', 'Supplement', 'Total Price', 'Name', 'Email');
+    $header = array( 'Order ID', 'Name' , 'Email', 'From', 'To', 'Journey Type', 'Tickets', 'Seats', 'Supplement', 'Total Price');
     $td = array('Date', $date);
     if ($iscsv) {
         header('Content-Type: application/csv');
@@ -1335,6 +1335,7 @@ function railticket_get_ordersummary($iscsv = false) {
 
     $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$date."'");
     $processed = array();
+    $lines = array();
 
     foreach ($bookings as $booking) {
         if (strlen($booking->woocartitem) > 0) {
@@ -1355,6 +1356,8 @@ function railticket_get_ordersummary($iscsv = false) {
                 "<input type='submit' value='".$booking->wooorderid."' />".
                 "</form>";
             }
+            $line[] = $order->get_formatted_billing_full_name();
+            $line[] = $order->get_billing_email();
             $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-fromstation")]->name;
             $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-tostation")]->name;
             $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
@@ -1371,8 +1374,9 @@ function railticket_get_ordersummary($iscsv = false) {
             $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-totalseats", true);
             $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-pricesupplement", true);
             $line[] = $data_store->get_metadata($booking->wooorderitem, "_line_total", true);
-            $line[] = $order->get_formatted_billing_full_name();
-            $line[] = $order->get_billing_email();
+
+            $key = $order->get_billing_last_name()." ".$order->get_billing_first_name()." ".wp_generate_uuid4();
+            $lines[$key] = $line;
         } elseif ($booking->manual > 0 && !in_array('M'.$booking->manual, $processed)) {
             $processed[] = 'M'.$booking->manual;
             if ($iscsv) {
@@ -1384,6 +1388,8 @@ function railticket_get_ordersummary($iscsv = false) {
                 "<input type='submit' value='M".$booking->manual."' />".
                 "</form>";
             }
+            $line[] = '';
+            $line[] = '';
             $mb = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$booking->manual)[0];
             $booking = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$booking->manual)[0];
             $line[] = $stns[$booking->fromstation]->name;
@@ -1398,21 +1404,22 @@ function railticket_get_ordersummary($iscsv = false) {
             $line[] = $mb->seats;
             $line[] = $mb->supplement;
             $line[] = $mb->price;
+            $lines['zzzzzzzzzzzz'.$booking->manual] = $line;
         } else {
             //Bookings should all be manual or woocommerce
             continue;
         }
-
-        if ($iscsv) {
-            fputcsv($f, $line);
-        } else {
-            railticket_waybill_row($line);
-        }
     }
-
+    ksort($lines);
     if ($iscsv) {
+        foreach ($lines as $line) {
+            fputcsv($f, $line);
+        }
         fclose($f);
     } else {
+        foreach ($lines as $line) {
+            railticket_waybill_row($line);
+        }
         echo "</table>";
         ?>
         <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
@@ -1428,4 +1435,6 @@ function railticket_get_ordersummary($iscsv = false) {
         </p>
         <?php
     }
+
+
 }
