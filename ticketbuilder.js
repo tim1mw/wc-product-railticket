@@ -541,39 +541,8 @@ function convert24hour(time) {
 function renderTicketSelector(response) {
     ticketdata = response;
     var summary = document.getElementById('railticket_summary_service');
-    var ddate = new Date(document.getElementById('dateoftravel').value);
-    var tdate = ddate.getDate()+"-"+months[ddate.getMonth()]+"-"+ddate.getFullYear();
-    if (specialSelected) {
-        var special = false;
-        for (index in specialsData) {
-            if (specialsData[index].id == document.railticketbooking['specials'].value) {
-                special = specialsData[index];
-            }
-        }
 
-        summary.innerHTML = "<p>"+special.name+" - "+tdate+"</p><p class='railticket_arrtime'>"+special.description+"</p>";
-    } else {
-        var fromindex = document.railticketbooking['fromstation'].value;
-        var toindex = document.railticketbooking['tostation'].value;
-        var f='', t='';
-        for (si in stationData) {
-            if (stationData[si].id == fromindex) {
-                f = stationData[si].name;
-            }
-            if (stationData[si].id == toindex) {
-                t = stationData[si].name;
-            }
-        }
-
-        document.railticketbooking['rettime'].value;
-        var str = "<p>"+tdate+", Outbound:"+convert24hour(document.railticketbooking['outtime'].value)+" from "+f;
-        if (document.railticketbooking['journeytype'].value == 'return') {
-            str += ", Return: "+convert24hour(document.railticketbooking['rettime'].value+" from "+t);
-        }
-        str += "</p>";
-
-        summary.innerHTML = str;
-    }
+    summary.innerHTML = getSelectionSummary();
 
     if (response.length == 0) {
         document.getElementById('ticket_type').style.display = "none";
@@ -609,6 +578,42 @@ function renderTicketSelector(response) {
     travellersChanged();
 
     showTicketStages('tickets', true);
+}
+
+function getSelectionSummary() {
+    var ddate = new Date(document.getElementById('dateoftravel').value);
+    var tdate = ddate.getDate()+"-"+months[ddate.getMonth()]+"-"+ddate.getFullYear();
+
+    if (specialSelected) {
+        var special = false;
+        for (index in specialsData) {
+            if (specialsData[index].id == document.railticketbooking['specials'].value) {
+                special = specialsData[index];
+            }
+        }
+
+        return "<p>"+special.name+" - "+tdate+"</p><p class='railticket_arrtime'>"+special.description+"</p>";
+    } else {
+        var fromindex = document.railticketbooking['fromstation'].value;
+        var toindex = document.railticketbooking['tostation'].value;
+        var f='', t='';
+        for (si in stationData) {
+            if (stationData[si].id == fromindex) {
+                f = stationData[si].name;
+            }
+            if (stationData[si].id == toindex) {
+                t = stationData[si].name;
+            }
+        }
+
+        var str = "<p>"+tdate+", Outbound: "+convert24hour(document.railticketbooking['outtime'].value)+" from "+f;
+        if (document.railticketbooking['journeytype'].value == 'return') {
+            str += ", Return: "+convert24hour(document.railticketbooking['rettime'].value+" from "+t);
+        }
+        str += "</p>";
+
+        return str;
+    }
 }
 
 function travellersChanged() {
@@ -741,7 +746,7 @@ function showCapacity(response) {
     var capacitydiv = document.getElementById('ticket_capacity');
     var str = "<div class='railticket_travellers_table_container' >";
     if (response.ok || guard) {
-        str = "Socially distanced seating bay(s) are available for your journey:<br /><table class='railticket_travellers_table'><tr><td>Outbound</td><td>";
+        str = "Socially distanced seating bay(s) available for your journey:<br /><table class='railticket_travellers_table'><tr><td>Outbound</td><td>";
         if (typeof(response.outbays) == 'undefined' || response.outbays.length == 0 ) {
             str += "Insufficient space";
         } else {
@@ -869,6 +874,8 @@ function cartTickets() {
             if (guard) {
                 var ele = document.getElementById('railticket_processing');
                 ele.innerHTML = 'Booking created with reference: "'+response.id+'"'+
+                    '<br />'+
+                    getSelectionSummary()+
                     '<br />'+
                     '<a href="/wp-admin/admin.php?page=railticket-top-level-handle">Tap or Click here to return to service summary</a>';
             } else {
