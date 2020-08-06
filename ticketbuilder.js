@@ -784,7 +784,7 @@ function showCapacity(response) {
         str +="</table>";
 
         if (response.disablewarn) {
-            str += "<p class='railticketwarn'>WARNING: We could not allocate wheelchair space for all or part of your journey. "+
+            str += "<p class='railticketwarn'>WARNING: We could not allocate disabled space for all or part of your journey. "+
                 "You may continue with the selection shown, or try a different train.</p>";
         }
 

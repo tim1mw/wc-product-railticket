@@ -1232,7 +1232,7 @@ class TicketBuilder {
             "  </div>".
             "  <div id='ticket_summary' class='railticket_container'></div>".
             "  <div id='ticket_capbutton' class='railticket_container'>".
-            "  <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>&nbsp;&nbsp;&nbsp;Request space for wheelchair user</p>";
+            "  <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>&nbsp;&nbsp;&nbsp;Request space for disabled visitor</p>";
 
         if ($this->is_guard()) {
             $str .= "<p class='railticket_terms'><input type='checkbox' name='nominimum' id='nominimum'/>&nbsp;&nbsp;&nbsp;No Minimum Price</p>";
