@@ -553,11 +553,13 @@ function renderTicketSelector(response) {
     }
 
     var travellers = "";
+    var nTicketSelections = {};
     for (i in response.travellers) {
         var value = '';
         var code = response.travellers[i].code;
         if (code in ticketSelections) {
            value = ticketSelections[ticketdata.travellers[i].code];
+           nTicketSelections[code] = value;
         }
 
         travellers += "<div class='railticket_travellers'>"+
@@ -571,6 +573,8 @@ function renderTicketSelector(response) {
         travellers += "</div>"+
             "</div>";
     }
+
+    ticketSelections = nTicketSelections;
 
     var tn = document.getElementById('ticket_travellers')
     tn.style.display = "block";
