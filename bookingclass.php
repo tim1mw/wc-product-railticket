@@ -1209,7 +1209,7 @@ class TicketBuilder {
             "  <h3>Choose a Departure</h3>".
             "  <p class='railticket_help'>Tap or click the times and ticket type to select. ".
             "Times shown with a paler background and a strikethrough should have departed if trains are running on time, but can still be ".
-            " booked if you are certain the train is simply running late. Services which are greyed out cannot be booked on line.</p></div>";
+            " booked if you are certain the train is simply running late.</p></div>";
 
         $str .= "  <div id='deptimes_data' class='railticket_container'>".
             "    <div id='deptimes_data_out' class='railticket_listselect_left'>".
