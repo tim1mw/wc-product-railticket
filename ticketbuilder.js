@@ -570,7 +570,7 @@ function renderTicketSelector(response) {
         if (response.travellers[i].description.length > 0) {
             travellers += " <span>("+response.travellers[i].description+")</span>";
         }
-        travellers += "</div>"+
+        travellers += "</div></div>"+
             "</div>";
     }
 
