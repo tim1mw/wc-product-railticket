@@ -1128,7 +1128,7 @@ class TicketBuilder {
         $cal .= '<script type="text/javascript">var baseurl = "'.railtimetable_currentlang()."/".get_site_url().'";var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
 
         $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3>";
-        $str .= "<p>".get_option('wc_product_railticket_top_comment')."</p><div>".
+        $str .= "<p>".get_option('wc_product_railticket_top_comment')."</p></div>".
             "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
 
         $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>".
