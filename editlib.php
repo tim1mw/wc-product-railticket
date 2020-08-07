@@ -17,7 +17,6 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termspage');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
-   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultreserve');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
 }
 
@@ -93,10 +92,6 @@ function railticket_options() {
             <td><textarea rows='10' cols='60' id="wc_product_railticket_defaultcoaches" name="wc_product_railticket_defaultcoaches"><?php echo get_option('wc_product_railticket_defaultcoaches'); ?></textarea></td>
         </tr>
         <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_defaultreserve">Default Reserve Capacity</label></th>
-            <td><textarea rows='10' cols='60' id="wc_product_railticket_defaultreserve" name="wc_product_railticket_defaultreserve"><?php echo get_option('wc_product_railticket_defaultreserve'); ?></textarea></td>
-        </tr>
-        <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_bookinglimits">Booking limits</label></th>
             <td><textarea rows='10' cols='60' id="wc_product_railticket_bookinglimits" name="wc_product_railticket_bookinglimits"><?php echo get_option('wc_product_railticket_bookinglimits'); ?></textarea></td>
         </tr>
@@ -109,6 +104,12 @@ function railticket_options() {
 
 function railticket_bookable_days() {
     global $wp;
+
+    if (array_key_exists('month', $_POST)) {
+        $month = $_POST['month'];
+    } else {
+        $month = intval(date("n"));
+    }
     ?>
     <h1>Heritage Railway Tickets - Set bookable dates</h1>
     <form method='post' action='<?php echo railticket_get_page_url() ?>'>
@@ -118,7 +119,7 @@ function railticket_bookable_days() {
             <td><?php echo railtimetable_getyearselect();?></td>
         </tr><tr>
             <td>Month</td>
-            <td><?php echo railtimetable_getmonthselect();?></td>
+            <td><?php echo railtimetable_getmonthselect($month);?></td>
         </tr><tr>
             <td></td>
             <td><input type='submit' value='Show Bookable Days' /></td>
@@ -134,6 +135,8 @@ function railticket_bookable_days() {
             case 'filterbookable':
                 railticket_showcalendaredit($_POST['year'], $_POST['month']);
         }
+    } else {
+        railticket_showcalendaredit(intval(date("Y")), $month);
     }
 }
 
@@ -263,10 +266,17 @@ function railticket_updatebookable() {
             $soldout = 0;
         }
 
+        $timetable = railticket_find_timetable($id, 'id');
+
         if (count($bk) > 0) {
-            $bays = railticket_process_bays($bk[0]->composition);
+            $coaches = railticket_process_coaches($bk[0]->composition);
+            if (!$coaches->reserve) {
+                $coaches->reserve = $bk[0]->reserve;
+            }
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable",
-                array('bookable' => $bookable, 'bays' => $bays, 'sellreserve' => $reserve, 'soldout' => $soldout, 'specialonly' => $specialonly),
+                array('bookable' => $bookable, 'daytype' => $coaches->daytype, 'allocateby' => $coaches->allocateby, 
+                    'bays' => $coaches->bays, 'sellreserve' => $reserve, 'soldout' => $soldout, 'reserve' => $coaches->reserve,
+                    'specialonly' => $specialonly),
                 array('dateid' => $bk[0]->dateid));
         } else {
             if ($bookable) {
@@ -274,17 +284,20 @@ function railticket_updatebookable() {
                 if (get_option('wc_product_railticket_sameservicereturn') == 'on') {
                     $ssr = true;
                 }
+                $coaches = railticket_process_coaches(get_option('wc_product_railticket_defaultcoaches'), $timetable->timetable);
                 $data = array(
                     'dateid' => $id,
-                    'composition' => get_option('wc_product_railticket_defaultcoaches'),
-                    'bays' => railticket_process_bays(get_option('wc_product_railticket_defaultcoaches')),
+                    'daytype' => $coaches->daytype,
+                    'allocateby' => $coaches->allocateby,
+                    'composition' => $coaches->coachset,
+                    'bays' => $coaches->bays,
                     'bookclose' => '{}',
                     'limits' => get_option('wc_product_railticket_bookinglimits'),
                     'bookable' => 1,
                     'soldout' => 0,
                     'override' => randomString(),
                     'sameservicereturn' => $ssr,
-                    'reserve' => get_option('wc_product_railticket_defaultreserve'),
+                    'reserve' => $coaches->reserve,
                     'sellreserve' => 0,
                     'specialonly' => 0
                 );
@@ -301,30 +314,56 @@ function railticket_get_booking_grace($dateid) {
     return "{}";
 }
 
-function railticket_process_bays($json) {
-   global $wpdb;
-   $data = array();
-   $parsed = json_decode($json);
+function railticket_process_coaches($json, $timetable = null) {
+    global $wpdb;
+    $parsed = json_decode($json);
+    if ($timetable != null) {
+        $parsed = $parsed->$timetable;
+    }
 
-   $coachset = (array) $parsed->coachset;
-   foreach ($coachset as $coach => $count) {
-       $comp = $wpdb->get_var("SELECT composition FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$coach."'");
-       $bays = json_decode(stripslashes($comp));
-       foreach ($bays as $bay) {
-           if ($bay->priority) {
-               $key = $bay->baysize.'_priority';
-           } else {
-               $key = $bay->baysize.'_normal';
-           }
-           if (array_key_exists($key, $data)) {
-               $data[$key] += $bay->quantity * $count;
-           } else {
-               $data[$key] = $bay->quantity * $count;
-           }
-       }
-   }
-   ksort($data);
-   return wp_json_encode($data);
+    $r = new stdClass();
+    $r->daytype = $parsed->daytype;
+    $r->allocateby = $parsed->allocateby;
+    $r->coachset = json_encode($parsed);
+    switch ($parsed->daytype) {
+        case 'simple':
+            if (property_exists($parsed, 'reserve')) {
+                $r->reserve = json_encode($parsed->reserve);
+            } else {
+                $r->reserve = false;
+            }
+            $r->bays = railticket_get_coachset_bays($parsed->coachset);
+            break;
+        case 'pertrain':
+            $r->bays = "{}";
+            $r->reserve = false;
+            break;
+    }
+    return $r;
+}
+
+function railticket_get_coachset_bays($coachset) {
+    global $wpdb;
+    $coachset = (array) $coachset;
+    $data = array();
+    foreach ($coachset as $coach => $count) {
+        $comp = $wpdb->get_var("SELECT composition FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$coach."'");
+        $bays = json_decode(stripslashes($comp));
+        foreach ($bays as $bay) {
+            if ($bay->priority) {
+                $key = $bay->baysize.'_priority';
+            } else {
+                $key = $bay->baysize.'_normal';
+            }
+            if (array_key_exists($key, $data)) {
+                $data[$key] += $bay->quantity * $count;
+            } else {
+                $data[$key] = $bay->quantity * $count;
+            }
+        }
+    }
+    ksort($data);
+    return json_encode($data);
 }
 
 
@@ -486,7 +525,7 @@ function railticket_getdayselect($chosenday) {
     return $sel;
 }
 
-function findTimetable($dateoftravel) {
+function railticket_find_timetable($param, $field = 'date') {
     global $wpdb;
     $sql = "SELECT {$wpdb->prefix}railtimetable_timetables.*,{$wpdb->prefix}wc_railticket_bookable.override ".
         "FROM {$wpdb->prefix}railtimetable_dates ".
@@ -494,7 +533,7 @@ function findTimetable($dateoftravel) {
         " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
         "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
         " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-        "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$dateoftravel."'";
+        "WHERE {$wpdb->prefix}railtimetable_dates.".$field." = '".$param."'";
     $timetable = $wpdb->get_results($sql, OBJECT );
 
     if (count($timetable) > 0) {
@@ -509,7 +548,7 @@ function railticket_show_bookings_summary($dateofjourney) {
     global $wpdb;
     ?><h1>Summary for <?php echo $dateofjourney; ?></h1><?php
 
-    $timetable = findTimetable($dateofjourney);
+    $timetable = railticket_find_timetable($dateofjourney);
     if (!$timetable) {
         echo "<h3>No trains or bookings today</h3>";
         return;
