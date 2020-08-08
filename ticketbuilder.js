@@ -414,12 +414,23 @@ function showTimes(times, type, header, selecttime) {
                 }
             }
 
+            var arrmessage = "";
+            if (times[index]['full']) {
+                arrmessage = "FULL";
+            } else {
+                arrmessage = "(arrives: "+times[index]['arrdisp'];
+                if (times[index]['bookable'] && times[index]['seats'] > 0) {
+                    arrmessage += ", empty seats: "+times[index]['seats'];
+                }
+                arrmessage += ")";
+            }
+
             str += "<li id='lidep"+type+index+"' title='"+title+"'><input type='radio' name='"+type+"time' id='dep"+
                 type+index+"' class='"+tclass+"' "+
                 "value='"+times[index]['dep']+"' "+
                 "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" "+checked+" />"+
                 "<label "+lateclass+" for='dep"+type+index+"'>"+times[index]['depdisp']+
-                "<div class='railticket_arrtime'>(arrives: "+times[index]['arrdisp']+")</div></label></li>";
+                "<div class='railticket_arrtime'>"+arrmessage+"</div></label></li>";
             if (type == 'out') {
                 outtimemap[times[index]['dep']] = times[index]['arr'];
             }

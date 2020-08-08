@@ -157,17 +157,28 @@ class TicketBuilder {
         $deptime->setTime($parts[0], $parts[1], 0);
         $deptime->modify('+'.get_option('wc_product_railticket_bookinggrace').' minutes');
 
+        $r = new stdclass();
+        $r->bookable = false;
+        $r->full = false;
+        $r->seats = 0;
+
         if ($this->now > $deptime) {
-            return false;
+            if ($this->is_guard()) {
+                $r->seats = $this->get_capacity($time, 'single', $fromstn, $tostn)->outseatsleft;
+            }
+            return $r;
         }
 
         $cap = $this->get_capacity($time, 'single', $fromstn, $tostn);
 
         if ($cap->outseatsleft > 0) {
-            return true;
+            $r->bookable = true;
+            $r->seats = $cap->outseatsleft;
+            return $r;
         }
 
-        return false;
+        $r->full = true;
+        return $r;
     }
 
     private function is_today_bookable() {
@@ -322,14 +333,13 @@ class TicketBuilder {
         $firstarr = false;
         $outtotal = 0;
         foreach ($deptimes as $index => $dep) {
+            $canbook = $this->is_train_bookable($dep, $this->fromstation,  $this->tostation);
             if ($this->overridevalid == 1) {
-                $canbook = true;
-            } else {
-                $canbook = $this->is_train_bookable($dep, $this->fromstation,  $this->tostation);
+                $canbook->bookable = true;
             }
             $bookable['out'][] = array('dep' => $dep, 'depdisp' => strftime($fmt, strtotime($dep)),
                 'arr' => $deparrs[$index],  'arrdisp' => strftime($fmt, strtotime($deparrs[$index])),
-                'bookable' => $canbook);
+                'bookable' => $canbook->bookable, 'full' => $canbook->full, 'seats' => $canbook->seats);
             if ($firstarr == false) {
                 $firstarr = strtotime($deparrs[$index]);
             }
@@ -355,14 +365,13 @@ class TicketBuilder {
                 // If the first return trip is before the first arrival, skip it.
                 continue;
             }
+            $canbook = $this->is_train_bookable($ret, $this->tostation, $this->fromstation);
             if ($this->overridevalid == 1) {
-                $canbook = true;
-            } else {
-                $canbook = $this->is_train_bookable($ret, $this->tostation, $this->fromstation);
-            }
+                $canbook->bookable = true;
+            } 
             $bookable['ret'][] = array('dep' => $ret, 'depdisp' => strftime($fmt, strtotime($ret)),
                 'arr' => $retarrs[$index], 'arrdisp' => strftime($fmt, strtotime($retarrs[$index])), 
-                'bookable' => $canbook);
+                'bookable' => $canbook->bookable, 'full' => $canbook->full, 'seats' => $canbook->seats);
             $testfirst = false;
             if ($canbook) {
                 $intotal ++;
@@ -1238,7 +1247,7 @@ class TicketBuilder {
             "  <h3>Choose a Departure</h3>".
             "  <p class='railticket_help'>Tap or click the times and ticket type to select. ".
             "Times shown with a paler background and a strikethrough should have departed if trains are running on time, but can still be ".
-            " booked if you are certain the train is simply running late.</p></div>";
+            " booked if you are certain the train is simply running late. Some seating capacity is held back and released around 9am each morning.</p></div>";
 
         $str .= "  <div id='deptimes_data' class='railticket_container'>".
             "    <div id='deptimes_data_out' class='railticket_listselect_left'>".
