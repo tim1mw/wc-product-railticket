@@ -411,7 +411,7 @@ function showTimes(times, type, header, selecttime) {
                     }
                 }
                 for (loop=0; loop<count-index; loop++) {
-                    str += "<li><div><label class='railticket_disablelabel'>No Service<div class='railticket_arrtime'>use following train</label></div></div></li>";
+                    str += "<li><div><label class='railticket_disablelabel'>No Service<div class='railticket_arrtime'>please use a different train</label></div></div></li>";
                 }
             }
 
