@@ -417,11 +417,11 @@ function showTimes(times, type, header, selecttime) {
 
             var arrmessage = "";
             if (times[index]['full']) {
-                arrmessage = "FULL";
+                arrmessage = "FULL - please try another train";
             } else {
-                arrmessage = "(arrives: "+times[index]['arrdisp'];
+                arrmessage = "(arrival: "+times[index]['arrdisp'];
                 if (times[index]['bookable'] && times[index]['seats'] > 0) {
-                    arrmessage += ", empty seats: "+times[index]['seats'];
+                    arrmessage += ", empty&nbsp;seats: "+times[index]['seats'];
                 }
                 arrmessage += ")";
             }
