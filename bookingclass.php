@@ -497,7 +497,19 @@ class TicketBuilder {
 
         $rec = $wpdb->get_results($sql)[0];
 
-        $basebays = (array) json_decode($rec->bays);
+        // NOTE: Need to get origin station dep time here when intermediate stops are enabled!
+        switch ($rec->daytype) {
+            case 'simple':
+                $basebays = (array) json_decode($rec->bays);
+                break;
+            case 'pertrain':
+                $direction = $this->get_direction($fromstation, $tostation);
+                $formations = json_decode($rec->bays);
+                $set = $formations->$direction->$time;
+                $basebays = (array) $formations->coachsets->$set;
+                break;
+        }
+
         if ($baseonly) {
             return $basebays;
         }
@@ -1009,11 +1021,19 @@ class TicketBuilder {
     * Gets the outbound direction
     **/
 
-    private function get_direction() {
+    private function get_direction($from = false, $to = false) {
         global $wpdb;
 
-        $from = $this->getStationData($this->fromstation);
-        $to = $this->getStationData($this->tostation);
+        if ($from == false) {
+            $from = $this->getStationData($this->fromstation);
+        } else {
+            $from = $this->getStationData($from);
+        }
+        if ($to == false) {
+            $to = $this->getStationData($this->tostation);
+        } else {
+            $to = $this->getStationData($to);
+        }
 
         if ($from->sequence > $to->sequence) {
             return "up";

@@ -199,40 +199,14 @@ function railticket_showcalendaredit($year, $month) {
                 echo "checked ";
             }
             echo "/></td><td>";
-
-            $comp = json_decode($bk[0]->composition);
-            switch ($bk[0]->daytype) {
-                case 'simple':
-                    echo railticket_get_coachset_string($comp->coachset);
-                    break;
-                case 'pertrain':
-                    foreach ($comp->coachsets as $key => $set) {
-                        echo $key.":&nbsp;".railticket_get_coachset_string($set->coachset)."<br />";
-                    }
-                    break;
-            }
-
-
+            echo railticket_get_coachset($bk[0]);
             echo "</td><td>";
             echo "<input type='checkbox' value='1' name='reserve_".$ct->id."' ";
             if ($bk[0]->sellreserve == 1) {
                 echo "checked ";
             }
             echo "/><td>";
-            if (strlen($bk[0]->reserve) > 0) {
-                $reserve = json_decode($bk[0]->reserve);
-                switch ($bk[0]->daytype) {
-                    case 'simple':
-                        echo railticket_get_reserve_string($reserve);
-                        break;
-                    case 'pertrain':
-                        foreach ($reserve as $key => $set) {
-                            echo $key.":&nbsp;".railticket_get_reserve_string($set)."<br />";
-                        }
-                        break;
-                }
-            }
-
+            echo railticket_get_reserve($bk[0]);
             echo "</td>";
         }
 
@@ -247,6 +221,27 @@ function railticket_showcalendaredit($year, $month) {
     <?php
 }
 
+function railticket_get_reserve($bk,$deptime = false, $direction = false) {
+    if (strlen($bk->reserve) > 0) {
+        $reserve = json_decode($bk->reserve);
+        switch ($bk->daytype) {
+            case 'simple':
+                return railticket_get_reserve_string($reserve);
+            case 'pertrain':
+                if ($deptime) {
+                    $comp = json_decode($bk->composition);
+                    $setkey = $comp->$direction->$deptime;
+                    return railticket_get_reserve_string($reserve->$setkey);
+                }
+                $str = '';
+                foreach ($reserve as $key => $set) {
+                    $str .= $key.":&nbsp;".railticket_get_reserve_string($set)."<br />";
+                }
+                return $str;
+        }
+   }
+}
+
 function railticket_get_reserve_string($reserve) {
     $reserve = (array) $reserve;
     $str = '';
@@ -257,6 +252,26 @@ function railticket_get_reserve_string($reserve) {
     }
 
     return substr($str, 0, strlen($str)-2);
+}
+
+function railticket_get_coachset($bk, $deptime = false, $direction = false) {
+    $comp = json_decode($bk->composition);
+    switch ($bk->daytype) {
+        case 'simple':
+            return railticket_get_coachset_string($comp->coachset);
+            break;
+        case 'pertrain':
+            if ($deptime) {
+                $setkey = $comp->$direction->$deptime;
+                return railticket_get_reserve_string($comp->coachsets->$setkey->coachset);
+            }
+            $str = '';
+            foreach ($comp->coachsets as $key => $set) {
+                $str .= $key.":&nbsp;".railticket_get_coachset_string($set->coachset)."<br />";
+            }
+            return $str;
+            break;
+    }
 }
 
 function railticket_get_coachset_string($coachset) {
@@ -351,7 +366,13 @@ function railticket_process_coaches($json, $timetable = null) {
     global $wpdb;
     $parsed = json_decode($json);
     if ($timetable != null) {
-        $parsed = $parsed->$timetable;
+        // Should we use the same data as some other timetable. Saves duplication.
+        $copy = $parsed->$timetable->copy;
+        if ($copy) {
+            $parsed = $parsed->$copy;
+        } else {
+            $parsed = $parsed->$timetable;
+        }
     }
 
     $r = new stdClass();
@@ -586,7 +607,9 @@ function railticket_getdayselect($chosenday) {
 
 function railticket_find_timetable($param, $field = 'date') {
     global $wpdb;
-    $sql = "SELECT {$wpdb->prefix}railtimetable_timetables.*,{$wpdb->prefix}wc_railticket_bookable.override ".
+    $sql = "SELECT {$wpdb->prefix}railtimetable_timetables.*,{$wpdb->prefix}wc_railticket_bookable.override,".
+        "{$wpdb->prefix}wc_railticket_bookable.composition, {$wpdb->prefix}wc_railticket_bookable.reserve, ".
+        "{$wpdb->prefix}wc_railticket_bookable.daytype ".
         "FROM {$wpdb->prefix}railtimetable_dates ".
         "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
         " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
@@ -721,6 +744,7 @@ function railticket_show_departure() {
     $destination =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id =".$_REQUEST['destination'], OBJECT)[0];
     $direction = $_REQUEST['direction'];
     $deptime = $_REQUEST['deptime'];
+    $timetable = railticket_find_timetable($dateofjourney);
 
     if ($_REQUEST['action'] == 'showspecial') {
         $parts = explode(':',  $_REQUEST['deptime']);
@@ -747,6 +771,7 @@ function railticket_show_departure() {
     $capcollected = $tk->get_service_inventory($deptime, $station->id, $destination->id, false, true, true);
 
     echo "<div class='railticket_editdate'><h3>Service summary</h3><table border='1'>".
+        "<tr><th>Timetable</th><th>".$timetable->timetable."</th></tr>".
         "<tr><th>Station</th><th>".$station->name."</th></tr>".
         "<tr><th>Destination</th><th>".$destination->name."</th></tr>".
         "<tr><th>Date</td><th>".$dateofjourney."</th></tr>".
@@ -765,8 +790,10 @@ function railticket_show_departure() {
         echo "<td>".$bayd."</td><td>".$space."</td><td>".
             ($space-$capused->bays[$bay])."</td><td>".($space-$capcollected->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
     }
-    echo "</table></div>"
+    echo "</table></div>";
 
+    echo "<p>Coaches: ".railticket_get_coachset($timetable, $deptime, $direction)."<br />".
+        "Reserve: ".railticket_get_reserve($timetable, $deptime, $direction)."</p>";
     ?>
     <br />
     <h3>Booking summary</h3>
