@@ -319,7 +319,7 @@ class TicketBuilder {
         $da = $direction."_arrs";
         $deptimes = explode(",", $deptimesdata->$dd);
         $deparrs = explode(",", $rettimesdata->$da);
-        $firstdep = false;
+        $firstarr = false;
         $outtotal = 0;
         foreach ($deptimes as $index => $dep) {
             if ($this->overridevalid == 1) {
@@ -330,8 +330,8 @@ class TicketBuilder {
             $bookable['out'][] = array('dep' => $dep, 'depdisp' => strftime($fmt, strtotime($dep)),
                 'arr' => $deparrs[$index],  'arrdisp' => strftime($fmt, strtotime($deparrs[$index])),
                 'bookable' => $canbook);
-            if ($firstdep == false) {
-                $firstdep = strtotime($dep);
+            if ($firstarr == false) {
+                $firstarr = strtotime($deparrs[$index]);
             }
             if ($canbook) {
                 $outtotal++;
@@ -349,12 +349,10 @@ class TicketBuilder {
         $rettimes = explode(",", $rettimesdata->$dd);
         $retarrs = explode(",", $deptimesdata->$da);
         $bookable['ret'] = array();
-        $testfirst = true;
         $intotal = 0;
         foreach ($rettimes as $index => $ret) {
-            if ($testfirst && strtotime($ret) < $firstdep) {
-                // If the first return trip is before the first departure,skip it
-                $testfirst = false;
+            if (strtotime($ret) < $firstarr) {
+                // If the first return trip is before the first arrival, skip it.
                 continue;
             }
             if ($this->overridevalid == 1) {

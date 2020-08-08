@@ -118,6 +118,11 @@
     color:#aaaaaa;
 }
 
+.railticket_disablelabel {
+    background-color:#dddddd !important;
+    color:#880000 !important;
+}
+
 .railticket_listselect input[type="radio"]:checked + label {
     font-weight:bolder;
     background-color:#f2f0a6;

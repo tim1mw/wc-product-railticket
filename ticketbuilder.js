@@ -383,10 +383,10 @@ function showTimes(times, type, header, selecttime) {
                 //title = "Sorry, this train cannot be booked online";
             }
             var lateclass = "";
+            var depparts = times[index]['dep'].split(".");
+            var deptotal = (parseInt(depparts[0])*60)+parseInt(depparts[1]);
 
             if (document.getElementById('dateoftravel').value == today) {
-                var depparts = times[index]['dep'].split(".");
-                var deptotal = (parseInt(depparts[0])*60)+parseInt(depparts[1]);
                 if (nowtotal > deptotal && disabled == '') {
                     lateclass = "class='railticket_late'";
                 }
@@ -396,6 +396,22 @@ function showTimes(times, type, header, selecttime) {
             if (times[index]['dep'] == selecttime && times[index]['bookable']) {
                 checked = " checked ";
                 selected = index;
+            }
+
+            if (type == 'ret') {
+                var count = -1;
+                for (checki in outtimemap) {
+                    var arrparts = outtimemap[checki].split(".");
+                    var arrtotal = (parseInt(arrparts[0])*60)+parseInt(arrparts[1]);
+                    if (arrtotal < deptotal) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+                for (loop=0; loop<count-index; loop++) {
+                    str += "<li><div><label class='railticket_disablelabel'>No Service<div class='railticket_arrtime'>use following train</label></div></div></li>";
+                }
             }
 
             str += "<li id='lidep"+type+index+"' title='"+title+"'><input type='radio' name='"+type+"time' id='dep"+
