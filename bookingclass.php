@@ -56,12 +56,6 @@ class TicketBuilder {
             if (current_user_can('manage_tickets')) {
                 return true;
             }
-
-            $user = wp_get_current_user();
-            $roles = ( array ) $user->roles;
-            if (in_array('administrator', $roles)) {
-                return true;
-            }
         }
 
         return false;
