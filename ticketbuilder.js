@@ -116,6 +116,7 @@ function validateOverride() {
 
 function setBookingDate(bdate) {
     setChosenDate("Date of Travel", bdate);
+    overridevalid = false;
     doStations();
 }
 
