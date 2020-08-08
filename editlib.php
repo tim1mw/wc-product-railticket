@@ -632,7 +632,13 @@ function railticket_show_bookings_summary($dateofjourney) {
 
     $timetable = railticket_find_timetable($dateofjourney);
     if (!$timetable) {
-        echo "<h3>No trains or bookings today</h3>";
+        echo "<h3>No trains today</h3>";
+        return;
+    }
+
+    // If the override code is empty, this day has a timetable, but hasn't been initialised.
+    if (strlen($timetable->override) == 0) {
+        echo "<h3>Booking data not initiailised for this day - please make this day bookable.</h3>";
         return;
     }
 
