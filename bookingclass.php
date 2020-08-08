@@ -150,7 +150,7 @@ class TicketBuilder {
         }
     }
 
-    public function is_train_bookable($time, $stn, $direction) {
+    public function is_train_bookable($time, $fromstn, $tostn) {
         // Dates which are in the past are not allowed
         $parts = explode('.', $time);
         $deptime = DateTime::createFromFormat("Y-m-d", $this->dateoftravel, $this->railticket_timezone);
@@ -161,7 +161,7 @@ class TicketBuilder {
             return false;
         }
 
-        $cap = $this->get_capacity($time, 'single', $stn);
+        $cap = $this->get_capacity($time, 'single', $fromstn, $tostn);
 
         if ($cap->outseatsleft > 0) {
             return true;
@@ -325,7 +325,7 @@ class TicketBuilder {
             if ($this->overridevalid == 1) {
                 $canbook = true;
             } else {
-                $canbook = $this->is_train_bookable($dep, $this->fromstation, $direction);
+                $canbook = $this->is_train_bookable($dep, $this->fromstation,  $this->tostation);
             }
             $bookable['out'][] = array('dep' => $dep, 'depdisp' => strftime($fmt, strtotime($dep)),
                 'arr' => $deparrs[$index],  'arrdisp' => strftime($fmt, strtotime($deparrs[$index])),
@@ -360,7 +360,7 @@ class TicketBuilder {
             if ($this->overridevalid == 1) {
                 $canbook = true;
             } else {
-                $canbook = $this->is_train_bookable($ret, $this->tostation, $direction);
+                $canbook = $this->is_train_bookable($ret, $this->tostation, $this->fromstation);
             }
             $bookable['ret'][] = array('dep' => $ret, 'depdisp' => strftime($fmt, strtotime($ret)),
                 'arr' => $retarrs[$index], 'arrdisp' => strftime($fmt, strtotime($retarrs[$index])), 
@@ -561,7 +561,7 @@ class TicketBuilder {
         return $bays;
     }
 
-    public function get_capacity($outtime = null, $journeytype = null, $fromstation = null, $caponly = false) {
+    public function get_capacity($outtime = null, $journeytype = null, $fromstation = null, $tostation = null, $caponly = false) {
         if ($outtime == null) {
             $outtime = $this->outtime;
         }
@@ -570,6 +570,9 @@ class TicketBuilder {
         }
         if ($fromstation == null) {
             $fromstation = $this->fromstation;
+        }
+        if ($tostation == null) {
+            $tostation = $this->tostation;
         }
 
         $allocatedbays = new stdclass();
@@ -580,7 +583,7 @@ class TicketBuilder {
 
         $seatsreq = $this->count_seats();
 
-        $outbays = $this->get_service_inventory($outtime, $fromstation, $this->tostation, false, $this->is_guard());
+        $outbays = $this->get_service_inventory($outtime, $fromstation, $tostation, false, $this->is_guard());
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
         $allocatedbays->outseatsleft = $outbays->totalseats;
         if ($outbays->totalseats < $seatsreq) {
@@ -591,7 +594,7 @@ class TicketBuilder {
         }
 
         if ($journeytype == 'return') {
-            $retbays = $this->get_service_inventory($this->rettime, $this->tostation, $fromstation, false, $this->is_guard());
+            $retbays = $this->get_service_inventory($this->rettime, $tostation, $fromstation, false, $this->is_guard());
             // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
             $allocatedbays->retseatsleft = $retbays->totalseats;
             if ($retbays->totalseats < $seatsreq) {
@@ -1021,19 +1024,16 @@ class TicketBuilder {
     * Gets the outbound direction
     **/
 
-    private function get_direction($from = false, $to = false) {
-        global $wpdb;
+    private function get_direction($f = false, $t = false) {
+        if ($f === false) {
+            $f = $this->fromstation;
+        }
+        if ($t === false) {
+            $t = $this->tostation;
+        } 
 
-        if ($from == false) {
-            $from = $this->getStationData($this->fromstation);
-        } else {
-            $from = $this->getStationData($from);
-        }
-        if ($to == false) {
-            $to = $this->getStationData($this->tostation);
-        } else {
-            $to = $this->getStationData($to);
-        }
+        $from = $this->getStationData($f);
+        $to = $this->getStationData($t);
 
         if ($from->sequence > $to->sequence) {
             return "up";
