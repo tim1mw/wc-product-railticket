@@ -416,8 +416,10 @@ function showTimes(times, type, header, selecttime) {
             }
 
             var arrmessage = "";
+            var fullclass = "";
             if (times[index]['full']) {
                 arrmessage = "FULL - please try another train";
+                fullclass = " railticket_full ";
             } else {
                 arrmessage = "(arrival: "+times[index]['arrdisp'];
                 if (times[index]['bookable'] && times[index]['seats'] > 0) {
@@ -427,7 +429,7 @@ function showTimes(times, type, header, selecttime) {
             }
 
             str += "<li id='lidep"+type+index+"' title='"+title+"'><input type='radio' name='"+type+"time' id='dep"+
-                type+index+"' class='"+tclass+"' "+
+                type+index+"' class='"+tclass+fullclass+"' "+
                 "value='"+times[index]['dep']+"' "+
                 "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" "+checked+" />"+
                 "<label "+lateclass+" for='dep"+type+index+"'>"+times[index]['depdisp']+
@@ -493,6 +495,13 @@ function updateTimesList() {
         if (typeof(tt[t].value) == 'undefined') {
             continue;
         }
+
+        if (!guard && !overridevalid && tt[t].classList.contains('railticket_full')) {
+            tt[t].disabled = true;
+            tt[t].checked = false;
+            continue;
+        }
+
         if (sameservicereturn && ct > 0) {
             tt[t].disabled = true;
             tt[t].checked = false;
