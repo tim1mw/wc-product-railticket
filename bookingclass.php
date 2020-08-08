@@ -539,7 +539,18 @@ class TicketBuilder {
 
         // Take out the booking reserve
         if ($noreserve == false && $rec->sellreserve == 0 && strlen($rec->reserve) > 0) {
-            $reserve = (array) json_decode($rec->reserve);
+
+            // NOTE: Need to get origin station dep time here when intermediate stops are enabled!
+            switch ($rec->daytype) {
+                case 'simple':
+                    $reserve = (array) json_decode($rec->reserve);
+                    break;
+                case 'pertrain':
+                    $ropts = json_decode($rec->reserve);
+                    $reserve = $ropts->$set;
+                    break;
+            }
+
             foreach ($reserve as $i => $num) {
                 if (array_key_exists($i, $basebays)) {
                     $basebays[$i] = $basebays[$i] - $num;
