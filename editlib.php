@@ -32,6 +32,7 @@ function railticket_roles() {
     $role = get_role( 'administrator' );
     // Add a new capability.
     $role->add_cap( 'manage_tickets', true );
+    $role->add_cap( 'delete_tickets', true );
 
     $role = get_role( 'shop_manager' );
     // Add a new capability.
@@ -498,6 +499,9 @@ function railticket_view_bookings() {
                 break;
             case 'viewordersummary':
                 railticket_get_ordersummary(false);
+                break;
+            case 'deletemanual';
+                railticket_delete_manual_order();
                 break;
             case 'filterbookings':
             default:
@@ -1023,8 +1027,31 @@ function railticket_show_manualorder($orderid) {
                 "</form></p>";
         }
     }
+
+    if (current_user_can('delete_tickets')) {
+        echo "<p><form action='".railticket_get_page_url()."' method='post'>".
+            "<input type='hidden' name='action' value='deletemanual' />".
+            "<input type='hidden' name='orderid' value='".$orderid."' />".
+            "<input type='submit' value='Delete Manual Order' />".
+            "</form></p>";
+    }
+
     railticket_show_back_to_services($bookings[0]->date);
     echo "</div>";
+}
+
+function railticket_delete_manual_order() {
+    global $wpdb;
+    $orderid = $_POST['orderid'];
+
+    $bookings = $wpdb->get_results("SELECT id, date FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$orderid);
+    foreach ($bookings as $booking) {
+        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$booking->id);
+    }
+    $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$orderid);
+    $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
+    echo "<h3>Order M".$orderid." deleted</h3>";
+    railticket_show_back_to_services($bookings[0]->date);
 }
 
 function railticket_show_wooorder($orderid) {
