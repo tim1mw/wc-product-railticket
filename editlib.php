@@ -21,7 +21,8 @@ function railticket_register_settings() {
 }
 
 function railticket_add_pages() {
-    add_menu_page('Rail Ticket', 'Rail Ticket', 'manage_tickets', 'railticket-top-level-handle', 'railticket_view_bookings' );
+    add_menu_page('Rail Ticket', 'Rail Ticket', 'manage_tickets', 'railticket-top-level-handle', 'railticket_view_bookings', 
+        '', 30);
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
 }
@@ -200,11 +201,18 @@ function railticket_showcalendaredit($year, $month) {
             echo "/></td><td>";
 
             $comp = json_decode($bk[0]->composition);
-
-            $coachset = (array) $comp->coachset;
-            foreach ($coachset as $c => $v) {
-                echo $v."x ".$c.", ";
+            switch ($bk[0]->daytype) {
+                case 'simple':
+                    echo railticket_get_coachset_string($comp->coachset);
+                    break;
+                case 'pertrain':
+                    foreach ($comp->coachsets as $key => $set) {
+                        echo $key.":&nbsp;".railticket_get_coachset_string($set->coachset)."<br />";
+                    }
+                    break;
             }
+
+
             echo "</td><td>";
             echo "<input type='checkbox' value='1' name='reserve_".$ct->id."' ";
             if ($bk[0]->sellreserve == 1) {
@@ -212,11 +220,16 @@ function railticket_showcalendaredit($year, $month) {
             }
             echo "/><td>";
             if (strlen($bk[0]->reserve) > 0) {
-                $reserve = (array) json_decode($bk[0]->reserve);
-                foreach ($reserve as $i => $num) {
-                    if ($num > 0) {
-                        echo $i." x".$num.", ";
-                    }
+                $reserve = json_decode($bk[0]->reserve);
+                switch ($bk[0]->daytype) {
+                    case 'simple':
+                        echo railticket_get_reserve_string($reserve);
+                        break;
+                    case 'pertrain':
+                        foreach ($reserve as $key => $set) {
+                            echo $key.":&nbsp;".railticket_get_reserve_string($set)."<br />";
+                        }
+                        break;
                 }
             }
 
@@ -234,7 +247,27 @@ function railticket_showcalendaredit($year, $month) {
     <?php
 }
 
+function railticket_get_reserve_string($reserve) {
+    $reserve = (array) $reserve;
+    $str = '';
+    foreach ($reserve as $i => $num) {
+        if ($num > 0) {
+            $str .= $i." x".$num.", ";
+        }
+    }
 
+    return substr($str, 0, strlen($str)-2);
+}
+
+function railticket_get_coachset_string($coachset) {
+    $coachset = (array) $coachset;
+    $str = '';
+    foreach ($coachset as $c => $v) {
+        $str .= $v."x ".$c.", ";
+    }
+
+    return substr($str, 0, strlen($str)-2);
+}
 
 function railticket_updatebookable() {
     global $wpdb;
@@ -335,14 +368,36 @@ function railticket_process_coaches($json, $timetable = null) {
             $r->bays = railticket_get_coachset_bays($parsed->coachset);
             break;
         case 'pertrain':
-            $r->bays = "{}";
-            $r->reserve = false;
+            $r->bays = railticket_process_set_allocations($parsed);
+            $r->reserve = railticket_process_set_reserve($parsed);
             break;
     }
     return $r;
 }
 
-function railticket_get_coachset_bays($coachset) {
+function railticket_process_set_reserve($parsed) {
+    $data = array();
+
+    foreach ($parsed->coachsets as $key => $set) {
+        $data[$key] = $set->reserve;
+    }
+
+    return json_encode($data);
+}
+
+function railticket_process_set_allocations($parsed) {
+    $data = new stdclass();
+    $data->coachsets = array();
+    foreach ($parsed->coachsets as $key => $set) {
+        $data->coachsets[$key] = railticket_get_coachset_bays($set->coachset, false);
+    }
+    $data->up = $parsed->up;
+    $data->down = $parsed->down;
+
+    return json_encode($data);
+}
+
+function railticket_get_coachset_bays($coachset, $json = true) {
     global $wpdb;
     $coachset = (array) $coachset;
     $data = array();
@@ -363,7 +418,11 @@ function railticket_get_coachset_bays($coachset) {
         }
     }
     ksort($data);
-    return json_encode($data);
+    if ($json) {
+        return json_encode($data);
+    } else {
+        return $data;
+    }
 }
 
 
