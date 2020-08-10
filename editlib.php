@@ -531,19 +531,19 @@ function railticket_summary_selector() {
         if (array_key_exists('year', $_REQUEST)) {
             $chosenyear = $_REQUEST['year'];
         } else {
-            $chosenyear = intval(date("Y"));
+            $chosenyear = intval(date_i18n("Y"));
         }
 
         if (array_key_exists('month', $_REQUEST)) {
             $chosenmonth = intval($_REQUEST['month']);
         } else {
-            $chosenmonth = intval(date("n"));
+            $chosenmonth = intval(date_i18n("n"));
         }
     
         if (array_key_exists('day', $_REQUEST)) {
             $chosenday = intval($_REQUEST['day']);
         } else {
-            $chosenday = intval(date("j"));
+            $chosenday = intval(date_i18n("j"));
         }
 
         $date = new DateTime();
@@ -953,8 +953,10 @@ function railticket_show_manualorder($orderid) {
     $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$order->id);
     $stns = railticket_get_stations_map();
 
+    $depdate = DateTime::createFromFormat("Y-m-d", $bookings[0]->date,  new DateTimeZone(get_option('timezone_string')));
+
     ?><div class='railticket_editdate'><table border='1'>
-        <tr><th>Order ID</th><td class='railticket_meta'><?php echo $orderid; ?></td></tr>
+        <tr><th>Order ID</th><td class='railticket_meta'>M<?php echo $orderid; ?></td></tr>
         <tr><th>Total Paid</th><td class='railticket_meta'>£<?php echo $order->price; ?></td></tr>
         <tr><th>Fare Supplement</th><td class='railticket_meta'>£<?php echo $order->supplement; ?></td></tr>
         <tr><th>Seats</th><td class='railticket_meta'><?php echo $order->seats; ?></td></tr>
@@ -965,6 +967,7 @@ function railticket_show_manualorder($orderid) {
             }
          ?></td></tr>
         <tr><th>Journey Type</th><td class='railticket_meta'><?php echo $order->journeytype; ?></td></tr>
+        <tr><th>Date of travel</td><td class='railticket_meta'><?php echo $depdate->format('j-M-Y'); ?></td></tr>
         <tr><th>Outbound Dep</th><td class='railticket_meta'>
             <?php echo $stns[$bookings[0]->fromstation]->name." ".date("g:i", strtotime($bookings[0]->time)); ?></td></tr>
         <?php railticket_show_bays($bookings[0]->id, $bookings[0]->fromstation, "Outbound Bays" ); ?>
