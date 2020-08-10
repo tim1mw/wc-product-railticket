@@ -160,10 +160,7 @@ class TicketBuilder {
         $r->full = false;
         $r->seats = 0;
 
-        if ($this->now > $deptime) {
-            if ($this->is_guard()) {
-                $r->seats = $this->get_capacity($time, 'single', $fromstn, $tostn)->outseatsleft;
-            }
+        if (!$this->is_guard() && $this->now > $deptime) {
             return $r;
         }
 
