@@ -538,7 +538,9 @@ class TicketBuilder {
             } else {
                 $i = $booking->baysize.'_normal';
             }
-            $basebays[$i] = $basebays[$i] - $booking->num;
+            if (array_key_exists($i, $basebays)) {
+                $basebays[$i] = $basebays[$i] - $booking->num;
+            }
         }
 
         // Take out the booking reserve
@@ -597,11 +599,8 @@ class TicketBuilder {
         $seatsreq = $this->count_seats();
 
         $outbays = $this->get_service_inventory($outtime, $fromstation, $tostation, false, $this->is_guard());
-        // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
         $allocatedbays->outseatsleft = $outbays->totalseats;
-        if ($outbays->totalseats < $seatsreq) {
-            return $allocatedbays;
-        }
+
         if ($caponly) {
             return $allocatedbays;
         }
@@ -611,28 +610,35 @@ class TicketBuilder {
             // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
             $allocatedbays->retseatsleft = $retbays->totalseats;
             if ($retbays->totalseats < $seatsreq) {
-                return $allocatedbays;
-            }
-
-            $retallocatesm = $this->getBays($seatsreq, $retbays->bays, false);
-            $retallocatelg = $this->getBays($seatsreq, $retbays->bays, true);
-
-            if (!$retallocatesm && !$retallocatelg) {
-                $allocatedbays->error = true;
-                return $allocatedbays;
-            }
-
-            if ($retallocatesm[0] > $retallocatelg[0]) {
-                $allocatedbays->retbays = $retallocatelg[1];
-                if (!$retallocatelg[2] && $this->disabledrequest) {
-                    $allocatedbays->disablewarn = true;
-                }
+                $allocatedbays->retbays = array();
             } else {
-                $allocatedbays->retbays = $retallocatesm[1];
-                if (!$retallocatesm[2] && $this->disabledrequest) {
-                    $allocatedbays->disablewarn = true;
+
+                $retallocatesm = $this->getBays($seatsreq, $retbays->bays, false);
+                $retallocatelg = $this->getBays($seatsreq, $retbays->bays, true);
+
+                if (!$retallocatesm && !$retallocatelg) {
+                    $allocatedbays->error = true;
+                    return $allocatedbays;
+                }
+
+                if ($retallocatesm[0] > $retallocatelg[0]) {
+                    $allocatedbays->retbays = $retallocatelg[1];
+                    if (!$retallocatelg[2] && $this->disabledrequest) {
+                        $allocatedbays->disablewarn = true;
+                    }
+                } else {
+                    $allocatedbays->retbays = $retallocatesm[1];
+                    if (!$retallocatesm[2] && $this->disabledrequest) {
+                        $allocatedbays->disablewarn = true;
+                    }
                 }
             }
+        }
+
+        // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
+        if ($outbays->totalseats < $seatsreq) {
+            $allocatedbays->outbays = array();
+            return $allocatedbays;
         }
 
         $outallocatesm = $this->getBays($seatsreq, $outbays->bays, false);
@@ -643,8 +649,6 @@ class TicketBuilder {
             return $outallocatedbays;
         }
 
-        $allocatedbays->ok = true;
-        $dis = false;
         if ($outallocatesm[0] > $outallocatelg[0]) {
             $allocatedbays->outbays = $outallocatelg[1];
             if (!$outallocatelg[2] && $this->disabledrequest) {
@@ -658,7 +662,13 @@ class TicketBuilder {
         }
 
         $allocatedbays->match = true;
-        if ($journeytype == 'return') {
+        if ($journeytype == 'single') {
+            $allocatedbays->ok = true;
+            return $allocatedbays;
+        }
+
+        if (count($allocatedbays->retbays) > 0) {
+            $allocatedbays->ok = true;
             ksort($allocatedbays->outbays);
             ksort($allocatedbays->retbays);
 
@@ -841,9 +851,17 @@ class TicketBuilder {
         }
 
         if ($this->overridevalid == 1 && !$allocatedbays->ok ) {
-            $outbays = "As directed by the guard";
+            if (count($allocatedbays->outbays) > 0) {
+                $outbays = $this->baystring($allocatedbays->outbays);
+            } else {
+                $outbays = "As directed by the guard";
+            }
             if ($this->journeytype == 'return') {
-                $retbays = "As directed by the guard";
+                if (count($allocatedbays->retbays) > 0) {
+                    $retbays = $this->baystring($allocatedbays->retbays);
+                } else {
+                    $retbays = "As directed by the guard";
+                }
             } else {
                 $retbays = "n/a";
             }
