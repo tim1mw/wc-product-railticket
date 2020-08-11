@@ -21,8 +21,8 @@ class TicketCalendar
     public function __construct() {
         $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
         $this->today = new DateTime();
-        $this->today->setTime(0,0,0);
         $this->today->setTimezone($this->railticket_timezone);
+        $this->today->setTime(0,0,0);
     }
 
     /**
