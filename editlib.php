@@ -1571,7 +1571,11 @@ function railticket_get_ordersummary($iscsv = false) {
             continue;
         }
     }
-    ksort($lines);
+    uksort($lines, function ($a, $b) {
+        $a = mb_strtolower($a);
+        $b = mb_strtolower($b);
+        return strcmp($a, $b);
+    });
     if ($iscsv) {
         foreach ($lines as $line) {
             fputcsv($f, $line);
