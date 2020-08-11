@@ -1116,6 +1116,14 @@ function railticket_show_wooorder($orderid) {
             " AND fromstation = ".$tostation);
         railticket_show_bays($rbooking[0]->id, $tostation, 'Return bays');
     }
+
+    $notes = wc_get_order_notes([
+       'order_id' => $orderid,
+       'type' => 'customer',
+    ]);
+
+    echo "<tr><th>Customer Note</th><td class='railticket_meta'>".$order->get_customer_note()."</td></tr>";
+
     echo "<tr><th>Collected</th><td class='railticket_meta'>";
     if ($booking[0]->collected) {
         echo "Yes";
