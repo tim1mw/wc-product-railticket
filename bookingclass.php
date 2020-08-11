@@ -18,7 +18,6 @@ class TicketBuilder {
         $this->tomorrow->setTimezone($this->railticket_timezone);
         $this->tomorrow->modify('+1 day');
         $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC");
-
         $this->dateoftravel = $dateoftravel;
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
@@ -1155,9 +1154,8 @@ class TicketBuilder {
 
         $startyear = $this->today->format('Y');
         $startmonth = $this->today->format('n');
-
-        $endyear = date("Y", strtotime("+1 month"));
-        $endmonth = date("n", strtotime("+2 month"));
+        $endyear = date_i18n("Y", strtotime("+1 month"));
+        $endmonth = date_i18n("n", strtotime("+2 month"));
 
         if ($endmonth < $startmonth) {
             $stop = 13;
@@ -1168,7 +1166,7 @@ class TicketBuilder {
 
         for ($year=$startyear; $year<$endyear+1; $year++) {
             for ($month=$startmonth; $month<$stop; $month++) {
-                $cal .= "<div class='calendar-box-wrapper' id='railtimetable-cal-".$year."-".$month."'>".$calendar->draw(date($year."-".$month."-01"))."</div>";
+                $cal .= "<div class='calendar-box-wrapper' id='railtimetable-cal-".$year."-".$month."'>".$calendar->draw(date_i18n($year."-".$month."-01"))."</div>";
              }
              $startmonth = 1;
              $stop = $endmonth+1;
