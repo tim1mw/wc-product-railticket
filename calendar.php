@@ -84,7 +84,7 @@ class TicketCalendar
 
         $today = new DateTime();
         $total_days_in_month = (int) $date->format('t');
-        $calendar .= '<table class="calendar">';
+        $calendar .= '<table class="calendar ticket-calendar">';
         $calendar .= '<thead>';
         $calendar .= '<tr class="calendar-title">';
         $calendar .= '<th colspan="7">';

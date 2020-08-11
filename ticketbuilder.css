@@ -1,3 +1,18 @@
+
+.ticket-calendar tbody tr td.day {
+    font-size:large;
+    padding:11px;
+}
+
+
+.ticket-calendar th {
+    font-size:large;
+}
+
+.ticket-calendar .calendar-title th {
+    font-size:large;
+}
+
 .railticket_stageblock {
     border: 1px solid #eeeeee;
     background: #fafafa;
