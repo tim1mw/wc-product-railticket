@@ -950,7 +950,7 @@ function railticket_show_manualorder($orderid) {
     }
 
     $order = $order[0];
-    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$order->id);
+    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$order->get_id());
     $stns = railticket_get_stations_map();
 
     $depdate = DateTime::createFromFormat("Y-m-d", $bookings[0]->date,  new DateTimeZone(get_option('timezone_string')));
@@ -1485,7 +1485,7 @@ function railticket_get_ordersummary($iscsv = false) {
 
     $stns = railticket_get_stations_map();
     $date = $_REQUEST['dateofjourney'];
-    $header = array( 'Order ID', 'Name' , 'Email', 'From', 'To', 'Journey Type', 'Tickets', 'Seats', 'Supplement', 'Total Price');
+    $header = array( 'Order ID', 'Name' , 'Email', 'Phone', 'From', 'To', 'Journey Type', 'Tickets', 'Seats', 'Supplement', 'Total Price', 'Notes');
     $td = array('Date', $date);
     if ($iscsv) {
         header('Content-Type: application/csv');
@@ -1527,6 +1527,7 @@ function railticket_get_ordersummary($iscsv = false) {
             }
             $line[] = $order->get_formatted_billing_full_name();
             $line[] = $order->get_billing_email();
+            $line[] = $order->get_billing_phone();
             $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-fromstation")]->name;
             $line[] = $stns[$data_store->get_metadata($booking->wooorderitem, "tickettimes-tostation")]->name;
             $line[] = $data_store->get_metadata($booking->wooorderitem, "tickettimes-journeytype", true);
@@ -1545,6 +1546,14 @@ function railticket_get_ordersummary($iscsv = false) {
             $line[] = $data_store->get_metadata($booking->wooorderitem, "_line_total", true);
 
             $key = $order->get_billing_last_name()." ".$order->get_billing_first_name()." ".wp_generate_uuid4();
+
+            $notes = wc_get_order_notes([
+                'order_id' => $order->get_id(),
+                'type' => 'customer',
+            ]);
+
+            $line[] = $order->get_customer_note();
+
             $lines[$key] = $line;
         } elseif ($booking->manual > 0 && !in_array('M'.$booking->manual, $processed)) {
             $processed[] = 'M'.$booking->manual;
@@ -1557,6 +1566,7 @@ function railticket_get_ordersummary($iscsv = false) {
                 "<input type='submit' value='M".$booking->manual."' />".
                 "</form>";
             }
+            $line[] = '';
             $line[] = '';
             $line[] = '';
             $mb = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$booking->manual)[0];
@@ -1573,6 +1583,7 @@ function railticket_get_ordersummary($iscsv = false) {
             $line[] = $mb->seats;
             $line[] = $mb->supplement;
             $line[] = $mb->price;
+            $line[] = $mb->notes;
             $lines['zzzzzzzzzzzz'.$booking->manual] = $line;
         } else {
             //Bookings should all be manual or woocommerce
