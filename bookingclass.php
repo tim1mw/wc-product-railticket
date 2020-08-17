@@ -36,7 +36,11 @@ class TicketBuilder {
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
         $this->notes = $notes;
-        $this->nominimum = $nominimum;
+        if ($nominimum == 'true') {
+            $this->nominimum = true;
+        } else {
+            $this->nominimum = false;
+        }
 
         if ($this->is_guard()) {
             $this->overridevalid = true;
@@ -1284,7 +1288,7 @@ class TicketBuilder {
             "  <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>&nbsp;&nbsp;&nbsp;Request space for disabled visitor</p>";
 
         if ($this->is_guard()) {
-            $str .= "<p class='railticket_terms'><input type='checkbox' name='nominimum' id='nominimum'/>&nbsp;&nbsp;&nbsp;No Minimum Price</p>";
+            $str .= "<p class='railticket_terms'><input type='checkbox' name='nominimum' id='nominimum' />&nbsp;&nbsp;&nbsp;No Minimum Price</p>";
             $str .= "<p class='railticket_terms'><input type='checkbox' name='bypass' id='bypass'/>&nbsp;&nbsp;&nbsp;Bypass Ticket Restrictions</p>";
         } else {
             $str .= "<input type='hidden' name='nominimum' id='nominimum' value='0' />";
