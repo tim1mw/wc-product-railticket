@@ -950,7 +950,7 @@ function railticket_show_manualorder($orderid) {
     }
 
     $order = $order[0];
-    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$order->get_id());
+    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$orderid);
     $stns = railticket_get_stations_map();
 
     $depdate = DateTime::createFromFormat("Y-m-d", $bookings[0]->date,  new DateTimeZone(get_option('timezone_string')));
