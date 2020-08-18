@@ -310,11 +310,11 @@ function uncheckAll(classname) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-
+        var updateTimes = false;
         if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
             showTimes(response['out'], 'out', "Outbound", false);
         } else {
-            showTimes(response['out'], 'out', "Outbound", a_deptime);
+            updateTimes = showTimes(response['out'], 'out', "Outbound", a_deptime);
         }
         showTimes(response['ret'], 'ret', "Return", false);
 
@@ -347,7 +347,7 @@ function getDepTimes() {
                 railTicketAddListener('journeytype'+type, 'click', journeyTypeChanged);
             }
         }
-        if (a_deptime !== false) {
+        if (updateTimes !== false) {
             updateTimesList();
         }
 
@@ -442,7 +442,7 @@ function showTimes(times, type, header, selecttime) {
 
     str += "</ul>";
     document.getElementById('deptimes_data_'+type).innerHTML = str;
-    return index;
+    return selected;
 }
 
 function trainTimeChanged(index, type, skip) {
