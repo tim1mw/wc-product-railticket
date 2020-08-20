@@ -166,6 +166,9 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
 
         foreach ($cart_item['ticketsallocated'] as $ttype => $qty) {
             $ticketdata = railticket_product_ticketsallocated_display($ttype);
+            if (strlen($ticketdata->description) == 0) {
+                $ticketdata->description = '&nbsp;';
+            }
             $item_data[] = array(
                 'key'       => $qty." x ".$ticketdata->name,
                 'value'     => $ticketdata->description
