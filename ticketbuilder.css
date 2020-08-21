@@ -485,6 +485,11 @@ input[type=number]::-webkit-inner-spin-button {
     font-size:xx-large;
 }
 
+
+.railticket_shortsummary {
+    font-size:large;
+}
+
 #addtocart_button {
     width:100%;
 }
