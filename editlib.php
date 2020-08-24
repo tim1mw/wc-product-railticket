@@ -1003,6 +1003,13 @@ function railticket_show_manualorder($orderid) {
     $stns = railticket_get_stations_map();
 
     $depdate = DateTime::createFromFormat("Y-m-d", $bookings[0]->date,  new DateTimeZone(get_option('timezone_string')));
+    if ($order->createdby > 0) {
+        $u = get_userdata($order->createdby);
+    } else {
+        $u = new Stdclass();
+        $u->first_name = 'Unknown';
+        $u->last_name = 'User (id='.$order->createdby.')';
+    }
 
     ?><div class='railticket_editdate'><table border='1'>
         <tr><th>Order ID</th><td class='railticket_meta'>M<?php echo $orderid; ?></td></tr>
@@ -1030,6 +1037,7 @@ function railticket_show_manualorder($orderid) {
             }
         ?>
         <tr><th>Notes</th><td class='railticket_meta'><?php echo $order->notes; ?></td></tr>
+        <tr><th>Created By</th><td class='railticket_meta'><?php echo $u->first_name.' '.$u->last_name; ?></td></tr>
     <?php
 
     echo "<tr><th>Collected</th><td class='railticket_meta'>";
