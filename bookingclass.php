@@ -917,7 +917,8 @@ class TicketBuilder {
                 'seats' => $totalseats,
                 'travellers' => json_encode($this->ticketselections),
                 'tickets' => json_encode($this->ticketsallocated),
-                'notes' => $this->notes
+                'notes' => $this->notes,
+                'createdby' => get_current_user_id()
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
