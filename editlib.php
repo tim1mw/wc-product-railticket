@@ -1381,6 +1381,18 @@ function railticket_get_waybill($iscsv) {
     $summary[] = array('Total Passengers', $totalsdata->totalseats);
     $summary[] = array('Total Tickets', $totalsdata->totaltickets);
     $summary[] = array('Total One Way Journeys', $totalsdata->totaljourneys); 
+
+    foreach ($totalsdata->guardtotals as $id => $total) {
+        if ($id > 0) {
+            $u = get_userdata($id);
+        } else {
+            $u = new Stdclass();
+            $u->first_name = 'Unknown';
+            $u->last_name = 'User (id='.$id.')';
+        }
+        $summary[] = array('Manual Bookings - '.$u->first_name.' '.$u->last_name, $total);
+    }
+
     $summary[] = array('Total Manual Booking Revenue', $totalsdata->totalmanual);
     $summary[] = array('Total Online Bookings Revenue', $totalsdata->totalwoo);
 
@@ -1424,6 +1436,7 @@ function railticket_get_waybill_data($date) {
     $totalsupplement = 0;
     $totalwoo = 0;
     $totalmanual = 0;
+    $guardtotals = array();
     $totaljourneys = 0;
 
     foreach ($bookings as $booking) {
@@ -1463,6 +1476,11 @@ function railticket_get_waybill_data($date) {
             $ticketsallocated = (array) json_decode($mb->tickets);
             $totalmanual += $mb->price;
             $totalsupplement += $mb->supplement;
+            if (array_key_exists($mb->createdby, $guardtotals)) {
+                $guardtotals[$mb->createdby] += $mb->price;
+            } else {
+                $guardtotals[$mb->createdby] = $mb->price;
+            }
         } else {
             //Bookings should all be manual or woocommerce
             continue;
@@ -1494,6 +1512,7 @@ function railticket_get_waybill_data($date) {
     $r->totalsupplement = $totalsupplement;
     $r->totalwoo = $totalwoo;
     $r->totalmanual = $totalmanual;
+    $r->guardtotals = $guardtotals;
     $r->bookings = $bookings;
     $r->totaljourneys = $totaljourneys;
     return $r;
