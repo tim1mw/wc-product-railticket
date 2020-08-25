@@ -1236,8 +1236,8 @@ class TicketBuilder {
             "<h3>Choose Stations</h3>".
             "<p class='railticket_help'>Tap or click the stations to select. Departure times and single or return journeys are chosen in the next section.</p>".
             "<div class='railticket_container'>".
-            "<div class='railticket_listselect_left'><div class='inner'><h3>From</h3>".$this->station_radio("fromstation", true)."</div></div>".
-            "<div class='railticket_listselect_right'><div class='inner'><h3>To</h3>".$this->station_radio("tostation", false)."</div></div>".
+            "<div class='railticket_listselect_left'><div class='inner'><h3>Starting From</h3>".$this->station_radio("fromstation", true)."</div></div>".
+            "<div class='railticket_listselect_right'><div class='inner'><h3>Going To</h3>".$this->station_radio("tostation", false)."</div></div>".
             "</div></div>".
             "<div class='railticket_container' id='railticket_specials'></div>".
             "</div>";
