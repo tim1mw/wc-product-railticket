@@ -268,7 +268,7 @@
     font-weight:bold;
 }
 
-.railticket_terms input[type="checkbox"] {
+.railticket_terms input[type="checkbox"], .railticket_overbook {
     transform: scale(3);
 }
 

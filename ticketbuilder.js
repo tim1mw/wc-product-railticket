@@ -98,6 +98,18 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('notes', document.railticketbooking['notes'].value);
     data.append('nominimum', document.getElementById('nominimum').checked);
 
+    if ('overbookret' in document.railticketbooking && document.railticketbooking['overbookret'].value == 1) {
+        data.append('overbookret', 1);
+    } else {
+        data.append('overbookret', 0);
+    }
+
+    if ('overbookout' in document.railticketbooking && document.railticketbooking['overbookout'].value == 1) {
+        data.append('overbookout', 1);
+    } else {
+        data.append('overbookout', 0);
+    }
+
     request.send(data);
 }
 
@@ -790,6 +802,9 @@ function showCapacity(response) {
         str = "Socially distanced seating bay(s) available for your journey:<br /><table class='railticket_travellers_table'><tr><td>Outbound</td><td>";
         if (typeof(response.outbays) == 'undefined' || response.outbays.length == 0 ) {
             str += "Insufficient space";
+            if (guard) {
+                str += " - allow overbooking?&nbsp;&nbsp;<input class='railticket_overbook' type='checkbox' value='1' name='overbookout' />";
+            }
         } else {
             for (i in response.outbays) {
                 var desc = i.split('_');
@@ -806,6 +821,9 @@ function showCapacity(response) {
             str += "<tr><td>Return</td><td>";
             if (typeof(response.retbays) == 'undefined' || response.retbays.length == 0 ) {
                 str += "Insufficient space";
+                if (guard) {
+                    str += "- allow overbooking?&nbsp;&nbsp;<input class='railticket_overbook' type='checkbox' value='1' name='overbookret' />";
+                }
             } else {
                 for (i in response.retbays) {
                     var desc = i.split('_');

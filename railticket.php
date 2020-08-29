@@ -487,6 +487,8 @@ function railticket_getticketbuilder() {
     $notes = railticket_getpostfield('notes');
     $nominimum = railticket_getpostfield('nominimum');
     $show = railticket_getpostfield('show');
+    $overbookout = railticket_getpostfield('overbookout');
+    $overbookret = railticket_getpostfield('overbookret');
 
     $ticketselections = null;
     if (array_key_exists('ticketselections', $_REQUEST)) {
@@ -499,7 +501,8 @@ function railticket_getticketbuilder() {
     $tickets = array();
 
     return new TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show);
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest,
+        $notes, $nominimum, $show, $overbookout, $overbookret);
 }
 
 function railticket_getpostfield($field) {

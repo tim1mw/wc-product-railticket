@@ -5,7 +5,8 @@ class TicketBuilder {
     private $today, $tomorrow, $stations;
 
     public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
+        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest,
+        $notes, $nominimum, $show, $overbookout, $overbookret) {
         global $wpdb;
         $this->show = $show;
         $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
@@ -52,6 +53,9 @@ class TicketBuilder {
         } else {
             $this->disabledrequest = false;
         }
+
+        $this->overbookout = $overbookout;
+        $this->overbookret = $overbookret;
     }
 
     private function is_guard() {
