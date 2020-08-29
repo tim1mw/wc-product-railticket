@@ -775,7 +775,13 @@ function railticket_show_dep_buttons($dateofjourney, $station, $timetable, $dept
     }
 }
 
-function railticket_show_dep_button($dateofjourney, $stationid, $destination, $direction, $t) {
+function railticket_show_dep_button($dateofjourney, $stationid, $destination, $direction, $t, $incstn = false) {
+    global $wpdb;
+    $label = $t;
+    if ($incstn) {
+        $station =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id =".$stationid, OBJECT)[0];
+        $label = "Back to ".$t." from ".$station->name;
+    }
     ?>
     <form method='post' action='<?php echo railticket_get_page_url() ?>'>
        <input type='hidden' name='action' value='showdep' />
@@ -784,7 +790,7 @@ function railticket_show_dep_button($dateofjourney, $stationid, $destination, $d
        <input type='hidden' name='destination' value='<?php echo $destination; ?>' />
        <input type='hidden' name='direction' value='<?php echo $direction ?>' />
        <input type='hidden' name='deptime' value='<?php echo $t ?>' />
-       <input type='submit' name='submit' value='<?php echo $t ?>' />
+       <input type='submit' name='submit' value='<?php echo $label ?>' />
     </form>
     <?php
 }
@@ -1095,7 +1101,14 @@ function railticket_show_manualorder($orderid) {
             "<input type='submit' value='Delete Manual Order' />".
             "</form></p>";
     }
-
+    echo "<p>";
+    railticket_show_dep_button($bookings[0]->date, $bookings[0]->fromstation, $bookings[0]->tostation, $bookings[0]->direction, $bookings[0]->time, true);
+    echo "</p>";
+    if ($order->journeytype == 'return') {
+      echo "<p>";
+      railticket_show_dep_button($bookings[1]->date, $bookings[1]->fromstation, $bookings[1]->tostation, $bookings[1]->direction, $bookings[1]->time, true); 
+      echo "</p>";
+    }
     railticket_show_back_to_services($bookings[0]->date);
     echo "</div>";
 }
@@ -1145,6 +1158,7 @@ function railticket_show_wooorder($orderid) {
     $tostation = false;
     $journeytype = false;
     $dateofjourney = false;
+
     foreach ($formatted_meta_data as $meta) {
         switch ($meta->key) {
             case 'tickettimes-outbays':
@@ -1162,6 +1176,13 @@ function railticket_show_wooorder($orderid) {
                 break;
             case 'tickettimes-dateoftravel':
                 $dateofjourney = $meta->value;
+                break;
+            case 'tickettimes-outtime':
+                $outtime = $meta->value;
+                break;
+            case 'tickettimes-rettime':
+                $rettime = $meta->value;
+                break;
         }
         echo "<tr><th>".$meta->display_key."</th><td class='railticket_meta'>".strip_tags($meta->display_value)."</td></tr>";
     }
@@ -1228,9 +1249,20 @@ function railticket_show_wooorder($orderid) {
                 "</form></p>";
         }
     }
+
+    echo "<p>";
+    railticket_show_dep_button($dateofjourney, $booking[0]->fromstation, $booking[0]->tostation, $booking[0]->direction, $booking[0]->time, true);
+    echo "</p>";
+    if ($journeytype == 'return') {
+      echo "<p>";
+      railticket_show_dep_button($dateofjourney, $rbooking[0]->fromstation, $rbooking[0]->tostation, $rbooking[0]->direction, $rbooking[0]->time, true); 
+      echo "</p>";
+    }
+    
     railticket_show_back_to_services($dateofjourney);
     echo "</div>";
 }
+
 
 function railticket_show_back_to_services($dateofjourney) {
     ?>
