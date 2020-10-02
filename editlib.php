@@ -823,7 +823,7 @@ function railticket_show_departure($dateofjourney, $stationid, $destinationid, $
 
     $tk = new TicketBuilder($dateofjourney, $station->id, $destination->id, $deptime, false, 'single', false, false, false, false, '',false, false);
     $basebays = $tk->get_service_inventory($deptime, $station->id, $destination->id, true, true);
-    $capused = $tk->get_service_inventory($deptime, $station->id, $destination->id, false, true);
+    $capused = $tk->get_service_inventory($deptime, $station->id, $destination->id, false, false);
     $capcollected = $tk->get_service_inventory($deptime, $station->id, $destination->id, false, true, true);
 
    if ($summaryonly) {
@@ -844,7 +844,7 @@ function railticket_show_departure($dateofjourney, $stationid, $destinationid, $
             "</table></div><br />";
     }
     echo "<h3>Bay Usage (one way to destination)</h3><div class='railticket_trainbookings'>".
-        "<table border='1'><th>Bay</th><th>Total</th><th>Sold</th><th>Collected</th><th>Empty</th></tr>";
+        "<table border='1'><th>Bay</th><th>Total</th><th>Used</th><th>Collected</th><th>Available</th></tr>";
     foreach ($basebays as $bay => $space) {
         $bayd = str_replace('_', ' seat ', $bay);
         $bayd = str_replace('priority', 'disabled', $bayd);
