@@ -601,7 +601,7 @@ class TicketBuilder {
 
         $seatsreq = $this->count_seats();
 
-        $outbays = $this->get_service_inventory($outtime, $fromstation, $tostation, false, $this->is_guard());
+        $outbays = $this->get_service_inventory($outtime, $fromstation, $tostation, false);
         $allocatedbays->outseatsleft = $outbays->totalseats;
 
         if ($caponly) {
@@ -609,7 +609,7 @@ class TicketBuilder {
         }
 
         if ($journeytype == 'return') {
-            $retbays = $this->get_service_inventory($this->rettime, $tostation, $fromstation, false, $this->is_guard());
+            $retbays = $this->get_service_inventory($this->rettime, $tostation, $fromstation, false);
             // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
             $allocatedbays->retseatsleft = $retbays->totalseats;
             if ($retbays->totalseats < $seatsreq) {
