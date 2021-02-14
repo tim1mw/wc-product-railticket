@@ -5,6 +5,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 add_action('admin_menu', 'railticket_add_pages');
 add_action('admin_init', 'railticket_register_settings' );
 add_shortcode('railticket_manager', 'railticket_view_bookings');
+add_action('admin_post_railticket-importtimetable', 'railticket_importtimetable');
 
 function railticket_register_settings() {
    add_option('wc_product_railticket_woocommerce_product', '');
@@ -29,6 +30,7 @@ function railticket_add_pages() {
         '', 30);
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
+    add_submenu_page('railticket-top-level-handle', "Import Timetable", "Import Timetable", 'manage_options', 'railticket-import-timetable', 'railticket_import_timetable');
 }
 
 function railticket_roles() {
@@ -154,6 +156,138 @@ function railticket_bookable_days() {
     }
 }
 
+function railticket_import_timetable() {
+    ?>
+    <h2>Import Timetable</h2>
+    <p>Use the form below to import a new timetable revision and station data.</p>
+    <form method="post" action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" enctype="multipart/form-data">
+        <input type='hidden' name='action' value='railticket-importtimetable' />
+        <table><tr>
+            <td>Choose a file...</td>
+            <td><label for="file-upload"><input required type="file" name="dataimport" accept="text/json, application/json"></label></td>
+        </tr><tr>
+            <td>Update Timetable Date Assignments</td>
+            <td><input type='checkbox' name='upttdates' value='1' checked /></td>
+        </tr><tr>
+            <td>Process all timetable dates</td>
+            <td><input type='checkbox' name='incall' value='1' /></td>
+        </tr><tr>
+            <td>Import Timetable Revision</td>
+            <td><input type='checkbox' name='imprev' value='1' checked /></td>
+        </tr><tr>
+            <td>Start Date</td>
+            <td><input type='date' name='datefrom' required /></td>
+        </tr><tr>
+            <td>End Date</td>
+            <td><input type='date' name='dateto' required /></td>
+        </tr><tr>
+            <td>Timetable Revision Name</td>
+            <td><input type='text' name='name' value='' required /></td>
+        </tr></table>
+        <?php submit_button(__("Import Data")); ?>
+    </form>
+    <?php
+}
+
+function railticket_importtimetable() {
+    global $wpdb;
+
+    if (!array_key_exists('dataimport', $_FILES)) {
+        echo __("No file uploaded");
+        return;
+    }
+
+    $fileTmpPath = $_FILES['dataimport']['tmp_name'];
+    $fileName = $_FILES['dataimport']['name'];
+    $fileSize = $_FILES['dataimport']['size'];
+    $fileType = $_FILES['dataimport']['type'];
+
+    if ($fileSize == 0) {
+        echo __("You have uploaded an empty file");
+        return;
+    }
+
+    if ($fileType != "text/json" && $fileType != "application/json" ) {
+        echo __("Not a JSON file");
+        return;
+    }
+    $data = json_decode(file_get_contents($fileTmpPath));
+    $revision = array();
+    $revision['datefrom'] = sanitize_text_field($_POST['datefrom']);
+    $revision['dateto'] = sanitize_text_field($_POST['dateto']);
+    $revision['name'] = sanitize_text_field($_POST['name']);
+
+    //Create a new timetable revision
+    if (railticket_get_cbval('imprev')) {
+        $wpdb->insert($wpdb->prefix.'wc_railticket_ttrevisions', $revision);
+
+        $revisionid = $wpdb->insert_id;
+
+        railticket_import_table('stations', $data, $revisionid, 'stnid');
+        railticket_import_table('timetables', $data, $revisionid, 'timetableid');
+        railticket_import_table('stntimes', $data, $revisionid);
+    }
+
+    //Update the timetables for days
+    //Only read dates that are in the future and the range specified
+    if (railticket_get_cbval('upttdates')) {  
+        $datefrom = DateTime::createFromFormat('d-m-Y', $revision['datefrom']);
+        $dateto = DateTime::createFromFormat('d-m-Y', $revision['dateto']);
+        $now = new DateTime();
+
+        $incall = railticket_get_cbval('incall');
+
+        foreach($data->dates as $dateentry) {
+            $thisdate = DateTime::createFromFormat('d-m-Y', $dateentry->date);
+            if ( ($thisdate >= $now &&
+                $thisdate >= $datefrom &&
+                $thisdate <= $to)
+                || $incall) {
+                $existing = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates WHERE date = '".$dateentry->date."'");
+                if ($existing && count($existing) > 0) {
+                    $first = (array) reset($existing);
+                    if ($first['timetableid'] != $dateentry->timetableid) {
+                        $first['timetableid'] = $dateentry->timetableid;
+                        $wpdb->update("{$wpdb->prefix}wc_railticket_dates", $first, array('id' => $first['id']));
+                    }
+                } else {
+                    $dateentry = (array) $dateentry;
+                    unset($dateentry['id']);
+                    $wpdb->insert("{$wpdb->prefix}wc_railticket_dates", $dateentry);
+                }
+            }
+        }
+    }
+
+    unlink($fileTmpPath);
+
+    wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-days');
+}
+
+function railticket_import_table($table, $data, $revision = false, $idmap = false) {
+    global $wpdb;
+    $entrycount = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}wc_railticket_".$table);
+
+    foreach ($data->$table as $entry) {
+        $entry = (array) $entry;
+        if ($revision) {
+            $entry['revision'] = $revision;
+        }
+        if ($idmap) {
+            $entry[$idmap] = $entry['id'];
+        }
+        unset($entry['id']);
+        $wpdb->insert($wpdb->prefix.'wc_railticket_'.$table, $entry);
+    }
+}
+
+function railticket_get_cbval($cbname) {
+    if (array_key_exists($cbname, $_POST)) {
+        return sanitize_text_field($_POST[$cbname]);
+    } else {
+        return 0;
+    }
+}
 
 function railticket_showcalendaredit($year, $month) {
     global $wpdb, $wp;
