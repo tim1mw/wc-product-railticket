@@ -17,7 +17,7 @@ class TicketBuilder {
         $this->tomorrow = new DateTime();
         $this->tomorrow->setTimezone($this->railticket_timezone);
         $this->tomorrow->modify('+1 day');
-        $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC");
+        $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC");
         $this->dateoftravel = $dateoftravel;
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
@@ -85,8 +85,8 @@ class TicketBuilder {
         }
 
         global $wpdb;
-        $fstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC LIMIT 1", OBJECT)[0];
-        $lstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence DESC LIMIT 1", OBJECT)[0];
+        $fstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC LIMIT 1", OBJECT)[0];
+        $lstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence DESC LIMIT 1", OBJECT)[0];
 
         $fdeptime = $this->next_train_today_from($fstation->id);
         $ldeptime = $this->next_train_today_from($lstation->id);
@@ -189,7 +189,7 @@ class TicketBuilder {
         if (!$timetable) {
             return false;
         }
-        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$from."' ".
+        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_times WHERE station = '".$from."' ".
             " AND timetableid = ".$timetable->id)[0];
 
         if (strlen($deptimesdata->down_deps) > 0) {
@@ -220,7 +220,7 @@ class TicketBuilder {
         if (!$timetable) {
             return false;
         }
-        $deptime = $wpdb->get_var("SELECT lastdep FROM {$wpdb->prefix}railtimetable_times WHERE ".
+        $deptime = $wpdb->get_var("SELECT lastdep FROM {$wpdb->prefix}wc_railticket_times WHERE ".
             "timetableid = ".$timetable->id." ORDER BY lastdep DESC LIMIT 1");
         return $deptime;
     }
@@ -231,10 +231,10 @@ class TicketBuilder {
             $date = $date->format('Y-m-d');
         }
 
-        $sql = "SELECT {$wpdb->prefix}railtimetable_dates.* FROM {$wpdb->prefix}railtimetable_dates ".
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_dates.* FROM {$wpdb->prefix}wc_railticket_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date >= '".$date."' AND ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
+            "WHERE {$wpdb->prefix}wc_railticket_dates.date >= '".$date."' AND ".
             "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0 ORDER BY date ASC LIMIT ".$num;
 
         $rec = $wpdb->get_results($sql);
@@ -251,10 +251,10 @@ class TicketBuilder {
             $date = $date->format('Y-m-d');
         }
 
-        $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}wc_railticket_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date."' AND ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
+            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$date."' AND ".
             "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
 
         $rec = $wpdb->get_results($sql);
@@ -313,13 +313,13 @@ class TicketBuilder {
 
     public function get_bookable_trains() {
         global $wpdb;
-        $fmt = get_option('railtimetable_time_format');
+        $fmt = get_option('wc_railticket_time_format');
         $bookable = array();
 
         $timetable = $this->findTimetable();
-        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$this->fromstation."' ".
+        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_times WHERE station = '".$this->fromstation."' ".
             " AND timetableid = ".$timetable->id)[0];
-        $rettimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = '".$this->tostation."' ".
+        $rettimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_times WHERE station = '".$this->tostation."' ".
             " AND timetableid = ".$timetable->id)[0];
         $direction = $this->get_direction();
 
@@ -494,10 +494,10 @@ class TicketBuilder {
             $time = "s:".$time;
         }
 
-        $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}railtimetable_dates ".
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}wc_railticket_dates ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$this->dateoftravel."' AND ".
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
+            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$this->dateoftravel."' AND ".
             "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
 
         $rec = $wpdb->get_results($sql)[0];
@@ -964,12 +964,12 @@ class TicketBuilder {
 
 /*
     private function setSoldOut($dateoftravel, $fromstation, $tostation) {
-        $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
-            "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
-            " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+        $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_timetables.* FROM {$wpdb->prefix}wc_railticket_dates ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
+            " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$this->dateoftravel."'", OBJECT );
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
+            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$this->dateoftravel."'", OBJECT );
 
         $outbays = $this->get_service_inventory($dateoftravel, $outtime, $fromstation, $tostation);
         if ($outbays->totalseats == 0) {
@@ -983,8 +983,8 @@ class TicketBuilder {
         // with end to end bookings only this will always be the same as fromstation and time. Needs to be set properly
         // when intermediate stops are added. The aim is to allow the entire inventory for this service to be retrieved.
 
-        $fs = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$fromstation);
-        $ts = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$tostation);
+        $fs = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}wc_railticket_stations WHERE id = ".$fromstation);
+        $ts = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}wc_railticket_stations WHERE id = ".$tostation);
         if ($fs > $ts) {
             $direction = 'up';
         } else {
@@ -1079,7 +1079,7 @@ class TicketBuilder {
 
     private function getStationData($stationid) {
         global $wpdb;
-        $stn = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$stationid);
+        $stn = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE id = ".$stationid);
         return ($stn[0]) ? : false;
     }
 
@@ -1094,12 +1094,12 @@ class TicketBuilder {
             $date = $date->format('Y-m-d');
         }
 
-        $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
-            "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
-            " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+        $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_timetables.* FROM {$wpdb->prefix}wc_railticket_dates ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
+            " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date."'", OBJECT );
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
+            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$date."'", OBJECT );
 
 
         if (count($timetable) > 0) {
@@ -1125,7 +1125,7 @@ class TicketBuilder {
             "var today = '".$this->today->format('Y-m-d')."'\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
-            "var dateFormat = '".get_option('railtimetable_date_format')."';\n".
+            "var dateFormat = '".get_option('wc_railticket_date_format')."';\n".
             "var stationData = ".json_encode(railticket_get_stations_map()).";\n";
 
         $str .= $this->preset_javascript('a_dateofjourney');
@@ -1179,7 +1179,7 @@ class TicketBuilder {
 
         $scroll = $this->today->format("Y-n");
 
-        $cal .= '<script type="text/javascript">var baseurl = "'.railtimetable_currentlang()."/".get_site_url().'";var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
+        $cal .= '<script type="text/javascript">var baseurl = "'.wc_railticket_currentlang()."/".get_site_url().'";var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
 
         $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3>";
         $str .= "<p>".get_option('wc_product_railticket_top_comment')."</p></div>".

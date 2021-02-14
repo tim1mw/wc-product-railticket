@@ -33,13 +33,13 @@ class TicketCalendar
     private function findTimetable(DateTime $date)
     {
         global $wpdb;
-        $found_events = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_dates ".
-            "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
-            " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+        $found_events = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
+            " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
             "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-            "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$date->format('Y-m-d')."' ".
-            "AND {$wpdb->prefix}railtimetable_dates.date >= '".$this->today->format('Y-m-d')."'", OBJECT );
+            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
+            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$date->format('Y-m-d')."' ".
+            "AND {$wpdb->prefix}wc_railticket_dates.date >= '".$this->today->format('Y-m-d')."'", OBJECT );
 
         if (array_key_exists(0, $found_events)) {
             return $found_events[0];
@@ -56,7 +56,7 @@ class TicketCalendar
     {
         global $wpdb;
         $tdate = $date->format('Y-m-d');
-        $found_events = $wpdb->get_results("SELECT {$wpdb->prefix}railtimetable_eventdays.date, {$wpdb->prefix}railtimetable_eventdetails.* FROM {$wpdb->prefix}railtimetable_eventdays LEFT JOIN {$wpdb->prefix}railtimetable_eventdetails ON {$wpdb->prefix}railtimetable_eventdays.event = {$wpdb->prefix}railtimetable_eventdetails.id WHERE {$wpdb->prefix}railtimetable_eventdays.date = '".$tdate."'", OBJECT );
+        $found_events = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_eventdays.date, {$wpdb->prefix}wc_railticket_eventdetails.* FROM {$wpdb->prefix}wc_railticket_eventdays LEFT JOIN {$wpdb->prefix}wc_railticket_eventdetails ON {$wpdb->prefix}wc_railticket_eventdays.event = {$wpdb->prefix}wc_railticket_eventdetails.id WHERE {$wpdb->prefix}wc_railticket_eventdays.date = '".$tdate."'", OBJECT );
 
         return ($found_events) ? : false;
     }
@@ -134,7 +134,7 @@ class TicketCalendar
             if ($specials) {
                 $class .= " calendar-special ";
                 for ($loop=0; $loop< count($specials); $loop++) {
-                    $event_summary .= railtimetable_trans($specials[$loop]->title);
+                    $event_summary .= wc_railticket_trans($specials[$loop]->title);
                     if (strlen($specials[$loop]->background) > 0) {
                         $style .= "background:#".$specials[$loop]->background.";";
                     }
@@ -168,7 +168,7 @@ class TicketCalendar
                 }
             } else {
                 if ($specials) {
-                    $linkfield = railtimetable_currentlangcode();
+                    $linkfield = wc_railticket_currentlangcode();
                     $links = json_decode(end($specials)->link);
                     $calendar .= "<a style='".$style."'  href=\"".$links->$linkfield."\">";
                     $calendar .= $running_day->format('j');

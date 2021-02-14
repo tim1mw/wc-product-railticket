@@ -118,10 +118,10 @@ function railticket_bookable_days() {
         <input type='hidden' name='action' value='filterbookable' />    
         <table><tr>
             <td>Select Year</td>
-            <td><?php echo railtimetable_getyearselect();?></td>
+            <td><?php echo wc_railticket_getyearselect();?></td>
         </tr><tr>
             <td>Month</td>
-            <td><?php echo railtimetable_getmonthselect($month);?></td>
+            <td><?php echo wc_railticket_getmonthselect($month);?></td>
         </tr><tr>
             <td></td>
             <td><input type='submit' value='Show Bookable Days' /></td>
@@ -147,7 +147,7 @@ function railticket_showcalendaredit($year, $month) {
     global $wpdb, $wp;
 
     $daysinmonth = intval(date("t", mktime(0, 0, 0, $month, 1, $year)));
-    $timetables = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_timetables");
+    $timetables = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_timetables");
     ?>
     <form method='post' action='<?php echo railticket_get_page_url() ?>'>
     <input type='hidden' name='action' value='updatebookable' />
@@ -160,7 +160,7 @@ function railticket_showcalendaredit($year, $month) {
     for ($day = 1; $day < $daysinmonth + 1; $day++) {
         $time = mktime(0, 0, 0, $month, $day, $year);
 
-        $current = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_dates WHERE date = '".$year."-".$month."-".$day."'", OBJECT);
+        $current = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates WHERE date = '".$year."-".$month."-".$day."'", OBJECT);
         if (count($current) === 0) {
             continue;
         }
@@ -565,10 +565,10 @@ function railticket_summary_selector() {
             <td><?php echo railticket_getdayselect($chosenday);?></td>
           </tr><tr>
             <td>Month</td>
-            <td><?php echo railtimetable_getmonthselect($chosenmonth);?></td>
+            <td><?php echo wc_railticket_getmonthselect($chosenmonth);?></td>
           </tr><tr>
             <td>Year</td>
-            <td><?php echo railtimetable_getyearselect($chosenyear);?></td>
+            <td><?php echo wc_railticket_getyearselect($chosenyear);?></td>
         </tr><tr>
             <td colspan='2'><input type='submit' value='Show Departures' /></td>
         </tr></table>
@@ -614,15 +614,15 @@ function railticket_getdayselect($chosenday) {
 
 function railticket_find_timetable($param, $field = 'date') {
     global $wpdb;
-    $sql = "SELECT {$wpdb->prefix}railtimetable_timetables.*,{$wpdb->prefix}wc_railticket_bookable.override,".
+    $sql = "SELECT {$wpdb->prefix}wc_railticket_timetables.*,{$wpdb->prefix}wc_railticket_bookable.override,".
         "{$wpdb->prefix}wc_railticket_bookable.composition, {$wpdb->prefix}wc_railticket_bookable.reserve, ".
         "{$wpdb->prefix}wc_railticket_bookable.daytype ".
-        "FROM {$wpdb->prefix}railtimetable_dates ".
-        "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
-        " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+        "FROM {$wpdb->prefix}wc_railticket_dates ".
+        "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
+        " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
         "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-        " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-        "WHERE {$wpdb->prefix}railtimetable_dates.".$field." = '".$param."'";
+        " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
+        "WHERE {$wpdb->prefix}wc_railticket_dates.".$field." = '".$param."'";
     $timetable = $wpdb->get_results($sql, OBJECT );
 
     if (count($timetable) > 0) {
@@ -640,7 +640,7 @@ function railticket_get_seatsummary() {
 
     $timetable = railticket_find_timetable($dateofjourney);
 
-    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
+    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC", OBJECT);
     foreach ($stations as $station) {
         railticket_show_station_summary($dateofjourney, $station, $timetable, true);
     }
@@ -665,7 +665,7 @@ function railticket_show_bookings_summary($dateofjourney) {
 
     echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$timetable->override."</span></h2>";
 
-    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
+    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC", OBJECT);
     foreach ($stations as $station) {
         railticket_show_station_summary($dateofjourney, $station, $timetable);
     }
@@ -726,7 +726,7 @@ function railticket_show_bookings_summary($dateofjourney) {
 
 function railticket_show_station_summary($dateofjourney, $station, $timetable, $showseats = false) {
     global $wpdb;
-    $deptimes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_times WHERE station = ".$station->id." AND timetableid = ".$timetable->id)[0];
+    $deptimes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_times WHERE station = ".$station->id." AND timetableid = ".$timetable->id)[0];
 
     if ($showseats) {
         $h = "<br /><h1>";
@@ -755,9 +755,9 @@ function railticket_show_dep_buttons($dateofjourney, $station, $timetable, $dept
     $alltimes = explode(',', $deptimes->$key);
 
     if ($direction == 'up') {
-        $destination = $wpdb->get_var("SELECT id FROM `wp_railtimetable_stations` ORDER BY SEQUENCE ASC LIMIT 1");
+        $destination = $wpdb->get_var("SELECT id FROM `wp_wc_railticket_stations` ORDER BY SEQUENCE ASC LIMIT 1");
     } else {
-        $destination = $wpdb->get_var("SELECT id FROM `wp_railtimetable_stations` ORDER BY SEQUENCE DESC LIMIT 1");
+        $destination = $wpdb->get_var("SELECT id FROM `wp_wc_railticket_stations` ORDER BY SEQUENCE DESC LIMIT 1");
     }
 
     if ($showseats) {
@@ -779,7 +779,7 @@ function railticket_show_dep_button($dateofjourney, $stationid, $destination, $d
     global $wpdb;
     $label = $t;
     if ($incstn) {
-        $station =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id =".$stationid, OBJECT)[0];
+        $station =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE id =".$stationid, OBJECT)[0];
         $label = "Back to ".$t." from ".$station->name;
     }
     ?>
@@ -798,8 +798,8 @@ function railticket_show_dep_button($dateofjourney, $stationid, $destination, $d
 function railticket_show_departure($dateofjourney, $stationid, $destinationid, $direction, $deptime, $summaryonly = false) {
     global $wpdb, $wp;
 
-    $station =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id =".$stationid, OBJECT)[0];
-    $destination =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations WHERE id =".$destinationid, OBJECT)[0];
+    $station =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE id =".$stationid, OBJECT)[0];
+    $destination =  $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE id =".$destinationid, OBJECT)[0];
     $timetable = railticket_find_timetable($dateofjourney);
 
     if ($_REQUEST['action'] == 'showspecial') {
@@ -809,10 +809,10 @@ function railticket_show_departure($dateofjourney, $stationid, $destinationid, $
         $depname = $deptime;
     }
 
-    $bookings = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_bookings.*, {$wpdb->prefix}railtimetable_stations.name ".
+    $bookings = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_bookings.*, {$wpdb->prefix}wc_railticket_stations.name ".
         "FROM {$wpdb->prefix}wc_railticket_bookings ".
-        "LEFT JOIN {$wpdb->prefix}railtimetable_stations ON ".
-        "{$wpdb->prefix}railtimetable_stations.id = {$wpdb->prefix}wc_railticket_bookings.tostation ".
+        "LEFT JOIN {$wpdb->prefix}wc_railticket_stations ON ".
+        "{$wpdb->prefix}wc_railticket_stations.id = {$wpdb->prefix}wc_railticket_bookings.tostation ".
         "WHERE date='".$dateofjourney."' AND ".
         "time = '".$deptime."' AND fromstation = ".$station->id." AND direction = '".$direction."' ");
 
@@ -1324,18 +1324,18 @@ function railticket_create_manual($id = false) {
     <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
     <p>Departure station: 
     <?php
-    $stns = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ", OBJECT);
+    $stns = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ", OBJECT);
     echo $stns[$station]->name;
     ?>
     </p>
     <p>Destination station: <?php echo $stns[$destination]; ?></p>
     <?php
-    $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}railtimetable_timetables.* FROM {$wpdb->prefix}railtimetable_dates ".
-        "LEFT JOIN {$wpdb->prefix}railtimetable_timetables ON ".
-        " {$wpdb->prefix}railtimetable_dates.timetableid = {$wpdb->prefix}railtimetable_timetables.id ".
+    $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_timetables.* FROM {$wpdb->prefix}wc_railticket_dates ".
+        "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
+        " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
         "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-        " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}railtimetable_dates.id ".
-        "WHERE {$wpdb->prefix}railtimetable_dates.date = '".$dateoftravel."'", OBJECT );
+        " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
+        "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$dateoftravel."'", OBJECT );
 
     
     ?>
@@ -1370,7 +1370,7 @@ function railticket_get_waybill($iscsv) {
     }
     $totalsdata = railticket_get_waybill_data($date);
 
-    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
+    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC", OBJECT);
     $stn = array();
     foreach ($stations as $station) {
         $stn[$station->id] = $station->name;
@@ -1580,7 +1580,7 @@ function railticket_get_ordersummary_csv() {
 
 function railticket_get_stations_map() {
     global $wpdb;
-    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_stations ORDER BY sequence ASC", OBJECT);
+    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC", OBJECT);
     $stns = array();
     foreach ($stations as $s) {
         $stns[$s->id] = $s;

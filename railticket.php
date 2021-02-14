@@ -207,7 +207,7 @@ function railticket_product_format_date($date) {
     //date_default_timezone_set(get_option('timezone_string'));
     $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
     $jdate = DateTime::createFromFormat('Y-m-d', $date);
-    return strftime(get_option('railtimetable_date_format'), $jdate->getTimeStamp());
+    return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
 }
 
 function railticket_product_format_time($time) {
@@ -223,12 +223,12 @@ function railticket_product_format_time($time) {
     //date_default_timezone_set(get_option('timezone_string'));
     $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
     $dtime = DateTime::createFromFormat('H.i', $time);
-    return strftime(get_option('railtimetable_time_format'), $dtime->getTimeStamp());
+    return strftime(get_option('wc_railticket_time_format'), $dtime->getTimeStamp());
 }
 
 function railticket_product_get_station_name($id) {
     global $wpdb;
-    return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}railtimetable_stations WHERE id = ".$id);
+    return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_stations WHERE id = ".$id);
 }
 
 function railticket_product_ticketsallocated_display($ttype) {
@@ -522,7 +522,7 @@ function railticket_get_special_button($attr) {
     $special = $specials[0];
 
     $evtdate = Datetime::createFromFormat('Y-m-d', $attr['date']);
-    $date = strftime(get_option('railtimetable_date_format'), $evtdate->getTimestamp());
+    $date = strftime(get_option('wc_railticket_date_format'), $evtdate->getTimestamp());
 
     if ($special->onsale == 0) {
         echo "Sorry, the \"".$special->name."\" on ".$evtdate." is not currently on sale";
