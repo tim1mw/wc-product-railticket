@@ -115,6 +115,42 @@ function railticket_options() {
     <?php submit_button(); ?>
     </form>
     <?php
+    if (array_key_exists('action', $_POST)) {
+        switch ($_POST['action']) {
+            case 'mapbookable':
+                railticket_remapbookable();
+        }
+    }
+    ?>
+    <form action='' method='post'>
+    <input type='hidden' name='action' value='mapbookable' />
+    <input type='submit' value='Re-Map Bookable Days' />
+    </form>
+    <?php
+}
+
+function railticket_remapbookable() {
+    global $wpdb;
+
+    $bookables = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable");
+    foreach ($bookables as $bookable) {
+        if ($bookable->dateid == 0) {
+            continue;
+        }
+
+        $date = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}railtimetable_dates WHERE id = ".$bookable->dateid);
+        $bookable->date = $date->date;
+
+        $revision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE datefrom <= '".$date->date."' AND ".
+            "dateto >= '".$date->date."'");
+
+        $bookable->revision = $revision->id;
+        $bookable->timetableid = $date->timetableid;
+        $bookable = (array) $bookable;
+        $wpdb->update("{$wpdb->prefix}wc_railticket_bookable", $bookable, array('id' => $bookable['id']));
+
+    }
+    echo "<p>All dates re-mapped</p>";
 }
 
 
