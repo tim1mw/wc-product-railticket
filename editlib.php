@@ -124,7 +124,7 @@ function railticket_options() {
     ?>
     <form action='' method='post'>
     <input type='hidden' name='action' value='mapbookable' />
-    <input type='submit' value='Re-Map Bookable Days' />
+    <input type='submit' value='Update Database' />
     </form>
     <?php
 }
@@ -140,17 +140,31 @@ function railticket_remapbookable() {
 
         $date = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}railtimetable_dates WHERE id = ".$bookable->dateid);
         $bookable->date = $date->date;
-
-        $revision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE datefrom <= '".$date->date."' AND ".
-            "dateto >= '".$date->date."'");
-
-        $bookable->revision = $revision->id;
         $bookable->timetableid = $date->timetableid;
+
+        $ttrevision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE datefrom <= '".$date->date."' AND ".
+            "dateto >= '".$date->date."'");
+        $bookable->ttrevision = $ttrevision->id;
+
+        $prevision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_pricerevisions WHERE datefrom <= '".$date->date."' AND ".
+            "dateto >= '".$date->date."'");
+        $bookable->pricerevision = $prevision->id;
+
         $bookable = (array) $bookable;
         $wpdb->update("{$wpdb->prefix}wc_railticket_bookable", $bookable, array('id' => $bookable['id']));
 
     }
-    echo "<p>All dates re-mapped</p>";
+
+    // Move price revision 0 to 1 and set localprice same as price
+    $prices = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_prices WHERE revision = 0");
+    foreach ($prices as $price) {
+        $price->localprice = $price->price;
+        $price->revision = 1;
+        $price = (array) $price;
+        $wpdb->update("{$wpdb->prefix}wc_railticket_prices", $price, array('id' => $price['id']));
+    }
+
+    echo "<p>DB Upgraded</p>";
 }
 
 
