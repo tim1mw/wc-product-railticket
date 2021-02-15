@@ -909,23 +909,20 @@ function railticket_show_bookings_summary($dateofjourney) {
     global $wpdb;
     ?><h1>Summary for <?php echo $dateofjourney; ?></h1><?php
 
-    $timetable = railticket_find_timetable($dateofjourney);
-    if (!$timetable) {
-        echo "<h3>No trains today</h3>";
-        return;
-    }
+    $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
 
     // If the override code is empty, this day has a timetable, but hasn't been initialised.
-    if (strlen($timetable->override) == 0) {
+    if (!$bookableday) {
         echo "<h3>Booking data not initiailised for this day - please make this day bookable.</h3>";
         return;
     }
 
-    echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$timetable->override."</span></h2>";
+    echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$bookableday->get_override()."</span></h2>";
 
-    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC", OBJECT);
+    $stations = $bookableday->timetable->get_stations();
+
     foreach ($stations as $station) {
-        railticket_show_station_summary($dateofjourney, $station, $timetable);
+        railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable);
     }
 
     $specials = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$dateofjourney."'");
@@ -984,7 +981,6 @@ function railticket_show_bookings_summary($dateofjourney) {
 
 function railticket_show_station_summary($dateofjourney, $station, $timetable, $showseats = false) {
     global $wpdb;
-    $deptimes = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_times WHERE station = ".$station->id." AND timetableid = ".$timetable->id)[0];
 
     if ($showseats) {
         $h = "<br /><h1>";
@@ -994,39 +990,36 @@ function railticket_show_station_summary($dateofjourney, $station, $timetable, $
         $hs = "</h3>";
     }
 
-    if (strlen($deptimes->down_deps) > 0) {
-        echo "\n".$h."Down Departures from ".$station->name.$hs."\n<span class='railticket_inlinedeplist'>";
-        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $deptimes, "down", $showseats);
+    $down_deps = $timetable->get_down_deps($station, true);
+    if (count($down_deps) > 0) {
+        echo "\n".$h."Down Departures from ".$station->get_name().$hs."\n<span class='railticket_inlinedeplist'>";
+        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $down_deps, "down", $showseats);
         echo "</span>";
     }
 
-    if (strlen($deptimes->up_deps) > 0) {
-        echo "\n".$h."Up Departures from ".$station->name.$hs."\n<span class='railticket_inlinedeplist'>";
-        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $deptimes, "up", $showseats);
+    $up_deps = $timetable->get_up_deps($station, true);
+    if (count($up_deps) > 0) {
+        echo "\n".$h."Up Departures from ".$station->get_name().$hs."\n<span class='railticket_inlinedeplist'>";
+        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $up_deps, "up", $showseats);
         echo "</span>";
     }
 }
 
-function railticket_show_dep_buttons($dateofjourney, $station, $timetable, $deptimes, $direction, $showseats = false) {
+function railticket_show_dep_buttons($dateofjourney, $station, $timetable, $alltimes, $direction, $showseats = false) {
     global $wpdb, $wp;
     $key = $direction.'_deps';
-    $alltimes = explode(',', $deptimes->$key);
 
-    if ($direction == 'up') {
-        $destination = $wpdb->get_var("SELECT id FROM `wp_wc_railticket_stations` ORDER BY SEQUENCE ASC LIMIT 1");
-    } else {
-        $destination = $wpdb->get_var("SELECT id FROM `wp_wc_railticket_stations` ORDER BY SEQUENCE DESC LIMIT 1");
-    }
+    $destination = $timetable->get_terminal($direction);
 
     if ($showseats) {
         foreach ($alltimes as $t) {
-            railticket_show_departure($dateofjourney, $station->id, $destination, $direction, $t, true);
+            railticket_show_departure($dateofjourney, $station->get_id(), $destination->get_id(), $direction, $t, true);
         }
     } else {
         echo "<div class='railticket_inlinedeplist'><ul>";
         foreach ($alltimes as $t) {
             echo "<li>";
-            railticket_show_dep_button($dateofjourney, $station->id, $destination, $direction, $t);
+            railticket_show_dep_button($dateofjourney, $station->get_id(), $destination->get_id(), $direction, $t);
             echo "</li>";
         }
         echo "</ul></div>";
