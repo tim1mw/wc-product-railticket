@@ -2,7 +2,7 @@
 namespace wc_railticket;
 defined('ABSPATH') or die('No script kiddies please!');
 
-class Waybill {
+class Waybill extends Report {
 
     function __construct($date) {
         global $wpdb;
@@ -118,9 +118,9 @@ class Waybill {
             fputcsv($f, $header);
         } else {
             echo "<table border='1'>";
-            $this->waybill_row($td);
-            $this->waybill_row(array('', '', '', '', '', ''));
-            $this->waybill_row($header, 'th');
+            $this->report_row($td);
+            $this->report_row(array('', '', '', '', '', ''));
+            $this->report_row($header, 'th');
         }
 
         $stn = $this->bookableday->timetable->get_stations();
@@ -148,7 +148,7 @@ class Waybill {
                         if ($iscsv) {
                             fputcsv($f, $line);
                         } else {
-                            $this->waybill_row($line);
+                            $this->report_row($line);
                         }
                     }
                 }
@@ -184,7 +184,7 @@ class Waybill {
             fclose($f);
         } else {
             foreach ($summary as $s) {
-                $this->waybill_row($s);
+                $this->report_row($s);
             }
             echo "</table>";
          ?>
@@ -202,18 +202,4 @@ class Waybill {
         }
     }
 
-
-    private function waybill_row($rows, $type = 'td', $cola = 'th') {
-        echo "<tr>";
-        $first = true;
-        foreach ($rows as $row) {
-            if ($first) {
-                echo "<" . $cola . ">" . $row . "</" . $cola . ">";
-                $first = false;
-            } else {
-                echo "<" . $type . ">" . $row . "</" . $type . ">";
-            }
-        }
-        echo "</tr>";
-    }
 }
