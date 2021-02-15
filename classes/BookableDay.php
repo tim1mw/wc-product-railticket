@@ -39,4 +39,9 @@ class BookableDay {
     public function get_override() {
         return $this->data->override;
     }
+
+    public function get_all_bookings() {
+        global $wpdb;
+        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."'");
+    }
 }

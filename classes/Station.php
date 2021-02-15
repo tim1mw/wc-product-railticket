@@ -24,7 +24,7 @@ class Station {
 
         $objs = array();
         foreach ($stns as $stn) {
-            $objs[] = new Station($stn);
+            $objs[$stn->stnid] = new Station($stn);
         }
 
         return $objs;
