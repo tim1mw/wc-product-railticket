@@ -6,6 +6,10 @@ add_action('admin_menu', 'railticket_add_pages');
 add_action('admin_init', 'railticket_register_settings' );
 add_shortcode('railticket_manager', 'railticket_view_bookings');
 add_action('admin_post_railticket-importtimetable', 'railticket_importtimetable');
+add_action ('admin_post_waybill.csv', 'railticket_get_waybillcsv');
+// Add simple_role capabilities, priority must be after the initial role definition.
+add_action( 'init', 'railticket_roles', 11 );
+add_action ('admin_post_ordersummary.csv', 'railticket_get_ordersummary_csv');
 
 function railticket_register_settings() {
    add_option('wc_product_railticket_woocommerce_product', '');
@@ -52,9 +56,7 @@ function railticket_roles() {
         ]
     );
 }
- 
-// Add simple_role capabilities, priority must be after the initial role definition.
-add_action( 'init', 'railticket_roles', 11 );
+
 
 function railticket_options() {
     ?>
@@ -1540,7 +1542,6 @@ function railticket_create_manual($id = false) {
     <?php
 }
 
-add_action ('admin_post_waybill.csv', 'railticket_get_waybillcsv');
 function railticket_get_waybillcsv() {
     railticket_get_waybill(true);
 }
@@ -1768,8 +1769,6 @@ function railticket_waybill_row($rows, $type = 'td', $cola = 'th') {
     echo "</tr>";
 }
 
-
-add_action ('admin_post_ordersummary.csv', 'railticket_get_ordersummary_csv');
 function railticket_get_ordersummary_csv() {
     railticket_get_ordersummary(true);
 }
