@@ -17,6 +17,26 @@ require_once('calendar.php');
 require_once('bookingclass.php');
 require_once('editlib.php');
 
+
+spl_autoload_register('wc_railticket_autoloader');
+function wc_railticket_autoloader($class) {
+    $namespace = 'wc_railticket';
+    if (strpos($class, $namespace) !== 0) {
+        return;
+    }
+ 
+    $class = str_replace($namespace, '', $class);
+    $class = str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
+ 
+    $directory = dirname(__FILE__);
+    $path = $directory . DIRECTORY_SEPARATOR . 'classes' . DIRECTORY_SEPARATOR . $class;
+
+    if (file_exists($path)) {
+        require_once($path);
+    }
+}
+
+
 /**
  * Register the custom product type after init
  */
