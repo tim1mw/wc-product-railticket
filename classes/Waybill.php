@@ -130,7 +130,19 @@ class Waybill {
                 foreach ($datatwo as $journeytype => $datathree) {
                     ksort($datathree);
                     foreach ($datathree as $tickettype => $qty) {
-                        $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, " . "{$wpdb->prefix}wc_railticket_prices.tickettype, " . "{$wpdb->prefix}wc_railticket_prices.price, " . "{$wpdb->prefix}wc_railticket_tickettypes.name " . "FROM {$wpdb->prefix}wc_railticket_prices " . "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON " . "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype " . "WHERE ((stationone = " . $stationone . " AND stationtwo = " . $stationtwo . ") OR " . "(stationone = " . $stationtwo . " AND stationtwo = " . $stationone . ")) AND " . "journeytype = '" . $journeytype . "' AND {$wpdb->prefix}wc_railticket_tickettypes.code ='" . $tickettype . "'";
+                        $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, " .
+                            "{$wpdb->prefix}wc_railticket_prices.tickettype, " .
+                            "{$wpdb->prefix}wc_railticket_prices.price, " .
+                            "{$wpdb->prefix}wc_railticket_tickettypes.name " .
+                            "FROM {$wpdb->prefix}wc_railticket_prices " .
+                            "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON " .
+                            "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype " .
+                            "WHERE ((stationone = " . $stationone .
+                            " AND stationtwo = " . $stationtwo . ") OR " .
+                            "(stationone = " . $stationtwo . " AND stationtwo = " . $stationone . ")) AND " .
+                            "journeytype = '" . $journeytype . 
+                            "' AND {$wpdb->prefix}wc_railticket_tickettypes.code ='" . $tickettype . "' AND ".
+                            "{$wpdb->prefix}wc_railticket_prices.revision = ".$this->bookableday->get_price_revision();
                         $ticketdata = $wpdb->get_results($sql, OBJECT);
                         $line = array($stn[$stationone]->get_name() . " - " . $stn[$stationtwo]->get_name(), $journeytype, $tickettype, $qty, $ticketdata[0]->price, $qty * $ticketdata[0]->price);
                         if ($iscsv) {

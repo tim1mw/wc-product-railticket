@@ -44,4 +44,8 @@ class BookableDay {
         global $wpdb;
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."'");
     }
+
+    public function get_price_revision() {
+        return $this->data->pricerevision;
+    }
 }
