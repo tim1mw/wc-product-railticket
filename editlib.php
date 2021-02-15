@@ -23,6 +23,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
+
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
    add_option('wc_railticket_time_format', '%l.%M');
@@ -206,6 +207,61 @@ function railticket_bookable_days() {
     } else {
         railticket_showcalendaredit(intval(date("Y")), $month);
     }
+}
+
+function wc_railticket_getmonthselect($chosenmonth = false) {
+    if ($chosenmonth == false) {
+        $chosenmonth = 1;
+    }
+
+    if (array_key_exists('month', $_POST)) {
+        $chosenmonth = intval($_POST['month']);
+    }
+
+    $sel = "<select name='month'>";
+    for($m=1; $m<=12; ++$m){
+        if ($m == $chosenmonth) {
+            $s = ' selected="selected" ';
+        } else {
+            $s = '';
+        }
+        $sel .= "<option value='".$m."'".$s.">".date('F', mktime(0, 0, 0, $m, 1))."</option>";
+    }
+    $sel .= "</select>";
+    return $sel;
+}
+
+function wc_railticket_getyearselect($currentyear = false) {
+    global $wpdb;
+    if ($currentyear == false) {
+        $currentyear = intval(date("Y"));
+    }
+    if (array_key_exists('year', $_POST)) {
+        $chosenyear = sanitize_text_field($_POST['year']);
+    } else {
+        $chosenyear = $currentyear;
+    }
+
+    $firstdate = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_dates ORDER BY date ASC LIMIT 1 ");
+    if ($firstdate) {
+        $d = reset($firstdate);
+        $startdate = intval(explode('-', $d->date)[0]);
+    } else {
+        $startdate = $currentyear;
+    }
+    $enddate = $currentyear + 2;
+
+    $sel = "<select name='year'>";
+    for ($loop = $startdate; $loop < $enddate; $loop++) {
+        if ($loop == $chosenyear) {
+            $s = ' selected="selected" ';
+        } else {
+            $s = '';
+        }
+        $sel .= "<option value='".$loop."'".$s.">".$loop."</option>";
+    }
+    $sel .= "</select>";
+    return $sel;
 }
 
 function railticket_import_timetable() {
@@ -513,7 +569,7 @@ function railticket_updatebookable() {
             $soldout = 0;
         }
 
-        $timetable = railticket_find_timetable($id, 'id');
+        $timetable = railticket_find_timetable($id, true);
 
         if (count($bk) > 0) {
             $coaches = railticket_process_coaches($bk[0]->composition);
@@ -810,17 +866,21 @@ function railticket_getdayselect($chosenday) {
     return $sel;
 }
 
-function railticket_find_timetable($param, $field = 'date') {
+function railticket_find_timetable($param, $usedateid = false) {
     global $wpdb;
-    $sql = "SELECT {$wpdb->prefix}wc_railticket_timetables.*,{$wpdb->prefix}wc_railticket_bookable.override,".
-        "{$wpdb->prefix}wc_railticket_bookable.composition, {$wpdb->prefix}wc_railticket_bookable.reserve, ".
-        "{$wpdb->prefix}wc_railticket_bookable.daytype ".
-        "FROM {$wpdb->prefix}wc_railticket_dates ".
-        "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
-        " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
-        "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-        " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
-        "WHERE {$wpdb->prefix}wc_railticket_dates.".$field." = '".$param."'";
+
+    $sql = "SELECT timetables.*, bookable.override, bookable.composition, bookable.reserve, bookable.daytype ".
+        "FROM {$wpdb->prefix}wc_railticket_bookable bookable ".
+        "INNER JOIN {$wpdb->prefix}wc_railticket_timetables timetables ON ".
+        "bookable.timetableid = timetables.timetableid AND bookable.ttrevision = timetables.revision ";
+
+    if ($usedateid) {
+        $sql .= "INNER JOIN {$wpdb->prefix}wc_railticket_dates dates ON bookable.date = dates.date ".
+            "WHERE dates.id = ".$param;
+    } else {
+        $sql .= "WHERE bookable.date = '".$param."'";
+    }
+
     $timetable = $wpdb->get_results($sql, OBJECT );
 
     if (count($timetable) > 0) {
