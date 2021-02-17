@@ -1,4 +1,7 @@
 <?php
+namespace wc_railticket;
+
+defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 
 /**
@@ -19,8 +22,8 @@ class TicketCalendar
     private $date;
 
     public function __construct() {
-        $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
-        $this->today = new DateTime();
+        $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $this->today = new \DateTime();
         $this->today->setTimezone($this->railticket_timezone);
         $this->today->setTime(0,0,0);
     }
@@ -30,7 +33,7 @@ class TicketCalendar
      * @param  DateTime $date The date to match a timetable for.
      * @return array          Either an array of events or false.
      */
-    private function findTimetable(DateTime $date)
+    private function findTimetable(\DateTime $date)
     {
         global $wpdb;
         $found_events = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates ".
@@ -52,7 +55,7 @@ class TicketCalendar
      * @param  DateTime $date The date to match an event for.
      * @return array          Either an array of events or false.
      */
-    private function findSpecialEvents(DateTime $date)
+    private function findSpecialEvents(\DateTime $date)
     {
         global $wpdb;
         $tdate = $date->format('Y-m-d');
@@ -71,18 +74,18 @@ class TicketCalendar
     {
         $calendar = '';
 
-        $yesterday = new DateTime();
+        $yesterday = new \DateTime();
         $yesterday->modify('-1 day');
 
         if ($date) {
-            $date = DateTime::createFromFormat('Y-m-d', $date);
+            $date = \DateTime::createFromFormat('Y-m-d', $date);
             $date->modify('first day of this month');
         } else {
-            $date = new DateTime();
+            $date = new \DateTime();
             $date->modify('first day of this month');
         }
 
-        $today = new DateTime();
+        $today = new \DateTime();
         $total_days_in_month = (int) $date->format('t');
         $calendar .= '<table class="calendar ticket-calendar">';
         $calendar .= '<thead>';
@@ -117,7 +120,7 @@ class TicketCalendar
             $event_summary = '';
 
             if ($timetable) {
-                $timetabledate = new DateTime($timetable->date);
+                $timetabledate = new \DateTime($timetable->date);
                 if ($timetabledate > $yesterday) {
                     if ($timetable->bookable) {
                         if ($timetable->soldout) {
