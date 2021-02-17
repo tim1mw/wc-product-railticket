@@ -14,7 +14,6 @@ define('RETURN_TICKET', 1);
 define('SPECIAL_TICKET', 2);
 
 require_once('calendar.php');
-require_once('bookingclass.php');
 require_once('editlib.php');
 
 
@@ -518,7 +517,7 @@ function railticket_getticketbuilder() {
     }
     $tickets = array();
 
-    return new TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
+    return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
         $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show);
 }
 
