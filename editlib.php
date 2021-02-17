@@ -1032,9 +1032,9 @@ function railticket_show_dep_buttons($dateofjourney, \wc_railticket\Station $sta
 }
 
 function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $station,  \wc_railticket\Station $destination, $direction, $t, $incstn = false) {
-    $label = $t;
+    $label = $t->formatted;
     if ($incstn) {
-        $label = "Back to ".$t." from ".$station->get_name();
+        $label = "Back to ".$t->formatted." from ".$station->get_name();
     }
     ?>
     <form method='post' action='<?php echo railticket_get_page_url() ?>'>
@@ -1043,7 +1043,7 @@ function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $stat
        <input type='hidden' name='station' value='<?php echo $station->get_stnid(); ?>' />
        <input type='hidden' name='destination' value='<?php echo $destination->get_stnid(); ?>' />
        <input type='hidden' name='direction' value='<?php echo $direction; ?>' />
-       <input type='hidden' name='deptime' value='<?php echo $t; ?>' />
+       <input type='hidden' name='deptime' value='<?php echo $t->key; ?>' />
        <input type='hidden' name='ttrevision' value='<?php echo $station->get_revision(); ?>' />
        <input type='submit' name='submit' value='<?php echo $label; ?>' />
     </form>
@@ -1059,7 +1059,10 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         $parts = explode(':', $deptime);
         $depname = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_specials WHERE id = ".$parts[1]);
     } else {
-        $depname = $deptime;
+
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $depname = \DateTime::createFromFormat("H.i", $deptime);
+        $depname = strftime(get_option('wc_railticket_time_format'), $depname->getTimeStamp());
     }
 
     $bookings = $bookableday->get_bookings_from_station($station, $deptime, $direction);

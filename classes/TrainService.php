@@ -70,7 +70,7 @@ class TrainService {
         }
 
         // Take out the booking reserve
-        if ($noreserve == false && $this->bookableday->sell_reserve() && $this->bookableday->has_reserve()) {
+        if ($noreserve == false && !$this->bookableday->sell_reserve() && $this->bookableday->has_reserve()) {
 
             // NOTE: Need to get origin station dep time here when intermediate stops are enabled!
             switch ($this->bookableday->get_daytype()) {

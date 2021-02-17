@@ -52,10 +52,10 @@ class Timetable {
             foreach ($times as $time) {
                 $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
                 $dtime = \DateTime::createFromFormat("H:i", $time->hour.":".$time->min);
-                $ftimes[] = strftime($fmt, $dtime->getTimeStamp());
+                $time->key = $time->hour.".".$time->min;
+                $time->formatted = strftime($fmt, $dtime->getTimeStamp());
             }
 
-            return $ftimes;
         }
         return $times;
     }
