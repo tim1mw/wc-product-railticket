@@ -8,10 +8,12 @@ class TicketBuilder {
 
     private $today, $tomorrow, $stations;
 
-    public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
+    public function __construct($dateoftravel, Station $fromstation, Station $tostation, $outtime, $rettime,
         $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
         global $wpdb;
         $this->show = $show;
+
+        // Deal with some dates
         $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $this->now = new \DateTime();
         $this->now->setTimezone($this->railticket_timezone);
@@ -21,11 +23,14 @@ class TicketBuilder {
         $this->tomorrow = new \DateTime();
         $this->tomorrow->setTimezone($this->railticket_timezone);
         $this->tomorrow->modify('+1 day');
-        $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC");
+
+        $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
+        $this->stations = $this->bookableday->timetable->get_stations();
         $this->dateoftravel = $dateoftravel;
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
         $this->journeytype = $journeytype;
+
         if (strpos($outtime, 's:') === false) {
             $this->special = false;
             $this->outtime = $outtime;
@@ -37,9 +42,11 @@ class TicketBuilder {
             $this->rettime = $parts[1];
             $this->journeytype = 'return';
         }
+
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
         $this->notes = $notes;
+
         if ($nominimum == 'true') {
             $this->nominimum = true;
         } else {
@@ -89,8 +96,8 @@ class TicketBuilder {
         }
 
         global $wpdb;
-        $fstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC LIMIT 1", OBJECT)[0];
-        $lstation = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence DESC LIMIT 1", OBJECT)[0];
+        $fstation = $this->bookableday->timetable->get_terminal('up');
+        $lstation = $this->bookableday->timetable->get_terminal('down');
 
         $fdeptime = $this->next_train_today_from($fstation->id);
         $ldeptime = $this->next_train_today_from($lstation->id);
@@ -489,98 +496,6 @@ class TicketBuilder {
         }
 
         return $tickets;
-    }
-
-    public function get_service_inventory($time, $fromstation, $tostation, $baseonly = false, $noreserve = false, $onlycollected = false) {
-        global $wpdb;
-
-        if ($this->special && strpos($time, ':') === false) {
-            $time = "s:".$time;
-        }
-
-        $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}wc_railticket_dates ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
-            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$this->dateoftravel."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
-
-        $rec = $wpdb->get_results($sql)[0];
-
-        // NOTE: Need to get origin station dep time here when intermediate stops are enabled!
-        switch ($rec->daytype) {
-            case 'simple':
-                $basebays = (array) json_decode($rec->bays);
-                break;
-            case 'pertrain':
-                $direction = $this->get_direction($fromstation, $tostation);
-                $formations = json_decode($rec->bays);
-                $set = $formations->$direction->$time;
-                $basebays = (array) $formations->coachsets->$set;
-                break;
-        }
-
-        if ($baseonly) {
-            return $basebays;
-        }
-
-        // Get the bookings we need to subtract from this formation. Not using tostation, we'll want that for intermediate stops though.
-        $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
-            "{$wpdb->prefix}wc_railticket_bookings ".
-            " LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
-            " {$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
-            " WHERE ".
-            "{$wpdb->prefix}wc_railticket_bookings.fromstation = '".$fromstation."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookings.date = '".$this->dateoftravel."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookings.time = '".$time."' ";
-
-        if ($onlycollected) {
-            $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ";
-        }
-
-        $bookings = $wpdb->get_results($sql);
-
-        foreach ($bookings as $booking) {
-            if ($booking->priority) {
-                $i = $booking->baysize.'_priority';
-            } else {
-                $i = $booking->baysize.'_normal';
-            }
-            if (array_key_exists($i, $basebays)) {
-                $basebays[$i] = $basebays[$i] - $booking->num;
-            }
-        }
-
-        // Take out the booking reserve
-        if ($noreserve == false && $rec->sellreserve == 0 && strlen($rec->reserve) > 0) {
-
-            // NOTE: Need to get origin station dep time here when intermediate stops are enabled!
-            switch ($rec->daytype) {
-                case 'simple':
-                    $reserve = (array) json_decode($rec->reserve);
-                    break;
-                case 'pertrain':
-                    $ropts = json_decode($rec->reserve);
-                    $reserve = $ropts->$set;
-                    break;
-            }
-
-            foreach ($reserve as $i => $num) {
-                if (array_key_exists($i, $basebays)) {
-                    $basebays[$i] = $basebays[$i] - $num;
-                }
-            }
-        }
-
-        $totalseats = 0;
-        foreach ($basebays as $bay => $numleft) {
-            $bayd = $this->getBayDetails($bay);
-            $totalseats += $bayd[0]*$numleft;
-        }
-
-        $bays = new \stdclass();
-        $bays->bays = $basebays;
-        $bays->totalseats = $totalseats;
-        return $bays;
     }
 
     public function get_capacity($outtime = null, $journeytype = null, $fromstation = null, $tostation = null, $caponly = false) {
@@ -1057,34 +972,6 @@ class TicketBuilder {
             $total += $val;
         }
         return $total;
-    }
-
-    /**
-    * Gets the outbound direction
-    **/
-
-    private function get_direction($f = false, $t = false) {
-        if ($f === false) {
-            $f = $this->fromstation;
-        }
-        if ($t === false) {
-            $t = $this->tostation;
-        } 
-
-        $from = $this->getStationData($f);
-        $to = $this->getStationData($t);
-
-        if ($from->sequence > $to->sequence) {
-            return "up";
-        } else {
-            return "down";
-        }
-    }
-
-    private function getStationData($stationid) {
-        global $wpdb;
-        $stn = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE id = ".$stationid);
-        return ($stn[0]) ? : false;
     }
 
     private function findTimetable($date = null) {

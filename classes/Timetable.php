@@ -30,22 +30,20 @@ class Timetable {
         return $this->data->revision;
     }
 
-    public function get_times($station, $direction, $type, $format) {
+    public function get_name() {
+        return ucfirst($this->data->timetable);
+    }
+
+    public function get_times(Station $station, $direction, $type, $format) {
         global $wpdb;
 
-        if ($station instanceof Station) {
-            $stationid = $station->get_stnid();
-        } else {
-            $stationid = $station;
-        }
-
-        $cachekey = $stationid."_".$direction."_".$type;
+        $cachekey = $station->get_stnid()."_".$direction."_".$type;
         if (array_key_exists($cachekey, $this->cache)) {
             return $cache[$cachekey];
         }
 
         $times = $wpdb->get_var("SELECT ".$direction."_".$type." FROM {$wpdb->prefix}wc_railticket_stntimes WHERE revision = ".
-            $this->data->revision." AND timetableid = ".$this->data->timetableid." AND station = ".$stationid);
+            $this->data->revision." AND timetableid = ".$this->data->timetableid." AND station = ".$station->get_stnid());
 
         $times = json_decode($times);
         if ($format) {
@@ -62,19 +60,19 @@ class Timetable {
         return $times;
     }
 
-    public function get_up_deps($station, $format) {
+    public function get_up_deps(Station $station, $format) {
         return $this->get_times($station, 'up', 'deps', $format);
     }
 
-    public function get_down_deps($station, $format) {
+    public function get_down_deps(Station $station, $format) {
         return $this->get_times($station, 'down', 'deps', $format);
     }
 
-    public function get_up_arrs($station, $format) {
+    public function get_up_arrs(Station $station, $format) {
         return $this->get_times($station, 'up', 'arrs', $format);
     }
 
-    public function get_down_arrs($station, $format) {
+    public function get_down_arrs(Station $station, $format) {
         return $this->get_times($station, 'down', 'arrs', $format);
     }
 
@@ -90,7 +88,7 @@ class Timetable {
             $sort = "DESC";
         }
 
-        $data = $wpdb->get_row("SELECT id FROM `wp_wc_railticket_stations` WHERE revision = ".
+        $data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE revision = ".
             $this->data->revision." ORDER BY SEQUENCE ".$sort." LIMIT 1");
 
         return new Station($data);

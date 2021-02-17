@@ -10,6 +10,7 @@ class Station {
     }
 
     public static function get_station($stationid, $revision) {
+        global $wpdb;
         $stn = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE revision = ".
             $revision." AND stnid = ".$stationid." ORDER BY sequence ASC", OBJECT);
 
@@ -38,7 +39,19 @@ class Station {
         return $this->data->name;
     }
 
-    public function get_id() {
-        return $this->data->id;
+    public function get_revision() {
+        return $this->data->revision;
+    }
+
+    public function get_sequence() {
+        return $this->data->sequence;
+    }
+
+    public function get_direction(Station $t) {
+        if ($this->data->sequence > $to->get_sequence()) {
+            return "up";
+        } else {
+            return "down";
+        }
     }
 }
