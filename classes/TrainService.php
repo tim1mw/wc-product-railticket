@@ -10,6 +10,7 @@ class TrainService {
     public function __construct(BookableDay $bookableday, Station $fromstation, $deptime, $direction, $special) {
         $this->bookableday = $bookableday;
         $this->fromstation = $fromstation;
+        // TODO Err what aboput specials here?
         if ($special && strpos($deptime, ':') === false) {
             $deptime = "s:".$deptime;
         }

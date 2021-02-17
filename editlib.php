@@ -476,15 +476,15 @@ function railticket_showcalendaredit($year, $month) {
     <?php
 }
 
-function railticket_get_reserve($bk,$deptime = false, $direction = false) {
-    if (strlen($bk->reserve) > 0) {
-        $reserve = json_decode($bk->reserve);
-        switch ($bk->daytype) {
+function railticket_get_reserve(\wc_railticket\BookableDay $bk, \wc_railticket\TrainService $departure) {
+    if ($bk->has_reserve()) {
+        $reserve = $bk->get_reserve();
+        switch ($bk->get_daytype()) {
             case 'simple':
                 return railticket_get_reserve_string($reserve);
             case 'pertrain':
                 if ($deptime) {
-                    $comp = json_decode($bk->composition);
+                    $comp = json_decode($bk->get_composition());
                     $setkey = $comp->$direction->$deptime;
                     return railticket_get_reserve_string($reserve->$setkey);
                 }
@@ -509,9 +509,9 @@ function railticket_get_reserve_string($reserve) {
     return substr($str, 0, strlen($str)-2);
 }
 
-function railticket_get_coachset($bk, $deptime = false, $direction = false) {
-    $comp = json_decode($bk->composition);
-    switch ($bk->daytype) {
+function railticket_get_coachset(\wc_railticket\BookableDay $bk, \wc_railticket\TrainService $departure) {
+    $comp = $bk->get_composition();
+    switch ($bk->get_daytype()) {
         case 'simple':
             return railticket_get_coachset_string($comp->coachset);
             break;
@@ -1101,8 +1101,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     }
     echo "</table></div>";
 
-    echo "<p>Coaches: ".railticket_get_coachset($timetable, $deptime, $direction)."<br />".
-        "Reserve: ".railticket_get_reserve($timetable, $deptime, $direction)."</p>";
+    echo "<p>Coaches: ".railticket_get_coachset($bookableday, $trainservice)."<br />".
+        "Reserve: ".railticket_get_reserve($bookableday, $trainservice)."</p>";
     if ($summaryonly) {
         echo "<hr />";
         return;
@@ -1163,10 +1163,11 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
         <input type='hidden' name='action' value='<?php echo $_REQUEST['action']; ?>' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='hidden' name='station' value='<?php echo $station->id; ?>' />
+        <input type='hidden' name='station' value='<?php echo $station->get_stnid(); ?>' />
+        <input type='hidden' name='ttrevision' value='<?php echo $station->get_revision(); ?>' />
         <input type='hidden' name='direction' value='<?php echo $direction ?>' />
         <input type='hidden' name='deptime' value='<?php echo $deptime ?>' />
-        <input type='hidden' name='destination' value='<?php echo $destination->id ?>' />
+        <input type='hidden' name='destination' value='<?php echo $destination->get_stnid() ?>' />
         <input type='submit' name='submit' value='Refresh Display' />
     </form><br />
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
@@ -1178,10 +1179,11 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         <input type='hidden' name='action' value='createmanual' />
         <input type='hidden' name='show' value='1' />
         <input type='hidden' name='a_dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='hidden' name='a_station' value='<?php echo $station->id; ?>' />
+        <input type='hidden' name='a_station' value='<?php echo $station->get_stnid(); ?>' />
+        <input type='hidden' name='a_ttrevision' value='<?php echo $station->get_revision(); ?>' />
         <input type='hidden' name='a_direction' value='<?php echo $direction ?>' />
         <input type='hidden' name='a_deptime' value='<?php echo $deptime ?>' />
-        <input type='hidden' name='a_destination' value='<?php echo $destination->id ?>' />
+        <input type='hidden' name='a_destination' value='<?php echo $destination->get_stnid() ?>' />
         <input type='submit' name='submit' value='Add Manual Booking' />
     </form>
     </div>

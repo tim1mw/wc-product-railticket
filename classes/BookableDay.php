@@ -11,6 +11,15 @@ class BookableDay {
     private function __construct($data) {
         $this->timetable = Timetable::get_timetable($data->timetableid, $data->ttrevision);
         $this->data = $data;
+
+        // Pre-process json stuff that gets used a lot.
+        if (strlen($this->data->reserve) > 0) {
+            $this->hasreserve = true;
+        } else {
+            $this->hasreserve = false;
+        }
+        $this->data->reserve = json_decode($this->data->reserve);
+        $this->data->bays = json_decode($this->data->bays);
     }
 
     public static function get_bookable_day($dateofjourney, $usedateid = false) {
@@ -61,18 +70,15 @@ class BookableDay {
     }
 
     public function get_bays() {
-        return json_decode($this->data->bays);
+        return $this->data->bays;
     }
 
     public function get_reserve() {
-        return json_decode($this->data->reserve);
+        return $this->data->reserve;
     }
 
     public function has_reserve() {
-        if (strlen($this->data->reserve) > 0) {
-            return true;
-        }
-        return false;
+        return $this->hasreserve;
     }
 
     public function sell_reserve() {
@@ -81,6 +87,11 @@ class BookableDay {
         }
 
         return false;
+    }
+
+    public function get_composition() {
+        // Do this on the fly because it isn't used that much
+        return json_decode($this->data->composition);
     }
 
     public function get_all_bookings() {
@@ -102,4 +113,6 @@ class BookableDay {
     public function get_price_revision() {
         return $this->data->pricerevision;
     }
+
+
 }
