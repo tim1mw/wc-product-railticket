@@ -1,5 +1,9 @@
 <?php
 
+namespace wc_railticket;
+
+defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
+
 class TicketBuilder {
 
     private $today, $tomorrow, $stations;
@@ -8,13 +12,13 @@ class TicketBuilder {
         $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
         global $wpdb;
         $this->show = $show;
-        $this->railticket_timezone = new DateTimeZone(get_option('timezone_string'));
-        $this->now = new DateTime();
+        $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $this->now = new \DateTime();
         $this->now->setTimezone($this->railticket_timezone);
-        $this->today = new DateTime();
+        $this->today = new \DateTime();
         $this->today->setTimezone($this->railticket_timezone);
         $this->today->setTime(0,0,0);
-        $this->tomorrow = new DateTime();
+        $this->tomorrow = new \DateTime();
         $this->tomorrow->setTimezone($this->railticket_timezone);
         $this->tomorrow->modify('+1 day');
         $this->stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC");
@@ -154,11 +158,11 @@ class TicketBuilder {
     public function is_train_bookable($time, $fromstn, $tostn) {
         // Dates which are in the past are not allowed
         $parts = explode('.', $time);
-        $deptime = DateTime::createFromFormat("Y-m-d", $this->dateoftravel, $this->railticket_timezone);
+        $deptime = \DateTime::createFromFormat("Y-m-d", $this->dateoftravel, $this->railticket_timezone);
         $deptime->setTime($parts[0], $parts[1], 0);
         $deptime->modify('+'.get_option('wc_product_railticket_bookinggrace').' minutes');
 
-        $r = new stdclass();
+        $r = new \stdclass();
         $r->bookable = false;
         $r->full = false;
         $r->seats = 0;
@@ -409,7 +413,7 @@ class TicketBuilder {
 
     public function get_tickets() {
         global $wpdb;
-        $tickets = new stdClass();
+        $tickets = new \stdClass();
 
         if (!$this->is_guard()) {
             $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 ";
@@ -573,7 +577,7 @@ class TicketBuilder {
             $totalseats += $bayd[0]*$numleft;
         }
 
-        $bays = new stdclass();
+        $bays = new \stdclass();
         $bays->bays = $basebays;
         $bays->totalseats = $totalseats;
         return $bays;
@@ -593,7 +597,7 @@ class TicketBuilder {
             $tostation = $this->tostation;
         }
 
-        $allocatedbays = new stdclass();
+        $allocatedbays = new \stdclass();
         $allocatedbays->ok = false;
         $allocatedbays->tobig = false;
         $allocatedbays->error = false;
@@ -838,7 +842,7 @@ class TicketBuilder {
         //$tz = date_default_timezone_get();
         //date_default_timezone_set($this->railticket_timezone->getName());
 
-        $purchase = new stdclass();
+        $purchase = new \stdclass();
         $purchase->ok = false;
         $purchase->duplicate = false;
         if ($this->checkDuplicate()) {
@@ -1155,7 +1159,7 @@ class TicketBuilder {
 
     private function get_datepick() {
         global $wpdb;
-        $calendar = new TicketCalendar();
+        $calendar = new \wc_ticket_builder\TicketCalendar();
 
         $startyear = $this->today->format('Y');
         $startmonth = $this->today->format('n');
@@ -1205,7 +1209,7 @@ class TicketBuilder {
         }
 
         foreach ($nexttrains as $t) {
-            $date = DateTime::createFromFormat("Y-m-d", $t->date);
+            $date = \DateTime::createFromFormat("Y-m-d", $t->date);
             $str .= "<input type='button' value='".$date->format('j-M-Y')."' title='Click to travel on ".$date->format('j-M-Y')."' ".
                 "class='railticket_datebuttons' data='".$date->format("Y-m-d")."' />";
             if ($act == false) {

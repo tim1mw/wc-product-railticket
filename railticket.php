@@ -13,7 +13,6 @@ define('SINGLE_TICKET', 0);
 define('RETURN_TICKET', 1);
 define('SPECIAL_TICKET', 2);
 
-require_once('calendar.php');
 require_once('editlib.php');
 
 
