@@ -14,6 +14,11 @@ define('RETURN_TICKET', 1);
 define('SPECIAL_TICKET', 2);
 
 require_once('editlib.php');
+require_once('Mustache/Autoloader.php');
+Mustache_Autoloader::register();
+$rtmustache = new Mustache_Engine(array(
+   'loader' => new Mustache_Loader_FilesystemLoader(dirname(__FILE__).'/templates') 
+));
 
 
 spl_autoload_register('wc_railticket_autoloader');
