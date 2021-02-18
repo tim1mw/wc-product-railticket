@@ -722,20 +722,12 @@ function railticket_view_bookings() {
     if (array_key_exists('action', $_REQUEST)) {
         switch($_REQUEST['action']) {
             case 'cancelcollected';
-                railticket_mark_ticket(false, 'collected');
+                railticket_mark_ticket(false);
                 railticket_show_order();
                 break;
             case 'collected':
-                railticket_mark_ticket(true, 'collected');
+                railticket_mark_ticket(true);
             case 'showorder':
-                railticket_show_order();
-                break;
-            case 'cancelreturned';
-                railticket_mark_ticket(false, 'returned');
-                railticket_show_order();
-                break;
-            case 'returned':
-                railticket_mark_ticket(true, 'returned');
                 railticket_show_order();
                 break;
             case 'showorder':
@@ -1207,12 +1199,12 @@ function railticket_get_bookingbays_display($bookingid) {
     return $str;
 }
 
-function railticket_mark_ticket($val, $field) {
+function railticket_mark_ticket($val) {
     global $wpdb;
-    $orderid = $_POST['orderid'];
+    $id = $_POST['bookingid'];
     $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-                array($field => $val),
-                array('wooorderid' => $orderid));
+                array('collected' => $val),
+                array('id' => $id));
 }
 
 function railticket_get_ticket_item($order) {
@@ -1381,7 +1373,74 @@ function railticket_delete_manual_order() {
 }
 
 function railticket_show_wooorder($orderid) {
+    global $rtmustache;
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
+    if (!$bookingorder) {
+        echo "<p>Invalid order number or no tickets were purchased with this order.</p>";
+        railticket_summary_selector();
+        return;
+    }
+
+    $orderdata = array();
+    $orderdata[] = array('item' => __('Order ID', 'wc_railticket'), 'value' => $orderid);
+    $orderdata[] = array('item' => __('Name', 'wc_railticket'), 'value' => $bookingorder->get_customer_name());
+    $orderdata[] = array('item' => __('Postcode', 'wc_railticket'), 'value' => $bookingorder->get_postcode());
+    $orderdata[] = array('item' => __('Paid', 'wc_railticket'), 'value' => $bookingorder->is_paid(true));
+    $orderdata[] = array('item' => __('Price', 'wc_railticket'), 'value' => $bookingorder->get_price());
+    $orderdata[] = array('item' => __('Tickets'), 'value' => $bookingorder->get_tickets(true));
+    $orderdata[] = array('item' => __('Date'), 'value' => $bookingorder->get_date(true, true));
+    $orderdata[] = array('item' => __('Journey Type'), 'value' => $bookingorder->get_journeytype(true));
+    $orderdata[] = array('item' => __('Seats'), 'value' => $bookingorder->get_seats());
+    $orderdata[] = array('item' => __('Notes'), 'value' => $bookingorder->get_notes());
+
+    $alldata = array(
+        'details' => $orderdata,
+        'bookings' => railticket_get_booking_render_data($bookingorder->get_bookings()),
+        'timestr' => __('Departure Time', 'wc_railticket'),
+        'tripstr' => __('Trip', 'wc_railticket'),
+        'baystr' => __('Bays', 'wc_railticket'),
+        'collectedstr' => __('Collected', 'wc_railticket'),
+        'orderid' => $orderid,
+        'actionurl' => railticket_get_page_url()
+    );
+
+    $template = $rtmustache->loadTemplate('showorder');
+    echo $template->render($alldata);
+}
+
+function railticket_get_booking_render_data($bookings) {
+    $data = array();
+
+    $count = 1;
+    foreach($bookings as $booking) {
+        $bk = array();
+        $bk['title'] = __('Trip', 'wc_railtickey')." ".$count;
+        $bk['stns'] = $booking->get_from_station()->get_name().' - '.$booking->get_to_station()->get_name();
+        $bk['deptime'] = $booking->get_dep_time(true);
+        $bk['bays'] = $booking->get_bays(true);
+        if ($booking->is_collected()) {
+            $bk['collected'] = __('Yes');
+            $bk['actionstr'] = __('Cancel Collected', 'wc_railrticket');
+            $bk['action'] = 'cancelcollected';
+        } else {
+            $bk['collected'] = __('No');
+            $bk['actionstr'] = __('Mark Collected', 'wc_railrticket');
+            $bk['action'] = 'collected';
+        }
+        $bk['bookingid'] = $booking->get_id();
+        $data[] = $bk;
+        $count++;
+    }
+
+    return $data;
+}
+
+
+
+function railticket_show_wooorder_old($orderid) {
     global $wpdb;
+
     $order = wc_get_order($orderid);
 
     if (!$order) {

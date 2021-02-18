@@ -113,6 +113,4 @@ class BookableDay {
     public function get_price_revision() {
         return $this->data->pricerevision;
     }
-
-
 }
