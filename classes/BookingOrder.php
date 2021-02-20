@@ -6,11 +6,12 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class BookingOrder {
 
-    private $bookings;
+    private $bookings, $manual;
     public $bookableday;
 
     private function __construct($bookings, $orderid, $manual) {
         global $wpdb;
+        $this->manual = $manual;
         if ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = json_decode($mb->tickets);
@@ -74,6 +75,10 @@ class BookingOrder {
             $data->$key = $woometa->meta_value;
         }
         return $data;
+    }
+
+    public function is_manual() {
+        return $this->manual;
     }
 
     public function get_customer_name() {
