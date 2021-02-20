@@ -277,9 +277,6 @@ function railticket_import_timetable() {
             <td>Update Timetable Date Assignments</td>
             <td><input type='checkbox' name='upttdates' value='1' checked /></td>
         </tr><tr>
-            <td>Process all timetable dates</td>
-            <td><input type='checkbox' name='incall' value='1' /></td>
-        </tr><tr>
             <td>Import Timetable Revision</td>
             <td><input type='checkbox' name='imprev' value='1' checked /></td>
         </tr><tr>
@@ -326,7 +323,8 @@ function railticket_importtimetable() {
     $revision['name'] = sanitize_text_field($_POST['name']);
 
     //Create a new timetable revision
-    if (railticket_get_cbval('imprev')) {
+    $imprev = railticket_get_cbval('imprev');
+    if ($imprev) {
         $wpdb->insert($wpdb->prefix.'wc_railticket_ttrevisions', $revision);
 
         $revisionid = $wpdb->insert_id;
@@ -334,23 +332,23 @@ function railticket_importtimetable() {
         railticket_import_table('stations', $data, $revisionid, 'stnid');
         railticket_import_table('timetables', $data, $revisionid, 'timetableid');
         railticket_import_table('stntimes', $data, $revisionid);
+    } else {
+        $revs = $wpdb->get_row("SELECT COUNT(id) FROM {$wpdb->prefix}wc_railticket_ttrevisions ");
+        if ($revs === 0) {
+            echo __("You need to have at least 1 existing timetable revision to import without creating a new one.");
+            return;
+        }
+        
     }
 
-    //Update the timetables for days
-    //Only read dates that are in the future and the range specified
+    //Update the timetables for days, only in the range specified
     if (railticket_get_cbval('upttdates')) {  
         $datefrom = DateTime::createFromFormat('d-m-Y', $revision['datefrom']);
         $dateto = DateTime::createFromFormat('d-m-Y', $revision['dateto']);
-        $now = new DateTime();
-
-        $incall = railticket_get_cbval('incall');
 
         foreach($data->dates as $dateentry) {
             $thisdate = DateTime::createFromFormat('d-m-Y', $dateentry->date);
-            if ( ($thisdate >= $now &&
-                $thisdate >= $datefrom &&
-                $thisdate <= $to)
-                || $incall) {
+            if ($thisdate >= $datefrom && $thisdate <= $dateto) {
                 $existing = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates WHERE date = '".$dateentry->date."'");
                 if ($existing && count($existing) > 0) {
                     $first = (array) reset($existing);
@@ -401,7 +399,7 @@ function railticket_showcalendaredit($year, $month) {
     global $wpdb, $wp;
 
     $daysinmonth = intval(date("t", mktime(0, 0, 0, $month, 1, $year)));
-    $timetables = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_timetables");
+    //$timetables = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_timetables");
     ?>
     <form method='post' action='<?php echo railticket_get_page_url() ?>'>
     <input type='hidden' name='action' value='updatebookable' />

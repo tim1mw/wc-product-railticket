@@ -26,6 +26,8 @@ class Timetable {
         return false;
     }
 
+    
+
     public function get_revision() {
         return $this->data->revision;
     }
