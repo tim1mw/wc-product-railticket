@@ -228,8 +228,6 @@ function railticket_remapbookable() {
 
 
 function railticket_bookable_days() {
-    global $wp;
-
     if (array_key_exists('month', $_POST)) {
         $month = $_POST['month'];
     } else {
@@ -559,12 +557,6 @@ function railticket_updatebookable() {
     }
 }
 
-function railticket_get_booking_grace($dateid) {
-    $bg = get_option('wc_product_railticket_bookinggrace');
-
-    return "{}";
-}
-
 function railticket_process_coaches($json, $timetable = null) {
     global $wpdb;
     $parsed = json_decode($json);
@@ -718,7 +710,6 @@ function railticket_summary_selector() {
 }
 
 function railticket_show_order_form() {
-    global $wp;
     ?>
     <h2>Lookup Online Order<h2>
     <div class='railticket_editdate'>
@@ -836,8 +827,6 @@ function railticket_show_bookings_summary($dateofjourney) {
 }
 
 function railticket_show_station_summary($dateofjourney, \wc_railticket\Station $station, \wc_railticket\Timetable $timetable, $showseats = false) {
-    global $wpdb;
-
     if ($showseats) {
         $h = "<br /><h1>";
         $hs = "</h1>";
@@ -862,7 +851,6 @@ function railticket_show_station_summary($dateofjourney, \wc_railticket\Station 
 }
 
 function railticket_show_dep_buttons($dateofjourney, \wc_railticket\Station $station, $timetable, $alltimes, $direction, $showseats = false) {
-    global $wpdb, $wp;
     $key = $direction.'_deps';
 
     if ($showseats) {
@@ -881,26 +869,25 @@ function railticket_show_dep_buttons($dateofjourney, \wc_railticket\Station $sta
 }
 
 function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $station, $direction, $t, $incstn = false) {
-    $label = $t->formatted;
+    global $rtmustache;
+
+    $alldata = new \stdclass();
+    $alldata->dateofjourney = $dateofjourney;
+    $alldata->station = $station->get_stnid();
+    $alldata->direction = $direction;
+    $alldata->timekey = $t->key;
+    $alldata->ttrevison = $station->get_revision();
     if ($incstn) {
-        $label = "Back to ".$t->formatted." from ".$station->get_name();
+        $alldata->btnlabel = "Back to ".$t->formatted." from ".$station->get_name();
+    } else {
+        $alldata->btnlabel = $t->formatted;
     }
-    ?>
-    <form method='post' action='<?php echo railticket_get_page_url() ?>'>
-       <input type='hidden' name='action' value='showdep' />
-       <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-       <input type='hidden' name='station' value='<?php echo $station->get_stnid(); ?>' />
-       <input type='hidden' name='direction' value='<?php echo $direction; ?>' />
-       <input type='hidden' name='deptime' value='<?php echo $t->key; ?>' />
-       <input type='hidden' name='ttrevision' value='<?php echo $station->get_revision(); ?>' />
-       <input type='submit' name='submit' value='<?php echo $label; ?>' />
-    </form>
-    <?php
+
+    $template = $rtmustache->loadTemplate('depbutton');
+    echo $template->render($alldata);
 }
 
 function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, $direction, $deptime, $summaryonly = false) {
-    global $wpdb, $wp;
-
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
     $destination = $bookableday->timetable->get_terminal($direction);
     // If this is being called directly from a button click this will be a string
@@ -1070,8 +1057,6 @@ function railticket_delete_manual_order() {
 }
 
 function railticket_show_order() {
-    global $wpdb, $woocommerce;
-
     $orderid = sanitize_text_field($_REQUEST['orderid']);
 
     if (strlen($orderid) == 0) {
