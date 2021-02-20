@@ -23,7 +23,7 @@ class Booking {
     public function get_date($format = false, $nottoday = false) {
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-            $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->date);
+            $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->date, $railticket_timezone);
             $now = new \DateTime();
             if ($nottoday && $now != $jdate) {
                 return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp()).
@@ -42,7 +42,7 @@ class Booking {
 
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-            $dtime = \DateTime::createFromFormat("H.i", $this->data->time);
+            $dtime = \DateTime::createFromFormat("H.i", $this->data->time, $railticket_timezone);
             return strftime(get_option('wc_railticket_time_format'), $dtime->getTimeStamp());
         }
         return $this->data->time;

@@ -1,0 +1,34 @@
+<table border='1' style='border-collapse:collapse;'>
+    <tr style='background:#ffffff;'>
+        <th></th>
+        <th>Day</th>
+        <th>Date</th>
+        <th style='writing-mode: vertical-lr' width='40px'>Timetable</th>
+        <th style='writing-mode: vertical-lr' width='20px'>Bookable</th>
+        <th style='writing-mode: vertical-lr' width='20px'>Specials Only</th>
+        <th style='writing-mode: vertical-lr' width='20px'>Sold Out</th>
+        <th>Formation</th>
+        <th style='writing-mode: vertical-lr' width='20px'>Sell Reserve</th>
+        <th>Reserve</th>
+    </tr>
+    {{# days }}
+    <tr style='color:#{{colour}};background:#{{background}};font-weight:bold;'>
+        <td>
+            <form method='post' action={{url}}>
+                <input type='hidden' name='action' value='editbookable' />
+                <input type='hidden' name='date' value='{{date}}' />
+                <input type='submit' value='Edit' style='padding-left:0px;padding-right:0px;'/>
+            </form>
+        </td>
+        <td>{{dayofweek}}</td>
+        <td>{{dayofmonth}}</td>
+        <td>{{{timetable}}}</td>
+        <td>{{{bookable}}}</td>
+        <td>{{specialonly}}</td>
+        <td>{{soldout}}</td>
+        <td>{{{formation}}}</td>
+        <td>{{sellreserve}}</td>
+        <td>{{{reserve}}}</td>
+    </tr>
+    {{/ days }}
+</table>

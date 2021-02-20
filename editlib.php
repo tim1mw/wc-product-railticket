@@ -396,82 +396,58 @@ function railticket_get_cbval($cbname) {
 }
 
 function railticket_showcalendaredit($year, $month) {
-    global $wpdb, $wp;
-
+    global $wp, $rtmustache;
     $daysinmonth = intval(date("t", mktime(0, 0, 0, $month, 1, $year)));
-    //$timetables = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_timetables");
-    ?>
-    <form method='post' action='<?php echo railticket_get_page_url() ?>'>
-    <input type='hidden' name='action' value='updatebookable' />
-    <input type='hidden' name='year' value='<?php echo $year; ?>' />
-    <input type='hidden' name='month' value='<?php echo $month; ?>' />
-    <table border="1">
-    <tr><th>Day</th><th>Date</th><th>Timetable</th><th>Bookable</th><th>Specials Only</th><th>Sold Out</th><th>Formation</th><th>Sell Reserve</th><th>Reserve</th></tr>
-    <?php
-    $ids = array();
+    $render = new \stdclass();
+    $render->days = array();
+    $render->formurl =  railticket_get_page_url();
+
     for ($day = 1; $day < $daysinmonth + 1; $day++) {
         $time = mktime(0, 0, 0, $month, $day, $year);
-
-        $current = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates WHERE date = '".$year."-".$month."-".$day."'", OBJECT);
-        if (count($current) === 0) {
+        $dateofjourney = date('Y-m-d', $time);
+        // Check directly for a timetable first, since not all dates will be bookable yet
+        $timetable = \wc_railticket\Timetable::get_timetable_by_date($dateofjourney);
+        if (!$timetable) {
             continue;
         }
-        $ct = reset($current);
-        $tt = $ct->timetableid;
 
-        echo "<tr>".
-            "<td>".date('l', $time)."</td>".
-            "<td>".date('jS', $time)."</td>".
-            "<td>";
-        foreach ($timetables as $t) {
-            if ($t->id == $tt) {
-                echo ucfirst($t->timetable);
-                break;
-            }
-        }
-        echo "</td><td>\n";
+        $data = new \stdclass();
+        $data->dayofweek = date('l', $time);
+        $data->dayofmonth = date('jS', $time);
+        $data->timetable = $timetable->get_name();
+        $data->colour = $timetable->get_colour();
+        $data->background = $timetable->get_background();
+        $data->date = $dateofjourney;
 
-        $bk = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable WHERE dateid = ".$ct->id);
-        if (count($bk) == 0) {
-            echo "<input type='checkbox' value='1' name='bookable_".$ct->id."' />";
-        } else {
-            $bookable = $bk[0]->bookable;
-        
-            echo "<input type='checkbox' value='1' name='bookable_".$ct->id."' ";
-            if ($bookable == 1) {
-                echo "checked ";
-            }
-            echo "/></td><td>";
-            echo "<input type='checkbox' value='1' name='specialonly_".$ct->id."' ";
-            if ($bk[0]->specialonly == 1) {
-                echo "checked ";
-            }
-            echo "/></td><td>";
-            echo "<input type='checkbox' value='1' name='soldout_".$ct->id."' ";
-            if ($bk[0]->soldout == 1) {
-                echo "checked ";
-            }
-            echo "/></td><td>";
-            echo railticket_get_coachset($bk[0]);
-            echo "</td><td>";
-            echo "<input type='checkbox' value='1' name='reserve_".$ct->id."' ";
-            if ($bk[0]->sellreserve == 1) {
-                echo "checked ";
-            }
-            echo "/><td>";
-            echo railticket_get_reserve($bk[0]);
-            echo "</td>";
+        $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
+        if (!$bookableday) {
+            $render->days[] = $data;
+            continue;
         }
 
-        echo "</td></tr>\n";
-        $ids[] = $ct->id;
+        $data->formation = $bookableday->get_composition(true);
+        $data->reserve = $bookableday->get_reserve(true);
+        $data->bookable = railticket_get_yn($bookableday->is_bookable());
+        $data->soldout = railticket_get_yn($bookableday->sold_out());
+        $data->sellreserve = railticket_get_yn($bookableday->sell_reserve());
+        $data->specialonly = railticket_get_yn($bookableday->special_only());
+
+        $render->days[] = $data;
     }
-    ?>
-    </table>
-    <input type="hidden" name="ids" value="<?php echo implode(',', $ids);?>" />
-    <input type="submit" value="Update Bookable days" />
-    </form>
-    <?php
+
+    if (count($render->days) == 0) {
+        return '';
+    }
+
+    $template = $rtmustache->loadTemplate('bookable_calendar');
+    echo $template->render($render);
+}
+
+function railticket_get_yn($cl) {
+    if ($cl) {
+        return __('Y', 'wc_railticket');
+    }
+    return __('N', 'wc_railticket');
 }
 
 function railticket_updatebookable() {

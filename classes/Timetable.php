@@ -26,7 +26,19 @@ class Timetable {
         return false;
     }
 
-    
+    public static function get_timetable_by_date($date) {
+        global $wpdb;
+
+        $revision = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE ".
+            "datefrom <= '".$date."' AND dateto >= '".$date."'");
+        $ttid = $wpdb->get_var("SELECT timetableid FROM {$wpdb->prefix}wc_railticket_dates WHERE date = '".$date."'");
+
+        if (!$revision || !$ttid) {
+            return false;
+        }
+
+        return self::get_timetable($ttid, $revision);
+    }
 
     public function get_revision() {
         return $this->data->revision;
@@ -36,8 +48,18 @@ class Timetable {
         return ucfirst($this->data->timetable);
     }
 
+    public function get_colour() {
+        return $this->data->colour;
+    }
+
+    public function get_background() {
+        return $this->data->background;
+    }
+
     public function get_times(Station $station, $direction, $type, $format) {
         global $wpdb;
+
+        // TODO: Apply Rules! Probably need to add date to the params....
 
         $cachekey = $station->get_stnid()."_".$direction."_".$type;
         if (array_key_exists($cachekey, $this->cache)) {

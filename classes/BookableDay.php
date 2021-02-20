@@ -50,6 +50,13 @@ class BookableDay {
         return false;
     }
 
+    public function special_only() {
+        if ($this->data->specialonly == 1) {
+            return true;
+        }
+        return false;
+    }
+
     public function is_bookable() {
         if ($this->data->bookable == 1) {
             return true;
@@ -57,8 +64,14 @@ class BookableDay {
         return false;
     }
 
-    public function get_date() {
-        return $this->data->date;
+    public function get_date($format = false) {
+        if (!$format) {
+            return $this->data->date;
+        }
+
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->date, $railticket_timezone);
+        return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
     public function get_override() {
