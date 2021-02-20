@@ -7,6 +7,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class Booking {
 
     private $data, $bookableday, $bays;
+    public $special;
 
     public function __construct($data, BookableDay $bkd) {
         global $wpdb;
@@ -17,6 +18,12 @@ class Booking {
             $this->data->collected = true;
         } else {
             $this->data->collected = false;
+        }
+
+        if (strpos($this->data->time, "s:") === 0) {
+            $this->special = Special::get_special($this->data->time);
+        } else {
+            $this->special = false;
         }
     }
 
@@ -37,8 +44,14 @@ class Booking {
     }
 
     public function get_dep_time($format = false) {
-
-        // TODO Deal with specials!
+        global $wpdb;
+        if ($this->special) {
+            if ($format) {
+                return $this->special->get_name();
+            } else {
+                return $this->special->get_dep_id();
+            }
+        }
 
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
@@ -87,11 +100,5 @@ class Booking {
 
     public function is_collected() {
         return $this->data->collected;
-    }
-
-    public function get_tickets($format = false) {
-        global $wpdb;
-
-        return '';
     }
 }

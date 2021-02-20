@@ -5,17 +5,22 @@ namespace wc_railticket;
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class TrainService {
-    private $bookableday, $deptime, $fromstation;
+    private $bookableday, $deptime, $fromstation, $direction;
+    public $special;
 
-    public function __construct(BookableDay $bookableday, Station $fromstation, $deptime, $direction, $special) {
+    public function __construct(BookableDay $bookableday, Station $fromstation, $deptime, $direction) {
         $this->bookableday = $bookableday;
         $this->fromstation = $fromstation;
-        // TODO Err what aboput specials here?
-        if ($special && strpos($deptime, ':') === false) {
-            $deptime = "s:".$deptime;
-        }
         $this->deptime = $deptime;
         $this->direction = $direction;
+
+        // Is this is a special
+        if (strpos($deptime, "s:") === 0) {
+            $this->special = Special::get_special($deptime);
+echo "special";
+        } else {
+            $this->special = false;
+        }
     }
 
     public function get_inventory($baseonly = false, $noreserve = false, $onlycollected = false) {
@@ -166,4 +171,5 @@ class TrainService {
 
         return substr($str, 0, strlen($str)-2);
     }
+
 }

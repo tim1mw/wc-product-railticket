@@ -750,7 +750,6 @@ function railticket_getdayselect($chosenday) {
 }
 
 function railticket_get_seatsummary() {
-    global $wpdb;
     $dateofjourney = sanitize_text_field($_REQUEST['dateofjourney']);
     $timetable = \wc_railticket\Timetable::get_timetable_by_date($dateofjourney);
     ?><h1>Seat/Bay usage summary for <?php echo $timetable->get_date(true); ?></h1><?php
@@ -764,16 +763,15 @@ function railticket_get_seatsummary() {
 
 
 function railticket_show_bookings_summary($dateofjourney) {
-    global $wpdb;
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
-
-    ?><h1>Summary for <?php echo $bookableday->get_date(true); ?></h1><?php
 
     // If the override code is empty, this day has a timetable, but hasn't been initialised.
     if (!$bookableday) {
         echo "<h3>Booking data not initiailised for this day - please make this day bookable.</h3>";
         return;
     }
+
+    ?><h1>Summary for <?php echo $bookableday->get_date(true); ?></h1><?php
 
     echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$bookableday->get_override()."</span></h2>";
 
@@ -783,27 +781,27 @@ function railticket_show_bookings_summary($dateofjourney) {
         railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable);
     }
 
-    $specials = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$dateofjourney."'");
+    $specials = \wc_railticket\Special::get_specials($dateofjourney);
     if (count($specials) > 0) {
         echo "<h3>Specials</h3>";
         echo "<div class='railticket_inlinedeplist'><ul>";
         foreach ($specials as $special) {
+            $from = $special->get_from_station();
+            $to = $special->get_to_station();
             ?>
             <li><form method='post' action='<?php echo railticket_get_page_url() ?>'>
                 <input type='hidden' name='action' value='showspecial' />
                 <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-                <input type='hidden' name='station' value='<?php echo $special->fromstation; ?>' />
-                <input type='hidden' name='destination' value='<?php echo $special->tostation ?>' />
-                <input type='hidden' name='direction' value='down' />
-                <input type='hidden' name='deptime' value='s:<?php echo  $special->id ?>' />
-                <input type='submit' name='submit' value='<?php echo $special->name ?>' />
+                <input type='hidden' name='station' value='<?php echo $from->get_stnid(); ?>' />
+                <input type='hidden' name='direction' value='<?php echo $from->get_direction($to); ?>' />
+                <input type='hidden' name='deptime' value='<?php echo $special->get_dep_id() ?>' />
+                <input type='hidden' name='ttrevision' value='<?php echo $special->get_timetable_revision() ?>' />
+                <input type='submit' name='submit' value='<?php echo $special->get_name() ?>' />
             </form></li>
             <?php
         }
         echo "</ul></div>";
     }
-
-
     ?>
     <hr />
     <div class='railticket_editdate'>
@@ -905,33 +903,36 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
     $destination = $bookableday->timetable->get_terminal($direction);
-
-    // TODO Deal with Specials
-
-    // If this is being called directly from a button click, we won't have the forrmatted version of the time passed through
-    // So get it here.
+    // If this is being called directly from a button click this will be a string
     if (is_string($deptime)) {
-        $dt = new \stdclass();
-        $dt->key = $deptime;
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-        $depname = \DateTime::createFromFormat("H.i", $deptime, $railticket_timezone);
-        $dt->formatted = strftime(get_option('wc_railticket_time_format'), $depname->getTimeStamp());
-        $deptime = $dt;
+        $bookings = $bookableday->get_bookings_from_station($station, $deptime, $direction);
+        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime, $direction);
+        if ($trainservice->special == false) {
+            $dt = new \stdclass();
+            $dt->key = $deptime;
+            $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+            $depname = \DateTime::createFromFormat("H.i", $deptime, $railticket_timezone);
+            $dt->formatted = strftime(get_option('wc_railticket_time_format'), $depname->getTimeStamp());
+            $deptime = $dt;
+        } 
+    } else {
+        $bookings = $bookableday->get_bookings_from_station($station, $deptime->key, $direction);
+        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime->key, $direction);
     }
 
-    if ($_REQUEST['action'] == 'showspecial') {
-        $parts = explode(':', $deptime);
-        $depname = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_specials WHERE id = ".$parts[1]);
-    } 
-
-    $bookings = $bookableday->get_bookings_from_station($station, $deptime->key, $direction);
+    // Formatting for specials
+    if ($trainservice->special) {
+        $dt = new \stdclass();
+        $dt->key = $deptime;
+        $dt->formatted = $trainservice->special->get_name();
+        $deptime = $dt;
+    }
 
     $seats = 0;
     foreach ($bookings as $booking) {
         $seats += $booking->seats;
     }
 
-    $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime->key, $direction, false);
     $basebays = $trainservice->get_inventory(true, true);
     $capused = $trainservice->get_inventory(false, false);
     $capcollected = $trainservice->get_inventory(false, true, true);
