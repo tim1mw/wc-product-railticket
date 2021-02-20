@@ -1054,7 +1054,6 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 }
 
 function railticket_get_bookingbays_display($bookingid) {
-    global $wpdb;
     $str = '';
     $bays = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$bookingid);
     foreach ($bays as $bay) {
@@ -1068,11 +1067,8 @@ function railticket_get_bookingbays_display($bookingid) {
 }
 
 function railticket_mark_ticket($val) {
-    global $wpdb;
-    $id = $_POST['bookingid'];
-    $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-        array('collected' => $val),
-        array('id' => $id));
+    $id = sanitize_text_field($_POST['bookingid']);
+    $booking = \wc_railticket\Booking::set_collected($id, $val);
 }
 
 function railticket_delete_manual_order() {

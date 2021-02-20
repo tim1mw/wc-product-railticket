@@ -27,6 +27,20 @@ class Booking {
         }
     }
 
+    /**
+    * Make this static so we don't have to set up the entire object tree just to mark this as collected
+    * @param $id The ID of the booking
+    * @param $val The collected value
+    **/
+
+    public static function set_collected($id, $val) {
+        global $wpdb;
+
+        $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
+            array('collected' => $val),
+            array('id' => $id));
+    }
+
     public function get_date($format = false, $nottoday = false) {
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
@@ -101,4 +115,5 @@ class Booking {
     public function is_collected() {
         return $this->data->collected;
     }
+
 }
