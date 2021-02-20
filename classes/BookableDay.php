@@ -155,12 +155,17 @@ class BookableDay {
     public function get_bookings_from_station(Station $station, $deptime, $direction) {
         global $wpdb;
 
-        return $wpdb->get_results("SELECT bookings.*, stations.name ".
+        $bks = $wpdb->get_results("SELECT bookings.* ".
             "FROM {$wpdb->prefix}wc_railticket_bookings bookings ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_stations stations ON ".
-            "    stations.stnid = bookings.tostation AND stations.revision = ".$station->get_revision()." ".
             "WHERE bookings.date='".$this->data->date."' AND ".
             "bookings.time = '".$deptime."' AND bookings.fromstation = ".$station->get_stnid()." AND bookings.direction = '".$direction."' ");
+
+        $bookings = array();
+        foreach ($bks as $bk) {
+            $bookings[] = new Booking($bk, $this);
+        }
+
+        return $bookings;
     }
 
     public function get_price_revision() {

@@ -930,7 +930,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
     $seats = 0;
     foreach ($bookings as $booking) {
-        $seats += $booking->seats;
+        $seats += $booking->get_seats();
     }
 
     $basebays = $trainservice->get_inventory(true, true);
@@ -985,30 +985,23 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     <?php
     foreach ($bookings as $booking) {
         echo "<tr>";
-        if ($booking->manual) {
-            echo "<td><form action='".railticket_get_page_url()."' method='post'>".
-                "<input type='hidden' name='action' value='showorder' />".
-                "<input type='hidden' name='orderid' value='M".$booking->manual."' />".
-                "<input type='submit' value='M".$booking->manual."' />".
-                "</form></td>";
-        } else {
-           if (strlen($booking->woocartitem) > 0) {
+        if (strlen($booking->in_cart()) > 0) {
             echo "<td>In Cart</td>";
-           } else {
+        } else {
+            $orderid = $booking->get_order_id();
             echo "<td><form action='".railticket_get_page_url()."' method='post'>".
                 "<input type='hidden' name='action' value='showorder' />".
-                "<input type='hidden' name='orderid' value='".$booking->wooorderid."' />".
-                "<input type='submit' value='".$booking->wooorderid."' />".
+                "<input type='hidden' name='orderid' value='".$orderid."' />".
+                "<input type='submit' value='".$orderid."' />".
                 "</form></td>";
-           }
         }
-        echo "<td>".$booking->name."</td>".
-            "<td>".$booking->seats."</td>".
+        echo "<td>".$booking->get_order_name()."</td>".
+            "<td>".$booking->get_seats()."</td>".
             "<td>";
-        echo railticket_get_bookingbays_display($booking->id);
+        echo $booking->get_bays(true);
         echo "</td>";
 
-        if ($booking->collected) {
+        if ($booking->is_collected()) {
             echo "<td>Y</td>";   
         } else {
             echo "<td>N</td>";
@@ -1051,19 +1044,6 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     </form>
     </div>
     <?php
-}
-
-function railticket_get_bookingbays_display($bookingid) {
-    $str = '';
-    $bays = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$bookingid);
-    foreach ($bays as $bay) {
-        $str .= $bay->baysize;
-        if ($bay->priority) {
-            $str .= "d";
-        }
-        $str .= "X".$bay->num." ";
-    }
-    return $str;
 }
 
 function railticket_mark_ticket($val) {

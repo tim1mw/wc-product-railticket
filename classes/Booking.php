@@ -116,4 +116,37 @@ class Booking {
         return $this->data->collected;
     }
 
+    public function is_manual() {
+        if ($this->data->manual > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function get_order_id() {
+        if ($this->data->manual > 0) {
+            return "M".$this->data->manual;
+        }
+
+        return $this->data->wooorderid;
+    }
+
+    public function in_cart() {
+        if (strlen($this->data->woocartitem) > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function get_order_name() {
+        if ($this->data->manual > 0) {
+            return '';
+        }
+
+        $order = wc_get_order($this->data->wooorderid);
+        return $order->get_formatted_billing_full_name();
+    }
+
 }
