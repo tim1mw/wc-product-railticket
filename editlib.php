@@ -58,6 +58,62 @@ function railticket_roles() {
     );
 }
 
+function railticket_view_bookings() {
+    ?>
+    <h1>Heritage Railway Tickets</h1>    
+    <?php
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch($_REQUEST['action']) {
+            case 'cancelcollected';
+                railticket_mark_ticket(false);
+                railticket_show_order();
+                break;
+            case 'collected':
+                railticket_mark_ticket(true);
+            case 'showorder':
+                railticket_show_order();
+                break;
+            case 'showdep':
+            case 'showspecial':
+                $station = \wc_railticket\Station::get_station(
+                    sanitize_text_field($_REQUEST['station']), sanitize_text_field($_REQUEST['ttrevision']));
+                railticket_show_departure(sanitize_text_field($_REQUEST['dateofjourney']), $station,
+                   sanitize_text_field($_REQUEST['direction']), sanitize_text_field($_REQUEST['deptime']));
+                break;
+            case 'createmanual':
+                railticket_create_manual();
+                break;
+            case 'viewwaybill':
+                railticket_get_waybill(false);
+                break;
+            case 'viewordersummary':
+                railticket_get_ordersummary(false);
+                break;
+            case 'viewseatsummary':
+                railticket_get_seatsummary();
+                break;
+            case 'deletemanual';
+                railticket_delete_manual_order();
+                break;
+            case 'filterbookings':
+            default:
+                railticket_summary_selector();
+                break;
+        }
+    } else {
+        railticket_summary_selector();
+    }
+
+}
+
+function railticket_get_page_url() {
+    global $wp;
+    //return home_url( add_query_arg( array(), $wp->request ) )."/";
+    return '';
+}
 
 function railticket_options() {
     ?>
@@ -604,63 +660,6 @@ function randomString()
     return $randstring;
 }
 
-function railticket_view_bookings() {
-    ?>
-    <h1>Heritage Railway Tickets</h1>    
-    <?php
-    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
-    wp_enqueue_style('railticket_style');
-
-    if (array_key_exists('action', $_REQUEST)) {
-        switch($_REQUEST['action']) {
-            case 'cancelcollected';
-                railticket_mark_ticket(false);
-                railticket_show_order();
-                break;
-            case 'collected':
-                railticket_mark_ticket(true);
-            case 'showorder':
-                railticket_show_order();
-                break;
-            case 'showdep':
-            case 'showspecial':
-                $station = \wc_railticket\Station::get_station(
-                    sanitize_text_field($_REQUEST['station']), sanitize_text_field($_REQUEST['ttrevision']));
-                railticket_show_departure(sanitize_text_field($_REQUEST['dateofjourney']), $station,
-                   sanitize_text_field($_REQUEST['direction']), sanitize_text_field($_REQUEST['deptime']));
-                break;
-            case 'createmanual':
-                railticket_create_manual();
-                break;
-            case 'viewwaybill':
-                railticket_get_waybill(false);
-                break;
-            case 'viewordersummary':
-                railticket_get_ordersummary(false);
-                break;
-            case 'viewseatsummary':
-                railticket_get_seatsummary();
-                break;
-            case 'deletemanual';
-                railticket_delete_manual_order();
-                break;
-            case 'filterbookings':
-            default:
-                railticket_summary_selector();
-                break;
-        }
-    } else {
-        railticket_summary_selector();
-    }
-
-}
-
-function railticket_get_page_url() {
-    global $wp;
-    //return home_url( add_query_arg( array(), $wp->request ) )."/";
-    return '';
-}
-
 function railticket_summary_selector() {
     if (array_key_exists('dateofjourney', $_REQUEST)) {
         $dateofjourney = $_REQUEST['dateofjourney'];
@@ -749,31 +748,6 @@ function railticket_getdayselect($chosenday) {
     $sel .= "</select>";
     return $sel;
 }
-
-function railticket_find_timetable($param, $usedateid = false) {
-    global $wpdb;
-
-    $sql = "SELECT timetables.*, bookable.override, bookable.composition, bookable.reserve, bookable.daytype ".
-        "FROM {$wpdb->prefix}wc_railticket_bookable bookable ".
-        "INNER JOIN {$wpdb->prefix}wc_railticket_timetables timetables ON ".
-        "bookable.timetableid = timetables.timetableid AND bookable.ttrevision = timetables.revision ";
-
-    if ($usedateid) {
-        $sql .= "INNER JOIN {$wpdb->prefix}wc_railticket_dates dates ON bookable.date = dates.date ".
-            "WHERE dates.id = ".$param;
-    } else {
-        $sql .= "WHERE bookable.date = '".$param."'";
-    }
-
-    $timetable = $wpdb->get_results($sql, OBJECT );
-
-    if (count($timetable) > 0) {
-        return $timetable[0];
-    } else {
-        return false;
-    }
-}
-
 
 function railticket_get_seatsummary() {
     global $wpdb;
@@ -1098,21 +1072,6 @@ function railticket_mark_ticket($val) {
     $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
         array('collected' => $val),
         array('id' => $id));
-}
-
-function railticket_get_ticket_item($order) {
-    foreach ( $order->get_items() as $item_id => $item ) {
-        // Get the product object
-        $product = $item->get_product();
-
-        // Get the product Id
-        $product_id = $product->get_id();
-        if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
-            return $item;
-            break;
-        }
-    }
-    return false;
 }
 
 function railticket_delete_manual_order() {
