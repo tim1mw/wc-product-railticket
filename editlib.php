@@ -1126,126 +1126,6 @@ function railticket_get_ticket_item($order) {
     return false;
 }
 
-function railticket_show_manualorder($orderid) {
-    global $wpdb;
-    $orderid = substr($orderid, 1);
-    $order = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
-
-    if (!$order || count($order) == 0) {
-        echo "<p style='font-size:large;color:red;font-weight:bold;'>Manual Order '".$orderid."' not found.</p>";
-        railticket_summary_selector();
-        return;
-    }
-
-    $order = $order[0];
-    $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$orderid);
-    $stns = railticket_get_stations_map();
-
-    $depdate = DateTime::createFromFormat("Y-m-d", $bookings[0]->date,  new DateTimeZone(get_option('timezone_string')));
-    if ($order->createdby > 0) {
-        $u = get_userdata($order->createdby);
-    } else {
-        $u = new Stdclass();
-        $u->first_name = 'Unknown';
-        $u->last_name = 'User (id='.$order->createdby.')';
-    }
-
-    ?><div class='railticket_editdate'><table border='1'>
-        <tr><th>Order ID</th><td class='railticket_meta'>M<?php echo $orderid; ?></td></tr>
-        <tr><th>Total Paid</th><td class='railticket_meta'>£<?php echo $order->price; ?></td></tr>
-        <tr><th>Fare Supplement</th><td class='railticket_meta'>£<?php echo $order->supplement; ?></td></tr>
-        <tr><th>Seats</th><td class='railticket_meta'><?php echo $order->seats; ?></td></tr>
-        <tr><th>Tickets</th><td class='railticket_meta'><?php
-            $ta = (array) json_decode($order->tickets);
-            foreach ($ta as $ticket => $num) {
-                echo str_replace('_', ' ', $ticket)." x".$num.", ";
-            }
-         ?></td></tr>
-        <tr><th>Journey Type</th><td class='railticket_meta'><?php echo $order->journeytype; ?></td></tr>
-        <tr><th>Date of travel</td><td class='railticket_meta'><?php echo $depdate->format('j-M-Y'); ?></td></tr>
-        <tr><th>Outbound Dep</th><td class='railticket_meta'>
-            <?php echo $stns[$bookings[0]->fromstation]->name." ".date("g:i", strtotime($bookings[0]->time)); ?></td></tr>
-        <?php railticket_show_bays($bookings[0]->id, $bookings[0]->fromstation, "Outbound Bays" ); ?>
-        <?php
-            if ($order->journeytype == 'return') {
-                ?>
-        <tr><th>Return Dep</th><td class='railticket_meta'>
-            <?php echo $stns[$bookings[1]->fromstation]->name." ".date("g:i", strtotime($bookings[1]->time)); ?></td></tr>
-            <?php railticket_show_bays($bookings[1]->id, $bookings[1]->fromstation, "Return Bays" );
-
-            }
-        ?>
-        <tr><th>Notes</th><td class='railticket_meta'><?php echo $order->notes; ?></td></tr>
-        <tr><th>Created By</th><td class='railticket_meta'><?php echo $u->first_name.' '.$u->last_name; ?></td></tr>
-    <?php
-
-    echo "<tr><th>Collected</th><td class='railticket_meta'>";
-    if ($bookings[0]->collected) {
-        echo "Yes";
-    } else {
-        echo "No";
-    }
-    echo "</td></tr>";
-    if ($order->journeytype != 'single') {
-        echo "<tr><th>Returned</th><td class='railticket_meta'>";
-        if ($bookings[0]->returned) {
-            echo "Yes";
-        } else {
-            echo "No";
-        }
-        echo "</td></tr>";
-    }
-    echo "</table>";
-
-    if (!$bookings[0]->collected) {
-        echo "<p><form action='".railticket_get_page_url()."' method='post'>".
-            "<input type='hidden' name='action' value='collected' />".
-            "<input type='hidden' name='orderid' value='M".$orderid."' />".
-            "<input type='submit' value='Mark Collected' />".
-            "</form></p>";
-    } else {
-        echo "<p><form action='".railticket_get_page_url()."' method='post'>".
-            "<input type='hidden' name='action' value='cancelcollected' />".
-            "<input type='hidden' name='orderid' value='M".$orderid."' />".
-            "<input type='submit' value='Cancel Collected' />".
-            "</form></p>";
-    }
-
-    if ($order->journeytype != 'single') {
-        if (!$bookings[0]->returned) {
-            echo "<p><form action='".railticket_get_page_url()."' method='post'>".
-                "<input type='hidden' name='action' value='returned' />".
-                "<input type='hidden' name='orderid' value='M".$orderid."' />".
-                "<input type='submit' value='Mark Returned' />".
-                "</form></p>";
-        } else {
-            echo "<p><form action='".railticket_get_page_url()."' method='post'>".
-                "<input type='hidden' name='action' value='cancelreturned' />".
-                "<input type='hidden' name='orderid' value='M".$orderid."' />".
-                "<input type='submit' value='Cancel Returned' />".
-                "</form></p>";
-        }
-    }
-
-    if (current_user_can('delete_tickets')) {
-        echo "<p><form action='".railticket_get_page_url()."' method='post'>".
-            "<input type='hidden' name='action' value='deletemanual' />".
-            "<input type='hidden' name='orderid' value='".$orderid."' />".
-            "<input type='submit' value='Delete Manual Order' />".
-            "</form></p>";
-    }
-    echo "<p>";
-    railticket_show_dep_button($bookings[0]->date, $bookings[0]->fromstation, $bookings[0]->tostation, $bookings[0]->direction, $bookings[0]->time, true);
-    echo "</p>";
-    if ($order->journeytype == 'return') {
-      echo "<p>";
-      railticket_show_dep_button($bookings[1]->date, $bookings[1]->fromstation, $bookings[1]->tostation, $bookings[1]->direction, $bookings[1]->time, true); 
-      echo "</p>";
-    }
-    railticket_show_back_to_services($bookings[0]->date);
-    echo "</div>";
-}
-
 function railticket_delete_manual_order() {
     global $wpdb;
     $orderid = $_POST['orderid'];
@@ -1308,8 +1188,16 @@ function railticket_show_order_main($orderid) {
         'actionurl' => railticket_get_page_url()
     );
 
+    if ($bookingorder->is_manual() && current_user_can('delete_tickets')) {
+         $template = $rtmustache->loadTemplate('delete_order_button');
+         $alldata['extrabuttons'] = $template->render($alldata);
+    } else {
+         $alldata['extrabuttons'] = '';
+    }
+
     $template = $rtmustache->loadTemplate('showorder');
     echo $template->render($alldata);
+
 }
 
 function railticket_get_booking_render_data($bookings) {
@@ -1346,26 +1234,6 @@ function railticket_get_booking_render_data($bookings) {
     }
 
     return $data;
-}
-
-function railticket_show_bays($bookingid, $fromstation, $jt) {
-    global $wpdb;
-    $frombays = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$bookingid);
-    $fb = '';
-    foreach ($frombays as $bay) {
-        $fb .= $bay->baysize. " seat ";
-        if ($bay->priority) {
-            $fb.= " disabled ";
-        }
-        $fb.= " bay x".$bay->num.", ";
-    }
-    $fb = substr($fb, 0, strlen($fb)-2);
-    echo "<tr><th>".$jt."</th><td class='railticket_meta'>".$fb."</td></tr>";
-}
-
-function railticket_create_manualold() {
-   $tkt = new \wc_railticket\TicketBuilder();
-   echo $tkt->render();
 }
 
 function railticket_create_manual($id = false) {
