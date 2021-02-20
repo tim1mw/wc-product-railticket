@@ -7,12 +7,13 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class BookingOrder {
 
     private $bookings;
+    public $bookableday;
 
     private function __construct($bookings, $orderid, $manual) {
         global $wpdb;
         if ($manual) {
-            $mb = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
-            $this->tickets = json_decode($mb->comp);
+            $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
+            $this->tickets = json_decode($mb->tickets);
             $this->travellers = json_decode($mb->travellers);
             $this->price = $mb->price;
             $this->notes = $mb->notes;

@@ -20,4 +20,16 @@
             <input type='submit' value='{{actionstr}}' />
         </form></p>
     {{/ bookings }}
+
+    <br /><br />
+
+    {{# bookings }}
+    <p>{{> depbutton}}</p>
+    {{/ bookings }}
+    <p><form action='{{actionurl}}' method='post'>
+        <input type='hidden' name='action' value='filterbookings' />
+        <input type='hidden' name='dateofjourney' value='{{dateofjourney}}' />
+        <input type='submit' name='submit' value='Back to Services' />
+    </form></p>
+    <ul>
 </div>

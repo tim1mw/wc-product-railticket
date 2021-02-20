@@ -47,7 +47,7 @@ class Station {
         return $this->data->sequence;
     }
 
-    public function get_direction(Station $t) {
+    public function get_direction(Station $to) {
         if ($this->data->sequence > $to->get_sequence()) {
             return "up";
         } else {

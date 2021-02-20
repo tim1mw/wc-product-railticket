@@ -641,16 +641,11 @@ function railticket_view_bookings() {
             case 'showorder':
                 railticket_show_order();
                 break;
-            case 'showorder':
-                railticket_show_order();
-                break;
             case 'showdep':
             case 'showspecial':
                 $station = \wc_railticket\Station::get_station(
                     sanitize_text_field($_REQUEST['station']), sanitize_text_field($_REQUEST['ttrevision']));
-                $destination = \wc_railticket\Station::get_station(sanitize_text_field($_REQUEST['destination']),
-                    sanitize_text_field($_REQUEST['ttrevision']));
-                railticket_show_departure(sanitize_text_field($_REQUEST['dateofjourney']), $station, $destination,
+                railticket_show_departure(sanitize_text_field($_REQUEST['dateofjourney']), $station,
                    sanitize_text_field($_REQUEST['direction']), sanitize_text_field($_REQUEST['deptime']));
                 break;
             case 'createmanual':
@@ -917,24 +912,22 @@ function railticket_show_dep_buttons($dateofjourney, \wc_railticket\Station $sta
     global $wpdb, $wp;
     $key = $direction.'_deps';
 
-    $destination = $timetable->get_terminal($direction);
-
     if ($showseats) {
         foreach ($alltimes as $t) {
-            railticket_show_departure($dateofjourney, $station, $destination, $direction, $t, true);
+            railticket_show_departure($dateofjourney, $station, $direction, $t, true);
         }
     } else {
         echo "<div class='railticket_inlinedeplist'><ul>";
         foreach ($alltimes as $t) {
             echo "<li>";
-            railticket_show_dep_button($dateofjourney, $station, $destination, $direction, $t);
+            railticket_show_dep_button($dateofjourney, $station, $direction, $t);
             echo "</li>";
         }
         echo "</ul></div>";
     }
 }
 
-function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $station,  \wc_railticket\Station $destination, $direction, $t, $incstn = false) {
+function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $station, $direction, $t, $incstn = false) {
     $label = $t->formatted;
     if ($incstn) {
         $label = "Back to ".$t->formatted." from ".$station->get_name();
@@ -944,7 +937,6 @@ function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $stat
        <input type='hidden' name='action' value='showdep' />
        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
        <input type='hidden' name='station' value='<?php echo $station->get_stnid(); ?>' />
-       <input type='hidden' name='destination' value='<?php echo $destination->get_stnid(); ?>' />
        <input type='hidden' name='direction' value='<?php echo $direction; ?>' />
        <input type='hidden' name='deptime' value='<?php echo $t->key; ?>' />
        <input type='hidden' name='ttrevision' value='<?php echo $station->get_revision(); ?>' />
@@ -953,10 +945,11 @@ function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $stat
     <?php
 }
 
-function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, \wc_railticket\Station $destination, $direction, $deptime, $summaryonly = false) {
+function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, $direction, $deptime, $summaryonly = false) {
     global $wpdb, $wp;
 
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
+    $destination = $bookableday->timetable->get_terminal($direction);
 
     if ($_REQUEST['action'] == 'showspecial') {
         $parts = explode(':', $deptime);
@@ -1133,22 +1126,6 @@ function railticket_get_ticket_item($order) {
     return false;
 }
 
-function railticket_show_order() {
-    global $wpdb, $woocommerce;
-
-    if (strlen($_REQUEST['orderid']) == 0) {
-        echo "<p>No order number entered.</p>";
-        railticket_summary_selector();
-        return;
-    }
-
-    if (strpos(strtoupper($_REQUEST['orderid']), 'M') === false) {
-        railticket_show_wooorder($_REQUEST['orderid']);
-    } else {
-        railticket_show_manualorder($_REQUEST['orderid']);
-    }
-}
-
 function railticket_show_manualorder($orderid) {
     global $wpdb;
     $orderid = substr($orderid, 1);
@@ -1283,7 +1260,21 @@ function railticket_delete_manual_order() {
     railticket_show_back_to_services($bookings[0]->date);
 }
 
-function railticket_show_wooorder($orderid) {
+function railticket_show_order() {
+    global $wpdb, $woocommerce;
+
+    $orderid = sanitize_text_field($_REQUEST['orderid']);
+
+    if (strlen($orderid) == 0) {
+        echo "<p>No order number entered.</p>";
+        railticket_summary_selector();
+        return;
+    }
+
+    railticket_show_order_main($orderid);
+}
+
+function railticket_show_order_main($orderid) {
     global $rtmustache;
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
@@ -1306,6 +1297,7 @@ function railticket_show_wooorder($orderid) {
     $orderdata[] = array('item' => __('Notes'), 'value' => $bookingorder->get_notes());
 
     $alldata = array(
+        'dateofjourney' => $bookingorder->get_date(),
         'details' => $orderdata,
         'bookings' => railticket_get_booking_render_data($bookingorder->get_bookings()),
         'timestr' => __('Departure Time', 'wc_railticket'),
@@ -1325,9 +1317,11 @@ function railticket_get_booking_render_data($bookings) {
 
     $count = 1;
     foreach($bookings as $booking) {
+        $fromstn = $booking->get_from_station();
+
         $bk = array();
         $bk['title'] = __('Trip', 'wc_railtickey')." ".$count;
-        $bk['stns'] = $booking->get_from_station()->get_name().' - '.$booking->get_to_station()->get_name();
+        $bk['stns'] = $fromstn->get_name().' - '.$booking->get_to_station()->get_name();
         $bk['deptime'] = $booking->get_dep_time(true);
         $bk['bays'] = $booking->get_bays(true);
         if ($booking->is_collected()) {
@@ -1340,22 +1334,18 @@ function railticket_get_booking_render_data($bookings) {
             $bk['action'] = 'collected';
         }
         $bk['bookingid'] = $booking->get_id();
+
+        $bk['station'] = $fromstn->get_stnid();
+        $bk['direction'] = $fromstn->get_direction($booking->get_to_station());
+        $bk['ttrevison'] = $fromstn->get_revision();
+        $bk['timekey'] = $booking->get_dep_time(false);
+        $bk['btnlabel'] = "Back to ".$bk['deptime']." from ".$fromstn->get_name();
+
         $data[] = $bk;
         $count++;
     }
 
     return $data;
-}
-
-function railticket_show_back_to_services($dateofjourney) {
-    ?>
-    <br /><br />
-    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
-        <input type='hidden' name='action' value='filterbookings' />
-        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Back to Services' />
-    </form>
-    <?php
 }
 
 function railticket_show_bays($bookingid, $fromstation, $jt) {

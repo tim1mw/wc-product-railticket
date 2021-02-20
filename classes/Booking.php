@@ -33,7 +33,7 @@ class Booking {
             return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
         }
 
-        return $data->data->date;
+        return $this->data->date;
     }
 
     public function get_dep_time($format = false) {
@@ -43,7 +43,10 @@ class Booking {
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
             $dtime = \DateTime::createFromFormat("H.i", $this->data->time, $railticket_timezone);
-            return strftime(get_option('wc_railticket_time_format'), $dtime->getTimeStamp());
+            if ($dtime) {
+                // Despite the config option not having a space, this is contriving to put in a leading space I don't want. Trim it!
+                return trim(strftime(get_option('wc_railticket_time_format'), $dtime->getTimeStamp()));
+            }
         }
         return $this->data->time;
     }
