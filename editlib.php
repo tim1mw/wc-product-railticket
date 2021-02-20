@@ -777,12 +777,12 @@ function railticket_find_timetable($param, $usedateid = false) {
 
 function railticket_get_seatsummary() {
     global $wpdb;
-    $dateofjourney = $_POST['dateofjourney'];
+    $dateofjourney = sanitize_text_field($_REQUEST['dateofjourney']);
     ?><h1>Seat/Bay usage summary for <?php echo $dateofjourney; ?></h1><?php
 
-    $timetable = railticket_find_timetable($dateofjourney);
+    $timetable = \wc_railticket\Timetable::get_timetable_by_date($dateofjourney);
+    $stations = $timetable->get_stations();
 
-    $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ORDER BY sequence ASC", OBJECT);
     foreach ($stations as $station) {
         railticket_show_station_summary($dateofjourney, $station, $timetable, true);
     }
@@ -863,7 +863,7 @@ function railticket_show_bookings_summary($dateofjourney) {
     <?php
 }
 
-function railticket_show_station_summary($dateofjourney,  \wc_railticket\Station $station, $timetable, $showseats = false) {
+function railticket_show_station_summary($dateofjourney, \wc_railticket\Station $station, \wc_railticket\Timetable $timetable, $showseats = false) {
     global $wpdb;
 
     if ($showseats) {
@@ -932,31 +932,39 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
     $destination = $bookableday->timetable->get_terminal($direction);
 
+    // TODO Deal with Specials
+
+    // If this is being called directly from a button click, we won't have the forrmatted version of the time passed through
+    // So get it here.
+    if (is_string($deptime)) {
+        $dt = new \stdclass();
+        $dt->key = $deptime;
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $depname = \DateTime::createFromFormat("H.i", $deptime, $railticket_timezone);
+        $dt->formatted = strftime(get_option('wc_railticket_time_format'), $depname->getTimeStamp());
+        $deptime = $dt;
+    }
+
     if ($_REQUEST['action'] == 'showspecial') {
         $parts = explode(':', $deptime);
         $depname = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_specials WHERE id = ".$parts[1]);
-    } else {
+    } 
 
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-        $depname = \DateTime::createFromFormat("H.i", $deptime);
-        $depname = strftime(get_option('wc_railticket_time_format'), $depname->getTimeStamp());
-    }
-
-    $bookings = $bookableday->get_bookings_from_station($station, $deptime, $direction);
+    $bookings = $bookableday->get_bookings_from_station($station, $deptime->key, $direction);
 
     $seats = 0;
     foreach ($bookings as $booking) {
         $seats += $booking->seats;
     }
 
-    $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime, $direction, false);
+    $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime->key, $direction, false);
     $basebays = $trainservice->get_inventory(true, true);
     $capused = $trainservice->get_inventory(false, false);
     $capcollected = $trainservice->get_inventory(false, true, true);
 
    if ($summaryonly) {
         echo "<table><tr><td>";
-        railticket_show_dep_button($dateofjourney, $station, $destination, $direction, $deptime);
+        railticket_show_dep_button($dateofjourney, $station, $direction, $deptime);
         echo "</td><td class='railticket_shortsummary'>Seats Used:".$seats."&nbsp&nbsp;</td><td class='railticket_shortsummary'>Seats Available:".$capused->totalseats."</td></tr></table>";
    } else {
         echo "<div class='railticket_editdate'><h3>Service summary</h3><table border='1'>".
@@ -964,7 +972,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<tr><th>Station</th><th>".$station->get_name()."</th></tr>".
             "<tr><th>Destination</th><th>".$destination->get_name()."</th></tr>".
             "<tr><th>Date</td><th>".$dateofjourney."</th></tr>".
-            "<tr><th>Time</td><th>".$depname."</th></tr>".
+            "<tr><th>Time</td><th>".$deptime->formatted."</th></tr>".
             "<tr><th>Direction</th><th>".$direction."</th></tr>".
             "<tr><th>Total Orders</th><th>".count($bookings)."</th></tr>".
             "<tr><th>Seats Used</th><th>".$seats."</th></tr>".
@@ -1046,7 +1054,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         <input type='hidden' name='station' value='<?php echo $station->get_stnid(); ?>' />
         <input type='hidden' name='ttrevision' value='<?php echo $station->get_revision(); ?>' />
         <input type='hidden' name='direction' value='<?php echo $direction ?>' />
-        <input type='hidden' name='deptime' value='<?php echo $deptime ?>' />
+        <input type='hidden' name='deptime' value='<?php echo $deptime->key ?>' />
         <input type='hidden' name='destination' value='<?php echo $destination->get_stnid() ?>' />
         <input type='submit' name='submit' value='Refresh Display' />
     </form><br />
@@ -1062,7 +1070,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         <input type='hidden' name='a_station' value='<?php echo $station->get_stnid(); ?>' />
         <input type='hidden' name='a_ttrevision' value='<?php echo $station->get_revision(); ?>' />
         <input type='hidden' name='a_direction' value='<?php echo $direction ?>' />
-        <input type='hidden' name='a_deptime' value='<?php echo $deptime ?>' />
+        <input type='hidden' name='a_deptime' value='<?php echo $deptime->key ?>' />
         <input type='hidden' name='a_destination' value='<?php echo $destination->get_stnid() ?>' />
         <input type='submit' name='submit' value='Add Manual Booking' />
     </form>
