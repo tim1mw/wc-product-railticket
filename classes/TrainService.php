@@ -33,6 +33,7 @@ class TrainService {
             case 'pertrain':
                 $direction = $this->direction;
                 $formations = $this->bookableday->get_bays();
+                $deptime = $this->deptime;
                 $set = $formations->$direction->$deptime;
                 $basebays = (array) $formations->coachsets->$set;
                 break;
@@ -107,5 +108,62 @@ class TrainService {
         $parts[0] = intval($parts[0]);
         $parts[2] = $bay;
         return $parts;
+    }
+
+    public function get_reserve($format = false) {
+        $res = $this->bookableday->get_reserve();
+
+        switch ($this->bookableday->get_daytype()) {
+            case 'simple':
+                $resset = $res;
+                break;
+            case 'pertrain':
+                $comp = $this->bookableday->get_composition();
+                $direction = $this->direction;
+                $deptime = $this->deptime;
+                $setkey = $comp->$direction->$deptime;
+                $resset = $res->$setkey;
+                break;
+        }
+
+        if ($format) {
+            return $this->get_string($resset);
+        }
+
+        return $resset;
+    }
+
+    public function get_coachset($format = false) {
+        $comp = $this->bookableday->get_composition();
+
+        switch ($this->bookableday->get_daytype()) {
+            case 'simple':
+                $cset = $comp->coachset;
+                break;
+            case 'pertrain':
+                $direction = $this->direction;
+                $deptime = $this->deptime;
+                $setkey = $comp->$direction->$deptime;
+                $cset = $comp->coachsets->$setkey->coachset;
+                break;
+        }
+
+        if ($format) {
+            return $this->get_string($cset);
+        }
+
+        return $cset;
+    }
+
+    private function get_string($r) {
+        $r = (array) $r;
+        $str = '';
+        foreach ($r as $i => $num) {
+            if ($num > 0) {
+                $str .= $i." x".$num.", ";
+            }
+        }
+
+        return substr($str, 0, strlen($str)-2);
     }
 }

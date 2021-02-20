@@ -476,69 +476,6 @@ function railticket_showcalendaredit($year, $month) {
     <?php
 }
 
-function railticket_get_reserve(\wc_railticket\BookableDay $bk, \wc_railticket\TrainService $departure) {
-    if ($bk->has_reserve()) {
-        $reserve = $bk->get_reserve();
-        switch ($bk->get_daytype()) {
-            case 'simple':
-                return railticket_get_reserve_string($reserve);
-            case 'pertrain':
-                if ($deptime) {
-                    $comp = json_decode($bk->get_composition());
-                    $setkey = $comp->$direction->$deptime;
-                    return railticket_get_reserve_string($reserve->$setkey);
-                }
-                $str = '';
-                foreach ($reserve as $key => $set) {
-                    $str .= $key.":&nbsp;".railticket_get_reserve_string($set)."<br />";
-                }
-                return $str;
-        }
-   }
-}
-
-function railticket_get_reserve_string($reserve) {
-    $reserve = (array) $reserve;
-    $str = '';
-    foreach ($reserve as $i => $num) {
-        if ($num > 0) {
-            $str .= $i." x".$num.", ";
-        }
-    }
-
-    return substr($str, 0, strlen($str)-2);
-}
-
-function railticket_get_coachset(\wc_railticket\BookableDay $bk, \wc_railticket\TrainService $departure) {
-    $comp = $bk->get_composition();
-    switch ($bk->get_daytype()) {
-        case 'simple':
-            return railticket_get_coachset_string($comp->coachset);
-            break;
-        case 'pertrain':
-            if ($deptime) {
-                $setkey = $comp->$direction->$deptime;
-                return railticket_get_reserve_string($comp->coachsets->$setkey->coachset);
-            }
-            $str = '';
-            foreach ($comp->coachsets as $key => $set) {
-                $str .= $key.":&nbsp;".railticket_get_coachset_string($set->coachset)."<br />";
-            }
-            return $str;
-            break;
-    }
-}
-
-function railticket_get_coachset_string($coachset) {
-    $coachset = (array) $coachset;
-    $str = '';
-    foreach ($coachset as $c => $v) {
-        $str .= $v."x ".$c.", ";
-    }
-
-    return substr($str, 0, strlen($str)-2);
-}
-
 function railticket_updatebookable() {
     global $wpdb;
     $ids = explode(',', $_POST['ids']);
@@ -1096,8 +1033,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     }
     echo "</table></div>";
 
-    echo "<p>Coaches: ".railticket_get_coachset($bookableday, $trainservice)."<br />".
-        "Reserve: ".railticket_get_reserve($bookableday, $trainservice)."</p>";
+    echo "<p>Coaches: ".$trainservice->get_coachset(true)."<br />".
+        "Reserve: ".$trainservice->get_reserve(true)."</p>";
     if ($summaryonly) {
         echo "<hr />";
         return;

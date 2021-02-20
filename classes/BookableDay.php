@@ -73,8 +73,21 @@ class BookableDay {
         return $this->data->bays;
     }
 
-    public function get_reserve() {
-        return $this->data->reserve;
+    public function get_reserve($format = false) {
+        if (!$format) {
+            return $this->data->reserve;
+        }
+
+        switch ($this->data->daytype) {
+            case 'simple':
+                return $this->get_string($this->data->reserve);
+            case 'pertrain':
+                $str = '';
+                foreach ($this->data->reserve as $key => $set) {
+                    $str .= $key.":&nbsp;".$this->get_string($set)."<br />";
+                }
+               return $str;
+        }
     }
 
     public function has_reserve() {
@@ -89,9 +102,37 @@ class BookableDay {
         return false;
     }
 
-    public function get_composition() {
+    public function get_composition($format = false) {
         // Do this on the fly because it isn't used that much
-        return json_decode($this->data->composition);
+        $comp = json_decode($this->data->composition);
+        if (!$format) {
+            return $comp;
+        }
+
+        switch ($this->data->daytype) {
+            case 'simple':
+                return $this->get_string($comp->coachset);
+            case 'pertrain':
+                $str = '';
+                foreach ($comp->coachsets as $key => $set) {
+                    $str .= $key.":&nbsp;".$this->get_string($set->coachset)."<br />";
+                }
+               return $str;
+        }
+
+        return '';
+    }
+
+    private function get_string($reserve) {
+        $reserve = (array) $reserve;
+        $str = '';
+        foreach ($reserve as $i => $num) {
+            if ($num > 0) {
+                $str .= $i." x".$num.", ";
+            }
+        }
+
+        return substr($str, 0, strlen($str)-2);
     }
 
     public function get_all_bookings() {
@@ -103,11 +144,11 @@ class BookableDay {
         global $wpdb;
 
         return $wpdb->get_results("SELECT bookings.*, stations.name ".
-        "FROM {$wpdb->prefix}wc_railticket_bookings bookings ".
-        "LEFT JOIN {$wpdb->prefix}wc_railticket_stations stations ON ".
-        "    stations.stnid = bookings.tostation AND stations.revision = ".$station->get_revision()." ".
-        "WHERE bookings.date='".$this->data->date."' AND ".
-        "bookings.time = '".$deptime."' AND bookings.fromstation = ".$station->get_stnid()." AND bookings.direction = '".$direction."' ");
+            "FROM {$wpdb->prefix}wc_railticket_bookings bookings ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_stations stations ON ".
+            "    stations.stnid = bookings.tostation AND stations.revision = ".$station->get_revision()." ".
+            "WHERE bookings.date='".$this->data->date."' AND ".
+            "bookings.time = '".$deptime."' AND bookings.fromstation = ".$station->get_stnid()." AND bookings.direction = '".$direction."' ");
     }
 
     public function get_price_revision() {
