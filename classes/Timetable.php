@@ -1,7 +1,6 @@
 <?php
 
 namespace wc_railticket;
-
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class Timetable {
@@ -9,18 +8,19 @@ class Timetable {
     private $data;
     private $cache;
 
-    protected function __construct($data) {
+    protected function __construct($data, $date = false) {
         $this->data = $data;
+        $this->date = $date;
         $this->data->colsmeta = json_decode($data->colsmeta);
         $this->cache = array();
     }
 
-    public static function get_timetable($ttid, $revision) {
+    public static function get_timetable($ttid, $revision, $date = false) {
         global $wpdb;
         $data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_timetables WHERE revision = ".$revision." AND timetableid = ".$ttid);
 
         if ($data) {
-            return new Timetable($data);
+            return new Timetable($data, $date);
         }
 
         return false;
@@ -37,7 +37,7 @@ class Timetable {
             return false;
         }
 
-        return self::get_timetable($ttid, $revision);
+        return self::get_timetable($ttid, $revision, $date);
     }
 
     public function get_revision() {
@@ -56,32 +56,87 @@ class Timetable {
         return $this->data->background;
     }
 
+    public function get_date() {
+        return $this->date;
+    }
+
     public function get_times(Station $station, $direction, $type, $format) {
         global $wpdb;
 
-        // TODO: Apply Rules! Probably need to add date to the params....
+        if (!$this->date) {
+            throw new TicketException("This timetable instance has no date set, you must set a date to get station times.");
+        }
 
         $cachekey = $station->get_stnid()."_".$direction."_".$type;
         if (array_key_exists($cachekey, $this->cache)) {
             return $cache[$cachekey];
         }
 
-        $times = $wpdb->get_var("SELECT ".$direction."_".$type." FROM {$wpdb->prefix}wc_railticket_stntimes WHERE revision = ".
+        $dtimes = $wpdb->get_var("SELECT ".$direction."_".$type." FROM {$wpdb->prefix}wc_railticket_stntimes WHERE revision = ".
             $this->data->revision." AND timetableid = ".$this->data->timetableid." AND station = ".$station->get_stnid());
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $date = \DateTime::createFromFormat("Y-m-d", $this->date, $railticket_timezone);
+        $times = $this->apply_rules($dtimes, $this->data->colsmeta, $date);
 
-        $times = json_decode($times);
         if ($format) {
             $fmt = get_option('wc_railticket_time_format');
             $ftimes = array();
             foreach ($times as $time) {
-                $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-                $dtime = \DateTime::createFromFormat("H:i", $time->hour.":".$time->min);
+                $dtime = \DateTime::createFromFormat("H:i", $time->hour.":".$time->min, $railticket_timezone);
                 $time->key = $time->hour.".".$time->min;
                 $time->formatted = strftime($fmt, $dtime->getTimeStamp());
             }
 
         }
         return $times;
+    }
+
+    private function apply_rules($times) {
+
+        $filtered = array();
+        $times = json_decode($times);
+        $count = 0;
+
+        foreach ($times as $time) {
+            $rules = $this->data->colsmeta[$count]->rules;
+            $count++;
+            foreach ($rules as $rule) {
+
+                switch ($rule->code) {
+                    case '*':
+                        if ($this->isruleforday($rule->str, $date)) {
+                            $filtered[] = $time;  
+                            continue 3;
+                        }
+                        break;
+                    case '!':
+                        if ($this->isruleforday($rule->str, $date)) {  
+                            continue 3;
+                        }
+                        break;
+                }
+            }
+            $filtered[] = $time;
+        }
+        return $filtered;
+    }
+
+    private function isruleforday($str, $date) {
+        $len = strlen($str);
+        switch ($len) {
+            case 1:
+                if ($date->format("N") == $str) {
+                    return true;
+                }
+                break;
+            case 8:
+                $tdate = DateTime::createFromFormat("Ymd", $str);
+                if ($tdate == $date) {
+                    return true;
+                }
+                break;
+        }
+        return false;
     }
 
     public function get_up_deps(Station $station, $format) {

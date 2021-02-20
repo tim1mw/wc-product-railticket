@@ -1,7 +1,6 @@
 <?php
 
 namespace wc_railticket;
-
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class BookableDay {
@@ -9,7 +8,7 @@ class BookableDay {
     public $timetable;
 
     private function __construct($data) {
-        $this->timetable = Timetable::get_timetable($data->timetableid, $data->ttrevision);
+        $this->timetable = Timetable::get_timetable($data->timetableid, $data->ttrevision, $data->date);
         $this->data = $data;
 
         // Pre-process json stuff that gets used a lot.
