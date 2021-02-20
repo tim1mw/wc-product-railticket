@@ -265,33 +265,14 @@ function wc_railticket_getyearselect($currentyear = false) {
 }
 
 function railticket_import_timetable() {
-    ?>
-    <h2>Import Timetable</h2>
-    <p>Use the form below to import a new timetable revision and station data.</p>
-    <form method="post" action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" enctype="multipart/form-data">
-        <input type='hidden' name='action' value='railticket-importtimetable' />
-        <table><tr>
-            <td>Choose a file...</td>
-            <td><label for="file-upload"><input required type="file" name="dataimport" accept="text/json, application/json"></label></td>
-        </tr><tr>
-            <td>Update Timetable Date Assignments</td>
-            <td><input type='checkbox' name='upttdates' value='1' checked /></td>
-        </tr><tr>
-            <td>Import Timetable Revision</td>
-            <td><input type='checkbox' name='imprev' value='1' checked /></td>
-        </tr><tr>
-            <td>Start Date</td>
-            <td><input type='date' name='datefrom' required /></td>
-        </tr><tr>
-            <td>End Date</td>
-            <td><input type='date' name='dateto' required /></td>
-        </tr><tr>
-            <td>Timetable Revision Name</td>
-            <td><input type='text' name='name' value='' required /></td>
-        </tr></table>
-        <?php submit_button(__("Import Data")); ?>
-    </form>
-    <?php
+    global $rtmustache;
+    $alldata = array(
+        'adminurl' => esc_url( admin_url('admin-post.php')),
+        'submitbutton' => get_submit_button(__("Import Data"))
+    );
+
+    $template = $rtmustache->loadTemplate('import_timetable');
+    echo $template->render($alldata);
 }
 
 function railticket_importtimetable() {
@@ -1107,8 +1088,8 @@ function railticket_mark_ticket($val) {
     global $wpdb;
     $id = $_POST['bookingid'];
     $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-                array('collected' => $val),
-                array('id' => $id));
+        array('collected' => $val),
+        array('id' => $id));
 }
 
 function railticket_get_ticket_item($order) {
@@ -1127,17 +1108,21 @@ function railticket_get_ticket_item($order) {
 }
 
 function railticket_delete_manual_order() {
-    global $wpdb;
-    $orderid = $_POST['orderid'];
-
-    $bookings = $wpdb->get_results("SELECT id, date FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$orderid);
-    foreach ($bookings as $booking) {
-        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$booking->id);
+    global $rtmustache;
+    $orderid = sanitize_text_field($_REQUEST['orderid']);
+    $bo = \wc_railticket\BookingOrder::get_booking_order($orderid);
+    if (!$bo) {
+        echo "<h3>Order ".$orderid." not found</h3>";
+        return;
     }
-    $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$orderid);
-    $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
-    echo "<h3>Order M".$orderid." deleted</h3>";
-    railticket_show_back_to_services($bookings[0]->date);
+
+    $bo->delete();
+
+    echo "<h3>Order ".$orderid." deleted</h3>";
+
+    $alldata = array('actionurl' => railticket_get_page_url(), 'dateofjourney' => $bo->get_date());
+    $template = $rtmustache->loadTemplate('back_to_services');
+    echo $template->render($alldata);
 }
 
 function railticket_show_order() {
@@ -1197,7 +1182,6 @@ function railticket_show_order_main($orderid) {
 
     $template = $rtmustache->loadTemplate('showorder');
     echo $template->render($alldata);
-
 }
 
 function railticket_get_booking_render_data($bookings) {

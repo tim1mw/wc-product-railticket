@@ -6,12 +6,15 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class BookingOrder {
 
-    private $bookings, $manual;
+    private $bookings, $manual, $orderid;
     public $bookableday;
 
     private function __construct($bookings, $orderid, $manual) {
         global $wpdb;
+
+        $this->orderid = $orderid;
         $this->manual = $manual;
+
         if ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = json_decode($mb->tickets);
@@ -157,5 +160,20 @@ class BookingOrder {
         }
 
         return __('Unknown', 'wc_railticket');
+    }
+
+    public function delete() {
+        global $wpdb;
+
+        $bookings = $wpdb->get_results("SELECT id, date FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$this->orderid);
+        foreach ($bookings as $booking) {
+            $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$booking->id);
+        }
+
+        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$this->orderid);
+
+        if ($this->manual) {
+            $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$this->orderid);
+        }
     }
 }

@@ -1,0 +1,25 @@
+<h2>Import Timetable</h2>
+<p>Use the form below to import a new timetable revision and station data.</p>
+<form method="post" action="{{adminurl}}" enctype="multipart/form-data">
+    <input type='hidden' name='action' value='railticket-importtimetable' />
+    <table><tr>
+        <td>Choose a file...</td>
+        <td><label for="file-upload"><input required type="file" name="dataimport" accept="text/json, application/json"></label></td>
+    </tr><tr>
+        <td>Update Timetable Date Assignments</td>
+        <td><input type='checkbox' name='upttdates' value='1' checked /></td>
+    </tr><tr>
+        <td>Import Timetable Revision</td>
+        <td><input type='checkbox' name='imprev' value='1' checked /></td>
+    </tr><tr>
+        <td>Start Date</td>
+        <td><input type='date' name='datefrom' required /></td>
+    </tr><tr>
+        <td>End Date</td>
+        <td><input type='date' name='dateto' required /></td>
+    </tr><tr>
+        <td>Timetable Revision Name</td>
+        <td><input type='text' name='name' value='' required /></td>
+    </tr></table>
+    {{{submitbutton}}}
+</form>
