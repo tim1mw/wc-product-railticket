@@ -56,8 +56,14 @@ class Timetable {
         return $this->data->background;
     }
 
-    public function get_date() {
-        return $this->date;
+    public function get_date($format = false) {
+        if (!$format || !$this->date) {
+            return $this->date;
+        }
+
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $jdate = \DateTime::createFromFormat('Y-m-d', $this->date, $railticket_timezone);
+        return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
     public function get_times(Station $station, $direction, $type, $format) {

@@ -778,9 +778,9 @@ function railticket_find_timetable($param, $usedateid = false) {
 function railticket_get_seatsummary() {
     global $wpdb;
     $dateofjourney = sanitize_text_field($_REQUEST['dateofjourney']);
-    ?><h1>Seat/Bay usage summary for <?php echo $dateofjourney; ?></h1><?php
-
     $timetable = \wc_railticket\Timetable::get_timetable_by_date($dateofjourney);
+    ?><h1>Seat/Bay usage summary for <?php echo $timetable->get_date(true); ?></h1><?php
+
     $stations = $timetable->get_stations();
 
     foreach ($stations as $station) {
@@ -791,9 +791,9 @@ function railticket_get_seatsummary() {
 
 function railticket_show_bookings_summary($dateofjourney) {
     global $wpdb;
-    ?><h1>Summary for <?php echo $dateofjourney; ?></h1><?php
-
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
+
+    ?><h1>Summary for <?php echo $bookableday->get_date(true); ?></h1><?php
 
     // If the override code is empty, this day has a timetable, but hasn't been initialised.
     if (!$bookableday) {
