@@ -149,4 +149,8 @@ class Booking {
         return $order->get_formatted_billing_full_name();
     }
 
+    public function get_order_item_id() {
+        return $this->data->wooorderitem;
+    }
+
 }

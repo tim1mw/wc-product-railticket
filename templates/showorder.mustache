@@ -5,6 +5,15 @@
     {{/ details }}
     </table>
 
+    <div style='{{otheritemsstyle}}'>
+    <h2>{{otheritemsstr}}</h2>
+    <table border='1' class='railticket_admintable' style='width:100%;'>
+    {{# otheritems }}
+        <tr><th width='30%'>{{qty}} x</th><td class='railticket_meta'>{{{name}}}</td></tr>
+    {{/ otheritems }}
+    </table>
+    </div>
+
     {{# bookings }}
         <h2>{{title}}</h2>
         <table border='1'  class='railticket_admintable' style='width:100%;'>

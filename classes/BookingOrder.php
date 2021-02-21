@@ -80,6 +80,26 @@ class BookingOrder {
         return $data;
     }
 
+    public function other_items() {
+        if ($this->manual) {
+            return false;
+        }
+
+        $order = wc_get_order($this->orderid);
+        $orderitems = array();
+        foreach($order->get_items() as $item_id => $item) {
+            if ($this->bookings[0]->get_order_item_id() == $item_id) {
+                continue;
+            }
+            $c = new \stdclass();
+            $c->name = $item->get_name();
+            $c->qty = $item->get_quantity();
+            $orderitems[] = $c;
+        }
+
+        return $orderitems;
+    }
+
     public function is_manual() {
         return $this->manual;
     }

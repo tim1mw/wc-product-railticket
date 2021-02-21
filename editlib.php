@@ -1046,11 +1046,17 @@ function railticket_show_order_main($orderid) {
         'timestr' => __('Departure Time', 'wc_railticket'),
         'tripstr' => __('Trip', 'wc_railticket'),
         'baystr' => __('Bays', 'wc_railticket'),
+        'otheritemsstr' => __('Shop Items to Collect', 'wc_railticket'),
         'collectedstr' => __('Collected', 'wc_railticket'),
         'orderid' => $orderid,
         'actionurl' => railticket_get_page_url(),
-        'buttonstyle' => 'width:100%;'
+        'buttonstyle' => 'width:100%;',
+        'otheritems' => $bookingorder->other_items()
     );
+
+    if (count($alldata['otheritems']) == 0) {
+        $alldata['otheritemsstyle'] = 'display:none';
+    }
 
     if ($bookingorder->is_manual() && current_user_can('delete_tickets')) {
          $template = $rtmustache->loadTemplate('delete_order_button');
