@@ -585,12 +585,12 @@ function railticket_editbookableday() {
     }
 
     $ndata = new stdclass();
-    $ttrevision = sanitize_text_field($_REQUEST['ttrevision']);
-    if ($ttrevision > 0) {
+    if (array_key_exists('ttrevision', $_REQUEST)) {
+        $ttrevision = sanitize_text_field($_REQUEST['ttrevision']);
         $ndata->ttrevision = $ttrevision;
     }
-    $pr = sanitize_text_field($_REQUEST['pricerevision']);
-    if ($pr > 0) {
+    if (array_key_exists('pricerevision', $_REQUEST)) {
+        $pr = sanitize_text_field($_REQUEST['pricerevision']);
         $ndata->pricerevision = $pr;
     }
     $ndata->bookable = railticket_get_cbval('bookable');
