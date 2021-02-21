@@ -232,6 +232,26 @@ function railticket_remapbookable() {
 
 
 function railticket_bookable_days() {
+
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'updatebookable':
+                railticket_updatebookable();
+            case 'filterbookable':
+                railticket_show_cal_selector();
+                railticket_showcalendaredit($_REQUEST['year'], $_REQUEST['month']);
+                break;
+            case 'showbookableday':
+                railticket_showbookableday();
+                break;
+        }
+    } else {
+        railticket_showcalendaredit(intval(date("Y")), $month);
+    }
+}
+
+function railticket_show_cal_selector() {
     if (array_key_exists('month', $_POST)) {
         $month = sanitize_text_field($_POST['month']);
     } else {
@@ -255,21 +275,6 @@ function railticket_bookable_days() {
     </form>
     <hr />
     <?php
-
-    if (array_key_exists('action', $_REQUEST)) {
-        switch ($_REQUEST['action']) {
-            case 'updatebookable':
-                railticket_updatebookable();
-            case 'filterbookable':
-                railticket_showcalendaredit($_REQUEST['year'], $_REQUEST['month']);
-                break;
-            case 'showbookableday':
-                railticket_showbookableday();
-                break;
-        }
-    } else {
-        railticket_showcalendaredit(intval(date("Y")), $month);
-    }
 }
 
 function wc_railticket_getmonthselect($chosenmonth = false) {
