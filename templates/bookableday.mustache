@@ -1,0 +1,51 @@
+<h1>Editing Bookable Day: {{dateformatted}}</h1>
+<form method='post' action='{{adminurl}}'>
+<input type='hidden' name='date' value='{{date}}' />
+<input type='hidden' name='id' value='{{id}}' />
+<input type='hidden' name='action' value='railticket-editbookableday' />
+<table border='1' style='border-collapse:collapse;background:#ffffff;font-size:large;'>
+    <tr>
+        <td>Timetable</td>
+        <td style='color:#{{ttcolour}};background:#{{ttbackground}};font-weight:bold;'>{{timetable}}</td>
+    </tr><tr>
+        <td>Timetable Revision</td>
+        <td>
+            <select name='ttrevision' {{disabled}}>
+            {{# ttrevs }}
+                <option value='{{id}}' {{selected}}>{{name}}</option>    
+            {{/ ttrevs }}
+            </select> <span style='font-size:small'>{{locknote}}</span>
+        </td>
+    </tr><tr>
+        <td>Fares Revision</td>
+        <td>
+            <select name='pricerevision' {{disabled}}>
+            {{# fares }}
+                <option value='{{value}}' {{selected}}>{{name}}</option>    
+            {{/ fares }}
+            </select> <span style='font-size:small'>{{locknote}}</span>
+        </td>
+    </tr><tr>
+        <td>Bookable</td>
+        <td><input type='checkbox' name='bookable' value='1' {{bookable}} /></td>
+    </tr><tr>
+        <td>Sell Reserve</td>
+        <td><input type='checkbox' name='sellreserve' value='1' {{sellreserve}} /></td>
+    </tr><tr>
+        <td>Same Service Return</td>
+        <td><input type='checkbox' name='sameservicereturn' value='1' {{sameservicereturn}} /></td>
+    </tr><tr>
+        <td>Only Sell Specials</td>
+        <td><input type='checkbox' name='specialonly' value='1' {{specialonly}} /></td>
+    </tr><tr>
+        <td>Sold Out</td>
+        <td><input type='checkbox' name='soldout' value='1' {{soldout}} /></td>
+    </tr><tr>
+        <td>Override Code</td>
+        <td><input type='text' name='override' value='{{override}}' /></td>
+    </tr>
+</table>
+<h2>Service Parameters (don't edit unless you really know what you are doing)</h2>
+<p><textarea name='composition' rows='10' cols='60'>{{{composition}}}</textarea>
+<p><input type='submit' value='Update' style='padding-left:0px;padding-right:0px;'/></p>
+</form>

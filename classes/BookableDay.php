@@ -5,10 +5,19 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class BookableDay {
     private $data;
-    public $timetable;
+    public $timetable, $fares;
 
-    private function __construct($data) {
-        $this->timetable = Timetable::get_timetable($data->timetableid, $data->ttrevision, $data->date);
+    private function __construct($data, $timetable = false, $fares = false) {
+        if (!$timetable) {
+            $this->timetable = Timetable::get_timetable($data->timetableid, $data->ttrevision, $data->date);
+        } else {
+            $this->timetable = $timetable;
+        }
+        if (!$fares) {
+            $this->fares = FareCalculator::get_fares($data->pricerevision);
+        } else {
+            $this->fares = $fares;
+        }
         $this->data = $data;
 
         // Pre-process json stuff that gets used a lot.
@@ -42,6 +51,105 @@ class BookableDay {
         return false;
     }
 
+    public function create_bookable_day($dateofjourney) {
+        $timetable = Timetable::get_timetable_by_date($dateofjourney);
+        $fares = FareCalculator::get_fares_by_date($dateofjourney);
+
+        $ssr = false;
+        if (get_option('wc_product_railticket_sameservicereturn') == 'on') {
+            $ssr = true;
+        }
+        $coaches = CoachManager::process_coaches(json_decode(get_option('wc_product_railticket_defaultcoaches')), $timetable);
+        $data = new \stdclass();
+        $data->date = $dateofjourney;
+        $data->daytype = $coaches->daytype;
+        $data->allocateby = $coaches->allocateby;
+        $data->composition = json_encode($coaches->coachset);
+        $data->bays = json_encode($coaches->bays);
+        $data->bookclose = '{}';
+        $data->limits = get_option('wc_product_railticket_bookinglimits');
+        $data->bookable = 0;
+        $data->soldout = 0;
+        $data->override = self::randomString();
+        $data->sameservicereturn = $ssr;
+        $data->reserve = json_encode($coaches->reserve);
+        $data->sellreserve = 0;
+        $data->specialonly = 0;
+        $data->ttrevision = $timetable->get_revision();
+        $data->timetableid = $timetable->get_timetableid();
+        $data->pricerevision = $fares->get_revision();
+        $data->id = -1;
+
+        return new BookableDay($data, $timetable, $fares);
+    }
+
+    private static function randomString() {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyz';
+        $randstring = '';
+        for ($i = 0; $i < 6; $i++) {
+            $randstring .= $characters[rand(0, strlen($characters)-1)];
+        }
+        return $randstring;
+    }
+
+
+    public function update_bookable($ndata) {
+        global $wpdb;
+        $filtered = array();
+
+        foreach($ndata as $key => $value) {
+
+            switch ($key) {
+                case 'composition':
+                    // This should always be coming from the coach set manager wigit as JSON, so decode
+                    $jdata = json_decode($ndata->composition);
+
+                    $coaches = CoachManager::process_coaches($jdata);
+                    $filtered['composition'] = $ndata->composition;
+                    $filtered['daytype'] = $coaches->daytype;
+                    $filtered['allocateby'] = $coaches->allocateby;
+                    $filtered['reserve'] = json_encode($coaches->reserve);
+                    $filtered['bays'] = json_encode($coaches->bays);
+
+                    $this->data->composition = $jdata;
+                    $this->data->daytype = $coaches->daytype;
+                    $this->data->allocateby = $coaches->allocateby;
+                    $this->data->reserve = $coaches->reserve;
+                    $this->data->bays = $coaches->bays;
+                    break;
+                case 'daytype':
+                case 'allocateby':
+                case 'reserve':
+                case 'hasreserve':
+                case 'bays':
+                    throw new TicketException("Coach set configuration must be set via the composition property only");
+                    break;
+                default:
+                    if (!property_exists($this->data, $key)) {
+                        throw new TicketException("Invalid property in data: ".$key);
+                    }
+                    $filtered[$key] = $value;
+                    $this->data->$key = $value;
+                    break;
+            }
+        }
+        if ($this->data->id == -1) {
+            // We need to fill in any missing properties in filtered from data
+            foreach ((array) $this->data as $key => $value) {
+                if ($key == 'id') {continue;}
+
+                if (!array_key_exists($key, $filtered)) {
+                    $filtered[$key] = $value;
+                }
+            }
+
+            $wpdb->insert("{$wpdb->prefix}wc_railticket_bookable", $filtered);
+            $this->id = $wpdb->insert_id;
+        } else {
+            $wpdb->update("{$wpdb->prefix}wc_railticket_bookable", $filtered, array('id' => $this->data->id));
+        }
+    }
+
     public function sold_out() {
         if ($this->data->soldout == 1) {
             return true;
@@ -60,6 +168,14 @@ class BookableDay {
         if ($this->data->bookable == 1) {
             return true;
         }
+        return false;
+    }
+
+    public function same_service_return() {
+        if ($this->data->sameservicereturn == 1) {
+            return true;
+        }
+
         return false;
     }
 
@@ -90,16 +206,7 @@ class BookableDay {
             return $this->data->reserve;
         }
 
-        switch ($this->data->daytype) {
-            case 'simple':
-                return $this->get_string($this->data->reserve);
-            case 'pertrain':
-                $str = '';
-                foreach ($this->data->reserve as $key => $set) {
-                    $str .= $key.":&nbsp;".$this->get_string($set)."<br />";
-                }
-               return $str;
-        }
+        return CoachManager::format_reserve($this->data->reserve, $this->data->daytype);
     }
 
     public function has_reserve() {
@@ -116,40 +223,21 @@ class BookableDay {
 
     public function get_composition($format = false) {
         // Do this on the fly because it isn't used that much
-        $comp = json_decode($this->data->composition);
         if (!$format) {
-            return $comp;
+            return json_decode($this->data->composition);
         }
 
-        switch ($this->data->daytype) {
-            case 'simple':
-                return $this->get_string($comp->coachset);
-            case 'pertrain':
-                $str = '';
-                foreach ($comp->coachsets as $key => $set) {
-                    $str .= $key.":&nbsp;".$this->get_string($set->coachset)."<br />";
-                }
-               return $str;
-        }
-
-        return '';
-    }
-
-    private function get_string($reserve) {
-        $reserve = (array) $reserve;
-        $str = '';
-        foreach ($reserve as $i => $num) {
-            if ($num > 0) {
-                $str .= $i." x".$num.", ";
-            }
-        }
-
-        return substr($str, 0, strlen($str)-2);
+        return CoachManager::format_composition(json_decode($this->data->composition), $this->data->daytype);
     }
 
     public function get_all_bookings() {
         global $wpdb;
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."'");
+    }
+
+    public function count_bookings() {
+        global $wpdb;
+        return $wpdb->get_var("SELECT COUNT(id) FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."'");
     }
 
     public function get_bookings_from_station(Station $station, $deptime, $direction) {
@@ -170,5 +258,9 @@ class BookableDay {
 
     public function get_price_revision() {
         return $this->data->pricerevision;
+    }
+
+    public function get_data() {
+        return $this->data;
     }
 }

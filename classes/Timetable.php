@@ -40,6 +40,26 @@ class Timetable {
         return self::get_timetable($ttid, $revision, $date);
     }
 
+    public static function get_all_revisions($format = false) {
+        global $wpdb;
+
+        $revisions = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_ttrevisions");
+        if (!$format) {
+            return $revisions;
+        }
+
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+
+        foreach ($revisions as $rev) {
+            $jdate = \DateTime::createFromFormat('Y-m-d', $rev->datefrom, $railticket_timezone);
+            $rev->datefromformat = strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+            $jdate = \DateTime::createFromFormat('Y-m-d', $rev->dateto, $railticket_timezone);
+            $rev->datetoformat = strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+        }
+
+        return $revisions;
+    }
+
     public function get_revision() {
         return $this->data->revision;
     }
@@ -48,12 +68,20 @@ class Timetable {
         return ucfirst($this->data->timetable);
     }
 
+    public function get_key_name() {
+        return $this->data->timetable;
+    }
+
     public function get_colour() {
         return $this->data->colour;
     }
 
     public function get_background() {
         return $this->data->background;
+    }
+
+    public function get_timetableid() {
+        return $this->data->timetableid;
     }
 
     public function get_date($format = false) {

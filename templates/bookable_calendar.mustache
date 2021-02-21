@@ -14,8 +14,8 @@
     {{# days }}
     <tr style='color:#{{colour}};background:#{{background}};font-weight:bold;'>
         <td>
-            <form method='post' action={{url}}>
-                <input type='hidden' name='action' value='editbookable' />
+            <form method='post' action='{{url}}'>
+                <input type='hidden' name='action' value='showbookableday' />
                 <input type='hidden' name='date' value='{{date}}' />
                 <input type='submit' value='Edit' style='padding-left:0px;padding-right:0px;'/>
             </form>
