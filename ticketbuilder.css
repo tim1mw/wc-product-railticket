@@ -499,6 +499,11 @@ input[type=number]::-webkit-inner-spin-button {
     text-align:left;
 }
 
+.railticket_admintable {
+    border-collapse:collapse;
+    background:#ffffff;
+}
+
 /* Stop iOS trying to override form styles */
 
 textarea,

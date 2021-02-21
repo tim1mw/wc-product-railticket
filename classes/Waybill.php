@@ -105,6 +105,9 @@ class Waybill extends Report {
     function show_waybill($iscsv) {
         global $wpdb;
 
+        wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+        wp_enqueue_style('railticket_style');
+
         $header = array('Journey', 'Journey Type', 'Ticket Type', 'Number', 'Fare', 'Total');
         $td = array('Date', $this->date);
 
@@ -117,7 +120,7 @@ class Waybill extends Report {
             fputcsv($f, array('', '', '', '', '', ''));
             fputcsv($f, $header);
         } else {
-            echo "<table border='1'>";
+            echo "<table border='1' class='railticket_admintable'>";
             $this->report_row($td);
             $this->report_row(array('', '', '', '', '', ''));
             $this->report_row($header, 'th');

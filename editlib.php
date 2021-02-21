@@ -117,11 +117,14 @@ function railticket_get_page_url() {
 }
 
 function railticket_options() {
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
     ?>
+
     <h1>Heritage Railway Tickets</h1>
     <form method="post" action="options.php">
     <?php settings_fields('wc_product_railticket_options_main'); ?>
-    <table>
+    <table class='railticket_admintable'>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_woocommerce_product">Woocommerce Product ID</label></th>
             <td><input size='6' type="text" id="wc_product_railticket_woocommerce_product" name="wc_product_railticket_woocommerce_product" value="<?php echo get_option('wc_product_railticket_woocommerce_product'); ?>" /></td>
@@ -631,24 +634,23 @@ function railticket_summary_selector() {
     railticket_show_order_form();
    ?>
     <hr />
-    <h2>Service Summaries</h2>
+    <h1>Service Summaries</h1>
     <div class='railticket_editdate'>
     <form method='post' action='<?php echo railticket_get_page_url(); ?>'>
         <input type='hidden' name='action' value='filterbookings' />    
         <table><tr>
             <td>Day</td>
-            <td><?php echo railticket_getdayselect($chosenday);?></td>
-          </tr><tr>
             <td>Month</td>
-            <td><?php echo wc_railticket_getmonthselect($chosenmonth);?></td>
-          </tr><tr>
             <td>Year</td>
+        </tr><tr>
+            <td><?php echo railticket_getdayselect($chosenday);?></td>
+            <td><?php echo wc_railticket_getmonthselect($chosenmonth);?></td>
             <td><?php echo wc_railticket_getyearselect($chosenyear);?></td>
         </tr><tr>
-            <td colspan='2'><input type='submit' value='Show Departures' /></td>
+            <td colspan='3'><input type='submit' value='Show Departures' style='width:100%' /></td>
         </tr></table>
     </form>
-    </div>
+    </div><br />
     <hr />
     <?php
 
@@ -657,17 +659,18 @@ function railticket_summary_selector() {
 
 function railticket_show_order_form() {
     ?>
-    <h2>Lookup Online Order<h2>
+    <hr /><br />
+    <h1>Lookup Online Order<h1>
     <div class='railticket_editdate'>
     <form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='showorder' />    
         <table><tr>
-            <td>Order ID</td>
-            <td><input style='width:200px;font-size:large;' type='test' name='orderid' required /></td>
-        </tr><tr>
-            <td colspan='2'><input type='submit' value='Find Booking' /></td>
+            <td style='font-size:x-large;'>Order ID</td>
+            <td><input style='width:120px;font-size:x-large;' type='test' name='orderid' required /></td>
+            <td colspan='2'><input type='submit' value='Find' /></td>
         </tr></table>
     </form>
+    <br />
     </div>
     <?php
 }
@@ -741,31 +744,31 @@ function railticket_show_bookings_summary($dateofjourney) {
     }
     ?>
     <hr />
-    <div class='railticket_editdate'>
+    <div class='railticket_editdate' style='max-width:550px;margin-left:0px;margin-right:auto;'>
     <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewwaybill' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Way Bill' />
+        <input type='submit' name='submit' value='View Way Bill' style='width:100%' />
     </form></p>
     <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewordersummary' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Order Summary' />
+        <input type='submit' name='submit' value='View Order Summary'  style='width:100%'/>
     </form></p>
     <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewseatsummary' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Seat/Bay Usage Summary' />
+        <input type='submit' name='submit' value='View Seat/Bay Usage Summary' style='width:100%' />
     </form></p>
     <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='waybill.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Way Bill as Spreadsheet file' />
+        <input type='submit' name='submit' value='Get Way Bill as Spreadsheet file' style='width:100%' />
     </form></p>
     <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='ordersummary.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Order Summary Spreadsheet file' />
+        <input type='submit' name='submit' value='Get Order Summary Spreadsheet file' style='width:100%' />
     </form></p>
     </ul>
     </div>
@@ -875,7 +878,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         railticket_show_dep_button($dateofjourney, $station, $direction, $deptime);
         echo "</td><td class='railticket_shortsummary'>Seats Used:".$seats."&nbsp&nbsp;</td><td class='railticket_shortsummary'>Seats Available:".$capused->totalseats."</td></tr></table>";
    } else {
-        echo "<div class='railticket_editdate'><h3>Service summary</h3><table border='1'>".
+        echo "<div class='railticket_editdate'><h2>Service summary</h2><table class='railticket_admintable' border='1'>".
             "<tr><th>Timetable</th><th>".$bookableday->timetable->get_name()."</th></tr>".
             "<tr><th>Station</th><th>".$station->get_name()."</th></tr>".
             "<tr><th>Destination</th><th>".$destination->get_name()."</th></tr>".
@@ -887,8 +890,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<tr><th>Seats Available</th><th>".$capused->totalseats."</th></tr>".
             "</table></div><br />";
     }
-    echo "<h3>Bay Usage (one way to destination)</h3><div class='railticket_trainbookings'>".
-        "<table border='1'><th>Bay</th><th>Total</th><th>Used</th><th>Collected</th><th>Available</th></tr>";
+    echo "<h2>Bay Usage (one way to destination)</h2><div class='railticket_trainbookings'>".
+        "<table border='1' class='railticket_admintable'><th>Bay</th><th>Total</th><th>Used</th><th>Collected</th><th>Available</th></tr>";
     foreach ($basebays as $bay => $space) {
         $bayd = str_replace('_', ' seat ', $bay);
         $bayd = str_replace('priority', 'disabled', $bayd);
@@ -905,9 +908,9 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     }
     ?>
     <br />
-    <h3>Booking summary</h3>
+    <h2>Booking summary</h2>
     <div class='railticket_trainbookings'>
-    <table border='1'>
+    <table border='1' class='railticket_admintable' >
         <tr>
             <th>Order</th>
             <th>To</th>
@@ -925,7 +928,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             echo "<td><form action='".railticket_get_page_url()."' method='post'>".
                 "<input type='hidden' name='action' value='showorder' />".
                 "<input type='hidden' name='orderid' value='".$orderid."' />".
-                "<input type='submit' value='".$orderid."' />".
+                "<input type='submit' value='".$orderid."' style='width:100%;margin-top:4px;margin-bottom:4px;' />".
                 "</form></td>";
         }
         echo "<td>".$booking->get_order_name()."</td>".
@@ -948,7 +951,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
     <br />
     </div>
-    <div class='railticket_editdate'>
+    <div class='railticket_editdate' style='max-width:550px;margin-left:0px;margin-right:auto;'>
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
         <input type='hidden' name='action' value='<?php echo $_REQUEST['action']; ?>' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
@@ -957,12 +960,12 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         <input type='hidden' name='direction' value='<?php echo $direction ?>' />
         <input type='hidden' name='deptime' value='<?php echo $deptime->key ?>' />
         <input type='hidden' name='destination' value='<?php echo $destination->get_stnid() ?>' />
-        <input type='submit' name='submit' value='Refresh Display' />
+        <input type='submit' name='submit' value='Refresh Display' style='width:100%' />
     </form><br />
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
         <input type='hidden' name='action' value='filterbookings' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Back to Services' />
+        <input type='submit' name='submit' value='Back to Services' style='width:100%' />
     </form><br />
     <form action='/book/' method='post'>
         <input type='hidden' name='action' value='createmanual' />
@@ -973,7 +976,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         <input type='hidden' name='a_direction' value='<?php echo $direction ?>' />
         <input type='hidden' name='a_deptime' value='<?php echo $deptime->key ?>' />
         <input type='hidden' name='a_destination' value='<?php echo $destination->get_stnid() ?>' />
-        <input type='submit' name='submit' value='Add Manual Booking' />
+        <input type='submit' name='submit' value='Add Manual Booking' style='width:100%' />
     </form>
     </div>
     <?php

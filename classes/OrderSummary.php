@@ -12,6 +12,9 @@ class OrderSummary extends Report{
     function show_summary($iscsv) {
         global $wpdb;
 
+        wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+        wp_enqueue_style('railticket_style');
+
         $stns = $this->bookableday->timetable->get_stations();
         $header = array('Order ID', 'Name', 'Email', 'Phone', 'From', 'To', 'Journey Type', 
             'Tickets', 'Seats', 'Supplement', 'Total Price', 'Notes');
@@ -26,7 +29,7 @@ class OrderSummary extends Report{
             fputcsv($f, array('', '', '', '', '', ''));
             fputcsv($f, $header);
         } else {
-            echo "<table border='1'>";
+            echo "<table border='1' class='railticket_admintable'>";
             $this->report_row($td);
             $this->report_row(array('', '', '', '', '', ''));
             $this->report_row($header, 'th');
