@@ -1,14 +1,14 @@
-<div class='railticket_editdate'>
-    <table border='1' style='border-collapse:collapse;background:#ffffff;'>
+<div  class='railticket_editdate' style='max-width:550px;margin-left:0px;margin-right:auto;'>
+    <table border='1' style='border-collapse:collapse;background:#ffffff;width:100%;'>
     {{# details }}
-        <tr><th>{{item}}</th><td class='railticket_meta'>{{{value}}}</td></tr>
+        <tr><th width='30%'>{{item}}</th><td class='railticket_meta'>{{{value}}}</td></tr>
     {{/ details }}
     </table>
 
     {{# bookings }}
         <h2>{{title}}</h2>
-        <table border='1' style='border-collapse:collapse;background:#ffffff;'>
-            <tr><th>{{tripstr}}</th><td class='railticket_meta'>{{stns}}</td></tr>
+        <table border='1' style='border-collapse:collapse;background:#ffffff;width:100%;'>
+            <tr><th width='30%'>{{tripstr}}</th><td class='railticket_meta'>{{stns}}</td></tr>
             <tr><th>{{timestr}}</th><td class='railticket_meta'>{{deptime}}</td></tr>
             <tr><th>{{baystr}}</th><td class='railticket_meta'>{{bays}}</td></tr>
             <tr><th>{{collectedstr}}</th><td class='railticket_meta'>{{collected}}</td></tr>

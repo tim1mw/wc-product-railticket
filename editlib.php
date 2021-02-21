@@ -1045,7 +1045,8 @@ function railticket_show_order_main($orderid) {
         'baystr' => __('Bays', 'wc_railticket'),
         'collectedstr' => __('Collected', 'wc_railticket'),
         'orderid' => $orderid,
-        'actionurl' => railticket_get_page_url()
+        'actionurl' => railticket_get_page_url(),
+        'buttonstyle' => 'width:100%;'
     );
 
     if ($bookingorder->is_manual() && current_user_can('delete_tickets')) {
