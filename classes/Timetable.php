@@ -64,6 +64,11 @@ class Timetable {
         return $this->data->revision;
     }
 
+    public function get_revision_name() {
+        global $wpdb;
+        return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE id = ".$this->data->revision);
+    }
+
     public function get_name() {
         return ucfirst($this->data->timetable);
     }

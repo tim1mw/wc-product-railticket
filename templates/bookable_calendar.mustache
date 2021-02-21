@@ -10,6 +10,8 @@
         <th>Formation</th>
         <th style='writing-mode: vertical-lr' width='20px'>Sell Reserve</th>
         <th>Reserve</th>
+        <th>Timetable<br />Revision</th>
+        <th>Price<br />Revision</th>
     </tr>
     {{# days }}
     <tr style='color:#{{colour}};background:#{{background}};font-weight:bold;'>
@@ -29,6 +31,8 @@
         <td>{{{formation}}}</td>
         <td>{{sellreserve}}</td>
         <td>{{{reserve}}}</td>
+        <td>{{{ttrev}}}</td>
+        <td>{{{pricerev}}}</td>
     </tr>
     {{/ days }}
 </table>

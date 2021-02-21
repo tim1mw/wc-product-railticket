@@ -484,6 +484,8 @@ function railticket_showcalendaredit($year, $month) {
         $data->soldout = railticket_get_yn($bookableday->sold_out());
         $data->sellreserve = railticket_get_yn($bookableday->sell_reserve());
         $data->specialonly = railticket_get_yn($bookableday->special_only());
+        $data->ttrev = $bookableday->timetable->get_revision_name();
+        $data->pricerev = $bookableday->fares->get_name();
 
         $render->days[] = $data;
     }
