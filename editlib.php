@@ -1054,7 +1054,7 @@ function railticket_show_order_main($orderid) {
         'otheritems' => $bookingorder->other_items()
     );
 
-    if (count($alldata['otheritems']) == 0) {
+    if ($alldata['otheritems'] && count($alldata['otheritems']) == 0) {
         $alldata['otheritemsstyle'] = 'display:none';
     }
 
