@@ -575,11 +575,11 @@ function railticket_editbookableday() {
     }
 
     $ndata = new stdclass();
-    $ttrevision = sanitize_text_field('ttrevision');
+    $ttrevision = sanitize_text_field($_REQUEST['ttrevision']);
     if ($ttrevision > 0) {
         $ndata->ttrevision = $ttrevision;
     }
-    $pr = sanitize_text_field('pricerevision');
+    $pr = sanitize_text_field($_REQUEST['pricerevision']);
     if ($pr > 0) {
         $ndata->pricerevision = $pr;
     }
@@ -589,7 +589,6 @@ function railticket_editbookableday() {
     $ndata->soldout = railticket_get_cbval('soldout');
     $ndata->sameservicereturn = railticket_get_cbval('sameservicereturn');
     $ndata->composition = stripslashes($_REQUEST['composition']);
-
     $bookable->update_bookable($ndata);
 
     $p = explode('-', $bkdate);
