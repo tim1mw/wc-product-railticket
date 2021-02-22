@@ -232,8 +232,6 @@ function railticket_remapbookable() {
 
 
 function railticket_bookable_days() {
-
-
     if (array_key_exists('action', $_REQUEST)) {
         switch ($_REQUEST['action']) {
             case 'updatebookable':

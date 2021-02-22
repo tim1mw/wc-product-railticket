@@ -196,19 +196,19 @@ class Timetable {
         return false;
     }
 
-    public function get_up_deps(Station $station, $format) {
+    public function get_up_deps(Station $station, $format = false) {
         return $this->get_times($station, 'up', 'deps', $format);
     }
 
-    public function get_down_deps(Station $station, $format) {
+    public function get_down_deps(Station $station, $format = false) {
         return $this->get_times($station, 'down', 'deps', $format);
     }
 
-    public function get_up_arrs(Station $station, $format) {
+    public function get_up_arrs(Station $station, $format = false) {
         return $this->get_times($station, 'up', 'arrs', $format);
     }
 
-    public function get_down_arrs(Station $station, $format) {
+    public function get_down_arrs(Station $station, $format = false) {
         return $this->get_times($station, 'down', 'arrs', $format);
     }
 
@@ -227,21 +227,41 @@ class Timetable {
         $data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE revision = ".
             $this->data->revision." ORDER BY SEQUENCE ".$sort." LIMIT 1");
 
-        return new Station($data);
+        $s = new Station($data);
+        return $s;
     }
 
     public function get_last_train() {
-        $updep = end($this->get_up_deps());
-        $downdep = end($this->get_down_deps());
+        $downterm = $this->get_terminal('down');
+        $upterm = $this->get_terminal('up');
 
-        $updepdt = \DateTime::createFromFormat("H:i", $updep);
-        $downdepdt = \DateTime::createFromFormat("H:i", $downdep);
+        $updeps = $this->get_up_deps($downterm);
+        $downdeps = $this->get_down_deps($upterm);
+
+        $updep = end($updeps);
+        $downdep = end($downdeps);
+
+        $updepdt = (intval($updep->hour)*60) + intval($updep->min);
+        $downdepdt = (intval($downdep->hour)*60) + intval($downdep->min);
 
         if ($updepdt > $downdepdt) {
             return $updep;
         }
 
         return $downdep;
+    }
+
+    public function next_train_from(Station $from) {
+        $alldeps = array_merge($this->get_down_deps($from), $this->get_up_deps($from));
+        $now = new \DateTime();
+        $nowtime = ($now->format('G')*60) + $now->format('i');
+        foreach ($alldeps as $dep) {
+            $time = (intval($dep->hour)*60) + intval($dep->min) + intval(get_option("wc_product_railticket_bookinggrace"));
+            if ($time > $nowtime) {
+                return $dep;
+            }
+        }
+        return false;
     }
 
     public function has_specials() {

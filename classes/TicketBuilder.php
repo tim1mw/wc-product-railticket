@@ -25,6 +25,7 @@ class TicketBuilder {
         $this->tomorrow->modify('+1 day');
 
         if ($dateoftravel == false) {
+            $this->bookableday = BookableDay::get_bookable_day($this->today->format('Y-m-d'));
             return;
         }
 
@@ -95,16 +96,15 @@ class TicketBuilder {
         wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
         wp_enqueue_style('railticket_style');
 
-        if ($this->show || \wc_railticket\BookableDay::is_date_bookable($this->today->format('Y-m-d')) == false) {
+        if ($this->show || $this->bookableday == false) {
             return $this->get_all_html();
         }
 
-        global $wpdb;
         $fstation = $this->bookableday->timetable->get_terminal('up');
         $lstation = $this->bookableday->timetable->get_terminal('down');
 
-        $fdeptime = $this->next_train_today_from($fstation->id);
-        $ldeptime = $this->next_train_today_from($lstation->id);
+        $fdeptime = $this->bookableday->timetable->next_train_from($fstation);
+        $ldeptime = $this->bookableday->timetable->next_train_from($lstation);
 
         if ($fdeptime === false && $ldeptime === false) {
             return $this->get_all_html();
@@ -182,37 +182,6 @@ class TicketBuilder {
 
         $r->full = true;
         return $r;
-    }
-
-    private function next_train_today_from($from) {
-        global $wpdb;
-        $timetable = $this->findTimetable($this->today);
-        if (!$timetable) {
-            return false;
-        }
-        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_times WHERE station = '".$from."' ".
-            " AND timetableid = ".$timetable->id)[0];
-
-        if (strlen($deptimesdata->down_deps) > 0) {
-            $deps = $deptimesdata->down_deps;
-        } else {
-            if (strlen($deptimesdata->up_deps) == 0) {
-                return false;
-            }
-            $deps = $deptimesdata->up_deps;
-        }
-        $nowtime = ($this->now->format('G')*60) + $this->now->format('i');
-
-        $alldeps = explode(",", $deps);
-        foreach ($alldeps as $dep) {
-            $t = explode(".", $dep);
-            $time = (intval($t[0])*60) + intval($t[1]) + intval(get_option("wc_product_railticket_bookinggrace"));
-            if ($time > $nowtime) {
-                return $dep;
-            }
-        }
-
-        return false;
     }
 
     public function get_bookable_stations() {
@@ -985,8 +954,7 @@ class TicketBuilder {
             if ($lt === false ) {
                 $endtime = 60*24;
             } else {
-                $et = explode(":", $lt);
-                $endtime = (intval($et[0])*60) + intval($et[1]) + intval(get_option("wc_product_railticket_bookinggrace"));
+                $endtime = (intval($lt->hour)*60) + intval($lt->min) + intval(get_option("wc_product_railticket_bookinggrace"));
             }
         } else {
             $endtime = 60*24;
