@@ -8,7 +8,7 @@ class TicketBuilder {
 
     private $today, $tomorrow, $stations;
 
-    public function __construct($dateoftravel, Station $fromstation, Station $tostation, $outtime, $rettime,
+    public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
         $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
         global $wpdb;
         $this->show = $show;
@@ -23,6 +23,10 @@ class TicketBuilder {
         $this->tomorrow = new \DateTime();
         $this->tomorrow->setTimezone($this->railticket_timezone);
         $this->tomorrow->modify('+1 day');
+
+        if ($dateoftravel == false) {
+            return;
+        }
 
         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
         $this->stations = $this->bookableday->timetable->get_stations();
@@ -91,7 +95,7 @@ class TicketBuilder {
         wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
         wp_enqueue_style('railticket_style');
 
-        if ($this->show || $this->is_date_bookable($this->today) == false) {
+        if ($this->show || \wc_railticket\BookableDay::is_date_bookable($this->today->format('Y-m-d')) == false) {
             return $this->get_all_html();
         }
 
@@ -121,18 +125,21 @@ class TicketBuilder {
         $str .= "</div></div>";
 
         return $str;
+
     }
 
     private function get_all_html() {
         return $this->get_javascript().
            '<div id="pleasewait" class="railticket_loading"></div>'.
-           $this->get_datepick().
+           $this->get_datepick();
+/*
            '<form action="post" name="railticketbooking">'.
            $this->get_stations().
            $this->get_deptimes().
            $this->get_ticket_choices().
            $this->get_addtocart().'</form>'.
            '<div id="railticket_error" class="railticket_stageblock" ></div>';
+*/
     }
 
     private function get_preset_form($fstation, $tstation, $deptime, $direction) {
@@ -147,19 +154,6 @@ class TicketBuilder {
             "</form><br />";
 
         return $str;
-    }
-
-    public function is_date_bookable($date) {
-        if ($date < $this->today) {
-            return false;
-        }
-
-        $rec = $this->get_bookable_record($date);
-        if ($rec) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     public function is_train_bookable($time, $fromstn, $tostn) {
@@ -188,10 +182,6 @@ class TicketBuilder {
 
         $r->full = true;
         return $r;
-    }
-
-    private function is_today_bookable() {
-    
     }
 
     private function next_train_today_from($from) {
@@ -223,57 +213,6 @@ class TicketBuilder {
         }
 
         return false;
-    }
-
-    private function last_train_today() {
-        global $wpdb;
-        $timetable = $this->findTimetable($this->today);
-        if (!$timetable) {
-            return false;
-        }
-        $deptime = $wpdb->get_var("SELECT lastdep FROM {$wpdb->prefix}wc_railticket_times WHERE ".
-            "timetableid = ".$timetable->id." ORDER BY lastdep DESC LIMIT 1");
-        return $deptime;
-    }
-
-    private function get_next_bookable($date, $num) {
-        global $wpdb;
-        if ($date instanceof DateTime) {
-            $date = $date->format('Y-m-d');
-        }
-
-        $sql = "SELECT {$wpdb->prefix}wc_railticket_dates.* FROM {$wpdb->prefix}wc_railticket_dates ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
-            "WHERE {$wpdb->prefix}wc_railticket_dates.date >= '".$date."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0 ORDER BY date ASC LIMIT ".$num;
-
-        $rec = $wpdb->get_results($sql);
-        if (count($rec) > 0) {
-            return $rec;
-        } else {
-            return false;
-        }
-    }
-
-    private function get_bookable_record($date) {
-        global $wpdb;
-        if ($date instanceof DateTime) {
-            $date = $date->format('Y-m-d');
-        }
-
-        $sql = "SELECT {$wpdb->prefix}wc_railticket_bookable.* FROM {$wpdb->prefix}wc_railticket_dates ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
-            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$date."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookable.bookable = 1 AND {$wpdb->prefix}wc_railticket_bookable.soldout = 0";
-
-        $rec = $wpdb->get_results($sql);
-        if (count($rec) > 0) {
-            return $rec[0];
-        } else {
-            return false;
-        }
     }
 
     public function get_bookable_stations() {
@@ -877,25 +816,9 @@ class TicketBuilder {
         }
         $purchase->ok = true;
 
-        //date_default_timezone_set($tz);
         return $purchase;
     }
 
-/*
-    private function setSoldOut($dateoftravel, $fromstation, $tostation) {
-        $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_timetables.* FROM {$wpdb->prefix}wc_railticket_dates ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
-            " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
-            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$this->dateoftravel."'", OBJECT );
-
-        $outbays = $this->get_service_inventory($dateoftravel, $outtime, $fromstation, $tostation);
-        if ($outbays->totalseats == 0) {
-
-        }
-    }
-*/
     private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays, $manual) {
         global $wpdb;
         // TODO originstation and origintime reflect the station this train originally started from. Right now
@@ -974,32 +897,6 @@ class TicketBuilder {
         return $total;
     }
 
-    private function findTimetable($date = null) {
-        global $wpdb;
-
-        if ($date == null) {
-            $date = $this->dateoftravel;
-        }
-
-        if ($date instanceof DateTime) {
-            $date = $date->format('Y-m-d');
-        }
-
-        $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_timetables.* FROM {$wpdb->prefix}wc_railticket_dates ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
-            " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
-            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$date."'", OBJECT );
-
-
-        if (count($timetable) > 0) {
-            return $timetable[0];
-        } else {
-            return false;
-        }
-    }
-
     private function get_javascript() {
 
         wp_register_script('railticket_script', plugins_url('wc-product-railticket/ticketbuilder.js'));
@@ -1016,8 +913,7 @@ class TicketBuilder {
             "var today = '".$this->today->format('Y-m-d')."'\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
             "var minprice = ".$minprice."\n".
-            "var dateFormat = '".get_option('wc_railticket_date_format')."';\n".
-            "var stationData = ".json_encode(railticket_get_stations_map()).";\n";
+            "var dateFormat = '".get_option('wc_railticket_date_format')."';\n";
 
         $str .= $this->preset_javascript('a_dateofjourney');
         $str .= $this->preset_javascript('a_station');
@@ -1046,7 +942,7 @@ class TicketBuilder {
 
     private function get_datepick() {
         global $wpdb;
-        $calendar = new \wc_ticket_builder\TicketCalendar();
+        $calendar = new \wc_railticket\TicketCalendar();
 
         $startyear = $this->today->format('Y');
         $startmonth = $this->today->format('n');
@@ -1070,7 +966,7 @@ class TicketBuilder {
 
         $scroll = $this->today->format("Y-n");
 
-        $cal .= '<script type="text/javascript">var baseurl = "'.wc_railticket_currentlang()."/".get_site_url().'";var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
+        $cal .= '<script type="text/javascript">var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
 
         $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3>";
         $str .= "<p>".get_option('wc_product_railticket_top_comment')."</p></div>".
@@ -1082,17 +978,24 @@ class TicketBuilder {
         $act = false;
 
         $nowtime = ($this->now->format('G')*60) + $this->now->format('i');
-        $lt = $this->last_train_today();
-        if ($lt === false ) {
+        $timetable = \wc_railticket\Timetable::get_timetable_by_date($this->now->format('Y-m-d'));
+
+        if ($timetable) {
+            $lt = $timetable->get_last_train();
+            if ($lt === false ) {
+                $endtime = 60*24;
+            } else {
+                $et = explode(":", $lt);
+                $endtime = (intval($et[0])*60) + intval($et[1]) + intval(get_option("wc_product_railticket_bookinggrace"));
+            }
+        } else {
             $endtime = 60*24;
-        } else {
-            $et = explode(":", $lt);
-            $endtime = (intval($et[0])*60) + intval($et[1]) + intval(get_option("wc_product_railticket_bookinggrace"));
         }
+
         if ($nowtime < $endtime || $this->is_guard()) {
-            $nexttrains = $this->get_next_bookable($this->today, $toshow);
+            $nexttrains = \wc_railticket\BookableDay::get_next_bookable_dates($this->today->format('Y-m-d'), $toshow);
         } else {
-            $nexttrains = $this->get_next_bookable($this->tomorrow, $toshow);
+            $nexttrains = \wc_railticket\BookableDay::get_next_bookable_dates($this->tomorrow->format('Y-m-d'), $toshow);
         }
 
         foreach ($nexttrains as $t) {

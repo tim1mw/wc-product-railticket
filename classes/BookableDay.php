@@ -51,6 +51,62 @@ class BookableDay {
         return false;
     }
 
+    public static function get_next_bookable_dates($date, $num) {
+        global $wpdb;
+        if ($date instanceof DateTime) {
+            $date = $date->format('Y-m-d');
+        }
+
+        $sql = "SELECT date FROM {$wpdb->prefix}wc_railticket_bookable ".
+            "WHERE date >= '".$date."' AND bookable = 1 AND soldout = 0 ORDER BY date ASC LIMIT ".$num;
+
+        $rec = $wpdb->get_results($sql);
+        if (count($rec) > 0) {
+            return $rec;
+        } else {
+            return false;
+        }
+    }
+
+    public static function is_date_bookable($date) {
+        global $wpdb;
+
+        $data = $wpdb->get_row("SELECT id FROM {$wpdb->prefix}wc_railticket_bookable ".
+            "WHERE date = '".$date."' AND bookable = 1 AND soldout = 0 ");
+
+        if ($data) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static function is_date_sold_out($date) {
+        global $wpdb;
+
+        $data = $wpdb->get_row("SELECT id FROM {$wpdb->prefix}wc_railticket_bookable ".
+            "WHERE date = '".$date."' AND soldout = 1 ");
+
+        if ($data) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static function date_has_specials($date) {
+        global $wpdb;
+
+        $data = $wpdb->get_row("SELECT id FROM {$wpdb->prefix}wc_railticket_specials ".
+            "WHERE date = '".$date."'");
+
+        if ($data) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function create_bookable_day($dateofjourney) {
         $timetable = Timetable::get_timetable_by_date($dateofjourney);
         $fares = FareCalculator::get_fares_by_date($dateofjourney);

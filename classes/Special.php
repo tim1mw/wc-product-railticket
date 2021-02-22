@@ -71,4 +71,12 @@ class Special {
     public function on_sale() {
         return $this->data->onsale;
     }
+
+    public function get_background() {
+        return $this->data->background;
+    }
+
+    public function get_colour() {
+        return $this->data->colour;
+    }
 }

@@ -9,9 +9,27 @@ class Timetable {
     private $cache;
 
     protected function __construct($data, $date = false) {
+        global $wpdb;
         $this->data = $data;
         $this->date = $date;
         $this->data->colsmeta = json_decode($data->colsmeta);
+
+        if ($date) {
+            $specials = \wc_railticket\Special::get_specials($date);
+            if ($specials) {
+                $c = $specials[0]->get_colour();
+                if (strlen($c) > 0) {
+                    $this->data->colour = $c;
+                }
+                $b = $specials[0]->get_background();
+                if (strlen($b) > 0) {
+                    $this->data->background = $b;
+                }
+                $this->specials = true;
+            }
+        } else {
+            $this->specials = false;
+        }
         $this->cache = array();
     }
 
@@ -210,5 +228,23 @@ class Timetable {
             $this->data->revision." ORDER BY SEQUENCE ".$sort." LIMIT 1");
 
         return new Station($data);
+    }
+
+    public function get_last_train() {
+        $updep = end($this->get_up_deps());
+        $downdep = end($this->get_down_deps());
+
+        $updepdt = \DateTime::createFromFormat("H:i", $updep);
+        $downdepdt = \DateTime::createFromFormat("H:i", $downdep);
+
+        if ($updepdt > $downdepdt) {
+            return $updep;
+        }
+
+        return $downdep;
+    }
+
+    public function has_specials() {
+        return $this->specials;
     }
 }

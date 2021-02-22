@@ -29,42 +29,6 @@ class TicketCalendar
     }
 
     /**
-     * Find the timetable from the database
-     * @param  DateTime $date The date to match a timetable for.
-     * @return array          Either an array of events or false.
-     */
-    private function findTimetable(\DateTime $date)
-    {
-        global $wpdb;
-        $found_events = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
-            " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
-            "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-            " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
-            "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$date->format('Y-m-d')."' ".
-            "AND {$wpdb->prefix}wc_railticket_dates.date >= '".$this->today->format('Y-m-d')."'", OBJECT );
-
-        if (array_key_exists(0, $found_events)) {
-            return $found_events[0];
-        }
-        return false;
-    }
-
-    /**
-     * Find special events in the database
-     * @param  DateTime $date The date to match an event for.
-     * @return array          Either an array of events or false.
-     */
-    private function findSpecialEvents(\DateTime $date)
-    {
-        global $wpdb;
-        $tdate = $date->format('Y-m-d');
-        $found_events = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_eventdays.date, {$wpdb->prefix}wc_railticket_eventdetails.* FROM {$wpdb->prefix}wc_railticket_eventdays LEFT JOIN {$wpdb->prefix}wc_railticket_eventdetails ON {$wpdb->prefix}wc_railticket_eventdays.event = {$wpdb->prefix}wc_railticket_eventdetails.id WHERE {$wpdb->prefix}wc_railticket_eventdays.date = '".$tdate."'", OBJECT );
-
-        return ($found_events) ? : false;
-    }
-
-    /**
      * Draw the calendar and echo out.
      * @param string $date    The date of this calendar.
      * @param string $format  The format of the preceding date.
@@ -113,39 +77,25 @@ class TicketCalendar
         $rowcount = 0;
 
         do {
-            $timetable = $this->findTimetable($running_day);
-            $specials = $this->findSpecialEvents($running_day);
+            $timetable = \wc_railticket\Timetable::get_timetable_by_date($running_day->format('Y-m-d'));
             $class = '';
             $style = '';
             $event_summary = '';
 
+            $datebookable = \wc_railticket\BookableDay::is_date_bookable($running_day->format('Y-m-d'));
+            $datesoldout = \wc_railticket\BookableDay::is_date_sold_out($running_day->format('Y-m-d'));
+
             if ($timetable) {
-                $timetabledate = new \DateTime($timetable->date);
+                $timetabledate = \DateTime::createFromFormat('Y-m-d', $timetable->get_date());
                 if ($timetabledate > $yesterday) {
-                    if ($timetable->bookable) {
-                        if ($timetable->soldout) {
-                            $style .= "background:#".$timetable->background.";color:#".$timetable->colour.";font-weight:bold;";
+                    if ($datebookable) {
+                        if ($datesoldout) {
+                            $style .= "background:#".$timetable->get_background().";color:#".$timetable->get_colour().";font-weight:bold;";
                         } else {
-                            $style .= "background:#".$timetable->background.";color:#".$timetable->colour.";";
+                            $style .= "background:#".$timetable->get_background().";color:#".$timetable->get_colour().";";
                         }
                     } else {
-                        $style .= "opacity:0.4;background:#".$timetable->background.";color:#".$timetable->colour.";";
-                    }
-                }
-            }
-
-            if ($specials) {
-                $class .= " calendar-special ";
-                for ($loop=0; $loop< count($specials); $loop++) {
-                    $event_summary .= wc_railticket_trans($specials[$loop]->title);
-                    if (strlen($specials[$loop]->background) > 0) {
-                        $style .= "background:#".$specials[$loop]->background.";";
-                    }
-                    if (strlen($specials[$loop]->background) > 0 || strlen($specials[$loop]->colour) > 0) {
-                        $style .= "color:#".$specials[$loop]->colour.";";
-                    }
-                    if ($loop < count($specials)-1) {
-                        $event_summary .= " & ";
+                        $style .= "opacity:0.4;background:#".$timetable->get_background().";color:#".$timetable->get_colour().";";
                     }
                 }
             }
@@ -154,8 +104,8 @@ class TicketCalendar
             $calendar .= '<td style="'.$style.'" class="' . $class . $today_class . ' day" title="' . htmlentities($event_summary) . '">';
 
             if ($timetable) {
-                if ($timetable->bookable) {
-                    if ($timetable->soldout) {
+                if ($datebookable) {
+                    if ($datesoldout) {
                         $calendar .= "<a style='".$style."' title='Sold Out' href=\"javascript:soldOut('".$running_day->format("Y-m-d")."');\">";
                         $calendar .= 'X';
                         $calendar .= '</a>';
@@ -170,15 +120,7 @@ class TicketCalendar
                     $calendar .= '</a>';
                 }
             } else {
-                if ($specials) {
-                    $linkfield = wc_railticket_currentlangcode();
-                    $links = json_decode(end($specials)->link);
-                    $calendar .= "<a style='".$style."'  href=\"".$links->$linkfield."\">";
-                    $calendar .= $running_day->format('j');
-                    $calendar .= '</a>';
-                } else {
-                    $calendar .= $running_day->format('j');
-                }
+                $calendar .= $running_day->format('j');
             }
             $calendar .= "</td>";
 
