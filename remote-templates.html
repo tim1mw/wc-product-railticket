@@ -1,0 +1,14 @@
+<script id="stationradio" type="x-tmpl-mustache">
+<ul>
+{{#stations}}
+    <li>
+        <input type='radio' name='{{name}}' id='{{$name}}{{stationid}}' value='{{stationid}}'
+            class='railticket_{{name}} railticket_notbookable' disabled />
+        <label for='{{name}}{{stationid}}'>
+            {{stationname}}<br />
+            <div class='railticket_stndesc'>{{stationdesc}}</div>
+       </label>
+    </li>
+{{/stations}}
+</ul>
+</script>

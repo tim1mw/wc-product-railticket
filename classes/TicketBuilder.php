@@ -129,17 +129,34 @@ class TicketBuilder {
     }
 
     private function get_all_html() {
-        return $this->get_javascript().
-           '<div id="pleasewait" class="railticket_loading"></div>'.
-           $this->get_datepick();
-/*
-           '<form action="post" name="railticketbooking">'.
-           $this->get_stations().
-           $this->get_deptimes().
-           $this->get_ticket_choices().
-           $this->get_addtocart().'</form>'.
-           '<div id="railticket_error" class="railticket_stageblock" ></div>';
-*/
+        global $rtmustache;
+
+        $alldata = new \stdclass();
+        $alldata->javascript = $this->get_javascript();
+        $alldata->datepick = $this->get_datepick();
+
+        if ($this->is_guard()) {
+            $alldata->ticket_guardopts = "<p class='railticket_terms'><input type='checkbox' name='nominimum' id='nominimum' />".
+                "&nbsp;&nbsp;&nbsp;No Minimum Price</p>".
+                "<p class='railticket_terms'><input type='checkbox' name='bypass' id='bypass'/>".
+                "&nbsp;&nbsp;&nbsp;Bypass Ticket Restrictions</p>";
+
+            $alldata->addtocartopts = "<p><label for='notes'>Guard's Notes:</label><br />".
+                "<textarea id='notes' cols='40' rows='5' name='notes'></textarea></p>".
+                "<p><input type='button' value='Create Booking' id='createbooking' /></p>";
+        } else {
+            $alldata->ticket_guardopts = "<input type='hidden' name='nominimum' id='nominimum' value='0' />";
+            $alldata->addtocartopts = "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>".
+                "&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
+                "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
+                "<div id='addticketstocart'><p class='railticket_terms'>Your tickets will be reserved for ".
+                get_option('wc_product_railticket_reservetime')." minutes after you click add to cart.".
+                " Please complete your purchases within that time.</p>".
+                "<p><input type='hidden' name='notes' value='' /><input type='button' value='Add To Cart' id='addtocart_button' /></p></div></div>";
+        }
+
+        $template = $rtmustache->loadTemplate('ticketbuilder');
+        echo $template->render($alldata);
     }
 
     private function get_preset_form($fstation, $tstation, $deptime, $direction) {
@@ -867,7 +884,7 @@ class TicketBuilder {
     }
 
     private function get_javascript() {
-
+        wp_register_script('railticket_script', plugins_url('wc-product-railticket/mustache.min.js'));
         wp_register_script('railticket_script', plugins_url('wc-product-railticket/ticketbuilder.js'));
         wp_enqueue_script('railticket_script');
 
@@ -876,8 +893,9 @@ class TicketBuilder {
         if (strlen($opt) > 0) {
             $minprice = $opt;
         }
-
-        $str = "\n<script type='text/javascript'>\n".
+        
+        $str = file_get_contents(dirname(__FILE__).'/../remote-templates.html').
+            "\n<script type='text/javascript'>\n".
             "var ajaxurl = '".admin_url( 'admin-ajax.php', 'relative' )."';\n".
             "var today = '".$this->today->format('Y-m-d')."'\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
@@ -933,10 +951,6 @@ class TicketBuilder {
              $stop = $endmonth+1;
         }
 
-        $scroll = $this->today->format("Y-n");
-
-        $cal .= '<script type="text/javascript">var closetext="'.__("Close", "railtimetable").'";var scrollto="'.$scroll.'"; initTrainTimes();</script>';
-
         $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3>";
         $str .= "<p>".get_option('wc_product_railticket_top_comment')."</p></div>".
             "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
@@ -988,101 +1002,6 @@ class TicketBuilder {
             "  <p class='railticket_overridedesc'>The override code can be used to unlock services not available for booking below, ".
             "  eg if a train is running late. The code, if needed can be obtained from the guard once the train has arrived.</p>".
             "  </div></div></div>";
-
-        return $str;
-    }
-
-    private function get_stations() {
-        $str = "<div id='stations' class='railticket_stageblock railticket_listselect'>".
-            "<div id='stations_container'>".
-            "<h3>Choose Stations</h3>".
-            "<p class='railticket_help'>Tap or click the stations to select. Departure times and single or return journeys are chosen in the next section.</p>".
-            "<div class='railticket_container'>".
-            "<div class='railticket_listselect_left'><div class='inner'><h3>Starting From</h3>".$this->station_radio("fromstation", true)."</div></div>".
-            "<div class='railticket_listselect_right'><div class='inner'><h3>Going To</h3>".$this->station_radio("tostation", false)."</div></div>".
-            "</div></div>".
-            "<div class='railticket_container' id='railticket_specials'></div>".
-            "</div>";
-
-        return $str;
-    }
-
-    private function station_radio($name, $from) {
-        $str="<ul>";
-        foreach ($this->stations as $station) {
-            $str .= "<li><input type='radio' name='".$name."' id='".$name.$station->id."' value='".$station->id.
-                "' class='railticket_".$name." railticket_notbookable' disabled />\n".
-                "<label for='".$name.$station->id."'>".$station->name."<br />".
-                "<div class='railticket_stndesc'>".$station->description."</div></label></li>";
-        }
-        $str.="</ul>";
-        return $str;
-    }
-
-    private function get_deptimes() {
-        $str =
-            "<div id='deptimes' class='railticket_stageblock railticket_listselect'><div id='deptimes_data' class='railticket_container'>".
-            "  <h3>Choose a Departure</h3>".
-            "  <p class='railticket_help'>Tap or click the times and ticket type to select. ".
-            "Times shown with a paler background and a strikethrough should have departed if trains are running on time, but can still be ".
-            " booked if you are certain the train is simply running late. Some seating capacity is held back and released around 9am each morning.</p></div>";
-
-        $str .= "  <div id='deptimes_data' class='railticket_container'>".
-            "    <div id='deptimes_data_out' class='railticket_listselect_left'>".
-            "    <input type='hidden' name='outtime' value='' /></div>".
-            "    <div id='deptimes_data_ret' class='railticket_listselect_right'>".
-            "    <input type='hidden' name='rettime' value='' /></div>".
-            "  </div>".
-            "  <div id='ticket_type' class='railticket_container'><input type='hidden' name='journeytype' value='' /></div>".
-            "</div>";
-
-        return $str;
-    }
-
-    private function get_ticket_choices() {
-        $str = "<div id='tickets' class='railticket_stageblock'>".
-            "<h3>Choose Tickets</h3>".
-            "<div class='railicket_selected_service' id='railticket_summary_service'></div>".
-            "<p class='railticket_help'>Use the boxes on the left to enter the number of tickets required</p>".
-            "  <div id='ticket_travellers' class='railticket_container'>".
-            "  </div>".
-            "  <div id='ticket_summary' class='railticket_container'></div>".
-            "  <div id='ticket_capbutton' class='railticket_container'>".
-            "  <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>&nbsp;&nbsp;&nbsp;Request space for disabled visitor</p>";
-
-        if ($this->is_guard()) {
-            $str .= "<p class='railticket_terms'><input type='checkbox' name='nominimum' id='nominimum' />&nbsp;&nbsp;&nbsp;No Minimum Price</p>";
-            $str .= "<p class='railticket_terms'><input type='checkbox' name='bypass' id='bypass'/>&nbsp;&nbsp;&nbsp;Bypass Ticket Restrictions</p>";
-        } else {
-            $str .= "<input type='hidden' name='nominimum' id='nominimum' value='0' />";
-        }
-
-        $str.= "  <input type='button' value='Confirm Choices' id='confirmchoices' /></div>".
-            "  <div id='ticket_capacity' class='railticket_container'></div>".
-            "</div>";
-
-        return $str;
-    }
-
-    private function get_addtocart() {
-        $str = "<div id='addtocart' class='railticket_stageblock'>".
-            "<input type='hidden' name='ticketselections' />".
-            "<input type='hidden' name='ticketallocations' />".
-            "<div class='railticket_container'>";
-
-        if ($this->is_guard()) {
-            $str .= "<p><label for='notes'>Guard's Notes:</label><br /><textarea id='notes' cols='40' rows='5' name='notes'></textarea></p>".
-                "<p><input type='button' value='Create Booking' id='createbooking' /></p>";
-        } else {
-            $str .= "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
-                "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
-                "<div id='addticketstocart'><p class='railticket_terms'>Your tickets will be reserved for ".
-                get_option('wc_product_railticket_reservetime')." minutes after you click add to cart.".
-                " Please complete your purchases within that time.</p>".
-                "<p><input type='hidden' name='notes' value='' /><input type='button' value='Add To Cart' id='addtocart_button' /></p></div></div>";
-        }
-
-        $str .= "<div id='railticket_processing' class='railticket_processing'><p>Processing - Please wait</p></div></div>";
 
         return $str;
     }

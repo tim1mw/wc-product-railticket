@@ -1,0 +1,77 @@
+{{{javascript}}}
+<div id="pleasewait" class="railticket_loading"></div>
+{{{datepick}}}
+<form action="post" name="railticketbooking">
+
+<div id='stations' class='railticket_stageblock railticket_listselect'>
+    <div id='stations_container'>
+        <h3>Choose Stations</h3>
+        <p class='railticket_help'>Tap or click the stations to select. Departure times and single or return journeys are chosen in the next section.</p>
+        <div class='railticket_container'>
+            <div class='railticket_listselect_left'>
+                <div class='inner'>
+                    <h3>Starting From</h3>
+                    <div id='stations_from_list'></div>
+                </div>
+            </div>
+            <div class='railticket_listselect_right'>
+                 <div class='inner'>
+                     <h3>Going To</h3>
+                     <div id='stations_from_list'></div>
+                 </div>
+             </div>
+         </div>
+     </div>
+     <div class='railticket_container' id='railticket_specials'></div>
+</div>
+
+
+<div id='deptimes' class='railticket_stageblock railticket_listselect'>
+    <div id='deptimes_data' class='railticket_container'>
+        <h3>Choose a Departure</h3>
+        <p class='railticket_help'>
+        Tap or click the times and ticket type to select. Times shown with a paler background and a strikethrough should have
+        departed if trains are running on time, but can still be booked if you are certain the train is simply running late.
+        Some seating capacity is held back and released around 9am each morning.
+        </p>
+    </div>
+    <div id='deptimes_data' class='railticket_container'>
+        <div id='deptimes_data_out' class='railticket_listselect_left'>
+            <input type='hidden' name='outtime' value='' />
+        </div>
+        <div id='deptimes_data_ret' class='railticket_listselect_right'>
+            <input type='hidden' name='rettime' value='' />
+        </div>
+    </div>
+    <div id='ticket_type' class='railticket_container'><input type='hidden' name='journeytype' value='' /></div>
+</div>
+
+
+<div id='tickets' class='railticket_stageblock'>
+    <h3>Choose Tickets</h3>
+    <div class='railicket_selected_service' id='railticket_summary_service'></div>
+    <p class='railticket_help'>Use the boxes on the left to enter the number of tickets required</p>
+    <div id='ticket_travellers' class='railticket_container'></div>
+    <div id='ticket_summary' class='railticket_container'></div>
+    <div id='ticket_capbutton' class='railticket_container'>
+        <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>
+         &nbsp;&nbsp;&nbsp;Request space for disabled visitor</p>
+         {{{ticket_guardopts}}}
+        <input type='button' value='Confirm Choices' id='confirmchoices' />
+    </div>
+    <div id='ticket_capacity' class='railticket_container'></div>
+</div>
+
+
+<div id='addtocart' class='railticket_stageblock'>
+    <input type='hidden' name='ticketselections' />
+    <input type='hidden' name='ticketallocations' />
+    <div class='railticket_container'>
+        {{{addtocartopts}}}
+        <div id='railticket_processing' class='railticket_processing'>
+            <p>Processing - Please wait</p>
+        </div>
+    </div>
+</div>
+</form>
+<div id="railticket_error" class="railticket_stageblock" ></div>
