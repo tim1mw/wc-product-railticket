@@ -9,6 +9,15 @@ if ( ! defined( 'ABSPATH' ) ) {
     return;
 }
 
+add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
+add_shortcode('railticket_selector', 'railticket_selector');
+add_shortcode('railticket_special', 'railticket_get_special_button');
+add_action( 'wp_ajax_nopriv_railticket_ajax', 'railticket_ajax_request');
+add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
+
+add_filter( 'cron_schedules', 'railticket_add_every_two_minutes' );
+add_action( 'railticket_add_every_two_minutes', 'railticket_every_two_minutes_event_func' );
+
 function railticket_selector() {
     $ticketbuilder = railticket_getticketbuilder();
     return $ticketbuilder->render();
@@ -141,11 +150,3 @@ function railticket_get_special_button($attr) {
         "</form><br />";
 }
 
-add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
-add_shortcode('railticket_selector', 'railticket_selector');
-add_shortcode('railticket_special', 'railticket_get_special_button');
-add_action( 'wp_ajax_nopriv_railticket_ajax', 'railticket_ajax_request');
-add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
-
-add_filter( 'cron_schedules', 'railticket_add_every_two_minutes' );
-add_action( 'railticket_add_every_two_minutes', 'railticket_every_two_minutes_event_func' );
