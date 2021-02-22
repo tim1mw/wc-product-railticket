@@ -240,20 +240,21 @@ function railticket_bookable_days() {
                 railticket_updatebookable();
             case 'filterbookable':
                 railticket_show_cal_selector();
-                railticket_showcalendaredit($_REQUEST['year'], $_REQUEST['month']);
+                railticket_showcalendaredit(intval($_REQUEST['year']), intval($_REQUEST['month']));
                 break;
             case 'showbookableday':
                 railticket_showbookableday();
                 break;
         }
     } else {
-        railticket_showcalendaredit(intval(date("Y")), $month);
+        railticket_show_cal_selector();
+        railticket_showcalendaredit(intval(date("Y")), intval(date("n")));
     }
 }
 
 function railticket_show_cal_selector() {
-    if (array_key_exists('month', $_POST)) {
-        $month = sanitize_text_field($_POST['month']);
+    if (array_key_exists('month', $_REQUEST)) {
+        $month = sanitize_text_field($_REQUEST['month']);
     } else {
         $month = intval(date("n"));
     }
