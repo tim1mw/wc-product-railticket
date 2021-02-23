@@ -232,23 +232,32 @@ class Timetable {
     }
 
     public function get_last_train() {
-        $downterm = $this->get_terminal('down');
-        $upterm = $this->get_terminal('up');
+        // TODO This is quite an expensive method to call and the value won't change, so add a column to the DB and cache the result on import
 
-        $updeps = $this->get_up_deps($downterm);
-        $downdeps = $this->get_down_deps($upterm);
+        $stations = Station::get_stations($this->data->revision);
+        $lastdepdt = 0;
+        $lastdep = false;
+        foreach ($stations as $station) {
+            $updeps = $this->get_up_deps($station);
+            foreach ($updeps as $updep) {
+                $updepdt = (intval($updep->hour)*60) + intval($updep->min);
+                if ($updepdt > $lastdepdt) {
+                    $lastdepdt = $updepdt;
+                    $lastdep = $updep;
+                }
+            }
 
-        $updep = end($updeps);
-        $downdep = end($downdeps);
-
-        $updepdt = (intval($updep->hour)*60) + intval($updep->min);
-        $downdepdt = (intval($downdep->hour)*60) + intval($downdep->min);
-
-        if ($updepdt > $downdepdt) {
-            return $updep;
+            $downdeps = $this->get_down_deps($station);
+            foreach ($downdeps as $downdep) {
+                $downdepdt = (intval($downdep->hour)*60) + intval($downdep->min);
+                if ($downdepdt > $lastdepdt) {
+                    $lastdepdt = $downdepdt;
+                    $lastdep = $downdep;
+                }
+            }
         }
 
-        return $downdep;
+        return $lastdep;
     }
 
     public function next_train_from(Station $from) {
