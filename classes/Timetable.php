@@ -212,8 +212,8 @@ class Timetable {
         return $this->get_times($station, 'down', 'arrs', $format);
     }
 
-    public function get_stations() {
-        return Station::get_stations($this->data->revision);
+    public function get_stations($dataonly = false) {
+        return Station::get_stations($this->data->revision, $dataonly);
     }
 
     public function get_terminal($direction) {

@@ -14,11 +14,15 @@ class Special {
             "datefrom <= '".$this->data->date."' AND dateto >= '".$this->data->date."'");
     }
 
-    public static function get_specials($date) {
+    public static function get_specials($date, $dataonly = false) {
         global $wpdb;
         $specials = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$date."'");   
         if (count($specials) == 0) {
              return false;   
+        }
+
+        if ($dataonly) {
+            return false;
         }
 
         $sp = array();

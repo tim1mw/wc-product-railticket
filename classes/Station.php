@@ -17,11 +17,15 @@ class Station {
         return new Station($stn);
     }
 
-    public static function get_stations($revision) {
+    public static function get_stations($revision, $dataonly = false) {
         global $wpdb;
 
         $stns = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE revision = ".
             $revision." ORDER BY sequence ASC", OBJECT);
+
+        if ($dataonly) {
+            return $stns;
+        }
 
         $objs = array();
         foreach ($stns as $stn) {
@@ -29,17 +33,6 @@ class Station {
         }
 
         return $objs;
-    }
-
-    public static function railticket_get_stations_json($revision) {
-        global $wpdb;
-        $stations = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE revision = ".
-            $revision." ORDER BY sequence ASC", OBJECT);
-        $stns = array();
-        foreach ($stations as $s) {
-            $stns[$s->id] = $s;
-        }
-        return json_encode($stns);
     }
 
     public function get_stnid() {

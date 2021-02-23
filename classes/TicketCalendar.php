@@ -34,7 +34,7 @@ class TicketCalendar
      * @param string $format  The format of the preceding date.
      * @return string         The calendar
      */
-    public function draw($date = false)
+    public function draw($date = false, $guard = false)
     {
         $calendar = '';
 
@@ -82,8 +82,8 @@ class TicketCalendar
             $style = '';
             $event_summary = '';
 
-            $datebookable = \wc_railticket\BookableDay::is_date_bookable($running_day->format('Y-m-d'));
-            $datesoldout = \wc_railticket\BookableDay::is_date_sold_out($running_day->format('Y-m-d'));
+            $datebookable = \wc_railticket\BookableDay::is_date_bookable($running_day, $guard);
+            $datesoldout = \wc_railticket\BookableDay::is_date_sold_out($running_day);
 
             if ($timetable) {
                 $timetabledate = \DateTime::createFromFormat('Y-m-d', $timetable->get_date());
@@ -110,7 +110,7 @@ class TicketCalendar
                         $calendar .= 'X';
                         $calendar .= '</a>';
                     } else {
-                        $calendar .= "<a style='".$style."'title='Click to select this date' href=\"javascript:setBookingDate('".$running_day->format("Y-m-d")."');\">";
+                        $calendar .= "<a style='".$style."' title='Click to select this date' href=\"javascript:setBookingDate('".$running_day->format("Y-m-d")."');\">";
                         $calendar .= $running_day->format('j');
                         $calendar .= '</a>';
                     }

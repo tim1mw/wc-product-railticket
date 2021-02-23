@@ -60,7 +60,9 @@ class BookableDay {
         $sql = "SELECT date FROM {$wpdb->prefix}wc_railticket_bookable ".
             "WHERE date >= '".$date."' AND bookable = 1 AND soldout = 0 ORDER BY date ASC LIMIT ".$num;
 
+
         $rec = $wpdb->get_results($sql);
+
         if (count($rec) > 0) {
             return $rec;
         } else {
@@ -68,11 +70,27 @@ class BookableDay {
         }
     }
 
-    public static function is_date_bookable($date) {
+    public static function is_date_bookable(\DateTime $date, $skiptime = false) {
         global $wpdb;
 
+        $today = new \DateTime();
+        $nowm = (intval($today->format('H')) * 60) + intval($today->format('i'));
+        $today->setTime(0,0,0);
+        if ($date < $today) {
+            return false;
+        }
+
+        if (!$skiptime && $date == $today) {
+            // Check the last train hasn't departed
+            $lt = $timetable->get_last_train();
+            $endtime = (intval($lt->hour)*60) + intval($lt->min) + intval(get_option("wc_product_railticket_bookinggrace"));
+            if ($nowm > $endtime) {
+               // return false;
+            }
+        }
+
         $data = $wpdb->get_row("SELECT id FROM {$wpdb->prefix}wc_railticket_bookable ".
-            "WHERE date = '".$date."' AND bookable = 1 AND soldout = 0 ");
+            "WHERE date = '".$date->format('Y-m-d')."' AND bookable = 1 AND soldout = 0 ");
 
         if ($data) {
             return true;
@@ -81,11 +99,11 @@ class BookableDay {
         return false;
     }
 
-    public static function is_date_sold_out($date) {
+    public static function is_date_sold_out(\DateTime $date) {
         global $wpdb;
 
         $data = $wpdb->get_row("SELECT id FROM {$wpdb->prefix}wc_railticket_bookable ".
-            "WHERE date = '".$date."' AND soldout = 1 ");
+            "WHERE date = '".$date->format('Y-m-d')."' AND soldout = 1 ");
 
         if ($data) {
             return true;
@@ -107,7 +125,7 @@ class BookableDay {
         return false;
     }
 
-    public function create_bookable_day($dateofjourney) {
+    public static function create_bookable_day($dateofjourney) {
         $timetable = Timetable::get_timetable_by_date($dateofjourney);
         $fares = FareCalculator::get_fares_by_date($dateofjourney);
 
@@ -318,5 +336,35 @@ class BookableDay {
 
     public function get_data() {
         return $this->data;
+    }
+
+    public function get_specials($dataonly = false) {
+        return Special::get_specials($this->data->date, $dataonly);
+    }
+
+    public function get_booking_limits() {
+
+        /*
+        $bookable = array();
+        $bookable['from'] = array();
+        $bookable['to'] = array();
+        $bookable['override'] = $bkrec->override;
+
+        $bookinglimits = json_decode($this->data->limits);
+
+
+        foreach ($bookinglimits as $limit) {
+            if ($limit->enableout || $this->overridevalid == 1) {
+                $bookable['from'][$limit->station] = true;
+            } else {
+                $bookable['from'][$limit->station] = false;
+            }
+            if ($limit->enableret || $this->overridevalid == 1) {
+                $bookable['to'][$limit->station] = true;
+            } else {
+                $bookable['to'][$limit->station] = false;
+            }
+        }
+        */
     }
 }

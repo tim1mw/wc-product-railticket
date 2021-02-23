@@ -81,24 +81,32 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('action', 'railticket_ajax');
     data.append('function', datareq);
     data.append('dateoftravel', document.getElementById('dateoftravel').value);
-    data.append('fromstation', document.railticketbooking['fromstation'].value);
-    data.append('tostation', document.railticketbooking['tostation'].value);
+    data.append('fromstation', getFormValue('fromstation'));
+    data.append('tostation', getFormValue('tostation'));
     if (specialSelected) {
-        data.append('outtime', "s:"+document.railticketbooking['specials'].value);
-        data.append('rettime', "s:"+document.railticketbooking['specials'].value);
+        data.append('outtime', "s:"+getFormValue('specials'));
+        data.append('rettime', "s:"+getFormValue('specials'));
     } else {
-        data.append('outtime', document.railticketbooking['outtime'].value);
-        data.append('rettime', document.railticketbooking['rettime'].value);
+        data.append('outtime', getFormValue('outtime'));
+        data.append('rettime', getFormValue('rettime'));
     }
-    data.append('journeytype', document.railticketbooking['journeytype'].value);
+    data.append('journeytype', getFormValue('journeytype'));
     data.append('ticketselections', JSON.stringify(ticketSelections));
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
     data.append('overridevalid', overridevalid);
     data.append('disabledrequest', document.getElementById('disabledrequest').checked);
-    data.append('notes', document.railticketbooking['notes'].value);
+    data.append('notes', getFormValue('notes'));
     data.append('nominimum', document.getElementById('nominimum').checked);
 
     request.send(data);
+}
+
+function getFormValue(param) {
+    if (param in document.railticketbooking) {
+        return document.railticketbooking[param].value;
+    }
+
+    return false;
 }
 
 function validateOverride() {
@@ -122,8 +130,23 @@ function setBookingDate(bdate) {
 
 function doStations() {
     railTicketAjax('bookable_stations', true, function(response) {
-        enableStations('from', response, a_station);
-        enableStations('to', response, a_destination);
+
+        for (i in response['stations']) {
+            if (response['stations'][i].closed == 1) {
+                response['stations'][i].closed = 'disabled';
+            } else {
+                response['stations'][i].closed = '';
+            }
+
+            if (response['stations'][i].hidden == 1) {
+                response['stations'][i].hidden = 'display:none;';
+            } else {
+                response['stations'][i].hidden = '';
+            }
+        }
+
+        renderStations('from', response, a_station);
+        renderStations('to', response, a_destination);
         if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
             specialSeleted = true;
             var sp = a_deptime.split(':');
@@ -143,6 +166,22 @@ function doStations() {
             showTicketStages('stations', true);
         }
     });
+}
+
+function renderStations(type, response, defstn) {
+    var stc = document.getElementById('stations_container');
+    if (response['specialonly'] == 1) {
+        stc.style.display = 'none';
+    } else {  
+        var stntemplate = document.getElementById('stationradio').innerHTML;
+        var div = document.getElementById('stations_'+type+'_list');
+
+
+
+        div.innerHTML = Mustache.render(stntemplate, {"stations" : response['stations']});
+
+        stc.style.display = 'block';
+    }
 }
 
 function enableStations(type, response, defstn) {

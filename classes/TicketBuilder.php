@@ -159,13 +159,13 @@ class TicketBuilder {
         echo $template->render($alldata);
     }
 
-    private function get_preset_form($fstation, $tstation, $deptime, $direction) {
+    private function get_preset_form(\wc_railticket\Station $fstation, \wc_railticket\Station $tstation, $deptime, $direction) {
         $str = "<form action='/book/' method='post'>".
-            "<input type='submit' value='Return tickets for the next train from ".$fstation->name."' />".
+            "<input type='submit' value='Return tickets for the next train from ".$fstation->get_name()."' />".
             "<input type='hidden' name='a_dateofjourney' value='".$this->today->format('Y-m-d')."' />".
             "<input type='hidden' name='a_deptime' value='".$deptime."' />".
-            "<input type='hidden' name='a_station' value='".$fstation->id."' />".
-            "<input type='hidden' name='a_destination' value='".$tstation->id."' />".
+            "<input type='hidden' name='a_station' value='".$fstation->get_stnid()."' />".
+            "<input type='hidden' name='a_destination' value='".$tstation->get_stnid()."' />".
             "<input type='hidden' name='a_direction' value='".$direction."' />".
             "<input type='hidden' name='show' value='1' />".
             "</form><br />";
@@ -204,35 +204,18 @@ class TicketBuilder {
     public function get_bookable_stations() {
         global $wpdb;
         $bookable = array();
-        $bookable['from'] = array();
-        $bookable['to'] = array();
-        $bkrec = $this->get_bookable_record($this->dateoftravel);
-        $bookinglimits = json_decode($bkrec->limits);
-
-        $bookable['override'] = $bkrec->override;
-        foreach ($bookinglimits as $limit) {
-            if ($limit->enableout || $this->overridevalid == 1) {
-                $bookable['from'][$limit->station] = true;
-            } else {
-                $bookable['from'][$limit->station] = false;
-            }
-            if ($limit->enableret || $this->overridevalid == 1) {
-                $bookable['to'][$limit->station] = true;
-            } else {
-                $bookable['to'][$limit->station] = false;
-            }
-        }
+        $bookable['override'] = $this->bookableday->get_override();
+        $bookable['stations'] = $this->bookableday->timetable->get_stations(true);
 
         // Are their any specials today?
 
-        $specials = $wpdb->get_results("SELECT id, name, description, fromstation, tostation FROM {$wpdb->prefix}wc_railticket_specials".
-            " WHERE date = '".$this->dateoftravel."' AND onsale = 1");
+        $specials = $this->bookableday->get_specials(true);
         if ($specials && count($specials) > 0) {
             $bookable['specials'] = $specials;
         } else {
             $bookable['specials'] = false;
         }
-        $bookable['specialonly'] = $bkrec->specialonly;
+        $bookable['specialonly'] = $this->bookableday->special_only();
 
         return $bookable;
     }
@@ -884,9 +867,10 @@ class TicketBuilder {
     }
 
     private function get_javascript() {
-        wp_register_script('railticket_script', plugins_url('wc-product-railticket/mustache.min.js'));
-        wp_register_script('railticket_script', plugins_url('wc-product-railticket/ticketbuilder.js'));
-        wp_enqueue_script('railticket_script');
+        wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/mustache.min.js'));
+        wp_register_script('railticket_script_builder', plugins_url('wc-product-railticket/ticketbuilder.js'));
+        wp_enqueue_script('railticket_script_mustache');
+        wp_enqueue_script('railticket_script_builder');
 
         $minprice = 'false';
         $opt = get_option('wc_product_railticket_min_price');
@@ -945,7 +929,7 @@ class TicketBuilder {
 
         for ($year=$startyear; $year<$endyear+1; $year++) {
             for ($month=$startmonth; $month<$stop; $month++) {
-                $cal .= "<div class='calendar-box-wrapper' id='railtimetable-cal-".$year."-".$month."'>".$calendar->draw(date_i18n($year."-".$month."-01"))."</div>";
+                $cal .= "<div class='calendar-box-wrapper' id='railtimetable-cal-".$year."-".$month."'>".$calendar->draw(date_i18n($year."-".$month."-01"), $this->is_guard())."</div>";
              }
              $startmonth = 1;
              $stop = $endmonth+1;
@@ -980,8 +964,11 @@ class TicketBuilder {
             $nexttrains = \wc_railticket\BookableDay::get_next_bookable_dates($this->tomorrow->format('Y-m-d'), $toshow);
         }
 
+
+
         foreach ($nexttrains as $t) {
             $date = \DateTime::createFromFormat("Y-m-d", $t->date);
+
             $str .= "<input type='button' value='".$date->format('j-M-Y')."' title='Click to travel on ".$date->format('j-M-Y')."' ".
                 "class='railticket_datebuttons' data='".$date->format("Y-m-d")."' />";
             if ($act == false) {
