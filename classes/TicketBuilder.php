@@ -230,6 +230,40 @@ class TicketBuilder {
         return $result;
     }
 
+    public function get_journey_options() {
+        $popular = new \stdclass();
+        $popular->journeytype = 'return';
+        $popular->journeydesc = 'Return to Bala';
+        $popular->extradesc = 'A full line return trip';
+        $popular->code = 'return_2';
+
+        $otherleft1 = new \stdclass();
+        $otherleft1->journeytype = 'single';
+        $otherleft1->journeydesc = 'Single to Pentrepiod';
+        $otherleft1->extradesc = "You'll get stuck in the middle of nowhere! ";
+        $otherleft1->code = 'single_3';
+
+        $otherright1 = new \stdclass();
+        $otherright1->journeytype = 'return';
+        $otherright1->journeydesc = 'Return to Pentrepiod';
+        $otherright1->extradesc = 'Not much to do while you wait.';
+        $otherright1->code = 'return_3';
+
+        $otherleft2 = new \stdclass();
+        $otherleft2->journeytype = 'single';
+        $otherleft2->journeydesc = "Single to Dan's Platform";
+        $otherleft2->extradesc = 'Are you sure you want to go here????';
+        $otherleft2->code = 'single_3';
+
+        $otherright2 = new \stdclass();
+        $otherright2->journeytype = 'return';
+        $otherright2->journeydesc = "Return to Dan's Platform";
+        $otherright2->extradesc = 'Ok, you are joking....';
+        $otherright2->code = 'return_3';
+
+        return ['popular' => [$popular], 'otherleft' => [$otherleft1, $otherleft2], 'otherright' => [$otherright1, $otherright2]];
+    }
+
     public function get_bookable_trains() {
         global $wpdb;
         $fmt = get_option('wc_railticket_time_format');

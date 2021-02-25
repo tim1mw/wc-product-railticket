@@ -1,10 +1,11 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
-var lastto=-1, lastfrom=-1, lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
+var lastout=-1, lastret=-1, ticketdata, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
 var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array(), hasSpecials = false, specialSelected = false, specialsData = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var stations = [];
 
 
 function setupTickets() {
@@ -13,13 +14,6 @@ function setupTickets() {
         dbuttons[i].addEventListener('click', function(evt) {
             setBookingDate(evt.target.getAttribute('data'));
         });   
-    }
-
-    var fromstation = document.getElementsByClassName("railticket_fromstation");
-    var tostation = document.getElementsByClassName("railticket_tostation");
-    for (var i = 0; i < fromstation.length; i++) {
-        fromstation[i].addEventListener('click', fromStationChanged);
-        tostation[i].addEventListener('click', toStationChanged);
     }
 
     // Add listeners for all the stuff in the main form
@@ -131,22 +125,12 @@ function setBookingDate(bdate) {
 function doStations() {
     railTicketAjax('bookable_stations', true, function(response) {
 
-        for (i in response['stations']) {
-            if (response['stations'][i].closed == 1) {
-                response['stations'][i].closed = 'disabled';
-            } else {
-                response['stations'][i].closed = '';
-            }
-
-            if (response['stations'][i].hidden == 1) {
-                response['stations'][i].hidden = 'display:none;';
-            } else {
-                response['stations'][i].hidden = '';
-            }
+        stations = response['stations'];
+        var stc = document.getElementById('stations_container');
+        if (response['specialonly'] == 0) {
+            renderFromStations(response);
         }
 
-        renderStations('from', response, a_station);
-        renderStations('to', response, a_destination);
         if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
             specialSeleted = true;
             var sp = a_deptime.split(':');
@@ -158,6 +142,7 @@ function doStations() {
         }
 
         overridecode = response['override'];
+
         if (a_station !== false && a_destination !== false) {
             a_station = false;
             a_destination = false;
@@ -168,22 +153,47 @@ function doStations() {
     });
 }
 
-function renderStations(type, response, defstn) {
-    var stc = document.getElementById('stations_container');
-    if (response['specialonly'] == 1) {
-        stc.style.display = 'none';
-    } else {  
-        var stntemplate = document.getElementById('stationradio').innerHTML;
-        var div = document.getElementById('stations_'+type+'_list');
+function renderFromStations(response) {
+    var mainstns = [];
+    var otherstns = [];
 
+    for (i in response['stations']) {
+        if (response['stations'][i].hidden == 1) {
+            continue;
+        }
 
+        var stn = {};
+        stn.name = response['stations'][i].name;
+        stn.stnid = response['stations'][i].stnid;
+        stn.description = response['stations'][i].description;
 
-        div.innerHTML = Mustache.render(stntemplate, {"stations" : response['stations']});
+        if (response['stations'][i].closed == 1) {
+            stn.closed = 'disabled';
+        } else {
+            stn.closed = '';
+        }
 
-        stc.style.display = 'block';
+        if (response['stations'][i].principal == 1) {
+            mainstns.push(stn);
+        } else {
+            otherstns.push(stn);
+        }
+    }
+ 
+    var stntemplate = document.getElementById('stationradio').innerHTML;
+    var div = document.getElementById('fromstations_container');
+    var data = {"mainstns" : mainstns, "otherstns" : otherstns};
+    console.log(data);
+    div.innerHTML = Mustache.render(stntemplate, data);
+    div.style.display = 'block';
+
+    var fromstations = document.getElementsByClassName('railticket_fromstation');
+    for (var i = 0; i < fromstations.length; i++) {
+        fromstations[i].addEventListener('click', fromStationChanged);
     }
 }
 
+/*
 function enableStations(type, response, defstn) {
     var stc = document.getElementById('stations_container');
     if (response['specialonly'] == 1) {
@@ -236,6 +246,7 @@ function enableStations(type, response, defstn) {
     }
             
 }
+*/
 
 function notBookable(bdate) {
     setChosenDate("Not available to book yet", bdate);
@@ -264,35 +275,25 @@ function setChosenDate(text, bdate) {
 }
 
 function fromStationChanged(evt) {
-
-    var to = document.getElementById('tostation'+evt.target.value);
+    //var to = document.getElementById('tostation'+evt.target.value);
     var from = document.getElementById('fromstation'+evt.target.value);
-
-    if (to.checked) {
-        to.checked = false;
-        if (lastfrom!=-1 && lastfrom!=evt.target.value) {
-            var nto = document.getElementById('tostation'+lastfrom);
-            nto.checked=true;
-            lastto=lastfrom;
-        }
-    }
-
-    lastfrom=evt.target.value;
     lastout=-1;
     lastret=-1;
+
     if (specialSelected) {
         uncheckAll('railticket_specials');
         specialSelected = false;
         showTicketStages('stations', false)
     }
 
-    if (document.railticketbooking['fromstation'].value != '' && 
-        document.railticketbooking['tostation'].value != '' &&
-        document.railticketbooking['fromstation'].value != 'undefined' && 
-        document.railticketbooking['tostation'].value != 'undefined')
-    {
-        getDepTimes();
-    }
+    railTicketAjax('journey_opts', true, function(response) {
+        console.log(response);
+
+        var stntemplate = document.getElementById('journeychoice').innerHTML;
+        var div = document.getElementById('journeychoice_container');
+        div.innerHTML = Mustache.render(stntemplate, response);
+        div.style.display = 'block';
+    });
 }
 
 function toStationChanged(evt) {

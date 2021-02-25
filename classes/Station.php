@@ -51,6 +51,10 @@ class Station {
         return $this->data->sequence;
     }
 
+    public function is_principal() {
+        return $this->data->principal;
+    }
+
     public function get_direction(Station $to) {
         if ($this->data->sequence > $to->get_sequence()) {
             return "up";

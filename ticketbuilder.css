@@ -100,6 +100,10 @@
 
 .railticket_fromstation {}
 
+.railticket_otherstation {
+    font-weight:normal !important;
+}
+
 .railticket_tostation {}
 
 .railticket_stationselect {}

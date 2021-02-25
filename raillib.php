@@ -31,6 +31,9 @@ function railticket_ajax_request() {
         case 'bookable_stations':
             $result = $ticketbuilder->get_bookable_stations();
             break;
+        case 'journey_opts':
+            $result = $ticketbuilder->get_journey_options();
+            break;
         case 'bookable_trains':
             $result = $ticketbuilder->get_bookable_trains();
             break;
