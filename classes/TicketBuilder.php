@@ -322,7 +322,7 @@ class TicketBuilder {
         $data->sameservicereturn = $this->bookableday->same_service_return();
         $data->legs = array();
 
-        $data->tickets = $this->bookableday->get_tickets($this->fromstation, $this->tostation, $this->journeytype, $this->is_guard());
+        $data->tickets = $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype, $this->is_guard());
 
         // There are no fares to sell...
         if (count($data->tickets->prices) == 0) {
