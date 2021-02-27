@@ -56,7 +56,7 @@
 <h3>Choose Journey</h3>
 <p class='railticket_help'>Choose your journey by tapping or clicking on the options below.</p>
 
-<h4>Popular Choices</h4>
+<h4 style='{{noptitle}}'>Popular Choices</h4>
 {{#popular}}
     <input type='radio' name='journeychoice' id='journeychoice{{code}}' value='{{code}}'
         class='railticket_journeychoice ' {{disabled}} />
@@ -67,7 +67,7 @@
 {{/popular}}
 
 <hr />
-<h4>Other Choices</h4>
+<h4 style='{{nootitle}}'>Other Choices</h4>
 <div class='railticket_listselect_left'>
     <div class='inner'>
     {{#otherleft}}

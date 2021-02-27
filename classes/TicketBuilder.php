@@ -233,8 +233,7 @@ class TicketBuilder {
     public function get_journey_options() {
 
         $allpopular = array();
-        $allotherleft = array();
-        $allotherright = array();
+        $allother = array();
 
         $up_terminal = $this->bookableday->timetable->get_terminal('up');
         $down_terminal = $this->bookableday->timetable->get_terminal('down');

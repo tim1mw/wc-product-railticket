@@ -316,9 +316,12 @@ function fromStationChanged(evt) {
             }
         }
 
+        if (data.popular.length == 0 || (data.otherleft.length == 0 && data.otherright.length == 0)) {
+            data.noptitle = 'display:none';
+            data.nootitle = 'display:none';
+        }
+
         div.innerHTML = Mustache.render(stntemplate, data);
-        div.style.display = 'block';
-        div.scrollIntoView(true);
         showTicketStages('journeychoice', true);
     });
 }
