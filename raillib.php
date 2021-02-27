@@ -92,10 +92,9 @@ function railticket_every_two_minutes_event_func() {
 function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');
     $fromstation = railticket_getpostfield('fromstation');
-    $tostation = railticket_getpostfield('tostation');
+    $journeychoice = railticket_getpostfield('journeychoice');
     $outtime = railticket_getpostfield('outtime');
     $rettime = railticket_getpostfield('rettime');
-    $journeytype = railticket_getpostfield('journeytype');
     $overridevalid = railticket_getpostfield('overridevalid');
     $disabledrequest = railticket_getpostfield('disabledrequest');
     $notes = railticket_getpostfield('notes');
@@ -112,8 +111,8 @@ function railticket_getticketbuilder() {
     }
     $tickets = array();
 
-    return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show);
+    return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $journeychoice, $outtime, $rettime,
+         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show);
 }
 
 function railticket_getpostfield($field) {

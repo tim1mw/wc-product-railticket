@@ -8,8 +8,8 @@ class TicketBuilder {
 
     private $today, $tomorrow, $stations;
 
-    public function __construct($dateoftravel, $fromstation, $tostation, $outtime, $rettime,
-        $journeytype, $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
+    public function __construct($dateoftravel, $fromstation, $journeychoice, $outtime, $rettime,
+        $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
         global $wpdb;
         $this->show = $show;
 
@@ -32,8 +32,15 @@ class TicketBuilder {
         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
         $this->dateoftravel = $dateoftravel;
         $this->fromstation = Station::get_station($fromstation, $this->bookableday->timetable->get_revision());
-        $this->tostation = $tostation;
-        $this->journeytype = $journeytype;
+
+        $jparts = explode('_', $journeychoice);
+        $this->journeytype = $jparts[0];
+        $this->tostation = Station::get_station($jparts[1], $this->bookableday->timetable->get_revision());
+        if ($this->journeytype == 'round') {
+            $this->rndtostation = Station::get_station($jparts[2], $this->bookableday->timetable->get_revision());
+        } else {
+            $this->rndtostation = false;
+        }
 
         if (strpos($outtime, 's:') === false) {
             $this->special = false;
@@ -310,7 +317,7 @@ class TicketBuilder {
             $term1->get_name()." - ".
             $term2->get_name()." - ".
             $from->get_name();
-        $rnd->code = 'round_'.$term1->get_stnid();
+        $rnd->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();;
         // Do a check here to see if this can be purchased
         $trp->disabled = '';
         return $rnd;

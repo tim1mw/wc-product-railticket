@@ -76,7 +76,7 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('function', datareq);
     data.append('dateoftravel', document.getElementById('dateoftravel').value);
     data.append('fromstation', getFormValue('fromstation'));
-    data.append('tostation', getFormValue('tostation'));
+
     if (specialSelected) {
         data.append('outtime', "s:"+getFormValue('specials'));
         data.append('rettime', "s:"+getFormValue('specials'));
@@ -84,7 +84,8 @@ function railTicketAjax(datareq, spinner, callback) {
         data.append('outtime', getFormValue('outtime'));
         data.append('rettime', getFormValue('rettime'));
     }
-    data.append('journeytype', getFormValue('journeytype'));
+
+    data.append('journeychoice', getFormValue('tostation'));
     data.append('ticketselections', JSON.stringify(ticketSelections));
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
     data.append('overridevalid', overridevalid);
