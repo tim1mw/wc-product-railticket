@@ -117,7 +117,7 @@ class Timetable {
         return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
-    public function get_times(Station $station, $direction, $type, $format) {
+    public function get_times(Station $station, $direction, $type, $format, Station $stopsat = null) {
         global $wpdb;
 
         if (!$this->date) {
@@ -131,29 +131,60 @@ class Timetable {
 
         $dtimes = $wpdb->get_var("SELECT ".$direction."_".$type." FROM {$wpdb->prefix}wc_railticket_stntimes WHERE revision = ".
             $this->data->revision." AND timetableid = ".$this->data->timetableid." AND station = ".$station->get_stnid());
+
+        // Set a departure number on each time we get back so we can cross-reference times with those for others
+        // stations if we need check the train stops at the destination
+
+        $dtimes = json_decode($dtimes);
+        for ($loop = 0; $loop < count($dtimes); $loop++) {
+            $dtimes[$loop]->index = $loop;
+            $dtimes[$loop]->key = $dtimes[$loop]->hour.".".$dtimes[$loop]->min;
+        }
+
         $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $date = \DateTime::createFromFormat("Y-m-d", $this->date, $railticket_timezone);
         $times = $this->apply_rules($dtimes, $this->data->colsmeta, $date);
 
         if ($format) {
             $fmt = get_option('wc_railticket_time_format');
-            $ftimes = array();
             foreach ($times as $time) {
                 $dtime = \DateTime::createFromFormat("H:i", $time->hour.":".$time->min, $railticket_timezone);
-                $time->key = $time->hour.".".$time->min;
-                $time->formatted = strftime($fmt, $dtime->getTimeStamp());
+                $time->formatted = trim(strftime($fmt, $dtime->getTimeStamp()));
             }
-
         }
+
+        // Populate arrivial times for the stopsat station. Don't filter out here so we can still get non-stopping trains at this level
+        if ($stopsat != null) {
+            $this->service_stops_at($times, $stopsat, $direction, 'arrs', $format);
+            $this->service_stops_at($times, $stopsat, $direction, 'deps', $format);
+        }
+
         return $times;
+    }
+
+    private function service_stops_at(&$times, Station $stopsat, $direction, $type, $format) {
+        $totimes = $this->get_times($stopsat, $direction, $type, $format, null);
+        foreach ($times as $time) {
+            // If stopsat is already true, then skip this check.
+            if (property_exists($time, 'stopsat') && $time->stopsat !== false) {
+                continue;
+            }
+            foreach ($totimes as $totime) {
+                if ($time->index == $totime->index) {
+                    $time->stopsat = $totime;
+                    continue 2;
+                }
+            }
+            $time->stopsat = false;
+        }
     }
 
     private function apply_rules($times) {
 
         $filtered = array();
-        $times = json_decode($times);
         $count = 0;
 
+        // Check for trains that run/don't run today
         foreach ($times as $time) {
             $rules = $this->data->colsmeta[$count]->rules;
             $count++;
@@ -175,6 +206,7 @@ class Timetable {
             }
             $filtered[] = $time;
         }
+
         return $filtered;
     }
 
@@ -196,20 +228,20 @@ class Timetable {
         return false;
     }
 
-    public function get_up_deps(Station $station, $format = false) {
-        return $this->get_times($station, 'up', 'deps', $format);
+    public function get_up_deps(Station $station, $format = false, Station $stopsat = null) {
+        return $this->get_times($station, 'up', 'deps', $format, $stopsat);
     }
 
-    public function get_down_deps(Station $station, $format = false) {
-        return $this->get_times($station, 'down', 'deps', $format);
+    public function get_down_deps(Station $station, $format = false, Station $stopsat = null) {
+        return $this->get_times($station, 'down', 'deps', $format, $stopsat);
     }
 
-    public function get_up_arrs(Station $station, $format = false) {
-        return $this->get_times($station, 'up', 'arrs', $format);
+    public function get_up_arrs(Station $station, $format = false, Station $stopsat = null) {
+        return $this->get_times($station, 'up', 'arrs', $format, $stopsat);
     }
 
-    public function get_down_arrs(Station $station, $format = false) {
-        return $this->get_times($station, 'down', 'arrs', $format);
+    public function get_down_arrs(Station $station, $format = false, Station $stopsat = null) {
+        return $this->get_times($station, 'down', 'arrs', $format, $stopsat);
     }
 
     public function get_stations($dataonly = false) {

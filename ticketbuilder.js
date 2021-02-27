@@ -85,7 +85,7 @@ function railTicketAjax(datareq, spinner, callback) {
         data.append('rettime', getFormValue('rettime'));
     }
 
-    data.append('journeychoice', getFormValue('tostation'));
+    data.append('journeychoice', getFormValue('journeychoice'));
     data.append('ticketselections', JSON.stringify(ticketSelections));
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
     data.append('overridevalid', overridevalid);
@@ -132,6 +132,7 @@ function doStations() {
             renderFromStations(response);
         }
 
+        /** TODO Deal with specials
         if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
             specialSeleted = true;
             var sp = a_deptime.split(':');
@@ -141,6 +142,7 @@ function doStations() {
             a_destination = false;
             a_deptime = false;
         }
+        **/
 
         overridecode = response['override'];
 
@@ -289,7 +291,6 @@ function setChosenDate(text, bdate) {
 }
 
 function fromStationChanged(evt) {
-
     if (specialSelected) {
         uncheckAll('railticket_specials');
         specialSelected = false;
@@ -323,40 +324,14 @@ function fromStationChanged(evt) {
         }
 
         div.innerHTML = Mustache.render(stntemplate, data);
+
+        var jcs = document.getElementsByClassName('railticket_journeychoice');
+        for (var i = 0; i < jcs.length; i++) {
+            jcs[i].addEventListener('click', getDepTimes);
+        }
+
         showTicketStages('journeychoice', true);
     });
-}
-
-function toStationChanged(evt) {
-
-    var from = document.getElementById('fromstation'+evt.target.value);
-    var to = document.getElementById('tostation'+evt.target.value);
-
-    if (from.checked) {
-        from.checked = false;
-        if (lastto!=-1 && lastto!=evt.target.value) {
-            var nfrom = document.getElementById('fromstation'+lastto);
-            nfrom.checked=true;
-            lastfrom=lastto;
-        }  
-    }
-
-    lastto=evt.target.value;
-    lastout=-1;
-    lastret=-1;
-    if (specialSelected) {
-        uncheckAll('railticket_specials');
-        specialSelected = false;
-        showTicketStages('stations', false)
-    }
-
-    if (document.railticketbooking['fromstation'].value != '' && 
-        document.railticketbooking['tostation'].value != '' &&
-        document.railticketbooking['fromstation'].value != 'undefined' && 
-        document.railticketbooking['tostation'].value != 'undefined')
-    {
-        getDepTimes();
-    }
 }
 
 function specialClicked(index, fromstation, tostation) {
@@ -381,140 +356,30 @@ function uncheckAll(classname) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-        var updateTimes = false;
-        if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
-            showTimes(response['out'], 'out', "Outbound", false);
-        } else {
-            updateTimes = showTimes(response['out'], 'out', "Outbound", a_deptime);
-        }
-        showTimes(response['ret'], 'ret', "Return", false);
+console.log(response);
+        sameservicereturn = response['sameservicereturn'];
+        var div = document.getElementById('deptimes_data');
 
-        var str = "";
-        if (response['tickets'].length == 0) {
-            str += "<h4>Sorry, no services can be booked on line for these choices. Please try a different selection.</h4>"+
-                "<input type='hidden' name='journeytype' />";
-            document.getElementById('ticket_type').innerHTML = str;
-        } else {
-            sameservicereturn = response['sameservicereturn'];
-            if (sameservicereturn) {
-                str += "  <p class='railticket_help'>Services today require you to return on the same train you started on.</p>";
-            }
-            str += "<ul>";
-            for (index in response['tickets']) {
-                var selected ="";
-                if (index == response['tickets'].length-1) {
-                    selected = " checked ";
-                }
-                var type = response['tickets'][index];
-                str += "<li class='railticket_hlist'><input type='radio' name='journeytype' id='journeytype"+
-                    type+"' "+selected+" value='"+type+"' /><label class='railticket_caplitalise' for='journeytype"+
-                    type+"'>"+type+"</label></li>";
-            }
-            str += "</ul>";
-
-            document.getElementById('ticket_type').innerHTML = str;
-            for (index in response['tickets']) {
-                var type = response['tickets'][index];
-                railTicketAddListener('journeytype'+type, 'click', journeyTypeChanged);
-            }
-        }
-        if (updateTimes !== false) {
-            updateTimesList();
+        if (response['legs'].length == 0) {
+            div.innerHTML = '<p>No bookable services found. Sorry!</p>';
+            showTicketStages('deptimes', true);
+            return;
         }
 
-        a_deptime = false;
+        var deptemplate = document.getElementById('deplist_tmpl').innerHTML;
+        var data = {};
+        data.legs = [];
+        for (i in response['legs']) {
+            data.legs.push(Mustache.render(deptemplate, response['legs'][i]));
+        }
+
+        var depctemplate = document.getElementById('depchoice_tmpl').innerHTML;
+        div.innerHTML = Mustache.render(depctemplate, data);
+
         showTicketStages('deptimes', true);
     });
 }
 
-
-function showTimes(times, type, header, selecttime) {
-    var str = "<h3>"+header+"</h3>";
-    if (times.length == 0) {
-        str += '<h4>No Trains</h4><input type="hidden" name="'+type+'time" value="" />';
-    }
-    str += '<ul>';
-    var countenabled = 0;
-
-    var nowdate = new Date();
-    var nowtotal = (nowdate.getHours()*60)+nowdate.getMinutes();
-    var selected = false;
-    if (type == 'out') {
-        outtimemap = new Array();
-    }
-    for (index in times) {
-        if (times[index].length == 0) {
-            str += "<li><div class='timespacer'></div></li>";     
-        } else {
-            var disabled = '';
-            var tclass = "journeytype"+type;
-            var title = "";
-
-            if (!times[index]['bookable']) {
-                disabled = ' disabled ';
-                //title = "Sorry, this train cannot be booked online";
-            }
-            var lateclass = "";
-            var depparts = times[index]['dep'].split(".");
-            var deptotal = (parseInt(depparts[0])*60)+parseInt(depparts[1]);
-
-            if (document.getElementById('dateoftravel').value == today) {
-                if (nowtotal > deptotal && disabled == '') {
-                    lateclass = "class='railticket_late'";
-                }
-            }
-
-            var checked = "";
-            if (times[index]['dep'] == selecttime && times[index]['bookable']) {
-                checked = " checked ";
-                selected = index;
-            }
-
-            if (type == 'ret') {
-                var count = -1;
-                for (checki in outtimemap) {
-                    var arrparts = outtimemap[checki].split(".");
-                    var arrtotal = (parseInt(arrparts[0])*60)+parseInt(arrparts[1]);
-                    if (arrtotal < deptotal) {
-                        count++;
-                    } else {
-                        break;
-                    }
-                }
-                for (loop=0; loop<count-index; loop++) {
-                    str += "<li><div><label class='railticket_disablelabel'>No Service<div class='railticket_arrtime'>please use a different train</label></div></div></li>";
-                }
-            }
-
-            var arrmessage = "";
-            var fullclass = "";
-            if (times[index]['full']) {
-                arrmessage = "FULL - please try another train";
-                fullclass = " railticket_full ";
-            } else {
-                arrmessage = "(arrival: "+times[index]['arrdisp'];
-                if (times[index]['bookable'] && times[index]['seats'] > 0) {
-                    arrmessage += ", empty&nbsp;seats: "+times[index]['seats'];
-                }
-                arrmessage += ")";
-            }
-
-            str += "<li id='lidep"+type+index+"' title='"+title+"'><input type='radio' name='"+type+"time' id='dep"+
-                type+index+"' class='"+tclass+fullclass+"' "+
-                "value='"+times[index]['dep']+"' "+
-                "onclick='trainTimeChanged("+index+", \""+type+"\", false)' "+disabled+" "+checked+" />"+
-                "<label "+lateclass+" for='dep"+type+index+"'>"+times[index]['depdisp']+
-                "<div class='railticket_arrtime'>"+arrmessage+"</div></label></li>";
-            if (type == 'out') {
-                outtimemap[times[index]['dep']] = times[index]['arr'];
-            }
-        }
-    }
-
-    str += "</ul>";
-    document.getElementById('deptimes_data_'+type).innerHTML = str;
-    return selected;
-}
 
 function trainTimeChanged(index, type, skip) {
     if (type == 'out') {

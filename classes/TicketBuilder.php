@@ -34,12 +34,18 @@ class TicketBuilder {
         $this->fromstation = Station::get_station($fromstation, $this->bookableday->timetable->get_revision());
 
         $jparts = explode('_', $journeychoice);
-        $this->journeytype = $jparts[0];
-        $this->tostation = Station::get_station($jparts[1], $this->bookableday->timetable->get_revision());
-        if ($this->journeytype == 'round') {
-            $this->rndtostation = Station::get_station($jparts[2], $this->bookableday->timetable->get_revision());
+        if (count($jparts) > 1) {
+            $this->journeytype = $jparts[0];
+            $this->tostation = Station::get_station($jparts[1], $this->bookableday->timetable->get_revision());
+            if ($this->journeytype == 'round') {
+                $this->rndtostation = Station::get_station($jparts[2], $this->bookableday->timetable->get_revision());
+            } else {
+                $this->rndtostation = false;
+            }
         } else {
-            $this->rndtostation = false;
+             $this->journeytype = false;
+             $this->tostation = false;
+             $this->rndtostation = false;
         }
 
         if (strpos($outtime, 's:') === false) {
@@ -180,34 +186,6 @@ class TicketBuilder {
         return $str;
     }
 
-    public function is_train_bookable($time, $fromstn, $tostn) {
-        // Dates which are in the past are not allowed
-        $parts = explode('.', $time);
-        $deptime = \DateTime::createFromFormat("Y-m-d", $this->dateoftravel, $this->railticket_timezone);
-        $deptime->setTime($parts[0], $parts[1], 0);
-        $deptime->modify('+'.get_option('wc_product_railticket_bookinggrace').' minutes');
-
-        $r = new \stdclass();
-        $r->bookable = false;
-        $r->full = false;
-        $r->seats = 0;
-
-        if (!$this->is_guard() && $this->now > $deptime) {
-            return $r;
-        }
-
-        $cap = $this->get_capacity($time, 'single', $fromstn, $tostn);
-
-        if ($cap->outseatsleft > 0) {
-            $r->bookable = true;
-            $r->seats = $cap->outseatsleft;
-            return $r;
-        }
-
-        $r->full = true;
-        return $r;
-    }
-
     public function get_bookable_stations() {
         global $wpdb;
         $bookable = array();
@@ -249,6 +227,8 @@ class TicketBuilder {
 
         // Find the popular journeys. If this is a terminal, a return to the other terminal.
         // If an intermediate stop Round trips
+
+        // TODO : Not handling sameservicereturn here yet....
 
         if ($this->fromstation->get_stnid() == $up_terminal->get_stnid()) {
             $allpopular[] = $this->get_returntrip_opt($this->fromstation, $down_terminal, true);
@@ -292,7 +272,7 @@ class TicketBuilder {
 
         $trp->code = 'return_'.$to->get_stnid();
 
-        // Do a check here to see if this can be purchased
+        // TODO Do a check here to see if this can be purchased
         $trp->disabled = '';
 
         return $trp; 
@@ -304,7 +284,7 @@ class TicketBuilder {
         $trp->journeydesc = __('Single Trip to ', 'wc_railticket').$to->get_name();
         $trp->extradesc = $from->get_name()." - ".$to->get_name();
         $trp->code = 'single_'.$to->get_stnid();
-        // Do a check here to see if this can be purchased
+        // TODO Do a check here to see if this can be purchased
         $trp->disabled = '';
         return $trp; 
    }
@@ -318,96 +298,13 @@ class TicketBuilder {
             $term2->get_name()." - ".
             $from->get_name();
         $rnd->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();;
-        // Do a check here to see if this can be purchased
+        // TODO Do a check here to see if this can be purchased
         $trp->disabled = '';
         return $rnd;
     }
 
-    public function get_bookable_trains() {
-        global $wpdb;
-        $fmt = get_option('wc_railticket_time_format');
-        $bookable = array();
-
-        $timetable = $this->findTimetable();
-        $deptimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_times WHERE station = '".$this->fromstation."' ".
-            " AND timetableid = ".$timetable->id)[0];
-        $rettimesdata = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_times WHERE station = '".$this->tostation."' ".
-            " AND timetableid = ".$timetable->id)[0];
-        $direction = $this->get_direction();
-
-        $bookable['out'] = array();
-        $dd = $direction."_deps";
-        $da = $direction."_arrs";
-        $deptimes = explode(",", $deptimesdata->$dd);
-        $deparrs = explode(",", $rettimesdata->$da);
-        $firstarr = false;
-        $outtotal = 0;
-        foreach ($deptimes as $index => $dep) {
-            $canbook = $this->is_train_bookable($dep, $this->fromstation,  $this->tostation);
-            if ($this->overridevalid == 1) {
-                $canbook->bookable = true;
-            }
-            $bookable['out'][] = array('dep' => $dep, 'depdisp' => strftime($fmt, strtotime($dep)),
-                'arr' => $deparrs[$index],  'arrdisp' => strftime($fmt, strtotime($deparrs[$index])),
-                'bookable' => $canbook->bookable, 'full' => $canbook->full, 'seats' => $canbook->seats);
-            if ($firstarr == false) {
-                $firstarr = strtotime($deparrs[$index]);
-            }
-            if ($canbook) {
-                $outtotal++;
-            }
-        }
-        
-        if ($direction == 'up') {
-            $direction = 'down';
-        } else {
-            $direction = 'up';
-        }
-
-        $dd = $direction."_deps";
-        $da = $direction."_arrs";
-        $rettimes = explode(",", $rettimesdata->$dd);
-        $retarrs = explode(",", $deptimesdata->$da);
-        $bookable['ret'] = array();
-        $intotal = 0;
-        foreach ($rettimes as $index => $ret) {
-            if (strtotime($ret) < $firstarr) {
-                // If the first return trip is before the first arrival, skip it.
-                continue;
-            }
-            $canbook = $this->is_train_bookable($ret, $this->tostation, $this->fromstation);
-            if ($this->overridevalid == 1) {
-                $canbook->bookable = true;
-            } 
-            $bookable['ret'][] = array('dep' => $ret, 'depdisp' => strftime($fmt, strtotime($ret)),
-                'arr' => $retarrs[$index], 'arrdisp' => strftime($fmt, strtotime($retarrs[$index])), 
-                'bookable' => $canbook->bookable, 'full' => $canbook->full, 'seats' => $canbook->seats);
-            $testfirst = false;
-            if ($canbook) {
-                $intotal ++;
-            }
-        }
-
-        $bk = $this->get_bookable_record($this->dateoftravel);
-        if ($bk->sameservicereturn == 0) {
-            $bookable['sameservicereturn'] = false;
-        } else {
-            $bookable['sameservicereturn'] = true;
-        }
-        $bookable['tickets'] = array();
-        if ($outtotal > 0) {
-            if ($this->can_sell_journeytype('single') && $bookable['sameservicereturn'] == false) {
-                $bookable['tickets'][] = 'single';
-            }
-            if ($intotal > 0 && $this->can_sell_journeytype('return')) {
-                $bookable['tickets'][] = 'return';
-            }
-        }
-
-        return $bookable;
-    }
-
     private function can_sell_journeytype($type) {
+        // TODO Fix this method and use for opts above.
         global $wpdb;
         $jt = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_prices WHERE journeytype = '".$type."' AND ".
             "((stationone = ".$this->fromstation." AND stationtwo = ".$this->tostation.") OR ".
@@ -419,84 +316,45 @@ class TicketBuilder {
         return false;
     }
 
-    public function get_tickets() {
-        global $wpdb;
-        $tickets = new \stdClass();
+    public function get_bookable_trains() {
+        $data = new \stdclass();
+        // TODO : Do I need to do anything else with this here?
+        $data->sameservicereturn = $this->bookableday->same_service_return();
+        $data->legs = array();
 
-        if (!$this->is_guard()) {
-            $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 ";
-            $guard = " AND {$wpdb->prefix}wc_railticket_tickettypes.guardonly = 0 ";
-        } else {
-            $guardtra = "";
-            $guard = "";
+        $data->tickets = $this->bookableday->get_tickets($this->fromstation, $this->tostation, $this->journeytype, $this->is_guard());
+
+        // There are no fares to sell...
+        if (count($data->tickets->prices) == 0) {
+            return $data;
         }
 
-        if ($this->special) {
-            $t = $wpdb->get_results("SELECT id, tickettypes FROM {$wpdb->prefix}wc_railticket_specials WHERE ".
-                "id = ".$this->outtime." AND onsale = '1'")[0];
-            $specialval = " AND special = 1 AND (";
-            $tkts = json_decode($t->tickettypes);
-            $first = true;
-            $tickets->travellers = array();
-            foreach ($tkts as $tkt) {
-                if (!$first) {
-                    $specialval .= " OR ";
-                }
-                $first = false;
-                $specialval .= " tickettype = '".$tkt."' ";
-            }
-            $specialval .= ")";
-        } else {
-            $specialval = " AND special = 0 ";
+        $data->legs[0] = new \stdclass();
+        $data->legs[0]->times = $this->bookableday->get_bookable_trains($this->fromstation, $this->tostation);
+        $data->legs[0]->header ='';
+        $data->legs[0]->leg = 0;
+        if ($this->journeytype == 'return') {
+            $data->legs[1] = new \stdclass();
+            $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->fromstation,
+                reset($data->legs[0]->times)->stopsat);
+            $data->legs[1]->leg = 1;
+            $data->legs[0]->header = __('Outbound', 'wc_railticket');
+            $data->legs[1]->header = __('Return', 'wc_railticket');
+        } elseif ($this->journeytype == 'round') {
+            $data->legs[1] = new \stdclass();
+            $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->rndtostation,
+                reset($data->legs[0]->times)->stopsat);
+            $data->legs[1]->leg = 1;
+            $data->legs[2] = new \stdclass();
+            $data->legs[2]->times = $this->bookableday->get_bookable_trains($this->rndtostation, $this->fromstation,
+                reset($data->legs[1]->times)->stopsat);
+            $data->legs[2]->leg = 1;
+            $data->legs[0]->header = __('1st Train', 'wc_railticket');
+            $data->legs[1]->header = __('2nd Train', 'wc_railticket');
+            $data->legs[2]->header = __('3rd Train', 'wc_railticket');
         }
 
-        $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
-            "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
-            "{$wpdb->prefix}wc_railticket_prices.price, ".
-            "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
-            "{$wpdb->prefix}wc_railticket_tickettypes.description, ".
-            "{$wpdb->prefix}wc_railticket_tickettypes.composition, ".
-            "{$wpdb->prefix}wc_railticket_tickettypes.depends, ".
-            "{$wpdb->prefix}wc_railticket_prices.image ".
-            "FROM {$wpdb->prefix}wc_railticket_prices ".
-            "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
-            "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
-            "WHERE ((stationone = ".$this->fromstation." AND stationtwo = ".$this->tostation.") OR ".
-            "(stationone = ".$this->tostation." AND stationtwo = ".$this->fromstation.")) AND ".
-            "journeytype = '".$this->journeytype."' AND disabled = 0 ".$specialval." ".$guard.
-            "ORDER BY {$wpdb->prefix}wc_railticket_tickettypes.sequence ASC";
-
-        $ticketdata = $wpdb->get_results($sql, OBJECT);
-
-        $tickets->prices = array();
-        $tickets->travellers = array();
-        $done = array();
-
-        foreach($ticketdata as $ticketd) {
-            $ticketd->composition = json_decode($ticketd->composition);
-            $ticketd->depends = json_decode($ticketd->depends);
-            $tickets->prices[$ticketd->tickettype] = $ticketd;
-
-            foreach ($ticketd->composition as $code => $num) {
-                if ($num == 0) {
-                    continue;
-                } else {
-                    if (!in_array($code, $done)) {
-                        $done[] = $code;
-
-                        if (!$this->is_guard()) {
-                            $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 AND ";
-                        } else {
-                            $guardtra = " WHERE ";
-                        }
-                        $tickets->travellers[] = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra." ".
-                            " code = '".$code."'", OBJECT )[0];
-                    }
-                }
-            }
-        }
-
-        return $tickets;
+        return $data;
     }
 
     public function get_capacity($outtime = null, $journeytype = null, $fromstation = null, $tostation = null, $caponly = false) {

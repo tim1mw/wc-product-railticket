@@ -1,7 +1,6 @@
 <script id="stationchoice_tmpl" type="x-tmpl-mustache">
-
 <h3>Choose Station</h3>
-<p class='railticket_help'>Tap or click the station you wish to start your journey from.</p>
+<p class='railticket_help'>Tap or click the station you wish to START your journey from.</p>
 <div class='railticket_container'>
     <h4 style='{{noptitle}}'>Principal Stations</h4>
     <ul>
@@ -48,7 +47,6 @@
         </div>
     </div>
 </div>
-
 </script>
 
 <script id="journeychoice_tmpl" type="x-tmpl-mustache">
@@ -93,5 +91,26 @@
     </div>
 </div>
 </div>
+</script>
 
+<script id="depchoice_tmpl" type="x-tmpl-mustache">
+<table><tr>
+{{#legs}}
+   <td>{{{.}}}</td>
+{{/legs}}
+</tr></table>
+</script>
+
+<script id="deplist_tmpl" type="x-tmpl-mustache">
+<h3>{{header}}</h3>
+<ul>
+{{#times}}
+<li id='lidep_{{leg}}_{{index}}' title='{{title}}'>
+    <input type='radio' name='dep_{{leg}}_{{key}}' id='dep_{{leg}}_{{key}}' class='{{classes}}'
+        value='{{key}}' {{checked}} />
+        <label {{lateclass}} for='dep_{{leg}}_{{key}}'>{{formatted}}
+    <div class='railticket_arrtime'>{{seatsleftstr}}, arrives {{arr}}</div></label>
+</li>
+{{/times}}
+</ul>
 </script>

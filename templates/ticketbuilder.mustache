@@ -3,7 +3,7 @@
 {{{datepick}}}
 <form action="post" name="railticketbooking">
 
-<div id='stations' class='railticket_stageblock railticket_listselect' style='overflow:hidden'>
+<div id='stations' class='railticket_stageblock railticket_listselect'>
     <div class='railticket_container' id='fromstations_container'></div>
     <div class='railticket_container' id='railticket_specials'></div>
 </div>
@@ -17,20 +17,12 @@
     <div id='deptimes_data' class='railticket_container'>
         <h3>Choose a Departure</h3>
         <p class='railticket_help'>
-        Tap or click the times and ticket type to select. Times shown with a paler background and a strikethrough should have
+        Tap or click the train times to select. Times shown with a paler background and a strikethrough should have
         departed if trains are running on time, but can still be booked if you are certain the train is simply running late.
         Some seating capacity is held back and released around 9am each morning.
         </p>
     </div>
-    <div id='deptimes_data' class='railticket_container'>
-        <div id='deptimes_data_out' class='railticket_listselect_left'>
-            <input type='hidden' name='outtime' value='' />
-        </div>
-        <div id='deptimes_data_ret' class='railticket_listselect_right'>
-            <input type='hidden' name='rettime' value='' />
-        </div>
-    </div>
-    <div id='ticket_type' class='railticket_container'><input type='hidden' name='journeytype' value='' /></div>
+    <div id='deptimes_data' class='railticket_container'></div>
 </div>
 
 
