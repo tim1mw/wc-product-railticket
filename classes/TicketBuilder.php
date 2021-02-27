@@ -310,7 +310,7 @@ class TicketBuilder {
             $term1->get_name()." - ".
             $term2->get_name()." - ".
             $from->get_name();
-        $rnd->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();
+        $rnd->code = 'round_'.$term1->get_stnid();
         // Do a check here to see if this can be purchased
         $trp->disabled = '';
         return $rnd;
