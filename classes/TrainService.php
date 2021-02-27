@@ -8,16 +8,16 @@ class TrainService {
     private $bookableday, $deptime, $fromstation, $direction;
     public $special;
 
-    public function __construct(BookableDay $bookableday, Station $fromstation, $deptime, $direction) {
+    public function __construct(BookableDay $bookableday, Station $fromstation, $deptime, Station $tostation) {
         $this->bookableday = $bookableday;
         $this->fromstation = $fromstation;
+        $this->tostation = $fromstation;
         $this->deptime = $deptime;
-        $this->direction = $direction;
+        $this->direction = $fromstation->get_direction($tostation);
 
         // Is this is a special
         if (strpos($deptime, "s:") === 0) {
             $this->special = Special::get_special($deptime);
-echo "special";
         } else {
             $this->special = false;
         }
@@ -30,7 +30,7 @@ echo "special";
             return array();
         }
 
-        // NOTE: Need to get origin station dep time here when intermediate stops are enabled!
+        // TODO: Need to get origin station dep time here when intermediate stops are enabled!
         switch ($this->bookableday->get_daytype()) {
             case 'simple':
                 $basebays = (array) $this->bookableday->get_bays();
@@ -48,7 +48,7 @@ echo "special";
             return $basebays;
         }
 
-        // Get the bookings we need to subtract from this formation. This doesn't account for bookings from preceeding stations (it needs to).
+        // Get the bookings we need to subtract from this formation. TODO This doesn't account for bookings from preceeding stations (it needs to).
         $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
             "{$wpdb->prefix}wc_railticket_bookings ".
             " LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
@@ -78,7 +78,7 @@ echo "special";
         // Take out the booking reserve
         if ($noreserve == false && !$this->bookableday->sell_reserve() && $this->bookableday->has_reserve()) {
 
-            // NOTE: Need to get origin station dep time here when intermediate stops are enabled!
+            // TODO: Need to get origin station dep time here when intermediate stops are enabled!
             switch ($this->bookableday->get_daytype()) {
                 case 'simple':
                     $reserve = (array) $this->bookableday->get_reserve();

@@ -846,7 +846,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     // If this is being called directly from a button click this will be a string
     if (is_string($deptime)) {
         $bookings = $bookableday->get_bookings_from_station($station, $deptime, $direction);
-        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime, $direction);
+        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime, $destination);
         if ($trainservice->special == false) {
             $dt = new \stdclass();
             $dt->key = $deptime;
@@ -857,7 +857,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         } 
     } else {
         $bookings = $bookableday->get_bookings_from_station($station, $deptime->key, $direction);
-        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime->key, $direction);
+        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime->key, $destination);
     }
 
     // Formatting for specials
