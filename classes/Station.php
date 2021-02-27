@@ -55,11 +55,17 @@ class Station {
         return $this->data->principal;
     }
 
+    public function is_closed() {
+        return (bool) $this->data->closed;
+    }
+
     public function get_direction(Station $to) {
         if ($this->data->sequence > $to->get_sequence()) {
             return "up";
-        } else {
+        }
+        if ($this->data->sequence < $to->get_sequence()) {
             return "down";
         }
+        return false;
     }
 }

@@ -155,7 +155,10 @@ function doStations() {
 
 function renderFromStations(response) {
     var mainstns = [];
-    var otherstns = [];
+    var otherstnsleft = [];
+    var otherstnsright = [];
+
+    var next = true;
 
     for (i in response['stations']) {
         if (response['stations'][i].hidden == 1) {
@@ -176,16 +179,26 @@ function renderFromStations(response) {
         if (response['stations'][i].principal == 1) {
             mainstns.push(stn);
         } else {
-            otherstns.push(stn);
+            if (next) {
+                otherstnsleft.push(stn);
+                next = false;
+            } else {
+                otherstnsright.push(stn);
+                next = true;
+            }
         }
     }
  
-    var stntemplate = document.getElementById('stationradio').innerHTML;
+    var stntemplate = document.getElementById('stationchoice_tmpl').innerHTML;
     var div = document.getElementById('fromstations_container');
-    var data = {"mainstns" : mainstns, "otherstns" : otherstns};
-    console.log(data);
+    var data = {"mainstns": mainstns, "otherstnsleft": otherstnsleft, "otherstnsright": otherstnsright};
+
+    if (mainstns.length == 0 || (otherstnsleft.length == 0 && otherstnsright.length == 0)) {
+        data.noptitle = 'display:none';
+        data.nootitle = 'display:none';
+    }
+
     div.innerHTML = Mustache.render(stntemplate, data);
-    div.style.display = 'block';
 
     var fromstations = document.getElementsByClassName('railticket_fromstation');
     for (var i = 0; i < fromstations.length; i++) {
@@ -275,10 +288,6 @@ function setChosenDate(text, bdate) {
 }
 
 function fromStationChanged(evt) {
-    //var to = document.getElementById('tostation'+evt.target.value);
-    var from = document.getElementById('fromstation'+evt.target.value);
-    lastout=-1;
-    lastret=-1;
 
     if (specialSelected) {
         uncheckAll('railticket_specials');
@@ -289,10 +298,28 @@ function fromStationChanged(evt) {
     railTicketAjax('journey_opts', true, function(response) {
         console.log(response);
 
-        var stntemplate = document.getElementById('journeychoice').innerHTML;
+        var stntemplate = document.getElementById('journeychoice_tmpl').innerHTML;
         var div = document.getElementById('journeychoice_container');
-        div.innerHTML = Mustache.render(stntemplate, response);
+
+        var data = {}
+        data.popular =  response['popular'];
+        data.otherleft = [];
+        data.otherright = [];
+        var next = true;
+        for (i in response['other']) {
+            if (next) {
+                data.otherleft.push(response['other'][i]);
+                next = false;
+            } else {
+                data.otherright.push(response['other'][i]);
+                next = true;
+            }
+        }
+
+        div.innerHTML = Mustache.render(stntemplate, data);
         div.style.display = 'block';
+        div.scrollIntoView(true);
+        showTicketStages('journeychoice', true);
     });
 }
 
@@ -994,13 +1021,21 @@ function showTicketStages(stage, doscroll) {
 
     // If there is only one bookable station for both from and to, pre-select and skip this step.
     if (skipStations()) {
-        stage = 'deptimes';
+        stage = 'journeychoice';
     }
 
     if (stage == 'stations') {
         display = 'none';
-        scroll = datechoosen;
+        scroll = stations;
     }
+
+    var journeychoice = document.getElementById('journeychoice');
+    journeychoice.style.display = display;
+
+    if (stage == 'journeychoice') {
+        display = 'none';
+        scroll = journeychoice;
+    }  
 
     // Deptimes aren't shown for specials
     var deptimes = document.getElementById('deptimes');

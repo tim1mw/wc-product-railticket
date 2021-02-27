@@ -30,9 +30,8 @@ class TicketBuilder {
         }
 
         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
-        $this->stations = $this->bookableday->timetable->get_stations();
         $this->dateoftravel = $dateoftravel;
-        $this->fromstation = $fromstation;
+        $this->fromstation = Station::get_station($fromstation, $this->bookableday->timetable->get_revision());
         $this->tostation = $tostation;
         $this->journeytype = $journeytype;
 
@@ -103,8 +102,8 @@ class TicketBuilder {
         $fstation = $this->bookableday->timetable->get_terminal('up');
         $lstation = $this->bookableday->timetable->get_terminal('down');
 
-        $fdeptime = $this->bookableday->timetable->next_train_from($fstation);
-        $ldeptime = $this->bookableday->timetable->next_train_from($lstation);
+        $fdeptime = $this->bookableday->timetable->next_train_from($fstation, true);
+        $ldeptime = $this->bookableday->timetable->next_train_from($lstation, true);
 
         if ($fdeptime === false && $ldeptime === false) {
             return $this->get_all_html();
@@ -159,11 +158,12 @@ class TicketBuilder {
         echo $template->render($alldata);
     }
 
-    private function get_preset_form(\wc_railticket\Station $fstation, \wc_railticket\Station $tstation, $deptime, $direction) {
+    private function get_preset_form(\wc_railticket\Station $fstation, \wc_railticket\Station $tstation, \stdclass $deptime, $direction) {
+
         $str = "<form action='/book/' method='post'>".
             "<input type='submit' value='Return tickets for the next train from ".$fstation->get_name()."' />".
             "<input type='hidden' name='a_dateofjourney' value='".$this->today->format('Y-m-d')."' />".
-            "<input type='hidden' name='a_deptime' value='".$deptime."' />".
+            "<input type='hidden' name='a_deptime' value='".$deptime->key."' />".
             "<input type='hidden' name='a_station' value='".$fstation->get_stnid()."' />".
             "<input type='hidden' name='a_destination' value='".$tstation->get_stnid()."' />".
             "<input type='hidden' name='a_direction' value='".$direction."' />".
@@ -231,37 +231,90 @@ class TicketBuilder {
     }
 
     public function get_journey_options() {
-        $popular = new \stdclass();
-        $popular->journeytype = 'return';
-        $popular->journeydesc = 'Return to Bala';
-        $popular->extradesc = 'A full line return trip';
-        $popular->code = 'return_2';
 
-        $otherleft1 = new \stdclass();
-        $otherleft1->journeytype = 'single';
-        $otherleft1->journeydesc = 'Single to Pentrepiod';
-        $otherleft1->extradesc = "You'll get stuck in the middle of nowhere! ";
-        $otherleft1->code = 'single_3';
+        $allpopular = array();
+        $allotherleft = array();
+        $allotherright = array();
 
-        $otherright1 = new \stdclass();
-        $otherright1->journeytype = 'return';
-        $otherright1->journeydesc = 'Return to Pentrepiod';
-        $otherright1->extradesc = 'Not much to do while you wait.';
-        $otherright1->code = 'return_3';
+        $up_terminal = $this->bookableday->timetable->get_terminal('up');
+        $down_terminal = $this->bookableday->timetable->get_terminal('down');
+        $allstations = $this->bookableday->timetable->get_stations();
+        $otherterm = false;
 
-        $otherleft2 = new \stdclass();
-        $otherleft2->journeytype = 'single';
-        $otherleft2->journeydesc = "Single to Dan's Platform";
-        $otherleft2->extradesc = 'Are you sure you want to go here????';
-        $otherleft2->code = 'single_3';
+        // Find the popular journeys. If this is a terminal, a return to the other terminal.
+        // If an intermediate stop Round trips
 
-        $otherright2 = new \stdclass();
-        $otherright2->journeytype = 'return';
-        $otherright2->journeydesc = "Return to Dan's Platform";
-        $otherright2->extradesc = 'Ok, you are joking....';
-        $otherright2->code = 'return_3';
+        if ($this->fromstation->get_stnid() == $up_terminal->get_stnid()) {
+            $allpopular[] = $this->get_returntrip_opt($this->fromstation, $down_terminal, true);
+            $allpopular[] = $this->get_singletrip_opt($this->fromstation, $down_terminal);
+            $otherterm = $down_terminal;
+        } elseif ($this->fromstation->get_stnid() == $down_terminal->get_stnid()) {
+            $allpopular[] = $this->get_returntrip_opt($this->fromstation, $up_terminal, true);
+            $allpopular[] = $this->get_singletrip_opt($this->fromstation, $up_terminal);
+            $otherterm = $up_terminal;
+        } else {
+            // Must be an intermediate stop if we got here, so offer round trips
+            $allpopular[] = $this->get_roundtrip_opt($this->fromstation, $up_terminal, $down_terminal);
+            $allpopular[] = $this->get_roundtrip_opt($this->fromstation, $down_terminal, $up_terminal);
+        }
 
-        return ['popular' => [$popular], 'otherleft' => [$otherleft1, $otherleft2], 'otherright' => [$otherright1, $otherright2]];
+        foreach ($allstations as $stn) {
+            if ($stn->is_closed() || $stn->get_stnid() == $this->fromstation->get_stnid() ||
+               ($otherterm && $otherterm->get_stnid() == $stn->get_stnid()) ) {
+                 // this is the station we are at, or it is closed, we can't go there
+                continue;
+            }
+
+            $allother[] = $this->get_returntrip_opt($this->fromstation, $stn);
+            $allother[] = $this->get_singletrip_opt($this->fromstation, $stn);
+        }
+
+        return ['popular' => $allpopular, 'other' => $allother];
+    }
+
+    private function get_returntrip_opt(Station $from, Station $to, $full = false) {
+        $trp = new \stdclass();
+        $trp->journeytype = 'return';
+        $trp->journeydesc = __('Return Trip to ', 'wc_railticket').$to->get_name();
+
+        if ($full) {
+            $trp->extradesc =  __('A full line return trip', 'wc_railticket').", ".
+                $from->get_name()." - ".$to->get_name()." - ".$from->get_name();
+        } else {
+            $trp->extradesc = $from->get_name()." - ".$to->get_name()." - ".$from->get_name();
+        }
+
+        $trp->code = 'return_'.$to->get_stnid();
+
+        // Do a check here to see if this can be purchased
+        $trp->disabled = '';
+
+        return $trp; 
+   }
+
+    private function get_singletrip_opt(Station $from, Station $to) {
+        $trp = new \stdclass();
+        $trp->journeytype = 'single';
+        $trp->journeydesc = __('Single Trip to ', 'wc_railticket').$to->get_name();
+        $trp->extradesc = $from->get_name()." - ".$to->get_name();
+        $trp->code = 'single_'.$to->get_stnid();
+        // Do a check here to see if this can be purchased
+        $trp->disabled = '';
+        return $trp; 
+   }
+
+    private function get_roundtrip_opt(Station $from, Station $term1, Station $term2) {
+        $rnd = new \stdclass();
+        $rnd->journeytype = 'round';
+        $rnd->journeydesc = __('Full Line Round Trip', 'wc_railticket');
+        $rnd->extradesc = $from->get_name()." - ".
+            $term1->get_name()." - ".
+            $term2->get_name()." - ".
+            $from->get_name();
+        $rnd->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();
+        // Do a check here to see if this can be purchased
+        $trp->disabled = '';
+        return $rnd;
     }
 
     public function get_bookable_trains() {

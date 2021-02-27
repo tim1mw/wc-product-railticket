@@ -1,76 +1,78 @@
-<script id="stationradio" type="x-tmpl-mustache">
+<script id="stationchoice_tmpl" type="x-tmpl-mustache">
 
 <h3>Choose Station</h3>
 <p class='railticket_help'>Tap or click the station you wish to start your journey from.</p>
 <div class='railticket_container'>
-    <div class='railticket_listselect_left'>
-        <div class='inner'>
-           <h3>Principal stations</h3>
-        </div>
-    </div>
-    <div class='railticket_listselect_right'>
-        <div class='inner'>
-            <ul>
-            {{#mainstns}}
-            <li>
-                <input type='radio' name='fromstation' id='fromstation{{stnid}}' value='{{stnid}}'
-                    class='railticket_fromstation ' {{closed}}/>
-                <label for='fromstation{{stnid}}'>
-                {{name}}<br />
-                <div class='railticket_stndesc'>{{description}}</div>
-                </label>
-            </li>
-            {{/mainstns}}
-            </ul>
-        </div>
-    </div>
+    <h4 style='{{noptitle}}'>Principal Stations</h4>
+    <ul>
+    {{#mainstns}}
+        <li>
+            <input type='radio' name='fromstation' id='fromstation{{stnid}}' value='{{stnid}}'
+                class='railticket_fromstation ' {{closed}}/>
+            <label for='fromstation{{stnid}}'>
+            {{name}}<br />
+            <div class='railticket_stndesc'>{{description}}</div>
+            </label>
+        </li>
+        {{/mainstns}}
+    </ul>
 </div>
 <div class='railticket_container'>
-    <hr />
+    <h4 style='{{nootitle}}'>Other Stations</h4>
     <div class='railticket_listselect_left'>
         <div class='inner'>
-           <h4>Other stations</h4>
-        </div>
-    </div>
-    <div class='railticket_listselect_right'>
-        <div class='inner'>
-            {{#otherstns}}
+            {{#otherstnsleft}}
             <li>
                 <input type='radio' name='fromstation' id='fromstation{{stnid}}' value='{{stnid}}'
-                    class='railticket_fromstationother' {{closed}}/>
+                    class='railticket_fromstation' {{closed}}/>
                 <label for='fromstation{{stnid}}'>
                 <span class='railticket_otherstation'>{{name}}</span><br />
                 <span class='railticket_stndesc'>{{description}}</span>
                 </label>
             </li>
-            {{/otherstns}} 
+            {{/otherstnsleft}} 
+        </div>
+    </div>
+    <div class='railticket_listselect_right'>
+        <div class='inner'>
+            {{#otherstnsright}}
+            <li>
+                <input type='radio' name='fromstation' id='fromstation{{stnid}}' value='{{stnid}}'
+                    class='railticket_fromstation' {{closed}}/>
+                <label for='fromstation{{stnid}}'>
+                <span class='railticket_otherstation'>{{name}}</span><br />
+                <span class='railticket_stndesc'>{{description}}</span>
+                </label>
+            </li>
+            {{/otherstnsright}} 
         </div>
     </div>
 </div>
 
 </script>
 
-<script id="journeychoice" type="x-tmpl-mustache">
+<script id="journeychoice_tmpl" type="x-tmpl-mustache">
 <div class='railticket_container'>
-<hr />
-<h3>Popular Journeys</h3>
+<h3>Choose Journey</h3>
+<p class='railticket_help'>Choose your journey by tapping or clicking on the options below.</p>
+
+<h4>Popular Choices</h4>
 {{#popular}}
     <input type='radio' name='journeychoice' id='journeychoice{{code}}' value='{{code}}'
-        class='railticket_journeychoice '/>
+        class='railticket_journeychoice ' {{disabled}} />
     <label for='journeychoice{{code}}'>
     {{journeydesc}}<br />
     <div class='railticket_stndesc'>{{extradesc}}</div>
     </label>
 {{/popular}}
 
-<hr>
-<h3>Other Journeys</h3>
-
+<hr />
+<h4>Other Choices</h4>
 <div class='railticket_listselect_left'>
     <div class='inner'>
     {{#otherleft}}
         <input type='radio' name='journeychoice' id='journeychoice{{code}}' value='{{code}}'
-            class='railticket_journeychoice '/>
+            class='railticket_journeychoice ' {{disabled}} />
         <label for='journeychoice{{code}}'>
         <span class='railticket_otherstation'>{{journeydesc}}</span><br />
         <div class='railticket_stndesc'>{{extradesc}}</div>
@@ -82,7 +84,7 @@
     <div class='inner'>
     {{#otherright}}
         <input type='radio' name='journeychoice' id='journeychoice{{code}}' value='{{code}}'
-            class='railticket_journeychoice '/>
+            class='railticket_journeychoice ' {{disabled}} />
         <label for='journeychoice{{code}}'>
         <span class='railticket_otherstation'>{{journeydesc}}</span><br />
         <div class='railticket_stndesc'>{{extradesc}}</div>
@@ -90,7 +92,6 @@
     {{/otherright}}
     </div>
 </div>
-
 </div>
 
 </script>

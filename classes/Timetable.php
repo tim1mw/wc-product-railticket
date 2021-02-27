@@ -225,7 +225,7 @@ class Timetable {
         }
 
         $data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE revision = ".
-            $this->data->revision." ORDER BY SEQUENCE ".$sort." LIMIT 1");
+            $this->data->revision." AND closed = 0 ORDER BY SEQUENCE ".$sort." LIMIT 1");
 
         $s = new Station($data);
         return $s;

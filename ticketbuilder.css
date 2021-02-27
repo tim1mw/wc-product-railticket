@@ -21,6 +21,7 @@
     margin-left:auto;
     margin-right:auto;
     width:100%;
+    overflow-y:hidden;
 }
 
 .railticket_stageblock h3 {
