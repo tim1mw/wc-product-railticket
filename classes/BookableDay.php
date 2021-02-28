@@ -336,17 +336,30 @@ class BookableDay {
         return Special::get_specials($this->data->date, $dataonly);
     }
 
-    public function get_bookable_trains(Station $from, Station $to, $after = false) {
+    public function get_bookable_trains(Station $from, Station $to, $nodisable, $after = false, $disableafter = false) {
         $direction = $from->get_direction($to);
         $times = $this->timetable->get_times($from, $direction, "deps", true, $to);
 
         if ($after) {
             $after = ($after->hour*60) + $after->min;
         }
+        if ($disableafter) {
+            $disableafter = ($disableafter->hour*60) + $disableafter->min;
+        }
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $nowdt = new \DateTime();
+        $nowdt->setTimezone($railticket_timezone);
+
+        if ($nowdt->format('Y-m-d') == $this->data->date) {
+            $today = true;
+        } else {
+            $today = false;
+        }
+
+        $now = (intval($nowdt->format("H"))*60) + intval($nowdt->format("i"));
+        $grace = intval(get_option('wc_product_railticket_bookinggrace'));
 
         $ftimes = array();
-
-        // TODO Are their any fares for this trip???
 
         // The timetable won't tell us if the train can actually be booked. AKA, do we have seats for this trip
         foreach ($times as $time) {
@@ -355,28 +368,60 @@ class BookableDay {
                 continue;
             }
 
+            $dt = ($time->hour*60) + $time->min;
+            $time->classes = '';
+            $time->disabled = '';
+            $time->notbookable = false;
+
             // Filter out trains which are after the specified time
             if ($after) {
-                $dt = ($time->hour*60) + $time->min;
                 if ($dt < $after) {
                     continue;
                 }
             }
 
-            // TODO Late running/override/guard....
+            if ($today) {
+                $ext = intval($dt + $grace);
 
-            $trainservice = new \wc_railticket\TrainService($this, $from, $time->key, $to);
-            $capused = $trainservice->get_inventory(false, false);
-            $time->seatsleft = $capused->totalseats;
-            $time->classes = '';
-            if ($capused->totalseats == 0) {
-                $time->seatsleftstr = __('FULL - please try another train', 'wc_railticket');
-                $time->classes .= " railticket_full";
-            } else {
-                $time->seatsleftstr = $capused->totalseats.' '.__('empty seats', 'wc_railticket');
+                if ($now > $ext) {
+                    if ($nodisable) {
+                        $time->classes .= ' railticket_late';
+                    } else {
+                        $time->disabled = 'disabled';
+                        $time->notbookable = true;
+                    }
+                }
+
+                if ($now >= $dt && $now <= $ext) {
+                    $time->classes .= ' railticket_late';
+                }
             }
-            $time->arr = $time->stopsat->formatted;
-            
+
+            if (!$nodisable && $disableafter) {
+                if ($dt < $disableafter) {
+                    $time->disabled = 'disabled';
+                    $time->notbookable = true;
+                }
+            }
+
+            if (!$time->notbookable) {
+                $trainservice = new \wc_railticket\TrainService($this, $from, $time->key, $to);
+                $capused = $trainservice->get_inventory(false, false);
+                $time->seatsleft = $capused->totalseats;
+                if ($capused->totalseats == 0) {
+                    $time->seatsleftstr = __('FULL - please try another train', 'wc_railticket');
+                    $time->classes .= " railticket_full";
+                    if ($nodisable) {
+                        $time->classes .= ' railticket_late';
+                    } else {
+                        $time->disabled = 'disabled';
+                    }
+                } else {
+                    $time->seatsleftstr = ', '.$capused->totalseats.' '.__('empty seats', 'wc_railticket');
+                }
+            }
+
+            $time->arr = __('Arrives', 'wc_railticket').' '.$time->stopsat->formatted;
 
             $ftimes[] = $time;
         }

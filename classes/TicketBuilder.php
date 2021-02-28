@@ -231,17 +231,17 @@ class TicketBuilder {
         // TODO : Not handling sameservicereturn here yet....
 
         if ($this->fromstation->get_stnid() == $up_terminal->get_stnid()) {
-            $allpopular[] = $this->get_returntrip_opt($this->fromstation, $down_terminal, true);
-            $allpopular[] = $this->get_singletrip_opt($this->fromstation, $down_terminal);
+            $this->add_returntrip_opt($allpopular, $this->fromstation, $down_terminal, true);
+            $this->add_singletrip_opt($allpopular, $this->fromstation, $down_terminal);
             $otherterm = $down_terminal;
         } elseif ($this->fromstation->get_stnid() == $down_terminal->get_stnid()) {
-            $allpopular[] = $this->get_returntrip_opt($this->fromstation, $up_terminal, true);
-            $allpopular[] = $this->get_singletrip_opt($this->fromstation, $up_terminal);
+            $this->add_returntrip_opt($allpopular, $this->fromstation, $up_terminal, true);
+            $this->add_singletrip_opt($allpopular, $this->fromstation, $up_terminal);
             $otherterm = $up_terminal;
         } else {
             // Must be an intermediate stop if we got here, so offer round trips
-            $allpopular[] = $this->get_roundtrip_opt($this->fromstation, $up_terminal, $down_terminal);
-            $allpopular[] = $this->get_roundtrip_opt($this->fromstation, $down_terminal, $up_terminal);
+            $this->add_roundtrip_opt($allpopular, $this->fromstation, $up_terminal, $down_terminal);
+            $this->add_roundtrip_opt($allpopular, $this->fromstation, $down_terminal, $up_terminal);
         }
 
         foreach ($allstations as $stn) {
@@ -251,19 +251,24 @@ class TicketBuilder {
                 continue;
             }
 
-            $allother[] = $this->get_returntrip_opt($this->fromstation, $stn);
-            $allother[] = $this->get_singletrip_opt($this->fromstation, $stn);
+            $this->get_returntrip_opt($allother, $this->fromstation, $stn);
+            $this->get_singletrip_opt($allother, $this->fromstation, $stn);
         }
 
         return ['popular' => $allpopular, 'other' => $allother];
     }
 
-    private function get_returntrip_opt(Station $from, Station $to, $full = false) {
+    private function add_returntrip_opt(&$data, Station $from, Station $to, $fullline = false) {
+        // Do we have any tickets for this?
+        if (!$this->bookableday->fares->can_sell_journey($from, $to, 'return', $this->is_guard(), $this->special)) {
+            return false;
+        }
+
         $trp = new \stdclass();
         $trp->journeytype = 'return';
         $trp->journeydesc = __('Return Trip to ', 'wc_railticket').$to->get_name();
 
-        if ($full) {
+        if ($fullline) {
             $trp->extradesc =  __('A full line return trip', 'wc_railticket').", ".
                 $from->get_name()." - ".$to->get_name()." - ".$from->get_name();
         } else {
@@ -272,24 +277,38 @@ class TicketBuilder {
 
         $trp->code = 'return_'.$to->get_stnid();
 
-        // TODO Do a check here to see if this can be purchased
         $trp->disabled = '';
 
-        return $trp; 
+        $data[] = $trp;
+
+        return true; 
    }
 
-    private function get_singletrip_opt(Station $from, Station $to) {
+    private function add_singletrip_opt(&$data, Station $from, Station $to) {
+        // Do we have any tickets for this?
+        if (!$this->bookableday->fares->can_sell_journey($from, $to, 'single', $this->is_guard(), $this->special)) {
+            return false;
+        }
+
         $trp = new \stdclass();
         $trp->journeytype = 'single';
         $trp->journeydesc = __('Single Trip to ', 'wc_railticket').$to->get_name();
         $trp->extradesc = $from->get_name()." - ".$to->get_name();
         $trp->code = 'single_'.$to->get_stnid();
-        // TODO Do a check here to see if this can be purchased
+
         $trp->disabled = '';
-        return $trp; 
+
+        $data[] = $trp;
+
+        return true; 
    }
 
-    private function get_roundtrip_opt(Station $from, Station $term1, Station $term2) {
+    private function add_roundtrip_opt(&$data, Station $from, Station $term1, Station $term2) {
+        // Do we have any tickets for this?
+        if (!$this->bookableday->fares->can_sell_journey($from, $from, 'round', $this->is_guard(), $this->special)) {
+            return false;
+        }
+
         $rnd = new \stdclass();
         $rnd->journeytype = 'round';
         $rnd->journeydesc = __('Full Line Round Trip', 'wc_railticket');
@@ -300,20 +319,10 @@ class TicketBuilder {
         $rnd->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();;
         // TODO Do a check here to see if this can be purchased
         $trp->disabled = '';
+
+        $data[] = $trp;
+
         return $rnd;
-    }
-
-    private function can_sell_journeytype($type) {
-        // TODO Fix this method and use for opts above.
-        global $wpdb;
-        $jt = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_prices WHERE journeytype = '".$type."' AND ".
-            "((stationone = ".$this->fromstation." AND stationtwo = ".$this->tostation.") OR ".
-            "(stationone = ".$this->tostation." AND stationtwo = ".$this->fromstation.")) AND disabled = 0");
-        if (count($jt)) {
-            return true;
-        }
-
-        return false;
     }
 
     public function get_bookable_trains() {
@@ -329,25 +338,36 @@ class TicketBuilder {
             return $data;
         }
 
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $nowdt = new \DateTime();
+        $nowdt->setTimezone($railticket_timezone);
+        if ($nowdt->format('Y-m-d') == $this->dateoftravel) {
+            $today = true;
+        } else {
+            $today = false;
+        }
+
+        $nodisable = $this->is_guard();
+
         $data->legs[0] = new \stdclass();
-        $data->legs[0]->times = $this->bookableday->get_bookable_trains($this->fromstation, $this->tostation);
+        $data->legs[0]->times = $this->bookableday->get_bookable_trains($this->fromstation, $this->tostation, $nodisable);
         $data->legs[0]->header ='';
         $data->legs[0]->leg = 0;
         if ($this->journeytype == 'return') {
             $data->legs[1] = new \stdclass();
-            $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->fromstation,
-                reset($data->legs[0]->times)->stopsat);
+            $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->fromstation, $nodisable,
+                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled($data->legs[0]->times));
             $data->legs[1]->leg = 1;
             $data->legs[0]->header = __('Outbound', 'wc_railticket');
             $data->legs[1]->header = __('Return', 'wc_railticket');
         } elseif ($this->journeytype == 'round') {
             $data->legs[1] = new \stdclass();
-            $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->rndtostation,
-                reset($data->legs[0]->times)->stopsat);
+            $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->rndtostation, $nodisable,
+                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled($data->legs[0]->times));
             $data->legs[1]->leg = 1;
             $data->legs[2] = new \stdclass();
-            $data->legs[2]->times = $this->bookableday->get_bookable_trains($this->rndtostation, $this->fromstation,
-                reset($data->legs[1]->times)->stopsat);
+            $data->legs[2]->times = $this->bookableday->get_bookable_trains($this->rndtostation, $this->fromstation, $nodisable,
+                reset($data->legs[1]->times)->stopsat, $this->get_first_enabled($data->legs[1]->times));
             $data->legs[2]->leg = 1;
             $data->legs[0]->header = __('1st Train', 'wc_railticket');
             $data->legs[1]->header = __('2nd Train', 'wc_railticket');
@@ -355,6 +375,16 @@ class TicketBuilder {
         }
 
         return $data;
+    }
+
+    public function get_first_enabled($times) {
+        foreach ($times as $time) {
+            if (!$time->notbookable) {
+                return $time;
+            }
+        }
+
+        return false;
     }
 
     public function get_capacity($outtime = null, $journeytype = null, $fromstation = null, $tostation = null, $caponly = false) {

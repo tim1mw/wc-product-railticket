@@ -509,6 +509,10 @@ input[type=number]::-webkit-inner-spin-button {
     background:#ffffff;
 }
 
+.railticket_timestable {
+    border-collapse:collapse;
+}
+
 /* Stop iOS trying to override form styles */
 
 textarea,

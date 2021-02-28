@@ -71,6 +71,37 @@ class FareCalculator {
         return $this->data->id;
     }
 
+    public function can_sell_journey(Station $fromstation, Station $tostation, $type, $guard, $special) {
+        global $wpdb;
+
+        // Note round trips go from and to the same station for the purposes of pricing.
+
+        $sql = "SELECT COUNT(prices.id) FROM {$wpdb->prefix}wc_railticket_prices prices ".
+            "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes tt ON ".
+            "tt.code = prices.tickettype ".
+            "WHERE prices.journeytype = '".$type."' AND ".
+            "((prices.stationone = ".$fromstation->get_stnid()." AND prices.stationtwo = ".$tostation->get_stnid().") OR ".
+            "(prices.stationone = ".$tostation->get_stnid()." AND prices.stationtwo = ".$fromstation->get_stnid().")) AND prices.disabled = 0 AND ".
+            "prices.revision = ".$this->revision;
+
+        if (!$guard) {
+            $sql .= " AND tt.guardonly = 0";
+        }
+
+        if ($special) {
+            $sql .= " AND tt.special = 1";
+        } else {
+            $sql .= " AND tt.special = 0";
+        }
+
+        $jt = $wpdb->get_var($sql);
+        if ($jt > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard) {
         global $wpdb;
         $tickets = new \stdClass();

@@ -94,7 +94,7 @@
 </script>
 
 <script id="depchoice_tmpl" type="x-tmpl-mustache">
-<table><tr>
+<table class='railticket_times_table'><tr>
 {{#legs}}
    <td>{{{.}}}</td>
 {{/legs}}
@@ -106,10 +106,10 @@
 <ul>
 {{#times}}
 <li id='lidep_{{leg}}_{{index}}' title='{{title}}'>
-    <input type='radio' name='dep_{{leg}}_{{key}}' id='dep_{{leg}}_{{key}}' class='{{classes}}'
-        value='{{key}}' {{checked}} />
-        <label {{lateclass}} for='dep_{{leg}}_{{key}}'>{{formatted}}
-    <div class='railticket_arrtime'>{{seatsleftstr}}, arrives {{arr}}</div></label>
+    <input type='radio' name='dep_{{leg}}' id='dep_{{leg}}_{{key}}'
+        value='{{key}}' {{checked}} {{disabled}} />
+        <label  class='{{classes}}' for='dep_{{leg}}_{{key}}'>{{formatted}}
+    <div class='railticket_arrtime'>{{arr}} {{seatsleftstr}}</div></label>
 </li>
 {{/times}}
 </ul>
