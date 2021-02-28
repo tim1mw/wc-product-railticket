@@ -356,18 +356,18 @@ class TicketBuilder {
         if ($this->journeytype == 'return') {
             $data->legs[1] = new \stdclass();
             $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->fromstation, $nodisable,
-                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled($data->legs[0]->times));
+                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled($data->legs[0]->times)->stopsat);
             $data->legs[1]->leg = 1;
             $data->legs[0]->header = __('Outbound', 'wc_railticket');
             $data->legs[1]->header = __('Return', 'wc_railticket');
         } elseif ($this->journeytype == 'round') {
             $data->legs[1] = new \stdclass();
             $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->rndtostation, $nodisable,
-                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled($data->legs[0]->times));
+                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled($data->legs[0]->times)->stopsat);
             $data->legs[1]->leg = 1;
             $data->legs[2] = new \stdclass();
             $data->legs[2]->times = $this->bookableday->get_bookable_trains($this->rndtostation, $this->fromstation, $nodisable,
-                reset($data->legs[1]->times)->stopsat, $this->get_first_enabled($data->legs[1]->times));
+                reset($data->legs[1]->times)->stopsat, $this->get_first_enabled($data->legs[1]->times)->stopsat);
             $data->legs[2]->leg = 1;
             $data->legs[0]->header = __('1st Train', 'wc_railticket');
             $data->legs[1]->header = __('2nd Train', 'wc_railticket');
