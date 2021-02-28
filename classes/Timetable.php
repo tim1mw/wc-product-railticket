@@ -143,7 +143,7 @@ class Timetable {
 
         $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $date = \DateTime::createFromFormat("Y-m-d", $this->date, $railticket_timezone);
-        $times = $this->apply_rules($dtimes, $this->data->colsmeta, $date);
+        $times = $this->apply_rules($dtimes, $date);
 
         if ($format) {
             $fmt = get_option('wc_railticket_time_format');
@@ -179,7 +179,7 @@ class Timetable {
         }
     }
 
-    private function apply_rules($times) {
+    private function apply_rules($times, $date) {
 
         $filtered = array();
         $count = 0;
@@ -219,7 +219,7 @@ class Timetable {
                 }
                 break;
             case 8:
-                $tdate = DateTime::createFromFormat("Ymd", $str);
+                $tdate = \DateTime::createFromFormat("Ymd", $str);
                 if ($tdate == $date) {
                     return true;
                 }
