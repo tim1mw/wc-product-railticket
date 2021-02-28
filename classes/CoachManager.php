@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class CoachManager {
     private $composition, $reserve, $bays;
 
-    public function format_reserve($res, $daytype) {
+    public static function format_reserve($res, $daytype) {
         switch ($daytype) {
             case 'simple':
                 return self::get_string($res);
@@ -23,7 +23,7 @@ class CoachManager {
         return '';
     }
 
-    public function format_composition($comp, $daytype) {
+    public static function format_composition($comp, $daytype) {
         switch ($daytype) {
             case 'simple':
                 return self::get_string($comp->coachset);
@@ -38,7 +38,7 @@ class CoachManager {
         return '';
     }
 
-    private function get_string($reserve) {
+    private static function get_string($reserve) {
         $reserve = (array) $reserve;
         $str = '';
         foreach ($reserve as $i => $num) {
@@ -50,7 +50,7 @@ class CoachManager {
         return substr($str, 0, strlen($str)-2);
     }
 
-    public function process_coaches($parsed, Timetable $timetable = null) {
+    public static function process_coaches($parsed, Timetable $timetable = null) {
         global $wpdb;
 
         if ($timetable != null) {
@@ -79,13 +79,13 @@ class CoachManager {
                 break;
             case 'pertrain':
                 $r->bays = self::process_set_allocations($parsed);
-                $r->reserve = sef::process_set_reserve($parsed);
+                $r->reserve = self::process_set_reserve($parsed);
                 break;
         }
         return $r;
     }
 
- function process_set_reserve($parsed) {
+   private static function process_set_reserve($parsed) {
         $data = array();
 
         foreach ($parsed->coachsets as $key => $set) {
@@ -95,11 +95,11 @@ class CoachManager {
         return $data;
     }
 
-    function process_set_allocations($parsed) {
+    private static function process_set_allocations($parsed) {
         $data = new \stdclass();
         $data->coachsets = array();
         foreach ($parsed->coachsets as $key => $set) {
-            $data->coachsets[$key] = railticket_get_coachset_bays($set->coachset, false);
+            $data->coachsets[$key] = self::get_coachset_bays($set->coachset, false);
         }
         $data->up = $parsed->up;
         $data->down = $parsed->down;
@@ -107,7 +107,7 @@ class CoachManager {
         return $data;
     }
 
-    function get_coachset_bays($coachset) {
+    private static function get_coachset_bays($coachset) {
         global $wpdb;
         $coachset = (array) $coachset;
         $data = array();
