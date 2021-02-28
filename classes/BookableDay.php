@@ -397,10 +397,14 @@ class BookableDay {
                 }
             }
 
-            if (!$nodisable && $disableafter) {
+            if ($disableafter) {
                 if ($dt < $disableafter) {
-                    $time->disabled = 'disabled';
-                    $time->notbookable = true;
+                    if ($nodisable) {
+                        $time->classes .= ' railticket_late';
+                    } else {
+                        $time->disabled = 'disabled';
+                        $time->notbookable = true;
+                    }
                 }
             }
 
