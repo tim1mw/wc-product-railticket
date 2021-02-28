@@ -419,6 +419,7 @@ class BookableDay {
                         $time->classes .= ' railticket_late';
                     } else {
                         $time->disabled = 'disabled';
+                        $time->notbookable = true;
                     }
                 } else {
                     $time->seatsleftstr = ', '.$capused->totalseats.' '.__('empty seats', 'wc_railticket');

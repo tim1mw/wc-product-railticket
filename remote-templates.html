@@ -106,9 +106,9 @@
 <ul>
 {{#times}}
 <li id='lidep_{{leg}}_{{index}}' title='{{title}}'>
-    <input type='radio' name='dep_{{leg}}' id='dep_{{leg}}_{{key}}'
-        value='{{key}}' {{checked}} {{disabled}} />
-        <label  class='{{classes}}' for='dep_{{leg}}_{{key}}'>{{formatted}}
+    <input type='radio' name='dep_{{leg}}' id='dep_{{leg}}_{{index}}'
+        value='{{index}}' {{checked}} {{disabled}} class='railticket_dep_{{leg}}' />
+        <label  class='{{classes}}' for='dep_{{leg}}_{{index}}'>{{formatted}}
     <div class='railticket_arrtime'>{{arr}} {{seatsleftstr}}</div></label>
 </li>
 {{/times}}
