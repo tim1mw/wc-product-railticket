@@ -597,48 +597,51 @@ function allocateTickets() {
     
     confirm.style.display = 'inline';
     // Now show off what we have
-    var str = "<div class='railticket_travellers_table_container'><h4>My Tickets</h4>"+
-        minstr+
-        "<table class='railticket_travellers_table'>";
-    var total = 0;
+    var td = {};
+    td.allocated = [];
+    td.total = 0;
     for (i in ticketsAllocated) {
         var tkt = ticketdata.prices[i];
-        str += '<tr>'+
-            '<td><span>'+ticketsAllocated[i]+'&nbspx</span></td>'+
-            '<td><span>'+tkt.name+'</span><br />'+tkt.description+'</td>'+
-            '<td><span>'+formatter.format(tkt.price * ticketsAllocated[i])+'</span></td>'+
-            '<td><img src="'+tkt.image+'" class="railticket_image" /></td>'+
-            '</tr>';
-        total += parseFloat(tkt.price) * ticketsAllocated[i];
-    }
-    var supplement = 0;
+        td.total += parseFloat(tkt.price) * ticketsAllocated[i];
 
-    if (total < minprice && total != 0) {
-        var nm = document.getElementById('nominimum');
-        if (guard && nm.checked == true) {
-            supplement = 0;
-        } else {
-            supplement = minprice - total;
-            total = minprice;
+        var t = {};
+        t.num = ticketsAllocated[i];
+        t.name = tkt.name;
+        t.price = formatter.format(tkt.price * ticketsAllocated[i]);
+        t.image = tkt.image;
+        t.description = tkt.description;
+
+        td.allocated.push(t);
+    }
+
+    td.supplement = 0;
+    if (minprice !== false) {
+        if (td.total < minprice && td.total != 0) {
+            var nm = document.getElementById('nominimum');
+            if (guard && nm.checked == true) {
+                td.supplement = 0;
+            } else {
+                td.supplement = minprice - td.total;
+                td.total = minprice;
+            }
         }
-        
-        str += '<tr>'+
-            '<td><span>&nbsp</span></td>'+
-            '<td><span>Minimum price supplement</td>'+
-            '<td><span>'+formatter.format(supplement)+'</span></td>'+
-            '<td></td>'+
-            '</tr>';
+        td.minstr = minstr;
+    } else {
+        td.hidemin = 'display:none;';
     }
 
-    str += "<tr><td></td><td><span>Total</span></td><td><span>"+formatter.format(total)+"</span></td><td></td></tr>";
-    str += '</table></div>';
-    summary.innerHTML = str;
+    td.total = formatter.format(td.total);
+    td.supplement = formatter.format(td.supplement);
+
+    var tkttemplate = document.getElementById('tickets_tmpl').innerHTML;
+    summary.innerHTML = Mustache.render(tkttemplate, td);
 }
 
 const formatter = new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: 'GBP',
-    minimumFractionDigits: 2
+    minimumFractionDigits: 2,
+    currencyDisplay: 'symbol'
 })
 
 function checkCapacity() {

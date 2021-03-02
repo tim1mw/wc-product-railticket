@@ -127,3 +127,26 @@
 </div>
 {{/travellers}}
 </script>
+
+<script id="tickets_tmpl" type="x-tmpl-mustache">
+<div class='railticket_travellers_table_container'>
+    <h4>My Tickets</h4>
+    {{{minstr}}}
+    <table class='railticket_travellers_table'>
+    {{#allocated}}
+        <tr>
+            <td><span>{{num}}&nbsp;x</span></td>
+            <td><span>{{{name}}}</span><br />{{{description}}}</td>
+            <td><span>{{price}}</span></td>
+            <td><img src="{{image}}" class="railticket_image" /></td>
+        </tr>
+    {{/allocated}}
+        <tr style='{{hidemin}}'>
+            <td><span>&nbsp</span></td>
+            <td><span>Minimum price supplement</td>
+            <td><span>{{supplement}}</span></td>
+            <td></td>
+        </tr>
+        <tr><td></td><td><span>Total</span></td><td><span>{{total}}</span></td><td></td></tr>
+    </table></div>
+</script>
