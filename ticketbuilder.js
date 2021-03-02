@@ -5,7 +5,8 @@ var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimem
 var ticketSelections = {};
 var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-var stations = [];
+var stationData = [];
+var fromstationdata, tostationdata, journeychoicedata, journeytypedata, alljourneys;
 
 
 function setupTickets() {
@@ -78,9 +79,11 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('fromstation', getFormValue('fromstation'));
 
     if (specialSelected) {
+        // TODO Do specials work here?
         data.append('outtime', "s:"+getFormValue('specials'));
         data.append('rettime', "s:"+getFormValue('specials'));
     } else {
+        // TODO This is going to fail....
         data.append('outtime', getFormValue('outtime'));
         data.append('rettime', getFormValue('rettime'));
     }
@@ -126,7 +129,7 @@ function setBookingDate(bdate) {
 function doStations() {
     railTicketAjax('bookable_stations', true, function(response) {
 
-        stations = response['stations'];
+        stationData = response['stations'];
         var stc = document.getElementById('stations_container');
         if (response['specialonly'] == 0) {
             renderFromStations(response);
@@ -300,6 +303,8 @@ function fromStationChanged(evt) {
     railTicketAjax('journey_opts', true, function(response) {
         console.log(response);
 
+        alljourneys = response['popular'].concat(response['other']);
+
         var stntemplate = document.getElementById('journeychoice_tmpl').innerHTML;
         var div = document.getElementById('journeychoice_container');
 
@@ -356,11 +361,12 @@ function uncheckAll(classname) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-console.log(response);
+
         sameservicereturn = response['sameservicereturn'];
         var div = document.getElementById('deptimes_data');
         deplegs = response['legs'];
         ticketdata = response['tickets'];
+console.log(ticketdata);
 
         if (response['legs'].length == 0) {
             div.innerHTML = '<p>No bookable services found. Sorry!</p>';
@@ -447,23 +453,36 @@ function convert24hour(time) {
 }
 
 function renderTicketSelector() {
-    var summary = document.getElementById('railticket_summary_service');
+    var jc = getFormValue('journeychoice');
+    var jcparts = jc.split('_');
+    journeytype = jcparts[1];
+    fromindex = getFormValue('fromstation');
+    toindex = jcparts[1];
 
-    summary.innerHTML = getSelectionSummary();
+    for (si in stationData) {
 
-    if (response.length == 0) {
-        document.getElementById('ticket_type').style.display = "none";
-        document.getElementById('ticket_numbers').style.display = "none";
-        document.getElementById('ticket_summary').innerHTML = "<h3>Sorry, no tickets were found for this journey</h3>";
-        showTicketStages('tickets', true);
-        return;
+        if (stationData[si].stnid == fromindex) {
+            fromstationdata = stationData[si];
+        }
+        if (stationData[si].stnid == toindex) {
+            tostationdata = stationData[si];
+        }
     }
+
+    for (i in alljourneys) {
+        if (alljourneys[i].code == jc) {
+            journeychoicedata = alljourneys[i];
+        }
+    }
+
+    var summary = document.getElementById('railticket_summary_service');
+    summary.innerHTML = getSelectionSummary();
 
     var travellers = "";
     var nTicketSelections = {};
-    for (i in response.travellers) {
+    for (i in ticketdata.travellers) {
         var value = '';
-        var code = response.travellers[i].code;
+        var code = ticketdata.travellers[i].code;
         if (code in ticketSelections) {
            value = ticketSelections[ticketdata.travellers[i].code];
            nTicketSelections[code] = value;
@@ -473,9 +492,9 @@ function renderTicketSelector() {
             "<div class='railticket_travellers_numbers woocommerce'><div class='quantity'>"+
             " <input type='number' id='q_"+code+"' name='q_"+code+"' "+
             " class='input-text qty text' min='0' max='99' value='"+value+"' oninput='travellersChanged()'> "+
-            " <label for='q_"+code+"'>"+response.travellers[i].name+"</label> ";
-        if (response.travellers[i].description.length > 0) {
-            travellers += " <span>("+response.travellers[i].description+")</span>";
+            " <label for='q_"+code+"'>"+ticketdata.travellers[i].name+"</label> ";
+        if (ticketdata.travellers[i].description.length > 0) {
+            travellers += " <span>("+ticketdata.travellers[i].description+")</span>";
         }
         travellers += "</div></div>"+
             "</div>";
@@ -492,9 +511,11 @@ function renderTicketSelector() {
 }
 
 function getSelectionSummary() {
+    // TODO Obey configured date formatting.
     var ddate = new Date(document.getElementById('dateoftravel').value);
     var tdate = ddate.getDate()+"-"+months[ddate.getMonth()]+"-"+ddate.getFullYear();
 
+    /** TODO Make specials work.... **/
     if (specialSelected) {
         var special = false;
         for (index in specialsData) {
@@ -505,25 +526,10 @@ function getSelectionSummary() {
 
         return "<p>"+special.name+" - "+tdate+"</p><p class='railticket_arrtime'>"+special.description+"</p>";
     } else {
-        var fromindex = document.railticketbooking['fromstation'].value;
-        var toindex = document.railticketbooking['tostation'].value;
-        var f='', t='';
-        for (si in stationData) {
-            if (stationData[si].id == fromindex) {
-                f = stationData[si].name;
-            }
-            if (stationData[si].id == toindex) {
-                t = stationData[si].name;
-            }
-        }
 
-        var str = "<p>"+tdate+", Outbound: "+convert24hour(document.railticketbooking['outtime'].value)+" from "+f;
-        if (document.railticketbooking['journeytype'].value == 'return') {
-            str += ", Return: "+convert24hour(document.railticketbooking['rettime'].value+" from "+t);
-        }
-        str += "</p>";
+        var dep = deplegs[0].times[getFormValue('dep_0')];
 
-        return str;
+        return '<p>'+tdate+'. Departing from '+fromstationdata.name+" at "+dep.formatted+". "+journeychoicedata.journeydesc+".</p>";
     }
 }
 
