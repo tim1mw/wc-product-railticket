@@ -114,3 +114,16 @@
 {{/times}}
 </ul>
 </script>
+
+<script id="travellers_tmpl" type="x-tmpl-mustache">
+{{#travellers}}
+<div class='railticket_travellers'>
+    <div class='railticket_travellers_numbers woocommerce'><div class='quantity'>
+        <input type='number' id='q_{{code}}' name='q_{{code}}'
+            class='input-text qty text' min='0' max='99' value='{{value}}' oninput='travellersChanged()'>
+        <label for='q_{{code}}'>{{name}}</label>
+        <span>{{description}}</span>
+    </div></div>
+</div>
+{{/travellers}}
+</script>

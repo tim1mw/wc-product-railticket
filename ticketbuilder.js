@@ -484,27 +484,17 @@ function renderTicketSelector() {
         var value = '';
         var code = ticketdata.travellers[i].code;
         if (code in ticketSelections) {
-           value = ticketSelections[ticketdata.travellers[i].code];
-           nTicketSelections[code] = value;
+            ticketdata.travellers[i].value = ticketSelections[ticketdata.travellers[i].code];
+            nTicketSelections[code] = value;
         }
-
-        travellers += "<div class='railticket_travellers'>"+
-            "<div class='railticket_travellers_numbers woocommerce'><div class='quantity'>"+
-            " <input type='number' id='q_"+code+"' name='q_"+code+"' "+
-            " class='input-text qty text' min='0' max='99' value='"+value+"' oninput='travellersChanged()'> "+
-            " <label for='q_"+code+"'>"+ticketdata.travellers[i].name+"</label> ";
-        if (ticketdata.travellers[i].description.length > 0) {
-            travellers += " <span>("+ticketdata.travellers[i].description+")</span>";
-        }
-        travellers += "</div></div>"+
-            "</div>";
     }
 
     ticketSelections = nTicketSelections;
 
     var tn = document.getElementById('ticket_travellers')
     tn.style.display = "block";
-    tn.innerHTML = travellers;
+    var tratemplate = document.getElementById('travellers_tmpl').innerHTML;
+    tn.innerHTML = Mustache.render(tratemplate, ticketdata);
     travellersChanged();
 
     showTicketStages('tickets', true);
@@ -526,9 +516,7 @@ function getSelectionSummary() {
 
         return "<p>"+special.name+" - "+tdate+"</p><p class='railticket_arrtime'>"+special.description+"</p>";
     } else {
-
         var dep = deplegs[0].times[getFormValue('dep_0')];
-
         return '<p>'+tdate+'. Departing from '+fromstationdata.name+" at "+dep.formatted+". "+journeychoicedata.journeydesc+".</p>";
     }
 }
