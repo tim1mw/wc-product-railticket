@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
-var lastout=-1, lastret=-1, ticketdata, deplegs, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
+var lastout=-1, lastret=-1, ticketdata, deplegs = false, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
 var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array(), hasSpecials = false, specialSelected = false, specialsData = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
@@ -80,12 +80,20 @@ function railTicketAjax(datareq, spinner, callback) {
 
     if (specialSelected) {
         // TODO Do specials work here?
-        data.append('outtime', "s:"+getFormValue('specials'));
-        data.append('rettime', "s:"+getFormValue('specials'));
-    } else {
-        // TODO This is going to fail....
-        data.append('outtime', getFormValue('outtime'));
-        data.append('rettime', getFormValue('rettime'));
+        //data.append('outtime', "s:"+getFormValue('specials'));
+        //data.append('rettime', "s:"+getFormValue('specials'));
+    } else if (deplegs) {
+        var times = [];
+        for (var l = 0; l < deplegs.length; l++) {
+            var timeindex = getFormValue('dep_'+l);
+            for (var i = 0; i < deplegs[l].times.length; i++) {
+                if (deplegs[l].times[i].index == timeindex) {
+                    times.push(deplegs[l].times[i].key);
+                }
+            }
+            
+        }
+        data.append('times', JSON.stringify(times));
     }
 
     data.append('journeychoice', getFormValue('journeychoice'));
@@ -367,6 +375,7 @@ function getDepTimes() {
         deplegs = response['legs'];
         ticketdata = response['tickets'];
 console.log(ticketdata);
+console.log(deplegs);
 
         if (response['legs'].length == 0) {
             div.innerHTML = '<p>No bookable services found. Sorry!</p>';
@@ -651,6 +660,8 @@ function checkCapacity() {
 }
 
 function showCapacity(response) {
+console.log(response);
+/*
     var capacitydiv = document.getElementById('ticket_capacity');
     var str = "<div class='railticket_travellers_table_container' >";
     if (response.ok || guard) {
@@ -712,6 +723,7 @@ function showCapacity(response) {
     if (window.innerWidth >= 1010) {
         window.scrollBy(0, -80); 
     }
+*/
 }
 
 

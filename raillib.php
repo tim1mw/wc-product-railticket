@@ -93,14 +93,16 @@ function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');
     $fromstation = railticket_getpostfield('fromstation');
     $journeychoice = railticket_getpostfield('journeychoice');
-    $outtime = railticket_getpostfield('outtime');
-    $rettime = railticket_getpostfield('rettime');
     $overridevalid = railticket_getpostfield('overridevalid');
     $disabledrequest = railticket_getpostfield('disabledrequest');
     $notes = railticket_getpostfield('notes');
     $nominimum = railticket_getpostfield('nominimum');
     $show = railticket_getpostfield('show');
 
+    $times = null;
+    if (array_key_exists('times', $_REQUEST)) {
+        $times = json_decode(stripslashes($_REQUEST['times']));
+    }
     $ticketselections = null;
     if (array_key_exists('ticketselections', $_REQUEST)) {
         $ticketselections = json_decode(stripslashes($_REQUEST['ticketselections']));
@@ -111,7 +113,9 @@ function railticket_getticketbuilder() {
     }
     $tickets = array();
 
-    return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $journeychoice, $outtime, $rettime,
+    // TODO Sanitize JSON?
+
+    return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $journeychoice, $times,
          $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show);
 }
 

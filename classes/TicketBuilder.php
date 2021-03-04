@@ -8,7 +8,7 @@ class TicketBuilder {
 
     private $today, $tomorrow, $stations;
 
-    public function __construct($dateoftravel, $fromstation, $journeychoice, $outtime, $rettime,
+    public function __construct($dateoftravel, $fromstation, $journeychoice, $times,
         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
         global $wpdb;
         $this->show = $show;
@@ -48,17 +48,10 @@ class TicketBuilder {
              $this->rndtostation = false;
         }
 
-        if (strpos($outtime, 's:') === false) {
-            $this->special = false;
-            $this->outtime = $outtime;
-            $this->rettime = $rettime;
-        } else {
-            $parts = explode(":", $outtime);
-            $this->special = true;
-            $this->outtime = $parts[1];
-            $this->rettime = $parts[1];
-            $this->journeytype = 'return';
-        }
+        /* TODO Deal with Specials here */
+        //if (strpos($outtime, 's:') === false) {
+        $this->special = false;
+        $this->times = $times;
 
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
@@ -387,243 +380,31 @@ class TicketBuilder {
         return false;
     }
 
-    public function get_capacity($outtime = null, $journeytype = null, $fromstation = null, $tostation = null, $caponly = false) {
-        if ($outtime == null) {
-            $outtime = $this->outtime;
-        }
-        if ($journeytype == null) {
-            $journeytype = $this->journeytype;
-        }
-        if ($fromstation == null) {
-            $fromstation = $this->fromstation;
-        }
-        if ($tostation == null) {
-            $tostation = $this->tostation;
-        }
+    public function get_capacity() {
 
-        $allocatedbays = new \stdclass();
-        $allocatedbays->ok = false;
-        $allocatedbays->tobig = false;
-        $allocatedbays->error = false;
-        $allocatedbays->disablewarn = false;
+        $seatsreq = FareCalculator::count_seats($this->ticketselections);
 
-        $seatsreq = $this->count_seats();
+        $capacity = array();
 
-        $outbays = $this->get_service_inventory($outtime, $fromstation, $tostation, false);
-        $allocatedbays->outseatsleft = $outbays->totalseats;
-
-        if ($caponly) {
-            return $allocatedbays;
+        switch ($this->journeytype) {
+            case 'round':
+                $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
+                $capacity[] = $ts-->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->rndstation);
+                $capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $ts2 = new TrainService($this->bookableday, $this->rndstation, $this->times[2], $this->tostation);
+                $capacity[] = $ts2->get_capacity(false, $seatsreq, $this->disabledrequest);
+                break;
+            case 'return':
+                $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->fromstation);
+                $capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
+            case 'single':
+                $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
+                $capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capacity = array_reverse($capacity);
         }
 
-        if ($journeytype == 'return') {
-            $retbays = $this->get_service_inventory($this->rettime, $tostation, $fromstation, false);
-            // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
-            $allocatedbays->retseatsleft = $retbays->totalseats;
-            if ($retbays->totalseats < $seatsreq) {
-                $allocatedbays->retbays = array();
-            } else {
-
-                $retallocatesm = $this->getBays($seatsreq, $retbays->bays, false);
-                $retallocatelg = $this->getBays($seatsreq, $retbays->bays, true);
-
-                if (!$retallocatesm && !$retallocatelg) {
-                    $allocatedbays->error = true;
-                    return $allocatedbays;
-                }
-
-                if ($retallocatesm[0] > $retallocatelg[0]) {
-                    $allocatedbays->retbays = $retallocatelg[1];
-                    if (!$retallocatelg[2] && $this->disabledrequest) {
-                        $allocatedbays->disablewarn = true;
-                    }
-                } else {
-                    $allocatedbays->retbays = $retallocatesm[1];
-                    if (!$retallocatesm[2] && $this->disabledrequest) {
-                        $allocatedbays->disablewarn = true;
-                    }
-                }
-            }
-        }
-
-        // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
-        if ($outbays->totalseats < $seatsreq) {
-            $allocatedbays->outbays = array();
-            return $allocatedbays;
-        }
-
-        $outallocatesm = $this->getBays($seatsreq, $outbays->bays, false);
-        $outallocatelg = $this->getBays($seatsreq, $outbays->bays, true);
-
-        if (!$outallocatesm && !$outallocatelg) {
-            $outallocatedbays->error = true;
-            return $outallocatedbays;
-        }
-
-        if ($outallocatesm[0] > $outallocatelg[0]) {
-            $allocatedbays->outbays = $outallocatelg[1];
-            if (!$outallocatelg[2] && $this->disabledrequest) {
-                $allocatedbays->disablewarn = true;
-            }
-        } else {
-            $allocatedbays->outbays = $outallocatesm[1];
-            if (!$outallocatesm[2] && $this->disabledrequest) {
-                $allocatedbays->disablewarn = true;
-            }
-        }
-
-        $allocatedbays->match = true;
-        if ($journeytype == 'single') {
-            $allocatedbays->ok = true;
-            return $allocatedbays;
-        }
-
-        if (count($allocatedbays->retbays) > 0) {
-            $allocatedbays->ok = true;
-            ksort($allocatedbays->outbays);
-            ksort($allocatedbays->retbays);
-
-            foreach ($allocatedbays->outbays as $bay => $num) {
-                if (!array_key_exists($bay, $allocatedbays->retbays)) {
-                    $allocatedbays->match = false;
-                    break;
-                }
-                if ($allocatedbays->retbays[$bay] != $num) {
-                    $allocatedbays->match = false;
-                    break;
-                }
-            }
-        }
-
-        return $allocatedbays;
-    }
-
-    private function getBays($seatsleft, $bays, $largest) {
-        $allocatesm = array();
-        $smcount = 0;
-        $prioritydone = false;
-        while ($seatsleft > 0) {
-            $baychoice = false;
-
-            if ($this->disabledrequest && $prioritydone === false) {
-                $prioritybays = array();
-                foreach ($bays as $bay => $numleft) {
-                    $bayd = $this->getBayDetails($bay);
-                    if ($bayd[1] == 'priority') {
-                        $priorityonly[$bay] = $numleft;
-                     }
-                }
-
-                if ($baychoice === false) {
-                    if ($largest) {
-                        $baychoice = $this->findLargest($priorityonly, true);
-                    } else {
-                        $baychoice = $this->findSmallest($priorityonly, true);
-                    }
-                }
-            }
-
-            if ($baychoice === false) {
-                $baychoice = $this->findBay($seatsleft, $bays, false);
-            }
-
-            if ($baychoice === false) {
-                if ($largest) {
-                    $baychoice = $this->findLargest($bays, false);
-                } else {
-                    $baychoice = $this->findSmallest($bays, false);
-                }
-                // Bail out here, something is wrong....
-                if ($baychoice === false) {
-                    return false;
-                }
-            }
-
-            if ($baychoice && $baychoice[1] == 'priority') {
-                $prioritydone = true;
-            }
-
-            $seatsleft = $seatsleft - $baychoice[0];
-            $bays[$baychoice[2]]--;
-
-            if (array_key_exists($baychoice[2], $allocatesm)) {
-                $allocatesm[$baychoice[2]] ++;
-            } else {
-                $allocatesm[$baychoice[2]] = 1;
-            }
-            $smcount ++;
-            // Bail out here, something is wrong....
-            if ($smcount > 100) {
-                return false;
-            }
-        }
-        return array($smcount, $allocatesm, $prioritydone);
-    }
-
-    private function findSmallest($bays, $allowpriority=false) {
-        $chosen = false;
-        foreach ($bays as $bay => $numleft) {
-            if ($numleft > 0) {
-                $bayd = $this->getBayDetails($bay);
-                if ($allowpriority === false && $bayd[1] == 'priority') {
-                    continue;
-                }
-                if ($chosen === false || $bayd[0] < $chosen[0]) {
-                    $chosen = $bayd;
-                }
-            }
-        }
-        if ($chosen === false && $allowpriority === false) {
-            return $this->findSmallest($bays, true);
-        }
-
-        return $chosen;
-    }
-
-    private function findLargest($bays, $allowpriority=false) {
-        $chosen = false;
-        foreach ($bays as $bay => $numleft) {
-            if ($numleft > 0) {
-                $bayd = $this->getBayDetails($bay);
-                if ($allowpriority === false && $bayd[1] == 'priority') {
-                    continue;
-                }
-                if ($chosen === false || $bayd[0] > $chosen[0]) {
-                    $chosen = $bayd;
-                }
-            }
-        }
-
-        if ($chosen === false && $allowpriority === false) {
-            return $this->findLargest($bays, true);
-        }
-
-        return $chosen;
-    }
-
-    private function findBay($seatsreq, $bays, $allowpriority=false) {
-        foreach ($bays as $bay => $numleft) {
-            $bayd = $this->getBayDetails($bay);
-            if ($allowpriority === false && $bayd[1] == 'priority') {
-                continue;
-            }
-            if ($seatsreq <= $bayd[0] && $numleft > 0) {
-                return $bayd;
-            }
-        }
-
-        if ($allowpriority === false) {
-            return $this->findBay($seatsreq, $bays, true);
-        }
-
-        return false;
-    }
-
-    private function getBayDetails($bay) {
-        $parts = explode('_', $bay);
-        $parts[0] = intval($parts[0]);
-        $parts[2] = $bay;
-        return $parts;
+        return $capacity;
     }
 
     private function checkDuplicate() {
@@ -833,18 +614,6 @@ class TicketBuilder {
             $str .=', ';
         }
         return substr($str, 0, strlen($str)-2);
-    }
-
-    private function count_seats() {
-        global $wpdb;
-        $total = 0;
-        $tkts = (array) $this->ticketselections;
-
-        foreach ($tkts as $ttype => $number) {
-            $val = $wpdb->get_var("SELECT seats FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$ttype."'") * $number;
-            $total += $val;
-        }
-        return $total;
     }
 
     private function get_javascript() {

@@ -23,6 +23,179 @@ class TrainService {
         }
     }
 
+    public function get_capacity($caponly = false, $seatsreq = false, $disabledrequest = false) {
+
+        $allocatedbays = new \stdclass();
+        $allocatedbays->ok = false;
+        $allocatedbays->tobig = false;
+        $allocatedbays->error = false;
+        $allocatedbays->disablewarn = false;
+
+        $outbays = $this->get_inventory(false);
+        $allocatedbays->seatsleft = $outbays->totalseats;
+
+        if ($caponly) {
+            return $allocatedbays;
+        }
+
+        // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
+        if ($outbays->totalseats < $seatsreq) {
+            $allocatedbays->bays = array();
+            return $allocatedbays;
+        }
+
+        $outallocatesm = $this->getBays($seatsreq, $outbays->bays, false, $disabledrequest);
+        $outallocatelg = $this->getBays($seatsreq, $outbays->bays, true, $disabledrequest);
+
+        if (!$outallocatesm && !$outallocatelg) {
+            $outallocatedbays->error = true;
+            return $outallocatedbays;
+        }
+
+        if ($outallocatesm[0] > $outallocatelg[0]) {
+            $allocatedbays->bays = $outallocatelg[1];
+            if (!$outallocatelg[2] && $disabledrequest) {
+                $allocatedbays->disablewarn = true;
+            }
+        } else {
+            $allocatedbays->bays = $outallocatesm[1];
+            if (!$outallocatesm[2] && $disabledrequest) {
+                $allocatedbays->disablewarn = true;
+            }
+        }
+
+        $allocatedbays->ok = true;
+        return $allocatedbays;
+    }
+
+    private function getBays($seatsleft, $bays, $largest, $disabledrequest) {
+        $allocatesm = array();
+        $smcount = 0;
+        $prioritydone = false;
+        while ($seatsleft > 0) {
+            $baychoice = false;
+
+            if ($disabledrequest && $prioritydone === false) {
+                $prioritybays = array();
+                foreach ($bays as $bay => $numleft) {
+                    $bayd = $this->getBayDetails($bay);
+                    if ($bayd[1] == 'priority') {
+                        $priorityonly[$bay] = $numleft;
+                     }
+                }
+
+                if ($baychoice === false) {
+                    if ($largest) {
+                        $baychoice = $this->findLargest($priorityonly, true);
+                    } else {
+                        $baychoice = $this->findSmallest($priorityonly, true);
+                    }
+                }
+            }
+
+            if ($baychoice === false) {
+                $baychoice = $this->findBay($seatsleft, $bays, false);
+            }
+
+            if ($baychoice === false) {
+                if ($largest) {
+                    $baychoice = $this->findLargest($bays, false);
+                } else {
+                    $baychoice = $this->findSmallest($bays, false);
+                }
+                // Bail out here, something is wrong....
+                if ($baychoice === false) {
+                    return false;
+                }
+            }
+
+            if ($baychoice && $baychoice[1] == 'priority') {
+                $prioritydone = true;
+            }
+
+            $seatsleft = $seatsleft - $baychoice[0];
+            $bays[$baychoice[2]]--;
+
+            if (array_key_exists($baychoice[2], $allocatesm)) {
+                $allocatesm[$baychoice[2]] ++;
+            } else {
+                $allocatesm[$baychoice[2]] = 1;
+            }
+            $smcount ++;
+            // Bail out here, something is wrong....
+            if ($smcount > 100) {
+                return false;
+            }
+        }
+        return array($smcount, $allocatesm, $prioritydone);
+    }
+
+    private function findSmallest($bays, $allowpriority=false) {
+        $chosen = false;
+        foreach ($bays as $bay => $numleft) {
+            if ($numleft > 0) {
+                $bayd = $this->getBayDetails($bay);
+                if ($allowpriority === false && $bayd[1] == 'priority') {
+                    continue;
+                }
+                if ($chosen === false || $bayd[0] < $chosen[0]) {
+                    $chosen = $bayd;
+                }
+            }
+        }
+        if ($chosen === false && $allowpriority === false) {
+            return $this->findSmallest($bays, true);
+        }
+
+        return $chosen;
+    }
+
+    private function findLargest($bays, $allowpriority=false) {
+        $chosen = false;
+        foreach ($bays as $bay => $numleft) {
+            if ($numleft > 0) {
+                $bayd = $this->getBayDetails($bay);
+                if ($allowpriority === false && $bayd[1] == 'priority') {
+                    continue;
+                }
+                if ($chosen === false || $bayd[0] > $chosen[0]) {
+                    $chosen = $bayd;
+                }
+            }
+        }
+
+        if ($chosen === false && $allowpriority === false) {
+            return $this->findLargest($bays, true);
+        }
+
+        return $chosen;
+    }
+
+    private function findBay($seatsreq, $bays, $allowpriority=false) {
+        foreach ($bays as $bay => $numleft) {
+            $bayd = $this->getBayDetails($bay);
+            if ($allowpriority === false && $bayd[1] == 'priority') {
+                continue;
+            }
+            if ($seatsreq <= $bayd[0] && $numleft > 0) {
+                return $bayd;
+            }
+        }
+
+        if ($allowpriority === false) {
+            return $this->findBay($seatsreq, $bays, true);
+        }
+
+        return false;
+    }
+
+    private function getBayDetails($bay) {
+        $parts = explode('_', $bay);
+        $parts[0] = intval($parts[0]);
+        $parts[2] = $bay;
+        return $parts;
+    }
+
     public function get_inventory($baseonly = false, $noreserve = false, $onlycollected = false) {
         global $wpdb;
 
@@ -106,13 +279,6 @@ class TrainService {
         $bays->bays = $basebays;
         $bays->totalseats = $totalseats;
         return $bays;
-    }
-
-    private function getBayDetails($bay) {
-        $parts = explode('_', $bay);
-        $parts[0] = intval($parts[0]);
-        $parts[2] = $bay;
-        return $parts;
     }
 
     public function get_reserve($format = false) {

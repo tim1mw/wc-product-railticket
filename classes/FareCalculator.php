@@ -185,4 +185,16 @@ class FareCalculator {
 
         return $tickets;
     }
+
+    public static function count_seats($ticketselections) {
+        global $wpdb;
+        $total = 0;
+        $tkts = (array) $ticketselections;
+
+        foreach ($tkts as $ttype => $number) {
+            $val = $wpdb->get_var("SELECT seats FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$ttype."'") * $number;
+            $total += $val;
+        }
+        return $total;
+    }
 }
