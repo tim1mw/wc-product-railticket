@@ -102,7 +102,7 @@ class FareCalculator {
         return false;
     }
 
-    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice) {
+    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discountcode) {
         global $wpdb;
         $tickets = new \stdClass();
 
@@ -166,6 +166,8 @@ class FareCalculator {
         $tickets->travellers = array();
         $done = array();
 
+        // TODO Apply discounts here
+
         foreach($ticketdata as $ticketd) {
             $ticketd->composition = json_decode($ticketd->composition);
             $ticketd->depends = json_decode($ticketd->depends);
@@ -193,7 +195,7 @@ class FareCalculator {
         return $tickets;
     }
 
-    public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice, $nominimum) {
+    public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice, $nominimum, $discountcode) {
         global $wpdb;
 
         if ($localprice) {
@@ -210,12 +212,19 @@ class FareCalculator {
         $pdata = new \stdclass();
         $pdata->supplement = 0;
         $pdata->price = 0;
+        $pdata->discountcode = $discountcode;
+        $pdata->ticketprices = array();
 
-// TODO This ignores the stations!!!!
         foreach ($ticketsallocated as $ttype => $qty) {
             $price = $wpdb->get_var("SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".
-                "journeytype = '".$journeytype."' ");
+                "journeytype = '".$journeytype."' AND ".
+                "((stationone = ".$from->get_stnid()." AND stationtwo = ".$to->get_stnid().") OR ".
+                "(stationone = ".$to->get_stnid()." AND stationtwo = ".$from->get_stnid()."))");
+
+            // TODO Apply Discounts here
+
             $pdata->price += floatval($price)*floatval($qty);
+            $pdata->ticketprices[$ttype] = $price;
         }
 
         if ($nominimum || $pdata->price == 0) {

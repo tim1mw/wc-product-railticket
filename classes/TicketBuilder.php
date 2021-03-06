@@ -73,6 +73,9 @@ class TicketBuilder {
         } else {
             $this->disabledrequest = false;
         }
+
+        // TODO Actually set the discount code here
+        $this->discountcode = false;
     }
 
     private function is_guard() {
@@ -326,7 +329,7 @@ class TicketBuilder {
 
         // TODO Allow manager to override guard localprice here
         $data->tickets = $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
-            $this->is_guard(), $this->is_guard() );
+            $this->is_guard(), $this->is_guard(), $this->discountcode);
 
         // There are no fares to sell...
         if (count($data->tickets->prices) == 0) {
@@ -481,7 +484,7 @@ class TicketBuilder {
         } 
 
         $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated,
-            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum);
+            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discountcode);
 
         $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);
 
@@ -504,6 +507,7 @@ class TicketBuilder {
                 'seats' => $totalseats,
                 'travellers' => json_encode($this->ticketselections),
                 'tickets' => json_encode($this->ticketsallocated),
+                'ticketprices' => json_encode($this->ticketprices),
                 'notes' => $this->notes,
                 'createdby' => get_current_user_id()
             );
@@ -523,7 +527,7 @@ class TicketBuilder {
                 'unique' => uniqid()
             );
             $cart_item_data = array('custom_price' => $pricedata->price, 'ticketselections' => $this->ticketselections,
-                'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data);
+                'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data, 'ticketprices' => $pricedata->ticketprices);
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');
             $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
