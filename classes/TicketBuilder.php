@@ -31,14 +31,14 @@ class TicketBuilder {
 
         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
         $this->dateoftravel = $dateoftravel;
-        $this->fromstation = Station::get_station($fromstation, $this->bookableday->timetable->get_revision());
+        $this->fromstation = $this->bookableday->timetable->get_station($fromstation);
 
         $jparts = explode('_', $journeychoice);
         if (count($jparts) > 1) {
             $this->journeytype = $jparts[0];
-            $this->tostation = Station::get_station($jparts[1], $this->bookableday->timetable->get_revision());
+            $this->tostation =  $this->bookableday->timetable->get_station($jparts[1]);
             if ($this->journeytype == 'round') {
-                $this->rndtostation = Station::get_station($jparts[2], $this->bookableday->timetable->get_revision());
+                $this->rndtostation = $this->bookableday->timetable->get_station($this->bookableday->timetable->get_revision());
             } else {
                 $this->rndtostation = false;
             }
@@ -516,18 +516,9 @@ class TicketBuilder {
             $itemkey = 0;
             $purchase->id = 'M'.$mid;
         } else {
-            $data = array(
-                'fromstation' => $this->fromstation,
-                'tostation' => $this->tostation,
-                'leginfo' => $legbayinfo,
-                'dateoftravel' => $this->dateoftravel,
-                'journeytype' => $this->journeytype,
-                'totalseats' => $totalseats,
-                'pricesupplement' => $pricedata->supplement,
-                'unique' => uniqid()
-            );
             $cart_item_data = array('custom_price' => $pricedata->price, 'ticketselections' => $this->ticketselections,
-                'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data, 'ticketprices' => $pricedata->ticketprices);
+                'ticketsallocated' => $this->ticketsallocated, 'supplement' => $pricedata->supplement,
+                'ticketprices' => $pricedata->ticketprices);
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');
             $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);

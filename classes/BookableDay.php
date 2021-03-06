@@ -85,7 +85,7 @@ class BookableDay {
             $lt = $timetable->get_last_train();
             $endtime = (intval($lt->hour)*60) + intval($lt->min) + intval(get_option("wc_product_railticket_bookinggrace"));
             if ($nowm > $endtime) {
-               // return false;
+                return false;
             }
         }
 

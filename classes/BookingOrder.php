@@ -9,17 +9,26 @@ class BookingOrder {
     private $bookings, $manual, $orderid;
     public $bookableday;
 
-    private function __construct($bookings, $orderid, $manual) {
+    private function __construct($bookings, $orderid, $manual, $cart_item = false) {
         global $wpdb;
-
         $this->orderid = $orderid;
         $this->manual = $manual;
 
-        if ($manual) {
+        if ($cart_item) {
+            $this->tickets = $cart_item['ticketsallocated'];
+            $this->travellers = $cart_item['ticketselections'];
+            $this->price = $cart_item['custom_price'];
+            $this->supplement = $cart_item['supplement'];
+            $this->notes = '';
+            $this->customername = '';
+            $this->customerpostcode = '';
+            $this->paid = false;
+        } elseif ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = json_decode($mb->tickets);
             $this->travellers = json_decode($mb->travellers);
             $this->price = $mb->price;
+            $this->supplement = $mb->supplement;
             $this->notes = $mb->notes;
             $this->customername = '';
             $this->customerpostcode = '';
@@ -29,8 +38,11 @@ class BookingOrder {
             $wooorderitem = $bookings[0]->wooorderitem;
             $this->tickets = $this->get_woo_meta('ticketsallocated-', $wooorderitem);
             $this->travellers = $this->get_woo_meta('ticketselections-', $wooorderitem);
+            $this->ticketprices = $this->get_woo_meta('ticketprices-', $wooorderitem);
             $this->price = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
                 " meta_key='_line_total' AND order_item_id = ".$wooorderitem."");
+            $this->supplement = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
+                " meta_key='supplement' AND order_item_id = ".$wooorderitem."");
             $this->notes = $order->get_customer_note();
             $this->customername = $order->get_formatted_billing_full_name();
             $this->customerpostcode = $order->get_billing_postcode();
@@ -38,11 +50,11 @@ class BookingOrder {
         }
 
         // Bookings for a single order are always for the same day, so we can shortcut this safely
-        $bookableday = BookableDay::get_bookable_day($bookings[0]->date);
+        $this->bookableday = BookableDay::get_bookable_day($bookings[0]->date);
 
         $this->bookings = array();
         foreach ($bookings as $booking) {
-            $this->bookings[] = new Booking($booking, $bookableday);
+            $this->bookings[] = new Booking($booking, $this->bookableday);
         }
     }
 
@@ -60,11 +72,22 @@ class BookingOrder {
             $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = ".$orderid);
         }
 
-        if (count($bookings) == false) {
+        if (count($bookings) == 0) {
             return false;
         }
 
         return new BookingOrder($bookings, $orderid, $manual);
+    }
+
+    public static function get_booking_order_cart($cart_item) {
+        global $wpdb;
+
+        $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$cart_item['key']."'");
+        if (count($bookings) == 0) {
+            return false;
+        }
+
+        return new BookingOrder($bookings, $cart_item['key'], false, $cart_item);
     }
 
     private function get_woo_meta($metakey, $wooorderitem) {
@@ -129,13 +152,14 @@ class BookingOrder {
     }
 
     public function get_tickets($format = false) {
+        global $wpdb;
         if ($format) {
-            $s = '';
             $ta = (array) $this->tickets;
+            $fmt = array();
             foreach ($ta as $ticket => $num) {
-                 $s .= str_replace('_', ' ', $ticket)." x".$num.", ";
+                 $fmt[] = $num."x ".$wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$ticket."'");
             }
-            return $s;
+            return implode(', ', $fmt);
         }
         return $this->tickets;
     }
@@ -148,8 +172,20 @@ class BookingOrder {
         return $this->notes;
     }
 
-    public function get_price() {
-        return $this->price;
+    public function get_price($format = false) {
+        if (!$format) {
+            return $this->price;
+        }
+
+        return "£".number_format($this->price, 2);
+    }
+
+    public function get_supplement($format = false) {
+        if (!$format) {
+            return $this->supplement;
+        }
+
+        return "£".number_format($this->supplement, 2);
     }
 
     public function get_date($format = false, $nottoday = false) {

@@ -1,5 +1,10 @@
 <?php
 
+/**
+* Note run this after upgrade!
+* UPDATE `wp_woocommerce_order_itemmeta` SET `meta_key`='supplement' WHERE meta_key='tickettimes-pricesupplement' 
+**/
+
 if ( ! defined( 'ABSPATH' ) ) {
     return;
 }
@@ -124,63 +129,53 @@ function railticket_remove_price_fields( $price, $product ) {
 }
 
 function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
-    global $wpdb;
-    if ( isset($cart_item['ticketselections']) && isset($cart_item['ticketsallocated']) && isset($cart_item['tickettimes'])) {
-        $item_data[] = array(
-            'key'       => "Date of Travel",
-            'value'     => railticket_product_format_date($cart_item['tickettimes']['dateoftravel'])
-        );
-        $item_data[] = array(
-            'key'       => "Journey Type",
-            'value'     => ucfirst($cart_item['tickettimes']['journeytype'])
-        );
+    if (!isset($cart_item['ticketselections']) || !isset($cart_item['ticketsallocated'])) {
+        return $item_data;
+    }
 
-        $fstation = railticket_product_get_station_name($cart_item['tickettimes']['fromstation']);
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($cart_item);
+    if (!$bookingorder) {
+        return $item_data;
+    }
+
+    $item_data[] = array(
+        'key'       => __("Date of Travel", "wc_railticket"),
+        'value'     => $bookingorder->get_date(true)
+    );
+
+    $bookings = $bookingorder->get_bookings();
+
+    $item_data[] = array(
+        'key'       => __("Journey", "wc_railticket"),
+        'value'     => $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
+                       $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
+                       $bookings[0]->get_to_station()->get_name()
+                       
+    );
+
+    $item_data[] = array(
+        'key'       => __("Tickets", "wc_railticket"),
+        'value'     => $bookingorder->get_tickets(true)
+    );   
+
+    if ($bookingorder->get_supplement() > 0) {
         $item_data[] = array(
-            'key'       => "Outbound",
-            'value'     => $fstation.", ".railticket_product_format_time($cart_item['tickettimes']['outtime'])
+            'key'       => __("Minimum Price Supplement", "wc_railticket"),
+            'value'     => $bookingorder->get_supplement(true)
         );
-        if ($cart_item['tickettimes']['journeytype'] == 'return') {
-            $tstation = railticket_product_get_station_name($cart_item['tickettimes']['tostation']);
-            $item_data[] = array(
-                'key'       => "Return",
-                'value'     => $tstation.", ".railticket_product_format_time($cart_item['tickettimes']['rettime'])
-            );
-        }
+    }
 
-        foreach ($cart_item['ticketsallocated'] as $ttype => $qty) {
-            $ticketdata = railticket_product_ticketsallocated_display($ttype);
-            if (strlen($ticketdata->description) == 0) {
-                $ticketdata->description = '&nbsp;';
-            }
-            $item_data[] = array(
-                'key'       => $qty." x ".$ticketdata->name,
-                'value'     => $ticketdata->description
-            );
-        }
+    $item_data[] = array(
+        'key'       => __("Total Seats", "wc_railticket"),
+        'value'     => $bookingorder->get_seats()
+    );
 
+    foreach ($bookings as $booking) {
         $item_data[] = array(
-            'key'       => "Total Seats",
-            'value'     => $cart_item['tickettimes']['totalseats']
-        );
-
-        $item_data[] = array(
-            'key'       => "Outbound Seating bays",
-            'value'     => $cart_item['tickettimes']['outbays']
-        );
-        if ($cart_item['tickettimes']['journeytype'] == 'return') {
-            $item_data[] = array(
-                'key'       => "Return Seating bays",
-                'value'     => $cart_item['tickettimes']['retbays']
-            );
-        }
-
-        if ($cart_item['tickettimes']['pricesupplement'] > 0) {
-            $item_data[] = array(
-                'key'       => "Minimum Price Supplement",
-                'value'     => "£".$cart_item['tickettimes']['pricesupplement']
-            );
-        }
+            'key'       => $booking->get_from_station()->get_name()." - ".
+                               $booking->get_to_station()->get_name()." ".__("seats", "wc_railticket"),
+            'value'     => $booking->get_bays(true)
+        ); 
     }
 
     return $item_data;
@@ -208,11 +203,6 @@ function railticket_product_format_time($time) {
     $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
     $dtime = DateTime::createFromFormat('H.i', $time);
     return strftime(get_option('wc_railticket_time_format'), $dtime->getTimeStamp());
-}
-
-function railticket_product_get_station_name($id) {
-    global $wpdb;
-    return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_stations WHERE id = ".$id);
 }
 
 function railticket_product_ticketsallocated_display($ttype) {

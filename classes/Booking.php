@@ -97,11 +97,11 @@ class Booking {
 
         $fb = '';
         foreach ($this->bays as $bay) {
-            $fb .= $bay->baysize. " ".__('seat', 'wc_railticket')." ";
+            $fb .= $bay->num."x ".$bay->baysize. " ".__('seat', 'wc_railticket')." ";
             if ($bay->priority) {
                 $fb.= " ".__('disabled', 'wc_railticket');
             }
-            $fb.= " ".__('bay', 'wc_railticket')." x".$bay->num.", ";
+            $fb.= __('bay', 'wc_railticket').", ";
         }
         $fb = substr($fb, 0, strlen($fb)-2);
 
