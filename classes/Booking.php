@@ -41,6 +41,22 @@ class Booking {
             array('id' => $id));
     }
 
+    public static function delete_booking_order_cart($cart_item_key) {
+        global $wpdb;
+        $bookingids = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$cart_item_key."'");
+        foreach ($bookingids as $bookingid) {
+            $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $bookingid->id));
+            $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $bookingid->id));
+        }
+    }
+
+    public static function cart_purchased($order_id, $item_id, $key) {
+        global $wpdb;
+        $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
+            array('wooorderid' => $order_id, 'woocartitem' => '', 'wooorderitem' => $item_id, 'expiring' => 0),
+            array('woocartitem' => $key));
+    }
+
     public function get_date($format = false, $nottoday = false) {
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
@@ -151,6 +167,12 @@ class Booking {
 
     public function get_order_item_id() {
         return $this->data->wooorderitem;
+    }
+
+    public function delete() {
+        global $wpdb;
+        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$this->data->id);
+        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_bookings WHERE id = ".$this->data->id);
     }
 
 }

@@ -13,6 +13,7 @@ class BookingOrder {
         global $wpdb;
         $this->orderid = $orderid;
         $this->manual = $manual;
+        $this->incart = false;
 
         if ($cart_item) {
             $this->tickets = $cart_item['ticketsallocated'];
@@ -24,6 +25,7 @@ class BookingOrder {
             $this->customername = '';
             $this->customerpostcode = '';
             $this->paid = false;
+            $this->incart = true;
         } elseif ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = json_decode($mb->tickets);
@@ -233,16 +235,13 @@ class BookingOrder {
 
     public function delete() {
         global $wpdb;
-
-        $bookings = $wpdb->get_results("SELECT id, date FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$this->orderid);
-        foreach ($bookings as $booking) {
-            $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$booking->id);
+        foreach ($this->bookings as $booking) {
+            $booking->delete();
         }
-
-        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$this->orderid);
 
         if ($this->manual) {
             $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$this->orderid);
-        }
+        }  
     }
+
 }

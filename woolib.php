@@ -196,7 +196,6 @@ function railticket_product_add_on_order_item_meta2($item_id, $values, $key) {
 
 function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     global $wpdb;
-file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', print_r($formatted_meta, true));
 
     // Woocommerce doesn't tell use what the order or order item here is (though it does give a cart id...)
     // We can get the cart item id by using the key of the first item of meta data and get the order item
@@ -262,12 +261,7 @@ file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', print_r($for
 }
 
 function railticket_cart_updated($cart_item_key, $cart) {
-    global $wpdb;
-    $bookingids = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$cart_item_key."'");
-    foreach ($bookingids as $bookingid) {
-        $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $bookingid->id));
-        $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $bookingid->id));
-    }
+    \wc_railticket\Booking::delete_booking_order_cart($cart_item_key);
 }
 
 function railticket_cart_order_item_metadata( $item, $cart_item_key, $values, $order ) {
@@ -276,13 +270,11 @@ function railticket_cart_order_item_metadata( $item, $cart_item_key, $values, $o
 }
 
 function railticket_cart_complete($order_id) {
-    global $wpdb;
     if ( ! $order_id )
         return;
 
     // Allow code execution only once 
     if( ! get_post_meta( $order_id, '_railticket_thankyou_action_done', true ) ) {
-
         // Get an instance of the WC_Order object
         $order = wc_get_order( $order_id );
 
@@ -295,9 +287,7 @@ function railticket_cart_complete($order_id) {
             $product_id = $product->get_id();
             if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
                 $key = $item->get_meta( '_cart_item_key' );
-                $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
-                    array('wooorderid' => $order_id, 'woocartitem' => '', 'wooorderitem' => $item_id, 'expiring' => 0),
-                    array('woocartitem' => $key));
+                \wc_railticket\Booking::cart_purchased($order_id, $item_id, $key);
             }
         }
         $order->update_meta_data( '_railticket_thankyou_action_done', true );
@@ -327,11 +317,6 @@ function railticket_cart_check_cart() {
 }
 
 function railticket_order_cancel_refund($order_id) {
-    global $wpdb;
-    $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = ".$order_id;
-    $bookingids = $wpdb->get_results($sql);
-    foreach ($bookingids as $bookingid) {
-        $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $bookingid->id));
-        $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $bookingid->id));
-    }
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($order_id);
+    $bookingorder->delete();
 }
