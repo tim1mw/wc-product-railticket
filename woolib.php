@@ -150,7 +150,6 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
         'value'     => $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
                        $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
                        $bookings[0]->get_to_station()->get_name()
-                       
     );
 
     $item_data[] = array(
@@ -181,49 +180,10 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
     return $item_data;
 }
 
-function railticket_product_format_date($date) {
-    // Wordpress is failing to set the timezone, so force it here.
-    //date_default_timezone_set(get_option('timezone_string'));
-    $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
-    $jdate = DateTime::createFromFormat('Y-m-d', $date);
-    return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
-}
-
-function railticket_product_format_time($time) {
-    global $wpdb;
-    // Check if this is a special
-    if (strpos($time, 's:') !== false) {
-        $parts = explode(":", $time);
-        $special = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_specials WHERE id = ".$parts[1]);
-        return $special;
-    }
-
-    // Wordpress is failing to set the timezone, so force it here.
-    //date_default_timezone_set(get_option('timezone_string'));
-    $railticket_timezone = new DateTimeZone(get_option('timezone_string'));
-    $dtime = DateTime::createFromFormat('H.i', $time);
-    return strftime(get_option('wc_railticket_time_format'), $dtime->getTimeStamp());
-}
-
-function railticket_product_ticketsallocated_display($ttype) {
-    global $wpdb;
-    $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
-        "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
-        "{$wpdb->prefix}wc_railticket_prices.price, ".
-        "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
-        "{$wpdb->prefix}wc_railticket_tickettypes.description ".
-        "FROM {$wpdb->prefix}wc_railticket_prices ".
-        "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
-        "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
-        "WHERE tickettype = '".$ttype."'";
-    return $wpdb->get_results($sql, OBJECT)[0];
-}
-
-
 function railticket_product_add_on_order_item_meta($item_id, $values) {
     railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketselections');
     railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketsallocated');
-    railticket_product_add_on_order_item_meta2($item_id, $values, 'tickettimes');
+    railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketprices');
 }
 
 function railticket_product_add_on_order_item_meta2($item_id, $values, $key) {
@@ -235,91 +195,69 @@ function railticket_product_add_on_order_item_meta2($item_id, $values, $key) {
 }
 
 function railticket_order_item_get_formatted_meta_data($formatted_meta) {
+    global $wpdb;
+file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', print_r($formatted_meta, true));
+
+    // Woocommerce doesn't tell use what the order or order item here is (though it does give a cart id...)
+    // We can get the cart item id by using the key of the first item of meta data and get the order item
+    // ID from it's DB entry.
+    $firstkey = array_key_first($formatted_meta);
+    $itemid = $wpdb->get_var("SELECT order_item_id FROM {$wpdb->prefix}woocommerce_order_itemmeta ".
+        "WHERE meta_id = ".$firstkey);
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_itemid($itemid);
+    $bookings = $bookingorder->get_bookings();
+
+    // This is a massive fudge because woocommerce won't let me insert arbitrary data to display here, some of the
+    // the data in the order items we don't want to show, but we have data from the underlying bookings we do want to show.
+    // So the stuff shown and the key used doesn't fully match up...
+
     $retmeta = array();
-    $tickets = "";
     $tkey = false;
-    $outstationindex = false;
-    $tostationindex = false;
+    $skey = false;
+    $pkey = false;
+
     foreach ($formatted_meta as $index => $fm) {
         $fmparts = explode("-", $fm->key);
         switch ($fmparts[0]) {
-            case 'ticketselections':
-                // Hide this
+            case 'supplement':
+                $fm->display_key = __("Supplement", "wc_railticket");
+                $fm->display_value = $bookingorder->get_supplement(true);
+                $retmeta[$index] = $fm;
                 break;
             case 'ticketsallocated':
                 if ($tkey == false) {
                     $tkey = $index;
+                    $fm->display_key = __("Tickets", "wc_railticket");
+                    $fm->display_value = $bookingorder->get_tickets(true);
                     $retmeta[$index] = $fm;
                 }
-
-                $ticket = railticket_product_ticketsallocated_display($fmparts[1]);
-                $tickets .= $fm->value.'x&nbsp;'.$ticket->name." (".$ticket->description.'), ';
                 break;
-            case 'tickettimes':
-                switch ($fmparts[1]) {
-                    case 'fromstation':
-                        $fm->display_key = 'Outbound';
-                        $fm->display_value = '<p>'.railticket_product_get_station_name($fm->value);
-                        $outstationindex = $index;
-                        $retmeta[$index] = $fm;
-                        break;
-                    case 'tostation':
-                        $fm->display_key = 'Return';
-                        $fm->display_value = '<p>'.railticket_product_get_station_name($fm->value);
-                        $tostationindex = $index;
-                        $retmeta[$index] = $fm;
-                        break;
-                    case 'outtime':
-                        $retmeta[$outstationindex]->display_value .= ", ".railticket_product_format_time($fm->value).'</p>';
-                        break;
-                    case 'rettime':
-                        $retmeta[$tostationindex]->display_value .= ", ".railticket_product_format_time($fm->value).'</p>';
-                        break;
-                    case 'dateoftravel':
-                        $fm->display_key = 'Date of travel';
-                        $fm->display_value = '<p>'.railticket_product_format_date($fm->value).'</p>';
-                        $retmeta[$index] = $fm;
-                        break;
-                    case 'journeytype':
-                        $fm->display_key = 'Journey Type';
-                        if ($fm->value == 'single') {
-                            $fm->display_value = '<p>Single</p>';
-                        } else {
-                            $fm->display_value = '<p>Return</p>';
-                        }
-                        $retmeta[$index] = $fm;
-                        break;
-                    case 'totalseats':
-                        $fm->display_key = 'Total Seats';
-                        $fm->display_value = '<p>'.$fm->value.'</p>';
-                        $tostationindex = $index;
-                        $retmeta[$index] = $fm;
-                        break;
-                    case 'pricesupplement':
-                        if ($fm->value > 0) {
-                            $fm->display_key = 'Minimum Price Supplement';
-                            $fm->display_value = '<p>£'.$fm->value.'</p>';
-                            $tostationindex = $index;
-                            $retmeta[$index] = $fm;
-                        }
-                        break;
-                    case 'outbays':
-                        $fm->display_key = 'Outbound Seating bays';
-                        $fm->display_value = '<p>'.$fm->value.'</p>';
-                        $retmeta[$index] = $fm;
-                        break;
-                    case 'retbays':
-                        $fm->display_key = 'Return Seating bays';
-                        $fm->display_value = '<p>'.$fm->value.'</p>';
-                        $retmeta[$index] = $fm;
-                        break;
+            case 'ticketselections':
+                if ($skey == false) {
+                    $skey = $index;
+                    $fm->display_key = __("Journey", "wc_railticket");
+                    $d =__("Date of Travel", "wc_railticket").": ".$bookingorder->get_date(true)."<br />".
+                       $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
+                       $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
+                       $bookings[0]->get_to_station()->get_name()."<br />".
+                       __("Total Seats", "wc_railticket").": ".$bookingorder->get_seats()."<br />";
+
+                    // TODO Hide this for seat based capacity
+                    foreach ($bookings as $booking) {
+                       $d .= $booking->get_from_station()->get_name()." - ".
+                             $booking->get_to_station()->get_name()." ".__("seats", "wc_railticket").": ".
+                             $booking->get_bays(true)."<br />";
+
+                    }
+
+                    $fm->display_value = $d;
+                    $retmeta[$index] = $fm;
                 }
                 break;
         }
     }
-    $retmeta[$tkey]->display_key = "Tickets";
-    $retmeta[$tkey]->display_value = '<p>'.substr($tickets, 0, strlen($tickets)-2).'</p>';
-
+    
     return $retmeta;
 }
 

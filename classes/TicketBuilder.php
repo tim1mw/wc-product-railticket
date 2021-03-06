@@ -507,7 +507,7 @@ class TicketBuilder {
                 'seats' => $totalseats,
                 'travellers' => json_encode($this->ticketselections),
                 'tickets' => json_encode($this->ticketsallocated),
-                'ticketprices' => json_encode($this->ticketprices),
+                'ticketprices' => json_encode($pricedata->ticketprices),
                 'notes' => $this->notes,
                 'createdby' => get_current_user_id()
             );

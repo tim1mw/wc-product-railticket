@@ -17,6 +17,7 @@ class BookingOrder {
         if ($cart_item) {
             $this->tickets = $cart_item['ticketsallocated'];
             $this->travellers = $cart_item['ticketselections'];
+            $this->ticketprices = $cart_item['ticketprices'];
             $this->price = $cart_item['custom_price'];
             $this->supplement = $cart_item['supplement'];
             $this->notes = '';
@@ -27,6 +28,7 @@ class BookingOrder {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = json_decode($mb->tickets);
             $this->travellers = json_decode($mb->travellers);
+            $this->ticketprices = json_decode($mb->ticketprices);
             $this->price = $mb->price;
             $this->supplement = $mb->supplement;
             $this->notes = $mb->notes;
@@ -88,6 +90,17 @@ class BookingOrder {
         }
 
         return new BookingOrder($bookings, $cart_item['key'], false, $cart_item);
+    }
+
+    public static function get_booking_order_itemid($itemid) {
+        global $wpdb;
+
+        $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderitem = '".$itemid."'");
+        if (count($bookings) == 0) {
+            return false;
+        }
+
+        return new BookingOrder($bookings, $bookings[0]->wooorderid, false);    
     }
 
     private function get_woo_meta($metakey, $wooorderitem) {
