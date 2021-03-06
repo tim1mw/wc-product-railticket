@@ -150,3 +150,19 @@
         <tr><td></td><td><span>Total</span></td><td><span>{{total}}</span></td><td></td></tr>
     </table></div>
 </script>
+
+<script id="bays_tmpl" type="x-tmpl-mustache">
+<div class='railticket_travellers_table_container' >
+{{message}}
+<table class='railticket_travellers_table'>
+{{#legs}}
+    <tr>
+        <td>{{name}}</td>
+        <td>
+        {{#bays}}{{.}}<br />{{/bays}}
+        </td>
+    </tr>
+{{/legs}}
+</table>
+</div>
+</script>

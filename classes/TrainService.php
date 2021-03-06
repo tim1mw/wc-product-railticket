@@ -27,7 +27,6 @@ class TrainService {
 
         $allocatedbays = new \stdclass();
         $allocatedbays->ok = false;
-        $allocatedbays->tobig = false;
         $allocatedbays->error = false;
         $allocatedbays->disablewarn = false;
 

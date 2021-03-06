@@ -332,6 +332,10 @@ class BookableDay {
         return $this->data;
     }
 
+    public function get_allocation_type() {
+        return $this->data->allocateby;
+    }
+
     public function get_specials($dataonly = false) {
         return Special::get_specials($this->data->date, $dataonly);
     }

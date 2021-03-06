@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", setupTickets);
 
 var lastout=-1, lastret=-1, ticketdata, deplegs = false, laststage, capacityCheckRunning = false, rerunCapacityCheck = false;
-var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array(), hasSpecials = false, specialSelected = false, specialsData = false;
+var overridevalid = 0, overridecode = false, sameservicereturn = false, outtimemap = new Array(), hasSpecials = false, specialSelected = false, specialsData = false, journeytype = false;
 var ticketSelections = {};
 var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -464,7 +464,7 @@ function convert24hour(time) {
 function renderTicketSelector() {
     var jc = getFormValue('journeychoice');
     var jcparts = jc.split('_');
-    journeytype = jcparts[1];
+    journeytype = jcparts[0];
     fromindex = getFormValue('fromstation');
     toindex = jcparts[1];
 
@@ -660,70 +660,92 @@ function checkCapacity() {
 }
 
 function showCapacity(response) {
-console.log(response);
-/*
-    var capacitydiv = document.getElementById('ticket_capacity');
-    var str = "<div class='railticket_travellers_table_container' >";
-    if (response.ok || guard) {
-        str = "Socially distanced seating bay(s) available for your journey:<br /><table class='railticket_travellers_table'><tr><td>Outbound</td><td>";
-        if (typeof(response.outbays) == 'undefined' || response.outbays.length == 0 ) {
-            str += "Insufficient space";
-        } else {
-            for (i in response.outbays) {
-                var desc = i.split('_');
-                str += response.outbays[i]+"x "+desc[0]+" seat bay";
-                if (desc[1] == 'priority') {
-                    str += ' (with disabled space)';   
-                }
-                str += '<br />';
-            }
-        }
-        str += "</td></tr>";
-        var journeytype = document.railticketbooking['journeytype'].value;
-        if (journeytype == "return") {
-            str += "<tr><td>Return</td><td>";
-            if (typeof(response.retbays) == 'undefined' || response.retbays.length == 0 ) {
-                str += "Insufficient space";
-            } else {
-                for (i in response.retbays) {
-                    var desc = i.split('_');
-                    str += response.retbays[i]+"x "+desc[0]+" seat bay";
-                    if (desc[1] == 'priority') {
-                        str += ' (with disabled space)';   
-                    }
-                    str += '<br />';
-                }
-                str += "</td></tr>";
-            }
-        }
-        str +="</table>";
+console.log(response.capacity);
 
-        if (response.disablewarn) {
-            str += "<p class='railticketwarn'>WARNING: We could not allocate disabled space for all or part of your journey. "+
-                "You may continue with the selection shown, or try a different train.</p>";
+    var allok = true, anyerror = false, anydisablewarn = false;
+
+    var renderdata = {};
+    renderdata.legs = [];
+
+    // TODO Account for seat only allocation here
+    for (i in response.capacity) {
+        var legdata = {};
+        legdata.bays = [];
+        switch (journeytype) {
+            case 'single': legdata.name = ''; break;
+            case 'return':
+                if (i == 0) {
+                    legdata.name = 'Outbound';
+                } else {
+                    legdata.name = 'Return';
+                }
+                break;
+            case 'round':
+                switch (i) {
+                    case 0: legdata.name = '1st Trip'; break;
+                    case 1: legdata.name = '2nd Trip'; break;
+                    case 2: legdata.name = '3rd Trip'; break;
+                }
+                break;
         }
 
-        showTicketStages('addtocart', false);
-    } else {
-        if (overridevalid) {
-            str = "Please take seats as directed by the guard";
-            showTicketStages('addtocart', false);
-        } else {
-            if (response.tobig) {
-                str += "Parties with more than 12 members are requested to make seperate booking, or call to make a group booking.";
-            } else {
-                str += "Sorry, but we do not have space for a party of this size";
-            }
-            showTicketStages('tickets', false);
+        var legcap = response.capacity[i];
+
+        if (!legcap.ok) {
+            allok = false;
         }
+        if (legcap.error) {
+            anyerror = true;
+        }
+        if (legcap.disablewarn) {
+            anydisablewarn = true;
+        }
+
+        if (legcap.bays.length == 0) {
+            if (overridevalid && !guard) {
+                legdata.bays.push("Please take seats as directed by the guard");
+            } else {
+                legdata.bays.push("Insufficient space");
+            }
+        } else {
+            for (bi in legcap.bays) {
+                var baydata = {};
+                var desc = bi.split('_');
+                baydata = legcap.bays[bi]+'x '+desc[0];
+                switch(desc[1]) {
+                    case 'normal': baydata += ' seat bay'; break;
+                    case 'priority': baydata += ' seat bay (with disabled space)'; break;
+                }
+                legdata.bays.push(baydata);
+            }
+        }
+        renderdata.legs.push(legdata);
     }
-    capacitydiv.innerHTML = str+"</div>";
+
+    if (allok) {
+        // TODO Account for seat only allocation here
+        renderdata.message = 'The following seating bay(s) are available for your journey:';
+    } else {
+        renderdata.message = 'Sorry, but we do not have space for a party of this size on your chosen departure(s).';
+    }
+
+    if (anydisablewarn) {
+        renderdata.warning = 'WARNING: We could not allocate disabled space for all or part of your journey. '
+            'You may continue with the selection shown, or try a different train.';
+    }
+
+    var capacitydiv = document.getElementById('ticket_capacity');
+    var bdtemplate = document.getElementById('bays_tmpl').innerHTML;
+    capacitydiv.innerHTML = Mustache.render(bdtemplate, renderdata);
     capacitydiv.style.display = 'block';
     capacitydiv.scrollIntoView(true);
     if (window.innerWidth >= 1010) {
         window.scrollBy(0, -80); 
     }
-*/
+
+    if (allok || overridevalid || guard) {
+        showTicketStages('addtocart', false);
+    }
 }
 
 

@@ -384,27 +384,29 @@ class TicketBuilder {
 
         $seatsreq = FareCalculator::count_seats($this->ticketselections);
 
-        $capacity = array();
+        $capdata = new \stdclass();
+        $capdata->capacity = array();
+        $capdata->allocateby = $this->bookableday->get_allocation_type();
 
         switch ($this->journeytype) {
             case 'round':
                 $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
-                $capacity[] = $ts-->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts-->get_capacity(false, $seatsreq, $this->disabledrequest);
                 $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->rndstation);
-                $capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
                 $ts2 = new TrainService($this->bookableday, $this->rndstation, $this->times[2], $this->tostation);
-                $capacity[] = $ts2->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts2->get_capacity(false, $seatsreq, $this->disabledrequest);
                 break;
             case 'return':
                 $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->fromstation);
-                $capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
             case 'single':
                 $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
-                $capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest);
-                $capacity = array_reverse($capacity);
+                $capdata->capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity = array_reverse($capdata->capacity);
         }
 
-        return $capacity;
+        return $capdata;
     }
 
     private function checkDuplicate() {
