@@ -917,6 +917,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     <table border='1' class='railticket_admintable' >
         <tr>
             <th>Order</th>
+            <th>Name</th>
+            <th>From</th>
             <th>To</th>
             <th>Seats</th>
             <th>Bays</th>
@@ -936,6 +938,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
                 "</form></td>";
         }
         echo "<td>".$booking->get_order_name()."</td>".
+            "<td>".$booking->get_from_station()->get_name()."</td>".
+            "<td>".$booking->get_to_station()->get_name()."</td>".
             "<td>".$booking->get_seats()."</td>".
             "<td>";
         echo $booking->get_bays(true);
