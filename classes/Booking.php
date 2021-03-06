@@ -141,7 +141,7 @@ class Booking {
     }
 
     public function get_order_name() {
-        if ($this->data->manual > 0) {
+        if ($this->data->manual > 0 || $this->data->wooorderid == 0 ) {
             return '';
         }
 
