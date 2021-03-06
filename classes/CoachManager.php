@@ -50,6 +50,26 @@ class CoachManager {
         return substr($str, 0, strlen($str)-2);
     }
 
+    public static function bay_strings($bays) {
+        $str = '';
+        foreach ($bays as $bay => $num) {
+            $bayd = self::get_bay_details($bay);
+            $str .= $num.'x '.$bayd[0].' '.__('seat bay', 'wc_railticket');
+            if ($bayd[1] == 'priority') {
+                $str .= ' '.__('(with disabled space)', 'wc_railticket');
+            }
+            $str .=', ';
+        }
+        return substr($str, 0, strlen($str)-2);
+    }
+
+    public static function get_bay_details($bay) {
+        $parts = explode('_', $bay);
+        $parts[0] = intval($parts[0]);
+        $parts[2] = $bay;
+        return $parts;
+    }
+
     public static function process_coaches($parsed, Timetable $timetable = null) {
         global $wpdb;
 

@@ -250,6 +250,8 @@ class Timetable {
 
     public function get_terminal($direction) {
         global $wpdb;
+        // TODO: This ought to account for the fact the train we are on might not start from the first open station on the line...
+
         if ($direction == 'up') {
             $sort = "ASC";
         } else {

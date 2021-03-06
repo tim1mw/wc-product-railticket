@@ -324,7 +324,9 @@ class TicketBuilder {
         $data->sameservicereturn = $this->bookableday->same_service_return();
         $data->legs = array();
 
-        $data->tickets = $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype, $this->is_guard());
+        // TODO Allow manager to override guard localprice here
+        $data->tickets = $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
+            $this->is_guard(), $this->is_guard() );
 
         // There are no fares to sell...
         if (count($data->tickets->prices) == 0) {
@@ -382,7 +384,7 @@ class TicketBuilder {
 
     public function get_capacity() {
 
-        $seatsreq = FareCalculator::count_seats($this->ticketselections);
+        $seatsreq = $this->bookableday->fares->count_seats($this->ticketselections);
 
         $capdata = new \stdclass();
         $capdata->capacity = array();
@@ -425,10 +427,6 @@ class TicketBuilder {
     public function do_purchase() {
         global $woocommerce, $wpdb;
 
-        // Compensate for WordPresse's inconsistent timezone handling
-        //$tz = date_default_timezone_get();
-        //date_default_timezone_set($this->railticket_timezone->getName());
-
         $purchase = new \stdclass();
         $purchase->ok = false;
         $purchase->duplicate = false;
@@ -439,72 +437,70 @@ class TicketBuilder {
 
         // Check we still have capacity
         $allocatedbays = $this->get_capacity();
+        $legbayinfo = array();
+        
+        for ($legnum = 0; $legnum < count($allocatedbays->capacity); $legnum++) {
+            $legbays = $allocatedbays->capacity[$legnum];
 
-        if (!$allocatedbays->ok && $this->overridevalid == 0) {
-            return $purchase;
-        }
-
-        if ($this->overridevalid == 1 && !$allocatedbays->ok ) {
-            if (count($allocatedbays->outbays) > 0) {
-                $outbays = $this->baystring($allocatedbays->outbays);
-            } else {
-                $outbays = "As directed by the guard";
+            // Are we full now?
+            if ($this->overridevalid == 0 && !$legbays->ok) {
+                return $purchase;
             }
-            if ($this->journeytype == 'return') {
-                if (count($allocatedbays->retbays) > 0) {
-                    $retbays = $this->baystring($allocatedbays->retbays);
+
+            $legbaydata = new \stdclass();
+            $legbaydata->deptime = $this->times[$legnum];
+
+            switch ($this->journeytype) {
+                case 'single': $legbaydata->name = ''; break;
+                case 'return':
+                    if ($legnum == 0) {
+                        $legbaydata->name = __('Outbound', 'wc_railticket');
+                    } else {
+                        $legbaydata->name = __('Return', 'wc_railticket');
+                    }
+                    break;
+                case 'round':
+                    switch ($legnum) {
+                        case 0: $legbaydata->name = __('1st Trip', 'wc_railticket'); break;
+                        case 1: $legbaydata->name = __('2nd Trip', 'wc_railticket'); break;
+                        case 2: $legbaydata->name = __('3rd Trip', 'wc_railticket'); break;
+                    }
+                    break;
+            }
+
+            if ($this->overridevalid == 1 && !$legbays->ok ) {
+                if (count($legbays->bays) > 0) {
+                    $legbaydata->str = CoachManager::bay_strings($legbays->bays);
                 } else {
-                    $retbays = "As directed by the guard";
+                    $legbaydata->str = __("As directed by the guard", 'wc_railticket');
                 }
             } else {
-                $retbays = "n/a";
+                $legbaydata->str = CoachManager::bay_strings($legbays->bays);
             }
-        } else {
-            $outbays = $this->baystring($allocatedbays->outbays);
-            if ($this->journeytype == 'return') {
-                $retbays = $this->baystring($allocatedbays->retbays);
-            } else {
-                $retbays = "n/a";
-            }
-        }
-
-        $custom_price = 0;
-        foreach ($this->ticketsallocated as $ttype => $qty) {
-            $price = $wpdb->get_var("SELECT price FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".
-                "journeytype = '".$this->journeytype."' ");
-            $custom_price += floatval($price)*floatval($qty);
-        }
-
-        $mprice = get_option('wc_product_railticket_min_price');
-        $supplement = 0;
-        if (strlen($mprice) > 0 && $custom_price < $mprice) {
-            if ($custom_price == 0 && $this->is_guard()) {
-                // We will want to record the price for "other" here at some point, but that's not happening now
-            } else {
-                if ($this->is_guard() && $this->nominimum) {
-                    $supplement = 0;
-                } else {
-                    $mprice=floatval($mprice);
-                    $supplement = floatval($mprice) - floatval($custom_price);
-                    $custom_price = $mprice;
-                }
-            }
+            $legbayinfo[$legnum] = $legbaydata;
         } 
-        $totalseats = $this->count_seats();
 
+        $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated,
+            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum);
+
+        $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);
+
+/* TODO: Fix specials here... If they need fixing?
         if ($this->special) {
+
             $outtime = "s:".$this->outtime;
             $rettime = "s:".$this->rettime;
         } else {
             $outtime = $this->outtime;
             $rettime = $this->rettime;
         }
+*/
 
         if ($this->is_guard()) {
             $data = array(
                 'journeytype' => $this->journeytype,
-                'price' => $custom_price,
-                'supplement' => $supplement,
+                'price' => $pricedata->price,
+                'supplement' => $pricedata->supplement,
                 'seats' => $totalseats,
                 'travellers' => json_encode($this->ticketselections),
                 'tickets' => json_encode($this->ticketsallocated),
@@ -513,69 +509,75 @@ class TicketBuilder {
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
-            $this->insertBooking("", $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays->outbays, $mid);
-            if ($this->journeytype == 'return') {
-                $this->insertBooking("", $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays->retbays, $mid);
-            }
+            $itemkey = 0;
             $purchase->id = 'M'.$mid;
         } else {
             $data = array(
                 'fromstation' => $this->fromstation,
                 'tostation' => $this->tostation,
-                'outtime' => $outtime,
-                'outbays' => $outbays,
-                'rettime' => $rettime,
-                'retbays' => $retbays,
+                'leginfo' => $legbayinfo,
                 'dateoftravel' => $this->dateoftravel,
                 'journeytype' => $this->journeytype,
                 'totalseats' => $totalseats,
-                'pricesupplement' => $supplement,
+                'pricesupplement' => $pricedata->supplement,
                 'unique' => uniqid()
             );
-            $cart_item_data = array('custom_price' => $custom_price, 'ticketselections' => $this->ticketselections,
+            $cart_item_data = array('custom_price' => $pricedata->price, 'ticketselections' => $this->ticketselections,
                 'ticketsallocated' => $this->ticketsallocated, 'tickettimes' => $data);
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');
-            //$itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
             $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
             $woocommerce->cart->calculate_totals();
             $woocommerce->cart->set_session();
             $woocommerce->cart->maybe_set_cart_cookies();
-
-            $this->insertBooking($itemkey, $outtime, $this->fromstation, $this->tostation, $totalseats, $allocatedbays->outbays, 0);
-            if ($this->journeytype == 'return') {
-                $this->insertBooking($itemkey, $rettime, $this->tostation, $this->fromstation, $totalseats, $allocatedbays->retbays, 0);
-            }
+            $mid = 0;
         }
+
+        switch ($this->journeytype) {
+            case 'round':
+                $this->insertBooking($itemkey, $this->times[0], $this->fromstation, $this->tostation, $totalseats,
+                    $allocatedbays->capacity[0]->bays, $mid);
+                $this->insertBooking($itemkey, $this->times[1], $this->tostation, $this->rndstation, $totalseats,
+                    $allocatedbays->capacity[1]->bays, $mid);
+                $this->insertBooking($itemkey, $this->times[2], $this->rndstation, $this->fromstation, $totalseats,
+                    $allocatedbays->capacity[2]->bays, $mid);
+                break;
+            case 'single':
+                $this->insertBooking($itemkey, $legbayinfo[0]->deptime, $this->fromstation, $this->tostation, $totalseats,
+                    $allocatedbays->capacity[0]->bays, $mid);
+                break;
+            case 'return':
+                $this->insertBooking($itemkey, $legbayinfo[0]->deptime, $this->fromstation, $this->tostation, $totalseats,
+                    $allocatedbays->capacity[0]->bays, $mid);
+                $this->insertBooking($itemkey, $legbayinfo[1]->deptime, $this->tostation, $this->fromstation, $totalseats,
+                    $allocatedbays->capacity[1]->bays, $mid);
+        }
+
         $purchase->ok = true;
 
         return $purchase;
     }
 
-    private function insertBooking($itemkey, $time, $fromstation, $tostation, $totalseats, $allocatedbays, $manual) {
+    private function insertBooking($itemkey, $time, Station $fromstation, Station $tostation, $totalseats, $allocatedbays, $manual) {
         global $wpdb;
         // TODO originstation and origintime reflect the station this train originally started from. Right now
         // with end to end bookings only this will always be the same as fromstation and time. Needs to be set properly
         // when intermediate stops are added. The aim is to allow the entire inventory for this service to be retrieved.
 
-        $fs = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}wc_railticket_stations WHERE id = ".$fromstation);
-        $ts = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}wc_railticket_stations WHERE id = ".$tostation);
-        if ($fs > $ts) {
-            $direction = 'up';
-        } else {
-            $direction = 'down';
-        }
+        // Do I even care about origin station/time? It may not be needed....
+
+        $direction = $fromstation->get_direction($tostation);
 
         $dbdata = array(
             'woocartitem' => $itemkey,
             'date' => $this->dateoftravel,
             'time' => $time,
-            'fromstation' => $fromstation,
-            'tostation' => $tostation,
+            'fromstation' => $fromstation->get_stnid(),
+            'tostation' => $tostation->get_stnid(),
             'direction' => $direction,
             'seats' => $totalseats,
             'usebays' => 1,
-            'originstation' => $fromstation,
+            'originstation' => $fromstation->get_stnid(),
             'origintime' => $time,
             'created' => time(),
             'expiring' => 0,
@@ -588,8 +590,10 @@ class TicketBuilder {
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
 
         $id = $wpdb->insert_id;
+
+        // TODO This needs to be skipped for seat based bookings
         foreach ($allocatedbays as $bay => $num) {
-            $bayd = $this->getBayDetails($bay);
+            $bayd = CoachManager::get_bay_details($bay);
             if ($bayd[1] == 'priority') {
                 $pr = true;
             } else {
@@ -603,19 +607,6 @@ class TicketBuilder {
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_booking_bays", $bdata);
         }
-    }
-
-    private function bayString($bays) {
-        $str = '';
-        foreach ($bays as $bay => $num) {
-            $bayd = $this->getBayDetails($bay);
-            $str .= $num.'x '.$bayd[0].' seat bay';
-            if ($bayd[1] == 'priority') {
-                $str .= ' (with disabled space)';
-            }
-            $str .=', ';
-        }
-        return substr($str, 0, strlen($str)-2);
     }
 
     private function get_javascript() {

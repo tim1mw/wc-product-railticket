@@ -102,7 +102,7 @@ class FareCalculator {
         return false;
     }
 
-    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard) {
+    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice) {
         global $wpdb;
         $tickets = new \stdClass();
 
@@ -112,6 +112,12 @@ class FareCalculator {
         } else {
             $guardtra = "";
             $guard = "";
+        }
+
+        if ($localprice) {
+            $pfield = 'localprice';
+        } else {
+            $pfield = 'price';
         }
 
 /* TODO Fix specials...
@@ -137,7 +143,8 @@ class FareCalculator {
 
         $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
             "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
-            "{$wpdb->prefix}wc_railticket_prices.price, ".
+            "{$wpdb->prefix}wc_railticket_prices.".$pfield." as price, ".
+            "{$wpdb->prefix}wc_railticket_prices.localprice, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.description, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.composition, ".
@@ -186,7 +193,46 @@ class FareCalculator {
         return $tickets;
     }
 
-    public static function count_seats($ticketselections) {
+    public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice, $nominimum) {
+        global $wpdb;
+
+        if ($localprice) {
+            $pfield = 'localprice';
+        } else {
+            $pfield = 'price';
+        }
+
+        if ($journeytype == 'round') {
+            // Round trips are priced as from > to the same station where available.
+            $from = $to;
+        }
+
+        $pdata = new \stdclass();
+        $pdata->supplement = 0;
+        $pdata->price = 0;
+
+// TODO This ignores the stations!!!!
+        foreach ($ticketsallocated as $ttype => $qty) {
+            $price = $wpdb->get_var("SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".
+                "journeytype = '".$journeytype."' ");
+            $pdata->price += floatval($price)*floatval($qty);
+        }
+
+        if ($nominimum || $pdata->price == 0) {
+            return $pdata;
+        }
+
+        $mprice = get_option('wc_product_railticket_min_price');
+        if (strlen($mprice) > 0 && $pdata->price < $mprice) {
+            $mprice=floatval($mprice);
+            $pdata->supplement = floatval($mprice) - floatval($custom_price);
+            $pdata->price = $mprice;
+        }
+
+        return $pdata;
+    }
+
+    public function count_seats($ticketselections) {
         global $wpdb;
         $total = 0;
         $tkts = (array) $ticketselections;

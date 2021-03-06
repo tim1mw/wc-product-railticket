@@ -77,7 +77,7 @@ class TrainService {
             if ($disabledrequest && $prioritydone === false) {
                 $prioritybays = array();
                 foreach ($bays as $bay => $numleft) {
-                    $bayd = $this->getBayDetails($bay);
+                    $bayd = CoachManager::get_bay_details($bay);
                     if ($bayd[1] == 'priority') {
                         $priorityonly[$bay] = $numleft;
                      }
@@ -133,7 +133,7 @@ class TrainService {
         $chosen = false;
         foreach ($bays as $bay => $numleft) {
             if ($numleft > 0) {
-                $bayd = $this->getBayDetails($bay);
+                $bayd = CoachManager::get_bay_details($bay);
                 if ($allowpriority === false && $bayd[1] == 'priority') {
                     continue;
                 }
@@ -153,7 +153,7 @@ class TrainService {
         $chosen = false;
         foreach ($bays as $bay => $numleft) {
             if ($numleft > 0) {
-                $bayd = $this->getBayDetails($bay);
+                $bayd = CoachManager::get_bay_details($bay);
                 if ($allowpriority === false && $bayd[1] == 'priority') {
                     continue;
                 }
@@ -172,7 +172,7 @@ class TrainService {
 
     private function findBay($seatsreq, $bays, $allowpriority=false) {
         foreach ($bays as $bay => $numleft) {
-            $bayd = $this->getBayDetails($bay);
+            $bayd = CoachManager::get_bay_details($bay);
             if ($allowpriority === false && $bayd[1] == 'priority') {
                 continue;
             }
@@ -186,13 +186,6 @@ class TrainService {
         }
 
         return false;
-    }
-
-    private function getBayDetails($bay) {
-        $parts = explode('_', $bay);
-        $parts[0] = intval($parts[0]);
-        $parts[2] = $bay;
-        return $parts;
     }
 
     public function get_inventory($baseonly = false, $noreserve = false, $onlycollected = false) {
@@ -270,7 +263,7 @@ class TrainService {
 
         $totalseats = 0;
         foreach ($basebays as $bay => $numleft) {
-            $bayd = $this->getBayDetails($bay);
+            $bayd = CoachManager::get_bay_details($bay);
             $totalseats += $bayd[0]*$numleft;
         }
 
