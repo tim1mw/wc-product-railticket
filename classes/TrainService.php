@@ -213,7 +213,10 @@ class TrainService {
             return $basebays;
         }
 
-        // Get the bookings we need to subtract from this formation. TODO This doesn't account for bookings from preceeding stations (it needs to).
+        // Get the bookings we need to subtract from this formation.
+        // TODO This doesn't account for bookings from preceeding stations (it needs to).
+        // Also TODO account for intermediate bookings, especially where somebody alights at an intermediate stop and the bay is
+        // then taken by another booking. These must not be added together, but overlapping intermediate bookings should be!
         $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
             "{$wpdb->prefix}wc_railticket_bookings ".
             " LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
@@ -243,7 +246,7 @@ class TrainService {
         // Take out the booking reserve
         if ($noreserve == false && !$this->bookableday->sell_reserve() && $this->bookableday->has_reserve()) {
 
-            // TODO: Need to get origin station dep time here when intermediate stops are enabled!
+            // TODO: Do I need to do anything here to account for intermediate stops?
             switch ($this->bookableday->get_daytype()) {
                 case 'simple':
                     $reserve = (array) $this->bookableday->get_reserve();

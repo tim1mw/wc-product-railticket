@@ -217,7 +217,7 @@ class FareCalculator {
 
         foreach ($ticketsallocated as $ttype => $qty) {
             $price = $wpdb->get_var("SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".
-                "journeytype = '".$journeytype."' AND ".
+                "journeytype = '".$journeytype."' AND revision = ".$this->revision." ".
                 "((stationone = ".$from->get_stnid()." AND stationtwo = ".$to->get_stnid().") OR ".
                 "(stationone = ".$to->get_stnid()." AND stationtwo = ".$from->get_stnid()."))");
 
