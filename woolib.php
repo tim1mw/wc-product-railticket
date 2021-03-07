@@ -245,9 +245,8 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
 
                     // TODO Hide this for seat based capacity
                     foreach ($bookings as $booking) {
-                       $d .= $booking->get_from_station()->get_name()." - ".
-                             $booking->get_to_station()->get_name()." ".__("seats", "wc_railticket").": ".
-                             $booking->get_bays(true)."<br />";
+                       $d .= $booking->get_dep_time(true)." ".__("departure from ", "wc_railticket").$booking->get_from_station()->get_name().
+                             ": ".$booking->get_bays(true)."<br />";
 
                     }
 
