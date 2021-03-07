@@ -214,6 +214,7 @@ class FareCalculator {
         $pdata->price = 0;
         $pdata->discountcode = $discountcode;
         $pdata->ticketprices = array();
+        $pdata->revision = $this->revision;
 
         foreach ($ticketsallocated as $ttype => $qty) {
             $price = $wpdb->get_var("SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".

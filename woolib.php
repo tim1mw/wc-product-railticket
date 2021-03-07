@@ -152,29 +152,30 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
                        $bookings[0]->get_to_station()->get_name()
     );
 
+    // TODO Hide bays for seat only allocation
+    foreach ($bookings as $booking) {
+        $item_data[] = array(
+            'key'       => $booking->get_dep_time(true)." ".__("departure from ", "wc_railticket").
+                               $booking->get_from_station()->get_name(),
+            'value'     => $booking->get_bays(true)
+        ); 
+    }
+
     $item_data[] = array(
         'key'       => __("Tickets", "wc_railticket"),
         'value'     => $bookingorder->get_tickets(true)
     );   
-
-    if ($bookingorder->get_supplement() > 0) {
-        $item_data[] = array(
-            'key'       => __("Minimum Price Supplement", "wc_railticket"),
-            'value'     => $bookingorder->get_supplement(true)
-        );
-    }
 
     $item_data[] = array(
         'key'       => __("Total Seats", "wc_railticket"),
         'value'     => $bookingorder->get_seats()
     );
 
-    foreach ($bookings as $booking) {
+    if ($bookingorder->get_supplement() > 0) {
         $item_data[] = array(
-            'key'       => $booking->get_from_station()->get_name()." - ".
-                               $booking->get_to_station()->get_name()." ".__("seats", "wc_railticket"),
-            'value'     => $booking->get_bays(true)
-        ); 
+            'key'       => __("Minimum Price Supplement", "wc_railticket"),
+            'value'     => $bookingorder->get_supplement(true)
+        );
     }
 
     return $item_data;
