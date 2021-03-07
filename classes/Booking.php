@@ -50,6 +50,13 @@ class Booking {
         }
     }
 
+    public static function set_cart_itemid($item_id, $key) {
+        global $wpdb;
+        $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
+            array('wooorderitem' => $item_id),
+            array('woocartitem' => $key));
+    }
+
     public static function cart_purchased($order_id, $item_id, $key) {
         global $wpdb;
         $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",

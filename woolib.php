@@ -22,7 +22,7 @@ add_action('woocommerce_add_order_item_meta', 'railticket_product_add_on_order_i
 add_filter('woocommerce_order_item_get_formatted_meta_data', 'railticket_order_item_get_formatted_meta_data', 10, 1 );
 add_action('woocommerce_remove_cart_item', 'railticket_cart_updated', 10, 2 );
 add_action('woocommerce_checkout_create_order_line_item', 'railticket_cart_order_item_metadata', 10, 4 );
-add_action('woocommerce_thankyou', 'railticket_cart_complete', 10, 1);
+add_action('woocommerce_before_thankyou', 'railticket_cart_complete', 10, 1);
 add_action('woocommerce_before_checkout_form', 'railticket_cart_check_cart');
 add_action('woocommerce_before_cart', 'railticket_cart_check_cart');
 add_action('woocommerce_order_status_refunded', 'railticket_order_cancel_refund');
@@ -185,6 +185,10 @@ function railticket_product_add_on_order_item_meta($item_id, $values) {
     railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketselections');
     railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketsallocated');
     railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketprices');
+    wc_add_order_item_meta($item_id, 'supplement', $values['supplement']);
+    wc_add_order_item_meta($item_id, 'itemid', $item_id);
+
+    \wc_railticket\Booking::set_cart_itemid($item_id, $values['key']);
 }
 
 function railticket_product_add_on_order_item_meta2($item_id, $values, $key) {
@@ -197,15 +201,35 @@ function railticket_product_add_on_order_item_meta2($item_id, $values, $key) {
 
 function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     global $wpdb;
+    // Woocommerce doesn't tell use what the order or order item id here 
+    // The itemid is being put into the order metadata as a value so we get it here as a value
+    $itemid = false;
 
-    // Woocommerce doesn't tell use what the order or order item here is (though it does give a cart id...)
-    // We can get the cart item id by using the key of the first item of meta data and get the order item
-    // ID from it's DB entry.
-    $firstkey = array_key_first($formatted_meta);
-    $itemid = $wpdb->get_var("SELECT order_item_id FROM {$wpdb->prefix}woocommerce_order_itemmeta ".
-        "WHERE meta_id = ".$firstkey);
+    foreach ($formatted_meta as $item) {
+        if ($item->key == 'itemid') {
+            $itemid = $item->value;
+            break;
+        }
+    }
+
+    // Older orders are missing the itemid param.
+    // We can get the cart item id by using the key from a meta data and get the order item
+    // ID from it's DB entry. Sometimes the keys here in the formatted data are invalid, so loop till we get a good one.
+    if (!$itemid) {
+        foreach (array_keys($formatted_meta) as $key) {
+            $itemid = $wpdb->get_var("SELECT order_item_id FROM {$wpdb->prefix}woocommerce_order_itemmeta ".
+                "WHERE meta_id = ".$key);
+
+            if ($itemid) {
+                break;
+            }
+        }
+    }
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order_itemid($itemid);
+    if (!$bookingorder) {
+        return array();
+    }
     $bookings = $bookingorder->get_bookings();
 
     // This is a massive fudge because woocommerce won't let me insert arbitrary data to display here, some of the

@@ -38,7 +38,6 @@ class BookingOrder {
             $this->customerpostcode = '';
             $this->paid = true;
         } else {
-            $order = wc_get_order($orderid);
             $wooorderitem = $bookings[0]->wooorderitem;
             $this->tickets = $this->get_woo_meta('ticketsallocated-', $wooorderitem);
             $this->travellers = $this->get_woo_meta('ticketselections-', $wooorderitem);
@@ -47,10 +46,20 @@ class BookingOrder {
                 " meta_key='_line_total' AND order_item_id = ".$wooorderitem."");
             $this->supplement = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
                 " meta_key='supplement' AND order_item_id = ".$wooorderitem."");
-            $this->notes = $order->get_customer_note();
-            $this->customername = $order->get_formatted_billing_full_name();
-            $this->customerpostcode = $order->get_billing_postcode();
-            $this->paid = $order->is_paid();
+     
+            // This object might get created prior to the order being fully setup in Woocommerce, so skip this if there is no order
+            $order = wc_get_order($orderid);
+            if ($order) {
+                $this->notes = $order->get_customer_note();
+                $this->customername = $order->get_formatted_billing_full_name();
+                $this->customerpostcode = $order->get_billing_postcode();
+                $this->paid = $order->is_paid();
+            } else {
+                $this->customername = '';
+                $this->customerpostcode = '';
+                $this->paid = false;
+                $this->incart = false;
+            }
         }
 
         // Bookings for a single order are always for the same day, so we can shortcut this safely

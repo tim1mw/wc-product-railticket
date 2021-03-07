@@ -31,10 +31,14 @@ class TicketBuilder {
 
         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
         $this->dateoftravel = $dateoftravel;
-        $this->fromstation = $this->bookableday->timetable->get_station($fromstation);
-
+        if ($fromstation !== false) {
+            $this->fromstation = $this->bookableday->timetable->get_station($fromstation);
+        } else {
+            $fromstation = false;
+        }
         $jparts = explode('_', $journeychoice);
         if (count($jparts) > 1) {
+
             $this->journeytype = $jparts[0];
             $this->tostation =  $this->bookableday->timetable->get_station($jparts[1]);
             if ($this->journeytype == 'round') {
@@ -516,9 +520,11 @@ class TicketBuilder {
             $itemkey = 0;
             $purchase->id = 'M'.$mid;
         } else {
+            // Note the unique field cures a weird problem in woocommerce where two similataneous users with the same selection
+            // seem get their carts mixed up...
             $cart_item_data = array('custom_price' => $pricedata->price, 'ticketselections' => $this->ticketselections,
                 'ticketsallocated' => $this->ticketsallocated, 'supplement' => $pricedata->supplement,
-                'ticketprices' => $pricedata->ticketprices);
+                'ticketprices' => $pricedata->ticketprices, 'unique' => uniqid());
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');
             $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
