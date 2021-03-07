@@ -651,6 +651,7 @@ class TicketBuilder {
 
     private function get_datepick() {
         global $wpdb;
+        // TODO Use a template here
         $calendar = new \wc_railticket\TicketCalendar();
 
         $startyear = $this->today->format('Y');
