@@ -978,10 +978,6 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         <input type='hidden' name='show' value='1' />
         <input type='hidden' name='a_dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='hidden' name='a_station' value='<?php echo $station->get_stnid(); ?>' />
-        <input type='hidden' name='a_ttrevision' value='<?php echo $station->get_revision(); ?>' />
-        <input type='hidden' name='a_direction' value='<?php echo $direction ?>' />
-        <input type='hidden' name='a_deptime' value='<?php echo $deptime->key ?>' />
-        <input type='hidden' name='a_destination' value='<?php echo $destination->get_stnid() ?>' />
         <input type='submit' name='submit' value='Add Manual Booking' style='width:100%' />
     </form>
     </div>

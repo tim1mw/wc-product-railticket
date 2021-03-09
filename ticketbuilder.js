@@ -157,10 +157,11 @@ function doStations() {
 
         overridecode = response['override'];
 
-        if (a_station !== false && a_destination !== false) {
+        if (a_station) {
+            var stn = document.getElementById('fromstation'+a_station);
             a_station = false;
-            a_destination = false;
-            getDepTimes();
+            stn.checked = true;
+            fromStationChanged(false);
         } else {
             showTicketStages('stations', true);
         }
@@ -781,7 +782,6 @@ function cartTickets() {
 
 function showTicketStages(stage, doscroll) {
     var display = 'block';
-    
     var scroll = null;
 
     var datechooser = document.getElementById('datechooser');
@@ -795,11 +795,6 @@ function showTicketStages(stage, doscroll) {
     var stations = document.getElementById('stations');
     stations.style.display = display;
     var datechoosen = document.getElementById('datechooser');
-
-    // If there is only one bookable station for both from and to, pre-select and skip this step.
-    if (skipStations()) {
-        stage = 'journeychoice';
-    }
 
     if (stage == 'stations') {
         display = 'none';
@@ -820,10 +815,6 @@ function showTicketStages(stage, doscroll) {
         deptimes.style.display = 'none';
     } else {
         deptimes.style.display = display;
-    }
-    // If there is only one bookable train, pre-select the only time available and skip this step.
-    if (skipDepTimes()) {
-        stage = 'tickets';
     }
 
     if (stage == 'deptimes') {
@@ -851,10 +842,3 @@ function showTicketStages(stage, doscroll) {
     laststage = stage;
 }
 
-function skipStations() {
-    return false;
-}
-
-function skipDepTimes() {
-    return false;
-}

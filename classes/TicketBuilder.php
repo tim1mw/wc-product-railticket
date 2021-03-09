@@ -632,8 +632,7 @@ class TicketBuilder {
 
         $str .= $this->preset_javascript('a_dateofjourney');
         $str .= $this->preset_javascript('a_station');
-        $str .= $this->preset_javascript('a_destination');
-        $str .= $this->preset_javascript('a_direction');
+        $str .= $this->preset_javascript('a_journeychoice');
         $str .= $this->preset_javascript('a_deptime');
 
         if ($this->is_guard()) {
@@ -648,7 +647,7 @@ class TicketBuilder {
     }
 
     private function preset_javascript($key) {
-        if (array_key_exists('a_dateofjourney', $_REQUEST)) {
+        if (array_key_exists($key, $_REQUEST)) {
             return 'var '.$key.' = "'.$_REQUEST[$key].'";';
         } else {
             return 'var '.$key.' = false;';
