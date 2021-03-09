@@ -749,8 +749,6 @@ console.log(response.capacity);
 }
 
 
-
-
 function matchTicket(allocation) {
    var ret = false;
    for (i in ticketdata.prices) {
