@@ -330,7 +330,7 @@ function getDepTimes() {
 console.log(ticketdata);
 console.log(deplegs);
 
-        if (response['legs'].length == 0) {
+        if (deplegs.length == 0) {
             div.innerHTML = '<p>No bookable services found. Sorry!</p>';
             showTicketStages('deptimes', true);
             return;
@@ -339,8 +339,8 @@ console.log(deplegs);
         var deptemplate = document.getElementById('deplist_tmpl').innerHTML;
         var data = {};
         data.legs = [];
-        for (i in response['legs']) {
-            data.legs.push(Mustache.render(deptemplate, response['legs'][i]));
+        for (i in deplegs) {
+            data.legs.push(Mustache.render(deptemplate, deplegs[i]));
         }
 
         var depctemplate = document.getElementById('depchoice_tmpl').innerHTML;
@@ -350,6 +350,22 @@ console.log(deplegs);
             var deps = document.getElementsByClassName('railticket_dep_'+l);
             for (var i = 0; i < deps.length; i++) {
                 deps[i].addEventListener('click', depTimeChanged);
+            }
+        }
+
+        if (a_deptime) {
+            for (i in deplegs[0].times) {
+                if (deplegs[0].times[i].key == a_deptime) {
+                    var adep = document.getElementById('dep_0_'+deplegs[0].times[i].index);
+                    adep.checked = true;
+                    break;
+                }
+            }
+            a_deptime = false;
+
+            if (deplegs.length == 1) {
+                renderTicketSelector();
+                return;
             }
         }
 
