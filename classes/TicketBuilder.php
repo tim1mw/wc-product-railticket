@@ -517,7 +517,7 @@ class TicketBuilder {
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
-            $itemkey = 0;
+            $itemkey = '';
             $purchase->id = 'M'.$mid;
         } else {
             // Note the unique field cures a weird problem in woocommerce where two similataneous users with the same selection
