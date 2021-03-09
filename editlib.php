@@ -84,9 +84,6 @@ function railticket_view_bookings() {
                 railticket_show_departure(sanitize_text_field($_REQUEST['dateofjourney']), $station,
                    sanitize_text_field($_REQUEST['direction']), sanitize_text_field($_REQUEST['deptime']));
                 break;
-            case 'createmanual':
-                railticket_create_manual();
-                break;
             case 'viewwaybill':
                 railticket_get_waybill(false);
                 break;
@@ -1105,55 +1102,6 @@ function railticket_get_booking_render_data($bookings) {
     }
 
     return $data;
-}
-
-function railticket_create_manual($id = false) {
-    global $wpdb;
-    $dateofjourney = $_POST['dateofjourney'];
-    $station = $_POST['station'];
-    $deptime = $_POST['deptime'];
-    $direction = $_POST['direction'];
-    $destination = $_POST['destination'];
-    
-    if ($id !== false) {
-        $rec = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id=".$id)[0];
-    } else {
-        $rec = new stdclass();
-        $rec->id = false;
-        $rec->journeytype = 'return';
-        $rec->bookingout = false;
-        $rec->bookingret = false;
-        $rec->price = false;
-        $rec->seats = false;
-        $rec->travellers = "{}";
-        $rec->tickets = "{}";
-        $rec->notes = "";
-    }
-    ?>
-    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
-    <input type='hidden' name='action' value='savemanual' />
-    <p>Date of Journey: <?php echo $dateofjourney; ?></p>
-    <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-    <p>Departure station: 
-    <?php
-    $stns = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stations ", OBJECT);
-    echo $stns[$station]->name;
-    ?>
-    </p>
-    <p>Destination station: <?php echo $stns[$destination]; ?></p>
-    <?php
-    $timetable = $wpdb->get_results("SELECT {$wpdb->prefix}wc_railticket_timetables.* FROM {$wpdb->prefix}wc_railticket_dates ".
-        "LEFT JOIN {$wpdb->prefix}wc_railticket_timetables ON ".
-        " {$wpdb->prefix}wc_railticket_dates.timetableid = {$wpdb->prefix}wc_railticket_timetables.id ".
-        "LEFT JOIN {$wpdb->prefix}wc_railticket_bookable ON ".
-        " {$wpdb->prefix}wc_railticket_bookable.dateid = {$wpdb->prefix}wc_railticket_dates.id ".
-        "WHERE {$wpdb->prefix}wc_railticket_dates.date = '".$dateoftravel."'", OBJECT );
-
-    
-    ?>
-    <input type='submit' value='Create Booking' />
-    </form>
-    <?php
 }
 
 function railticket_get_waybillcsv() {
