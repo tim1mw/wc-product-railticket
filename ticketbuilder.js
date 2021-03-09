@@ -220,61 +220,6 @@ function renderFromStations(response) {
     }
 }
 
-/*
-function enableStations(type, response, defstn) {
-    var stc = document.getElementById('stations_container');
-    if (response['specialonly'] == 1) {
-        stc.style.display = 'none';
-    } else {
-        stc.style.display = 'block';
-    
-        for (stnid in response[type]) {
-            var stn = document.getElementById(type+'station'+stnid);
-
-            if (response[type][stnid]) {
-                stn.disabled = false;
-                //stn.title = 'Click to select this station';
-            } else {
-                stn.disabled = true;
-                //stn.title = 'No tickets are available for this station';
-            }
-            if (defstn !== false && defstn == stnid && stn.disabled == false) {
-                stn.checked = true;
-            } else {
-                stn.checked = false;
-            }
-        }
-    }
-
-    if (response['specials']) {
-        specialsData = response['specials'];
-        hasSpecials = true;
-       var str = "";
-        if (response['specialonly'] == 1) {
-            str += "<h4>Service trains are not currently available to book for this date, but "+
-                "the following specials can be chosen:</h4><ul>";
-        } else {
-            str += "<h3>Or choose one of these specials:</h3><ul>";
-        }
-        for (index in response['specials']) {
-           var special = response['specials'][index];
-           var selected = '';
-
-           str += "<li class='railticket_hlist'><input class='railticket_specials' type='radio' name='specials' id='specials"+
-               special.id+"' "+selected+" value='"+special.id+"' onclick='specialClicked("+special.id+", \""+special.fromstation+"\", \""+special.tostation+"\")' />"+
-               "<label class='railticket_caplitalise' for='specials"+
-               special.id+"'>"+special.name+"<div class='railticket_arrtime'>"+special.description+"</div></label></li>";
-        }
-        str += "</ul>";
-        document.getElementById('railticket_specials').innerHTML = str;
-    } else {
-        hasSpecials = false;
-        document.getElementById('railticket_specials').innerHTML = '';
-    }
-            
-}
-*/
-
 function notBookable(bdate) {
     setChosenDate("Not available to book yet", bdate);
     showTicketStages('date', true);
