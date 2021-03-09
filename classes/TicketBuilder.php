@@ -131,8 +131,8 @@ class TicketBuilder {
             "<input type='hidden' name='show' value='1' />".
             "</form><br />";
 
-        $str .= $this->get_preset_form($fstation, $lstation, $fdeptime, "down");
-        $str .= $this->get_preset_form($lstation, $fstation, $ldeptime, "up");
+        $str .= $this->get_preset_form($fstation, $lstation, $fdeptime);
+        $str .= $this->get_preset_form($lstation, $fstation, $ldeptime);
 
         $str .= "</div></div>";
 
@@ -171,15 +171,14 @@ class TicketBuilder {
         echo $template->render($alldata);
     }
 
-    private function get_preset_form(\wc_railticket\Station $fstation, \wc_railticket\Station $tstation, \stdclass $deptime, $direction) {
+    private function get_preset_form(\wc_railticket\Station $fstation, \wc_railticket\Station $tstation, \stdclass $deptime) {
 
         $str = "<form action='/book/' method='post'>".
             "<input type='submit' value='Return tickets for the next train from ".$fstation->get_name()."' />".
             "<input type='hidden' name='a_dateofjourney' value='".$this->today->format('Y-m-d')."' />".
             "<input type='hidden' name='a_deptime' value='".$deptime->key."' />".
             "<input type='hidden' name='a_station' value='".$fstation->get_stnid()."' />".
-            "<input type='hidden' name='a_destination' value='".$tstation->get_stnid()."' />".
-            "<input type='hidden' name='a_direction' value='".$direction."' />".
+            "<input type='hidden' name='a_journeychoice' value='return_".$tstation->get_stnid()."' />".
             "<input type='hidden' name='show' value='1' />".
             "</form><br />";
 

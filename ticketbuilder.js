@@ -289,7 +289,14 @@ function fromStationChanged(evt) {
             jcs[i].addEventListener('click', getDepTimes);
         }
 
-        showTicketStages('journeychoice', true);
+        if (a_journeychoice) {
+            var ajc = document.getElementById('journeychoice'+a_journeychoice);
+            ajc.checked = true;
+            a_journeychoice = false;
+            getDepTimes();
+        } else {
+            showTicketStages('journeychoice', true);
+        }
     });
 }
 
