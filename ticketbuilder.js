@@ -701,6 +701,9 @@ console.log(response.capacity);
     if (anydisablewarn) {
         renderdata.warning = 'WARNING: We could not allocate disabled space for all or part of your journey. '
             'You may continue with the selection shown, or try a different train.';
+        renderdata.hidewarning = '';
+    } else {
+        renderdata.hidewarning = 'display:none;';
     }
 
     var capacitydiv = document.getElementById('ticket_capacity');
