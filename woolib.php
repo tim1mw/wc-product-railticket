@@ -18,7 +18,6 @@ add_filter('woocommerce_disable_admin_bar', '__return_false' );
 add_filter('woocommerce_is_sold_individually', 'railticket_remove_quantity_fields', 10, 2 );
 add_filter('woocommerce_get_price_html', 'railticket_remove_price_fields', 10, 2 );
 add_filter('woocommerce_get_item_data', 'railticket_cart_item_custom_meta_data', 10, 2 );
-add_action('woocommerce_add_order_item_meta', 'railticket_product_add_on_order_item_meta', 10, 2 );
 add_filter('woocommerce_order_item_get_formatted_meta_data', 'railticket_order_item_get_formatted_meta_data', 10, 1 );
 add_action('woocommerce_remove_cart_item', 'railticket_cart_updated', 10, 2 );
 add_action('woocommerce_checkout_create_order_line_item', 'railticket_cart_order_item_metadata', 10, 4 );
@@ -181,24 +180,6 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
     return $item_data;
 }
 
-function railticket_product_add_on_order_item_meta($item_id, $values) {
-    railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketselections');
-    railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketsallocated');
-    railticket_product_add_on_order_item_meta2($item_id, $values, 'ticketprices');
-    wc_add_order_item_meta($item_id, 'supplement', $values['supplement']);
-    wc_add_order_item_meta($item_id, 'itemid', $item_id);
-
-    \wc_railticket\Booking::set_cart_itemid($item_id, $values['key']);
-}
-
-function railticket_product_add_on_order_item_meta2($item_id, $values, $key) {
-    if ( ! empty( $values[$key] ) ) {
-        foreach ($values[$key] as $a => $b) {
-            wc_add_order_item_meta($item_id, $key."-".$a, $b);
-        }
-    }
-}
-
 function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     global $wpdb;
     // Woocommerce doesn't tell use what the order or order item id here 
@@ -289,8 +270,24 @@ function railticket_cart_updated($cart_item_key, $cart) {
 }
 
 function railticket_cart_order_item_metadata( $item, $cart_item_key, $values, $order ) {
+    railticket_product_add_new_order_line_item($item, $values, 'ticketselections');
+    railticket_product_add_new_order_line_item($item, $values, 'ticketsallocated');
+    railticket_product_add_new_order_line_item($item, $values, 'ticketprices');
+    $item->update_meta_data('supplement', $values['supplement']);
+    $item->update_meta_data('itemid', $item->get_id());
+
+    \wc_railticket\Booking::set_cart_itemid($item->get_id(), $values['key']);
+
     // Save the cart item key as hidden order item meta data
     $item->update_meta_data( '_cart_item_key', $cart_item_key );
+}
+
+function railticket_product_add_new_order_line_item($item, $values, $key) {
+    if ( ! empty( $values[$key] ) ) {
+        foreach ($values[$key] as $a => $b) {
+            $item->update_meta_data($key."-".$a, $b);
+        }
+    }
 }
 
 function railticket_cart_complete($order_id) {
