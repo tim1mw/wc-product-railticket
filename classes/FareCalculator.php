@@ -236,7 +236,7 @@ class FareCalculator {
         $mprice = get_option('wc_product_railticket_min_price');
         if (strlen($mprice) > 0 && $pdata->price < $mprice) {
             $mprice=floatval($mprice);
-            $pdata->supplement = floatval($mprice) - floatval($custom_price);
+            $pdata->supplement = floatval($mprice) - floatval($pdata->price);
             $pdata->price = $mprice;
         }
 
