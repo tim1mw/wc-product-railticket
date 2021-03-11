@@ -37,8 +37,8 @@ function railticket_ajax_request() {
         case 'bookable_trains':
             $result = $ticketbuilder->get_bookable_trains();
             break;
-        case 'tickets':
-            $result = $ticketbuilder->get_tickets();
+        case 'ticket_data':
+            $result = $ticketbuilder->get_ticket_data();
             break;
         case 'capacity':
             $result = $ticketbuilder->get_capacity();
@@ -94,11 +94,13 @@ function railticket_getticketbuilder() {
     $fromstation = railticket_getpostfield('fromstation');
     $journeychoice = railticket_getpostfield('journeychoice');
     $overridevalid = railticket_getpostfield('overridevalid');
-    $disabledrequest = railticket_getpostfield('disabledrequest');
+    $disabledrequest = railticket_gettfpostfield('disabledrequest');
     $notes = railticket_getpostfield('notes');
-    $nominimum = railticket_getpostfield('nominimum');
+    $nominimum = railticket_gettfpostfield('nominimum');
     $show = railticket_getpostfield('show');
-
+    // Invert this one so the visible option can be false by default
+    $localprice = !railticket_gettfpostfield('onlineprice');
+file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', print_r($_REQUEST, true)."\n".$localprice);
     $times = null;
     if (array_key_exists('times', $_REQUEST)) {
         $times = json_decode(stripslashes($_REQUEST['times']));
@@ -116,7 +118,17 @@ function railticket_getticketbuilder() {
     // TODO Sanitize JSON?
 
     return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $journeychoice, $times,
-         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show);
+         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show, $localprice);
+}
+
+function railticket_gettfpostfield($field) {
+    if (array_key_exists($field, $_REQUEST)) {
+        $t = sanitize_text_field($_REQUEST[$field]);
+        if ($t == 'true') {
+            return true;
+        }
+    }
+    return false;
 }
 
 function railticket_getpostfield($field) {

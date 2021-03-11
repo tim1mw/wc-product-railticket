@@ -107,7 +107,7 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('notes', getFormValue('notes'));
     data.append('nominimum', getCBFormValue('nominimum'));
     data.append('onlineprice', getCBFormValue('onlineprice'));
-
+console.log(getCBFormValue('onlineprice'));
     request.send(data);
 }
 
@@ -517,7 +517,8 @@ function travellersChanged() {
 
 function onlinePriceChanged() {
     railTicketAjax('ticket_data', true, function(response) {
-        ticketdata = response['tickets'];
+        ticketdata = response;
+console.log(ticketdata);
         allocateTickets();
     } );
 }

@@ -9,7 +9,8 @@ class TicketBuilder {
     private $today, $tomorrow, $stations;
 
     public function __construct($dateoftravel, $fromstation, $journeychoice, $times,
-        $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show) {
+        $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes,
+        $nominimum, $show, $localprice) {
         global $wpdb;
         $this->show = $show;
 
@@ -69,9 +70,16 @@ class TicketBuilder {
 
         if ($this->is_guard()) {
             $this->overridevalid = true;
+            $this->localprice = true;
         } else {
             $this->overridevalid = $overridevalid;
+            $this->localprice = false;
         }
+
+        if ($this->is_booking_admin()) {
+            $this->localprice = $localprice;
+        }
+
         if ($disabledrequest == 'true') {
             $this->disabledrequest = true;
         } else {
@@ -353,15 +361,18 @@ class TicketBuilder {
         return $rnd;
     }
 
+    public function get_ticket_data() {
+        return $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
+            $this->is_guard(), $this->localprice, $this->discountcode);
+    }
+
     public function get_bookable_trains() {
         $data = new \stdclass();
         // TODO : Do I need to do anything else with this here?
         $data->sameservicereturn = $this->bookableday->same_service_return();
         $data->legs = array();
 
-        // TODO Allow manager to override guard localprice here
-        $data->tickets = $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
-            $this->is_guard(), $this->is_guard(), $this->discountcode);
+        $data->tickets = $this->get_ticket_data();
 
         // There are no fares to sell...
         if (count($data->tickets->prices) == 0) {

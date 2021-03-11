@@ -144,7 +144,6 @@ class FareCalculator {
         $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
             "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
             "{$wpdb->prefix}wc_railticket_prices.".$pfield." as price, ".
-            "{$wpdb->prefix}wc_railticket_prices.localprice, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.description, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.composition, ".
