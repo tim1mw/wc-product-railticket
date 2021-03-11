@@ -107,7 +107,6 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('notes', getFormValue('notes'));
     data.append('nominimum', getCBFormValue('nominimum'));
     data.append('onlineprice', getCBFormValue('onlineprice'));
-console.log(getCBFormValue('onlineprice'));
     request.send(data);
 }
 
