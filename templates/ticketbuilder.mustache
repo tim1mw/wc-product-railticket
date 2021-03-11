@@ -33,9 +33,11 @@
     <div id='ticket_travellers' class='railticket_container'></div>
     <div id='ticket_summary' class='railticket_container'></div>
     <div id='ticket_capbutton' class='railticket_container'>
-        <p class='railticket_terms'><input type='checkbox' name='disabledrequest' id='disabledrequest'/>
-         &nbsp;&nbsp;&nbsp;Request space for disabled visitor</p>
-         {{{ticket_guardopts}}}
+         <table class='ticket_opts_table'>
+         {{#ticket_opts}}
+             <tr><td class='railticket_terms'><input type='checkbox' name='{{name}}' id='{{{name}}}' /></td><td class='railticket_terms'>{{title}}</td></tr>
+         {{/ticket_opts}}
+         </table>
         <input type='button' value='Confirm Choices' id='confirmchoices' />
     </div>
     <div id='ticket_capacity' class='railticket_container'></div>

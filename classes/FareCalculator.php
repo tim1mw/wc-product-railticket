@@ -212,8 +212,10 @@ class FareCalculator {
         $pdata = new \stdclass();
         $pdata->supplement = 0;
         $pdata->price = 0;
-        $pdata->discountcode = $discountcode;
         $pdata->ticketprices = array();
+        $pdata->ticketprices['__pfield'] = $pfield;
+        $pdata->ticketprices['__discountcode'] = $discountcode;
+        $pdata->ticketprices['__discounttype'] = '';
         $pdata->revision = $this->revision;
 
         foreach ($ticketsallocated as $ttype => $qty) {

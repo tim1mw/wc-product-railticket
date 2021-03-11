@@ -45,6 +45,7 @@ function railticket_roles() {
     // Add a new capability.
     $role->add_cap( 'manage_tickets', true );
     $role->add_cap( 'delete_tickets', true );
+    $role->add_cap( 'admin_tickets', true );
 
     $role = get_role( 'shop_manager' );
     // Add a new capability.

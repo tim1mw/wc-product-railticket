@@ -92,6 +92,16 @@ class TicketBuilder {
         return false;
     }
 
+    private function is_booking_admin() {
+        if( is_user_logged_in() ) {
+            if (current_user_can('admin_tickets')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function render() {
 
         $ua = htmlentities($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, 'UTF-8');
@@ -146,18 +156,37 @@ class TicketBuilder {
         $alldata = new \stdclass();
         $alldata->javascript = $this->get_javascript();
         $alldata->datepick = $this->get_datepick();
+        $alldata->ticket_opts = array();
+
+        $disabled = new \stdclass();
+        $disabled->name = 'disabledrequest';
+        $disabled->title = __('Request space for disabled visitor', 'wc_railticket');
+        $alldata->ticket_opts[] = $disabled;
 
         if ($this->is_guard()) {
-            $alldata->ticket_guardopts = "<p class='railticket_terms'><input type='checkbox' name='nominimum' id='nominimum' />".
-                "&nbsp;&nbsp;&nbsp;No Minimum Price</p>".
-                "<p class='railticket_terms'><input type='checkbox' name='bypass' id='bypass'/>".
-                "&nbsp;&nbsp;&nbsp;Bypass Ticket Restrictions</p>";
+
+            $nm = new \stdclass();
+            $nm->name = 'nominimum';
+            $nm->title = __('No Minimum Price', 'wc_railticket');
+            $alldata->ticket_opts[] = $nm;
+
+            $bp = new \stdclass();
+            $bp->name = 'bypass';
+            $bp->title = __('Bypass Ticket Restrictions', 'wc_railticket');
+            $alldata->ticket_opts[] = $bp;
+
+            if ($this->is_booking_admin()) {
+                $op = new \stdclass();
+                $op->name = 'onlineprice';
+                $op->title = __('Use Online Sales Price', 'wc_railticket');
+                $alldata->ticket_opts[] = $op;
+            }
 
             $alldata->addtocartopts = "<p><label for='notes'>Guard's Notes:</label><br />".
                 "<textarea id='notes' cols='40' rows='5' name='notes'></textarea></p>".
                 "<p><input type='button' value='Create Booking' id='createbooking' /></p>";
         } else {
-            $alldata->ticket_guardopts = "<input type='hidden' name='nominimum' id='nominimum' value='0' />";
+            //$alldata->ticket_guardopts = "<input type='hidden' name='nominimum' id='nominimum' value='0' />";
             $alldata->addtocartopts = "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>".
                 "&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
                 "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".

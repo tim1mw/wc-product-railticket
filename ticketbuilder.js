@@ -25,6 +25,7 @@ function setupTickets() {
         railTicketAddListener('createbooking', 'click', cartTickets);
         railTicketAddListener('nominimum', 'click', allocateTickets);
         railTicketAddListener('bypass', 'click', allocateTickets);
+        railTicketAddListener('onlineprice', 'click', onlinePriceChanged);
     } else {
         railTicketAddListener('termsinput', 'click', termsClicked);
         railTicketAddListener('addticketstocart', 'click', cartTickets);
@@ -44,7 +45,9 @@ function setupTickets() {
 
 function railTicketAddListener(id, type, func) {
     var ele = document.getElementById(id);
-    ele.addEventListener(type, func);
+    if (ele != null) {
+        ele.addEventListener(type, func);
+    }
 }
 
 function railTicketoffset(el) {
@@ -100,11 +103,20 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('ticketselections', JSON.stringify(ticketSelections));
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
     data.append('overridevalid', overridevalid);
-    data.append('disabledrequest', document.getElementById('disabledrequest').checked);
+    data.append('disabledrequest', getCBFormValue('disabledrequest'));
     data.append('notes', getFormValue('notes'));
-    data.append('nominimum', document.getElementById('nominimum').checked);
+    data.append('nominimum', getCBFormValue('nominimum'));
+    data.append('onlineprice', getCBFormValue('onlineprice'));
 
     request.send(data);
+}
+
+function getCBFormValue(param) {
+    if (param in document.railticketbooking) {
+        return document.railticketbooking[param].checked;
+    }
+
+    return false;
 }
 
 function getFormValue(param) {
@@ -503,6 +515,13 @@ function travellersChanged() {
     setTimeout(allocateTickets, 10);
 }
 
+function onlinePriceChanged() {
+    railTicketAjax('ticket_data', true, function(response) {
+        ticketdata = response['tickets'];
+        allocateTickets();
+    } );
+}
+
 function allocateTickets() {
     showTicketStages('tickets', false);
     var capacitydiv = document.getElementById('ticket_capacity');
@@ -595,8 +614,8 @@ function allocateTickets() {
     td.supplement = 0;
     if (minprice !== false) {
         if (td.total < minprice && td.total != 0) {
-            var nm = document.getElementById('nominimum');
-            if (guard && nm.checked == true) {
+            var nm = getCBFormValue('nominimum');
+            if (guard && nm == true) {
                 td.supplement = 0;
             } else {
                 td.supplement = minprice - td.total;
