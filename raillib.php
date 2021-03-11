@@ -100,6 +100,7 @@ function railticket_getticketbuilder() {
     $show = railticket_getpostfield('show');
     // Invert this one so the visible option can be false by default
     $localprice = !railticket_gettfpostfield('onlineprice');
+    $manual = railticket_gettfpostfield('manual');
 
     $times = null;
     if (array_key_exists('times', $_REQUEST)) {
@@ -118,13 +119,13 @@ function railticket_getticketbuilder() {
     // TODO Sanitize JSON?
 
     return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $journeychoice, $times,
-         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show, $localprice);
+         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show, $localprice, $manual);
 }
 
 function railticket_gettfpostfield($field) {
     if (array_key_exists($field, $_REQUEST)) {
         $t = sanitize_text_field($_REQUEST[$field]);
-        if ($t == 'true') {
+        if ($t == 'true' || $t === true) {
             return true;
         }
     }

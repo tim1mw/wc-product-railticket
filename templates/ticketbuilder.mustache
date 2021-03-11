@@ -48,7 +48,24 @@
     <input type='hidden' name='ticketselections' />
     <input type='hidden' name='ticketallocations' />
     <div class='railticket_container'>
-        {{{addtocartopts}}}
+        {{#fields}}
+            <p><label for='{{name}}'>{{title}}</label><br />
+            <textarea id='{{name}}' cols='{{cols}}' rows='{{rows}}' name='{{name}}'></textarea></p>
+        {{/fields}}
+
+        <div class='ticket_opts_table' style='{{hideterms}}'>
+            <p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>
+                &nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>
+            <p><a href='{{termspage}}' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>
+        </div>
+
+        {{{terms}}}
+        <div id='addticketstocart'>
+        <p class='railticket_terms'>{{{comment}}}</p>
+        {{#buttons}}
+            <p><input type='button' value='{{value}}' id='{{id}}' /></p>
+        {{/buttons}}
+        </div>
         <div id='railticket_processing' class='railticket_processing'>
             <p>Processing - Please wait</p>
         </div>

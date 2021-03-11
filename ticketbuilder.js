@@ -7,6 +7,7 @@ var ticketsAllocated = {};
 const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var stationData = [];
 var fromstationdata, tostationdata, journeychoicedata, journeytypedata, alljourneys;
+var manual = false;
 
 
 function setupTickets() {
@@ -20,15 +21,15 @@ function setupTickets() {
     // Add listeners for all the stuff in the main form
     railTicketAddListener('validateOverrideIn', 'click', validateOverride);
     railTicketAddListener('confirmchoices', 'click', checkCapacity);
+    railTicketAddListener('addtocart_button', 'click', cartTickets);
 
     if (guard) {
-        railTicketAddListener('createbooking', 'click', cartTickets);
+        railTicketAddListener('createbooking', 'click', manualTickets);
         railTicketAddListener('nominimum', 'click', allocateTickets);
         railTicketAddListener('bypass', 'click', allocateTickets);
         railTicketAddListener('onlineprice', 'click', onlinePriceChanged);
     } else {
         railTicketAddListener('termsinput', 'click', termsClicked);
-        railTicketAddListener('addticketstocart', 'click', cartTickets);
     }
     if (guard) {
         overridevalid = 1;
@@ -107,6 +108,8 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('notes', getFormValue('notes'));
     data.append('nominimum', getCBFormValue('nominimum'));
     data.append('onlineprice', getCBFormValue('onlineprice'));
+    data.append('manual', manual);
+console.log(manual);
     request.send(data);
 }
 
@@ -786,15 +789,29 @@ function termsClicked() {
     }
 }
 
+function manualTickets() {
+    manual = true;
+console.log("Manual booking");
+    submitTickets();
+}
+
 function cartTickets() {
-    if (guard) {
-       var b = document.getElementById('createbooking');
-       b.disabled = true;
-       b.style.display='none';
-    } else {
-       var b = document.getElementById('addtocart_button');
-       b.disabled = true;
-       b.style.display='none';
+    manual = false;
+console.log("Cart booking");
+    submitTickets();
+}
+
+function submitTickets() {
+    var b = document.getElementById('createbooking');
+    if (b != null) {
+        b.disabled = true;
+        b.style.display='none';
+    }
+
+    var b = document.getElementById('addtocart_button');
+    if (b != null) {
+        b.disabled = true;
+        b.style.display='none';
     }
 
     var p = document.getElementById('railticket_processing');
@@ -802,7 +819,7 @@ function cartTickets() {
     
     railTicketAjax('purchase', false, function(response) {
         if (response.ok) {
-            if (guard) {
+            if (guard && manual) {
                 var ele = document.getElementById('railticket_processing');
                 ele.innerHTML = 'Booking created with reference: "'+response.id+'"'+
                     '<br />'+
@@ -877,6 +894,11 @@ function showTicketStages(stage, doscroll) {
 
     var tickets = document.getElementById('addtocart');
     addtocart.style.display = display;
+
+    if (guard) {
+        var cart = document.getElementById('addticketstocart');
+        cart.style.display = display;
+    }
 
     if (scroll !=null && stage != laststage && doscroll) {
         scroll.scrollIntoView(true);

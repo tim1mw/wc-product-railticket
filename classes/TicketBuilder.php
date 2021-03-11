@@ -10,7 +10,7 @@ class TicketBuilder {
 
     public function __construct($dateoftravel, $fromstation, $journeychoice, $times,
         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes,
-        $nominimum, $show, $localprice) {
+        $nominimum, $show, $localprice, $manual) {
         global $wpdb;
         $this->show = $show;
 
@@ -71,13 +71,16 @@ class TicketBuilder {
         if ($this->is_guard()) {
             $this->overridevalid = true;
             $this->localprice = true;
+            $this->manual = true;
         } else {
             $this->overridevalid = $overridevalid;
             $this->localprice = false;
+            $this->manual = false;
         }
 
         if ($this->is_booking_admin()) {
             $this->localprice = $localprice;
+            $this->manual = $manual;
         }
 
         if ($disabledrequest == 'true') {
@@ -171,8 +174,10 @@ class TicketBuilder {
         $disabled->title = __('Request space for disabled visitor', 'wc_railticket');
         $alldata->ticket_opts[] = $disabled;
 
-        if ($this->is_guard()) {
+        $alldata->fields = array();
+        $alldata->buttons = array();
 
+        if ($this->is_guard()) {
             $nm = new \stdclass();
             $nm->name = 'nominimum';
             $nm->title = __('No Minimum Price', 'wc_railticket');
@@ -190,18 +195,38 @@ class TicketBuilder {
                 $alldata->ticket_opts[] = $op;
             }
 
-            $alldata->addtocartopts = "<p><label for='notes'>Guard's Notes:</label><br />".
-                "<textarea id='notes' cols='40' rows='5' name='notes'></textarea></p>".
-                "<p><input type='button' value='Create Booking' id='createbooking' /></p>";
+            $notes = new \stdclass();
+            $notes->name = 'notes';
+            $notes->cols = 40;
+            $notes->rows = 5;
+            $notes->title = "Guard's Notes:";
+            $alldata->fields[] = $notes;
+
+            $manb = new \stdclass();
+            $manb->value = 'Create Manual Booking';
+            $manb->id ='createbooking';
+            $alldata->buttons[] = $manb;
+
+            $alldata->hideterms = 'display:none;';
         } else {
-            //$alldata->ticket_guardopts = "<input type='hidden' name='nominimum' id='nominimum' value='0' />";
-            $alldata->addtocartopts = "<p class='railticket_terms'><input type='checkbox' name='terms' id='termsinput'/>".
-                "&nbsp;&nbsp;&nbsp;I agree to the ticket sales terms and conditions.</p>".
-                "<p><a href='".get_option('wc_product_railticket_termspage')."' target='_blank'>Click here to view terms and conditions in a new tab.</a></p>".
-                "<div id='addticketstocart'><p class='railticket_terms'>Your tickets will be reserved for ".
+            $alldata->hideterms = '';
+            $alldata->termspage = get_option('wc_product_railticket_termspage');
+
+            $alldata->comment = "Your tickets will be reserved for ".
                 get_option('wc_product_railticket_reservetime')." minutes after you click add to cart.".
-                " Please complete your purchases within that time.</p>".
-                "<p><input type='hidden' name='notes' value='' /><input type='button' value='Add To Cart' id='addtocart_button' /></p></div></div>";
+                " Please complete your purchases within that time.";
+
+            $cart = new \stdclass();
+            $cart->value = 'Add To Cart';
+            $cart->id = 'addtocart_button';
+            $alldata->buttons[] = $cart;
+        }
+
+        if ($this->is_booking_admin()) {
+            $cart = new \stdclass();
+            $cart->value = 'Add To Shopping Cart';
+            $cart->id = 'addtocart_button';
+            $alldata->buttons[] = $cart;
         }
 
         $template = $rtmustache->loadTemplate('ticketbuilder');
@@ -542,7 +567,7 @@ class TicketBuilder {
         }
 */
 
-        if ($this->is_guard()) {
+        if ($this->manual) {
             $data = array(
                 'journeytype' => $this->journeytype,
                 'price' => $pricedata->price,
