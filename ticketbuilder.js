@@ -791,13 +791,11 @@ function termsClicked() {
 
 function manualTickets() {
     manual = true;
-console.log("Manual booking");
     submitTickets();
 }
 
 function cartTickets() {
     manual = false;
-console.log("Cart booking");
     submitTickets();
 }
 
