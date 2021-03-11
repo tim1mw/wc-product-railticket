@@ -100,7 +100,7 @@ function railticket_getticketbuilder() {
     $show = railticket_getpostfield('show');
     // Invert this one so the visible option can be false by default
     $localprice = !railticket_gettfpostfield('onlineprice');
-file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', print_r($_REQUEST, true)."\n".$localprice);
+
     $times = null;
     if (array_key_exists('times', $_REQUEST)) {
         $times = json_decode(stripslashes($_REQUEST['times']));
