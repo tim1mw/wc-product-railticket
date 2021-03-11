@@ -623,7 +623,7 @@ class TicketBuilder {
             'expiring' => 0,
             'manual' => $manual
         );
-        if ($manual) {
+        if ($manual && $this->dateoftravel == $this->today) {
             $dbdata['collected'] = true;
         }
 
