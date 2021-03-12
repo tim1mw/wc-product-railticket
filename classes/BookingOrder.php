@@ -28,6 +28,7 @@ class BookingOrder {
             $this->customerphone = '';
             $this->paid = false;
             $this->incart = true;
+            $this->createdby = 0;
         } elseif ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = json_decode($mb->tickets);
@@ -40,6 +41,7 @@ class BookingOrder {
             $this->customerpostcode = '';
             $this->customeremail = '';
             $this->customerphone = '';
+            $this->createdby = $mb->createdby;
             $this->paid = true;
         } else {
             $wooorderitem = $bookings[0]->wooorderitem;
@@ -50,7 +52,8 @@ class BookingOrder {
                 " meta_key='_line_total' AND order_item_id = ".$wooorderitem."");
             $this->supplement = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
                 " meta_key='supplement' AND order_item_id = ".$wooorderitem."");
-     
+             $this->createdby = 0;
+
             // This object might get created prior to the order being fully setup in Woocommerce, so skip this if there is no order
             $order = wc_get_order($orderid);
             if ($order) {
@@ -175,14 +178,6 @@ class BookingOrder {
        return $this->customeremail;
     }
 
-    public function get_discount_type() {
-       return '';
-    }
-
-    public function get_discount() {
-       return 0;
-    }
-
     public function is_paid($format = false) {
         if (!$format) {
             return $this->paid;
@@ -200,16 +195,24 @@ class BookingOrder {
     }
 
     public function get_tickets($format = false) {
-        global $wpdb;
         if ($format) {
             $ta = (array) $this->tickets;
             $fmt = array();
             foreach ($ta as $ticket => $num) {
-                 $fmt[] = $num."x ".$wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$ticket."'");
+                 $fmt[] = $num."x ".$this->bookableday->fares->get_ticket_name($ticket);
             }
             return implode(', ', $fmt);
         }
         return $this->tickets;
+    }
+
+    public function total_tickets() {
+        $count = 0;
+        $ta = (array) $this->tickets;
+        foreach ($ta as $ticket => $num) {
+            $count += $num;
+        }
+        return $count;
     }
 
     public function get_travellers() {
@@ -218,6 +221,22 @@ class BookingOrder {
 
     public function get_notes() {
         return $this->notes;
+    }
+
+    public function get_created_by($format = false) {
+        if ($format) {
+            if (!$this->manual) {
+                return __('Online Booking', 'wc_railticket');
+            }
+
+            if ($this->createdby > 0) {
+                $u = get_userdata($id);
+                return $u->first_name." ".$u->last_name;
+            }
+            return __('Unknown User', 'wc_railticket')." (id = ".$this->createdby.")";
+        }
+
+        return $this->createdby;
     }
 
     public function get_price($format = false) {
@@ -236,6 +255,32 @@ class BookingOrder {
         return "£".number_format($this->supplement, 2);
     }
 
+    public function is_guard_price() {
+        if ($this->ticketprices && property_exists($this->ticketprices, '__pfield')) {
+            if ($this->ticketprices->__pfield == 'localprice') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function get_discount_type() {
+        if ($this->ticketprices && property_exists($this->ticketprices, '__discounttype')) {
+            return $this->ticketprices->__discounttype;
+        }
+
+        return '';
+    }
+
+    public function get_discount() {
+        if ($this->ticketprices && property_exists($this->ticketprices, '__discounttotal')) {
+            return $this->ticketprices->__discounttotal;
+        }
+
+        return 0;
+    }
+
     public function get_date($format = false, $nottoday = false) {
         // Bookings for a single order are always for the same day, so we can shortcut this safely
         return $this->bookings[0]->get_date($format, $nottoday);
@@ -244,6 +289,14 @@ class BookingOrder {
     public function get_seats() {
         // Bookings for a single order are always for the same day, so we can shortcut this safely
         return $this->bookings[0]->get_seats();
+    }
+
+    public function get_journeys() {
+        $j = 0;
+        foreach ($this->bookings as $bk) {
+            $j += $bk->get_seats();
+        }
+        return $j;
     }
 
     public function get_journeytype($format = false) {

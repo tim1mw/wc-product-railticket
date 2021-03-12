@@ -45,6 +45,11 @@ class FareCalculator {
         return $r;
     }
 
+    public static function get_ticket_name($ticket) {
+        global $wpdb;
+        return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$ticket."'");
+    }
+
     private function get_date($key) {
         if (!$format) {
             return $this->data->$key;
@@ -195,8 +200,6 @@ class FareCalculator {
     }
 
     public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice, $nominimum, $discountcode) {
-        global $wpdb;
-
         if ($localprice) {
             $pfield = 'localprice';
         } else {
@@ -218,14 +221,7 @@ class FareCalculator {
         $pdata->revision = $this->revision;
 
         foreach ($ticketsallocated as $ttype => $qty) {
-            $sql = "SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".
-                "journeytype = '".$journeytype."' AND revision = ".$this->revision." AND ".
-                "((stationone = ".$from->get_stnid()." AND stationtwo = ".$to->get_stnid().") OR ".
-                "(stationone = ".$to->get_stnid()." AND stationtwo = ".$from->get_stnid()."))";
-            $price = $wpdb->get_var($sql);
-
-            // TODO Apply Discounts here
-
+            $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discountcode);
             $pdata->price += floatval($price)*floatval($qty);
             $pdata->ticketprices[$ttype] = $price;
         }
@@ -242,6 +238,19 @@ class FareCalculator {
         }
 
         return $pdata;
+    }
+
+    public function get_fare(Station $from, Station $to, $journeytype, $ttype, $pfield, $discountcode) {
+        global $wpdb;
+        $sql = "SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".
+            "journeytype = '".$journeytype."' AND revision = ".$this->revision." AND ".
+            "((stationone = ".$from->get_stnid()." AND stationtwo = ".$to->get_stnid().") OR ".
+            "(stationone = ".$to->get_stnid()." AND stationtwo = ".$from->get_stnid()."))";
+        $price = $wpdb->get_var($sql);
+
+        // TODO Apply Discounts here
+
+        return $price;
     }
 
     public function count_seats($ticketselections) {

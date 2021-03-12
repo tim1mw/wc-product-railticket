@@ -17,7 +17,6 @@ class OrderSummary extends Report{
 
         $bookingids = $this->bookableday->get_all_order_ids();
 
-        $processed = array();
         $lines = array();
 
         foreach ($bookingids as $bookingid) {

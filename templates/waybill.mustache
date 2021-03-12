@@ -1,0 +1,67 @@
+<p><table border='1' class='railticket_admintable'>
+    <tr><th>{{date}}</th></tr>
+    <tr>
+    {{#header}}
+        <th>{{.}}</th>
+    {{/header}}
+    </tr>
+    {{#lines}}
+    <tr>
+        <td style='text-align:center;font-weight:bold;'>{{{from}}}</td>
+        <td style='text-align:center;font-weight:bold;'>{{{to}}}</td>
+        <td style='text-align:center;'>{{{journeytype}}}</td>
+        <td style='text-align:center;'>{{{tickettype}}}</td>
+        <td style='text-align:center;'>{{{faretype}}}</td>
+        <td style='text-align:center;'>{{{discounttype}}}</td>
+        <td style='text-align:center;'>{{{number}}}</td>
+        <td style='text-align:center;'>{{{fare}}}</td>
+        <td style='text-align:center;'>{{{total}}}</td>
+    </tr>
+    {{/lines}}
+</table></p>
+
+<h2>Summaries</h2>
+<p><table border='1' class='railticket_admintable' style='font-size:large;'>
+    <tr>
+        <th style='text-align:right'>Total Passengers</th><td style='text-align:center;padding:4px;'>{{totalseats}}</td>
+        <td style='width:30px;'></td>
+        <th style='text-align:right'>Total Manual Booking Revenue</th><td style='text-align:center;padding:4px;'>{{totalmanual}}</td>
+    </tr><tr>
+        <th style='text-align:right'>Total Tickets</th><td style='text-align:center;padding:4px;'>{{totaltickets}}</td>
+        <td style='width:30px;'></td>
+        <th style='text-align:right'>Total Online Bookings Revenue</th><td style='text-align:center;padding:4px;'>{{totalwoo}}</td>
+    </tr><tr>
+        <th style='text-align:right'>Total One Way Journeys</th><td style='text-align:center;padding:4px;'>{{totaljourneys}}</td>
+        <td style='width:30px;'></td>
+        <th style='text-align:right'>Total Guards Price Revenue</th><td style='text-align:center;padding:4px;'>{{totalguardprice}}</td>
+    </tr><tr>
+        <th style='text-align:right'>Total Supplement Revenue</th><td style='text-align:center;padding:4px;'>{{totalsupplements}}</td>
+        <td style='width:30px;'></td>
+        <th style='text-align:right'>Total Online Price Revenue</th><td style='text-align:center;padding:4px;'>{{totalonlineprice}}</td>
+    </tr><tr>
+        <th style='text-align:right'>Total Discount Deductions</th><td style='text-align:center;padding:4px;'>{{totaldiscounts}}</td>
+        <td style='width:30px;'></td>
+        <th style='text-align:right'>Total Revenue</th><th style='text-align:center;padding:4px;'>{{totalrevenue}}</th>
+    </tr>
+</table></p>
+
+
+<h2>Guards Breakdown</h2>
+<p><table border='1' class='railticket_admintable' style='font-size:large;'>
+    {{#guards}}
+        <tr><th style='text-align:right'>{{name}}</th><td style='text-align:center;padding:4px;'>{{total}}</td></tr>
+    {{/guards}}
+</table></p>
+
+<hr />
+<p><form method='post' action='{{url}}'>
+    <input type='hidden' name='action' value='viewwaybill' />
+    <input type='hidden' name='dateofjourney' value='{{date}}' />
+    <input type='submit' name='submit' value='Refresh Data' />
+</form><br />
+<form action='{{url}}' method='post'>
+    <input type='hidden' name='action' value='filterbookings' />
+    <input type='hidden' name='dateofjourney' value='{{date}}' />
+    <input type='submit' name='submit' value='Back to Services' />
+</form>
+</p>
