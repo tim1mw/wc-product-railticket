@@ -106,7 +106,7 @@ class Waybill extends Report {
             $gti->total = $total;
             $gts[] = $gti;
         }
-/*
+/* TODO FIX Waybill CSV!
         if ($iscsv) {
             header('Content-Type: application/csv');
             header('Content-Disposition: attachment; filename="ordersummary-' . $this->date . '.csv";');
@@ -157,7 +157,7 @@ class Waybill extends Report {
         }
 
         $alldata = new \stdclass();
-        $alldata->date = $this->date;
+        $alldata->date = $this->bookableday->get_date(true);
         $alldata->header = $header;
 
         $alldata->lines = $plines;
