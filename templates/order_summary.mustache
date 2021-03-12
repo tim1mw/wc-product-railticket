@@ -1,0 +1,26 @@
+<table border='1' class='railticket_admintable'>
+    <tr><th>{{date}}</th></tr>
+    <tr>
+    {{#header}}
+        <th>{{.}}</th>
+    {{/header}}
+    </tr>
+    {{#lines}}
+    <tr>
+        {{#.}}
+        <td style='text-align:center;'>{{{.}}}</td>
+        {{/.}}
+    </tr>
+    {{/lines}}
+</table>
+<p><form method='post' action='{{url}}'>
+    <input type='hidden' name='action' value='viewordersummary' />
+    <input type='hidden' name='dateofjourney' value='{{date}}' />
+    <input type='submit' name='submit' value='Refresh Data' />
+</form><br />
+<form action='{{url}}' method='post'>
+    <input type='hidden' name='action' value='filterbookings' />
+    <input type='hidden' name='dateofjourney' value='{{date}}' />
+    <input type='submit' name='submit' value='Back to Services' />
+</form>
+</p>
