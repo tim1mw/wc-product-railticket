@@ -24,6 +24,8 @@ class BookingOrder {
             $this->notes = '';
             $this->customername = '';
             $this->customerpostcode = '';
+            $this->customeremail = '';
+            $this->customerphone = '';
             $this->paid = false;
             $this->incart = true;
         } elseif ($manual) {
@@ -36,6 +38,8 @@ class BookingOrder {
             $this->notes = $mb->notes;
             $this->customername = '';
             $this->customerpostcode = '';
+            $this->customeremail = '';
+            $this->customerphone = '';
             $this->paid = true;
         } else {
             $wooorderitem = $bookings[0]->wooorderitem;
@@ -53,10 +57,14 @@ class BookingOrder {
                 $this->notes = $order->get_customer_note();
                 $this->customername = $order->get_formatted_billing_full_name();
                 $this->customerpostcode = $order->get_billing_postcode();
+                $this->customeremail = $order->get_billing_email();
+                $this->customerphone = $order->get_billing_phone();
                 $this->paid = $order->is_paid();
             } else {
                 $this->customername = '';
                 $this->customerpostcode = '';
+                $this->customeremail = '';
+                $this->customerphone = '';
                 $this->paid = false;
                 $this->incart = false;
             }
@@ -74,7 +82,7 @@ class BookingOrder {
     public static function get_booking_order($orderid, $manual = false) {
         global $wpdb;
 
-        if ($manual === false && strpos(strtoupper($_REQUEST['orderid']), 'M') === 0) {
+        if ($manual === false && strpos(strtoupper($orderid), 'M') === 0) {
             $manual = true;
             $orderid = substr($orderid, 1);
         }
@@ -157,6 +165,22 @@ class BookingOrder {
 
     public function get_postcode() {
        return $this->customerpostcode;
+    }
+
+    public function get_phone() {
+       return $this->customerphone;
+    }
+
+    public function get_email() {
+       return $this->customeremail;
+    }
+
+    public function get_discount_type() {
+       return '';
+    }
+
+    public function get_discount() {
+       return 0;
     }
 
     public function is_paid($format = false) {

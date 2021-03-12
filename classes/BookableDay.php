@@ -296,6 +296,28 @@ class BookableDay {
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."'");
     }
 
+    public function get_all_order_ids() {
+        global $wpdb;
+
+        // Woocommerce orders are difficult to get directly, so pull from the bookings table and exclude duplicates
+        $allids = array();
+        $woobks = $wpdb->get_results("SELECT DISTINCT wooorderid FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."' ".
+            "AND woocartitem = '' AND manual = 0");
+        foreach($woobks as $bk) {
+            $allids[] = $bk->wooorderid;
+        }
+
+        // Manual bookings only record the date against the booking not the order, so pull from bookings an exclude duplicates
+        $mbks = $wpdb->get_results("SELECT DISTINCT manual FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."' ".
+            "AND woocartitem = '' AND wooorderid = 0");
+
+        foreach ($mbks as $mb) {
+            $allids[] = 'M'.$mb->manual;
+        }
+
+        return $allids;
+    }
+
     public function count_bookings() {
         global $wpdb;
         return $wpdb->get_var("SELECT COUNT(id) FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."'");
