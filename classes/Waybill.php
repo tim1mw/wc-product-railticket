@@ -91,7 +91,6 @@ class Waybill extends Report {
     }
 
     function show_waybill($iscsv) {
-
         $header = array('From', 'To', 'Journey Type', 'Ticket Type', 'Fare Type', 'Discount', 'Number', 'Fare', 'Total');
 
         $gts = array();
@@ -106,22 +105,68 @@ class Waybill extends Report {
             $gti->total = $total;
             $gts[] = $gti;
         }
-/* TODO FIX Waybill CSV!
+
         if ($iscsv) {
-            header('Content-Type: application/csv');
-            header('Content-Disposition: attachment; filename="ordersummary-' . $this->date . '.csv";');
-            header('Pragma: no-cache');
-            $f = fopen('php://output', 'w');
-            fputcsv($f, array('Date', $this->date);
-            fputcsv($f, array('', '', '', '', '', ''));
-            fputcsv($f, $header);
-            foreach ($lines as $line) {
-                fputcsv($f, $line);
-            }
-            fclose($f);
-            return;
+            $this->show_waybill_csv($header, $gts);
+        } else {
+            $this->show_waybill_html($header, $gts);
         }
-*/
+    }
+
+    function show_waybill_csv($header, $gts) {
+        header('Content-Type: application/csv');
+        header('Content-Disposition: attachment; filename="ordersummary-' . $this->date . '.csv";');
+        header('Pragma: no-cache');
+        $f = fopen('php://output', 'w');
+        fputcsv($f, array('Date', $this->date));
+        fputcsv($f, array('', '', '', '', '', ''));
+        fputcsv($f, $header);
+
+        foreach ($this->lines as $linekey => $linevalue) {
+            $keyparts = explode('|', $linekey);
+
+            $from = $this->bookableday->timetable->get_station($keyparts[0]);
+            $to = $this->bookableday->timetable->get_station($keyparts[1]);
+
+            $nline = array();
+            $nline[] = $from->get_name();
+            $nline[] = $to->get_name();
+            $nline[] = __(ucfirst($keyparts[2]), 'wc_railticket');
+            $nline[] = $this->bookableday->fares->get_ticket_name($keyparts[3]);
+            if ($keyparts[4] == 'price') {
+                $nline[] = __('Online', 'wc_railticket');
+            } else {
+                $nline[] = __('Guard', 'wc_railticket');
+            }
+            if ($keyparts[5] != 'AAAAAAAAAAAAAAAAA') {
+                // TODO Lookup the discount name here when we have something to look it up from
+                $nline[] = $keyparts[5];
+                $dtype = $keyparts[5];
+            } else {
+                $nline[] = '';
+                $dtype = '';
+            }
+            $nline[] = $linevalue;
+            $fare = $this->bookableday->fares->get_fare($from, $to, $keyparts[2], $keyparts[3], $keyparts[4], $dtype);
+            $nline[] = $fare;
+            $nline[] = $linevalue * $fare;
+            fputcsv($f, $nline);
+        }
+
+        fputcsv($f, array());
+        fputcsv($f, array());
+
+        fputcsv($f, array('Total Passengers', $this->totalseats, ' ', 'Total Manual Booking Revenue', $this->totalmanual));
+        fputcsv($f, array('Total Tickets', $this->totaltickets, ' ', 'Total Online Bookings Revenue', $this->totalwoo));
+        fputcsv($f, array('Total One Way Journeys', $this->totaljourneys, ' ', 'Total Guards Price Revenue', $this->totalguardprice));
+        fputcsv($f, array('Total Supplement Revenue', $this->totalsupplements, ' ', 'Total Online Price Revenue', $this->totalonlineprice));
+        fputcsv($f, array('Total Discount Deductions', $this->totaldiscounts, ' ', 'Total Revenue', $this->totalmanual + $this->totalwoo));
+
+        fclose($f);
+        return;
+    }
+
+    function show_waybill_html($header, $gts) {
         global $rtmustache;
         wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
         wp_enqueue_style('railticket_style');
