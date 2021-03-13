@@ -1,7 +1,7 @@
 <div class='railticket_editdate' style='max-width:550px;margin-left:0px;margin-right:auto;'>
     <table border='1' class='railticket_admintable' style='width:100%;'>
     {{# details }}
-        <tr><th width='30%'>{{item}}</th><td class='railticket_meta'>{{{value}}}</td></tr>
+        <tr><th width='30%' style='text-align:right'>{{item}}</th><td class='railticket_meta'>{{{value}}}</td></tr>
     {{/ details }}
     </table>
 
@@ -9,7 +9,7 @@
     <h2>{{otheritemsstr}}</h2>
     <table border='1' class='railticket_admintable' style='width:100%;'>
     {{# otheritems }}
-        <tr><th width='30%'>{{qty}} x</th><td class='railticket_meta'>{{{name}}}</td></tr>
+        <tr><th width='30%' style='text-align:right'>{{qty}} x</th><td class='railticket_meta'>{{{name}}}</td></tr>
     {{/ otheritems }}
     </table>
     </div>
@@ -17,10 +17,10 @@
     {{# bookings }}
         <h2>{{title}}</h2>
         <table border='1'  class='railticket_admintable' style='width:100%;'>
-            <tr><th width='30%'>{{tripstr}}</th><td class='railticket_meta'>{{stns}}</td></tr>
-            <tr><th>{{timestr}}</th><td class='railticket_meta'>{{deptime}}</td></tr>
-            <tr><th>{{baystr}}</th><td class='railticket_meta'>{{bays}}</td></tr>
-            <tr><th>{{collectedstr}}</th><td class='railticket_meta'>{{collected}}</td></tr>
+            <tr><th width='30%' style='text-align:right'>{{tripstr}}</th><td class='railticket_meta'>{{stns}}</td></tr>
+            <tr><th style='text-align:right'>{{timestr}}</th><td class='railticket_meta'>{{deptime}}</td></tr>
+            <tr><th style='text-align:right'>{{baystr}}</th><td class='railticket_meta'>{{bays}}</td></tr>
+            <tr><th style='text-align:right'>{{collectedstr}}</th><td class='railticket_meta'>{{collected}}</td></tr>
         </table>
         <p><form action='{{actionurl}}' method='post'>
             <input type='hidden' name='action' value='{{action}}' />

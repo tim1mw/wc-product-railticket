@@ -1033,12 +1033,14 @@ function railticket_show_order_main($orderid) {
     $orderdata[] = array('item' => __('Name', 'wc_railticket'), 'value' => $bookingorder->get_customer_name());
     $orderdata[] = array('item' => __('Postcode', 'wc_railticket'), 'value' => $bookingorder->get_postcode());
     $orderdata[] = array('item' => __('Paid', 'wc_railticket'), 'value' => $bookingorder->is_paid(true));
-    $orderdata[] = array('item' => __('Price', 'wc_railticket'), 'value' => $bookingorder->get_price());
-    $orderdata[] = array('item' => __('Supplement', 'wc_railticket'), 'value' => $bookingorder->get_supplement());
+    $orderdata[] = array('item' => __('Price', 'wc_railticket'), 'value' => $bookingorder->get_price(true));
+    $orderdata[] = array('item' => __('Price Breakdown', 'wc_railticket'), 'value' => $bookingorder->get_ticket_prices(true));
+    $orderdata[] = array('item' => __('Supplement', 'wc_railticket'), 'value' => $bookingorder->get_supplement(true));
     $orderdata[] = array('item' => __('Tickets'), 'value' => $bookingorder->get_tickets(true));
     $orderdata[] = array('item' => __('Date'), 'value' => $bookingorder->get_date(true, true));
     $orderdata[] = array('item' => __('Journey Type'), 'value' => $bookingorder->get_journeytype(true));
     $orderdata[] = array('item' => __('Seats'), 'value' => $bookingorder->get_seats());
+    $orderdata[] = array('item' => __('Booked by'), 'value' => $bookingorder->get_created_by(true));
     $orderdata[] = array('item' => __('Notes'), 'value' => $bookingorder->get_notes());
 
     $alldata = array(

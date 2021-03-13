@@ -90,10 +90,14 @@ class BookingOrder {
             $orderid = substr($orderid, 1);
         }
 
+        if (!is_numeric($orderid)) {
+            return false;
+        }
+
         if ($manual) {
-            $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = ".$orderid);
+            $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = '".$orderid."'");
         } else {
-            $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = ".$orderid);
+            $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = '".$orderid."'");
         }
 
         if (count($bookings) == 0) {
@@ -230,7 +234,7 @@ class BookingOrder {
             }
 
             if ($this->createdby > 0) {
-                $u = get_userdata($id);
+                $u = get_userdata($this->createdby);
                 return $u->first_name." ".$u->last_name;
             }
             return __('Unknown User', 'wc_railticket')." (id = ".$this->createdby.")";
@@ -255,6 +259,34 @@ class BookingOrder {
         return "£".number_format($this->supplement, 2);
     }
 
+    public function get_ticket_prices($format = false) {
+        if (!$this->ticketprices) {
+            return array();
+        }
+        $filtered = array();
+
+        if ($format) {
+            $str = '';
+            foreach ($this->ticketprices as $tpcode => $tpprice) {
+                if (strpos($tpcode, '__') === 0) {
+                    continue;
+                }
+                // TODO Sort out currency symblos properly....
+                $filtered[] = $this->bookableday->fares->get_ticket_name($tpcode).' £'.number_format($tpprice, 2).' '.__('each', 'wc_railticket');
+            }
+            return implode(', ', $filtered);
+        }
+
+        foreach ($this->ticketprices as $tpcode => $tpprice) {
+            if (strpos($tpcode, '__') === 0) {
+                continue;
+            }
+            $filtered[$tpcode] = $tpprice;
+        }
+
+        return $filtered;
+    }
+
     public function is_guard_price() {
         if ($this->ticketprices && property_exists($this->ticketprices, '__pfield')) {
             if ($this->ticketprices->__pfield == 'localprice') {
@@ -265,8 +297,15 @@ class BookingOrder {
         return false;
     }
 
-    public function get_discount_type() {
+    public function get_discount_type($format = false) {
         if ($this->ticketprices && property_exists($this->ticketprices, '__discounttype')) {
+
+            if (!$format) {
+                return $this->ticketprices->__discounttype;
+            }
+
+            // TODO Lookup discount type name here!
+
             return $this->ticketprices->__discounttype;
         }
 
