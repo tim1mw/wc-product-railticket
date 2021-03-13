@@ -95,9 +95,9 @@ class BookingOrder {
         }
 
         if ($manual) {
-            $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = '".$orderid."'");
+            $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE manual = '".$orderid."' ORDER BY time ASC");
         } else {
-            $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = '".$orderid."'");
+            $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderid = '".$orderid."' ORDER BY time ASC");
         }
 
         if (count($bookings) == 0) {
@@ -110,7 +110,7 @@ class BookingOrder {
     public static function get_booking_order_cart($cart_item) {
         global $wpdb;
 
-        $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$cart_item['key']."'");
+        $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$cart_item['key']."' ORDER BY time ASC");
         if (count($bookings) == 0) {
             return false;
         }
@@ -121,7 +121,7 @@ class BookingOrder {
     public static function get_booking_order_itemid($itemid) {
         global $wpdb;
 
-        $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderitem = '".$itemid."'");
+        $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE wooorderitem = '".$itemid."' ORDER BY time ASC");
         if (count($bookings) == 0) {
             return false;
         }
