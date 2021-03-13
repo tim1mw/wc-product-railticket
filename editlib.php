@@ -991,6 +991,15 @@ function railticket_mark_ticket($val) {
 function railticket_delete_manual_order() {
     global $rtmustache;
     $orderid = sanitize_text_field($_REQUEST['orderid']);
+    $sure = railticket_get_cbval('sure');
+    if ($sure != '1') {
+        echo "<h3>Refusing to delete ".$orderid." you weren't sure about it.</h3>";
+
+        $template = $rtmustache->loadTemplate('delete_order_button');
+        echo $template->render(array('orderid' => $orderid));
+        return;
+    }
+
     $bo = \wc_railticket\BookingOrder::get_booking_order($orderid);
     if (!$bo) {
         echo "<h3>Order ".$orderid." not found</h3>";
