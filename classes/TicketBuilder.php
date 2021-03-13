@@ -621,11 +621,6 @@ class TicketBuilder {
 
     private function insertBooking($itemkey, $time, Station $fromstation, Station $tostation, $totalseats, $allocatedbays, $manual) {
         global $wpdb;
-        // TODO originstation and origintime reflect the station this train originally started from. Right now
-        // with end to end bookings only this will always be the same as fromstation and time. Needs to be set properly
-        // when intermediate stops are added. The aim is to allow the entire inventory for this service to be retrieved.
-
-        // Do I even care about origin station/time? It may not be needed....
 
         $direction = $fromstation->get_direction($tostation);
 
@@ -638,8 +633,6 @@ class TicketBuilder {
             'direction' => $direction,
             'seats' => $totalseats,
             'usebays' => 1,
-            'originstation' => $fromstation->get_stnid(),
-            'origintime' => $time,
             'created' => time(),
             'expiring' => 0,
             'manual' => $manual
