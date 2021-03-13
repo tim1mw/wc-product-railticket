@@ -1,4 +1,4 @@
-<h1>Waybill for {{date}}</h1>
+<h1>Waybill for {{dateformatted}}</h1>
 <br />
 <p><table border='1' class='railticket_admintable'>
     <tr>
@@ -49,9 +49,9 @@
 
 <h2>Guards Breakdown</h2>
 <p><table border='1' class='railticket_admintable' style='font-size:large;'>
-    {{#guards}}
-        <tr><th style='text-align:right'>{{name}}</th><td style='text-align:center;padding:4px;'>{{total}}</td></tr>
-    {{/guards}}
+{{#guards}}
+    <tr><th style='text-align:right'>{{name}}</th><td style='text-align:center;padding:4px;'>{{total}}</td></tr>
+{{/guards}}
 </table></p>
 
 <hr />

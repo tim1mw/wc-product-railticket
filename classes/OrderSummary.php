@@ -82,6 +82,7 @@ class OrderSummary extends Report{
         } else {
             $alldata = new \stdclass();
             $alldata->date = $this->date;
+            $alldata->dateformatted = $this->bookableday->get_date(true);
             $alldata->header = $header;
             $alldata->lines = array_values($lines);
             $alldata->url = railticket_get_page_url();

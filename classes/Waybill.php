@@ -157,7 +157,8 @@ class Waybill extends Report {
         }
 
         $alldata = new \stdclass();
-        $alldata->date = $this->bookableday->get_date(true);
+        $alldata->date = $this->bookableday->get_date();
+        $alldata->dateformatted = $this->bookableday->get_date(true);
         $alldata->header = $header;
 
         $alldata->lines = $plines;
