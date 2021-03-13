@@ -54,7 +54,7 @@ class Waybill extends Report {
 
             // Construct a line key, then test to see if we have a match so we know if we have to increment an existing total
             // Or put in a new one
-            // The key will be fromstnid|tostnid|journeytype|tickettype|faretype|discounttype (yes quite a lot....)
+            // The key will be fromstnid|tostnid|journeytype|tickettype|faretype|discounttype|special (optional) (yes quite a lot....)
 
             // Account for the special case that the round trips go from-to the same station
             if ($bookingorder->get_journeytype() == 'round') {
@@ -74,6 +74,10 @@ class Waybill extends Report {
                     $tostn->get_stnid().'|'.
                     $bookingorder->get_journeytype().'|'.
                     $ticket.'|'.$faretype.'|'.$discountype;
+
+                if ($bookings[0]->is_special()) {
+                    $linekey .= '|special';
+                }
 
                 if (array_key_exists($linekey, $this->lines)) {
                     $this->lines[$linekey] += $num;
@@ -131,7 +135,13 @@ class Waybill extends Report {
             $nline = array();
             $nline[] = $from->get_name();
             $nline[] = $to->get_name();
-            $nline[] = __(ucfirst($keyparts[2]), 'wc_railticket');
+            if (count($keyparts) == 7) {
+                $special = true;
+                $nline[] = __('Special', 'wc_railticket');
+            } else {
+                $special = false;
+                $nline[] = __(ucfirst($keyparts[2]), 'wc_railticket');
+            }
             $nline[] = $this->bookableday->fares->get_ticket_name($keyparts[3]);
             if ($keyparts[4] == 'price') {
                 $nline[] = __('Online', 'wc_railticket');
@@ -147,7 +157,8 @@ class Waybill extends Report {
                 $dtype = '';
             }
             $nline[] = $linevalue;
-            $fare = $this->bookableday->fares->get_fare($from, $to, $keyparts[2], $keyparts[3], $keyparts[4], $dtype);
+
+            $fare = $this->bookableday->fares->get_fare($from, $to, $keyparts[2], $keyparts[3], $keyparts[4], $dtype, $special);
             $nline[] = $fare;
             $nline[] = $linevalue * $fare;
             fputcsv($f, $nline);
@@ -177,11 +188,18 @@ class Waybill extends Report {
 
             $from = $this->bookableday->timetable->get_station($keyparts[0]);
             $to = $this->bookableday->timetable->get_station($keyparts[1]);
-
             $nline = new \stdclass();
+
+            if (count($keyparts) == 7) {
+                $special = true;
+                $nline->journeytype = __('Special', 'wc_railticket');
+            } else {
+                $special = false;
+                $nline->journeytype = __(ucfirst($keyparts[2]), 'wc_railticket');
+            }
+
             $nline->from = $from->get_name();
             $nline->to = $to->get_name();
-            $nline->journeytype = __(ucfirst($keyparts[2]), 'wc_railticket');
             $nline->tickettype = $this->bookableday->fares->get_ticket_name($keyparts[3]);
             if ($keyparts[4] == 'price') {
                 $nline->faretype = __('Online', 'wc_railticket');
@@ -195,8 +213,9 @@ class Waybill extends Report {
             } else {
                 $dtype = '';
             }
+
             $nline->number = $linevalue;
-            $nline->fare = $this->bookableday->fares->get_fare($from, $to, $keyparts[2], $keyparts[3], $keyparts[4], $dtype);
+            $nline->fare = $this->bookableday->fares->get_fare($from, $to, $keyparts[2], $keyparts[3], $keyparts[4], $dtype, $special);
             $nline->total = $linevalue * $nline->fare;
             $plines[] = $nline;
         }
