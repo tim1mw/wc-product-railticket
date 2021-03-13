@@ -292,11 +292,11 @@ class TrainService {
                 break;
         }
 
-        if ($format) {
-            return $this->get_string($resset);
+        if (!$format) {
+            return $resset;
         }
 
-        return $resset;
+        return CoachManager::format_bays($resset);
     }
 
     public function get_coachset($format = false) {
@@ -314,23 +314,10 @@ class TrainService {
                 break;
         }
 
-        if ($format) {
-            return $this->get_string($cset);
+        if (!$format) {
+            return $cset;
         }
-
-        return $cset;
-    }
-
-    private function get_string($r) {
-        $r = (array) $r;
-        $str = '';
-        foreach ($r as $i => $num) {
-            if ($num > 0) {
-                $str .= $i." x".$num.", ";
-            }
-        }
-
-        return substr($str, 0, strlen($str)-2);
+        return CoachManager::format_coachset($cset);
     }
 
 }

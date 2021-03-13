@@ -12,25 +12,47 @@ class CoachManager {
     public static function format_reserve($res, $daytype) {
         switch ($daytype) {
             case 'simple':
-                return self::get_string($res);
+                return self::format_bays($res);
             case 'pertrain':
-                $str = '';
+                $c = array();
                 foreach ($res as $key => $set) {
-                    $str .= $key.":&nbsp;".self::get_string($set)."<br />";
+                    $c[] = $key.":&nbsp;".self::format_bays($set);
+                    //$str .= $key.":&nbsp;".self::get_string($set)."<br />";
                 }
-               return $str;
+               return implode('<br />', $c);
         }
         return '';
+    }
+
+    public static function format_bays($bays) {
+        $c = array();
+        foreach ($bays as $i => $num) {
+            if ($num > 0) {
+                $c[] = self::format_bay($i, $num);
+            }
+        }
+        return implode(', ', $c);
+    }
+
+    public static function format_bay($bay, $num) {
+        $parts = explode('_', $bay);
+        switch ($parts[1]) {
+            case 'normal': $name = $parts[0].' '.__('Seat Bay'); break;
+            case 'priority': $name = $parts[0].' '.__('Seat Disabled Bay'); break;
+            default: $name = $i; break;
+        }
+
+        return $num."x ".$name;
     }
 
     public static function format_composition($comp, $daytype) {
         switch ($daytype) {
             case 'simple':
-                return self::get_string($comp->coachset);
+                return self::format_coachset($comp->coachset);
             case 'pertrain':
                 $str = '';
                 foreach ($comp->coachsets as $key => $set) {
-                    $str .= $key.":&nbsp;".self::get_string($set->coachset)."<br />";
+                    $str .= $key.":&nbsp;".format_coachset($set->coachset)."<br />";
                 }
                return $str;
         }
@@ -38,16 +60,22 @@ class CoachManager {
         return '';
     }
 
-    private static function get_string($reserve) {
-        $reserve = (array) $reserve;
-        $str = '';
-        foreach ($reserve as $i => $num) {
+    public static function format_coachset($cset) {
+
+        $c = array();
+        foreach ($cset as $i => $num) {
             if ($num > 0) {
-                $str .= $i." x".$num.", ";
+                $name = self::format_coach($i);
+                $c[] = $num."x ".$name;
             }
         }
 
-        return substr($str, 0, strlen($str)-2);
+        return implode(', ', $c);
+    }
+
+    public static function format_coach($code) {
+        global $wpdb;
+        return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$code."'");
     }
 
     public static function bay_strings($bays) {
