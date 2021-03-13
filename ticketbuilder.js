@@ -83,9 +83,8 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('fromstation', getFormValue('fromstation'));
 
     if (specialSelected) {
-        // TODO Do specials work here?
-        //data.append('outtime', "s:"+getFormValue('specials'));
-        //data.append('rettime', "s:"+getFormValue('specials'));
+        var times = ["s:"+getFormValue('specials')];
+        data.append('times', JSON.stringify(times));
     } else if (deplegs) {
         var times = [];
         for (var l = 0; l < deplegs.length; l++) {
@@ -109,7 +108,6 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('nominimum', getCBFormValue('nominimum'));
     data.append('onlineprice', getCBFormValue('onlineprice'));
     data.append('manual', manual);
-console.log(manual);
     request.send(data);
 }
 
@@ -152,22 +150,14 @@ function doStations() {
     railTicketAjax('bookable_stations', true, function(response) {
 
         stationData = response['stations'];
+        specialsData = response['specials'];
+console.log(response);
         var stc = document.getElementById('stations_container');
         if (response['specialonly'] == 0) {
-            renderFromStations(response);
+            renderFromStations();
         }
 
-        /** TODO Deal with specials
-        if (a_deptime !== false && a_deptime.indexOf("s:") > -1) {
-            specialSeleted = true;
-            var sp = a_deptime.split(':');
-            document.getElementById('specials'+sp[1]).checked = true;
-            specialClicked(sp[1], a_station, a_destination);
-            a_station = false;
-            a_destination = false;
-            a_deptime = false;
-        }
-        **/
+        renderSpecials();
 
         overridecode = response['override'];
 
@@ -182,30 +172,48 @@ function doStations() {
     });
 }
 
-function renderFromStations(response) {
+function renderSpecials() {
+    var div = document.getElementById('railticket_specials');
+    if (specialsData == false) {
+        div.innerHTML = '';
+        return;
+    } 
+
+    var spltemplate = document.getElementById('specials_tmpl').innerHTML;
+    var data = {specials: specialsData};
+
+    div.innerHTML = Mustache.render(spltemplate, data);
+
+    var spls = document.getElementsByClassName('railticket_specials');
+    for (var i = 0; i < spls.length; i++) {
+        spls[i].addEventListener('click', specialClicked);
+    }
+}
+
+function renderFromStations() {
     var mainstns = [];
     var otherstnsleft = [];
     var otherstnsright = [];
 
     var next = true;
 
-    for (i in response['stations']) {
-        if (response['stations'][i].hidden == 1) {
+    for (i in stationData) {
+        if (stationData[i].hidden == 1) {
             continue;
         }
 
         var stn = {};
-        stn.name = response['stations'][i].name;
-        stn.stnid = response['stations'][i].stnid;
-        stn.description = response['stations'][i].description;
+        stn.name = stationData[i].name;
+        stn.stnid = stationData[i].stnid;
+        stn.description = stationData[i].description;
 
-        if (response['stations'][i].closed == 1) {
+        if (stationData[i].closed == 1) {
             stn.closed = 'disabled';
         } else {
             stn.closed = '';
         }
 
-        if (response['stations'][i].principal == 1) {
+        if (stationData[i].principal == 1) {
             mainstns.push(stn);
         } else {
             if (next) {
@@ -314,12 +322,25 @@ function fromStationChanged(evt) {
     });
 }
 
-function specialClicked(index, fromstation, tostation) {
+function specialClicked(evt) {
+    // Clear out any existing journeychoices.
+    uncheckAll('railticket_fromstation');
+    var journeychoice = document.getElementById('journeychoice');
+    journeychoice.style.display = 'none';
+    var jcdiv = document.getElementById('journeychoice_container');
+    jcdiv.innerHTML = '';
+    var deptimes = document.getElementById('deptimes');
+    deptimes.style.display = 'none';
+    var dpdiv = document.getElementById('deptimes_data');
+    dpdiv.innerHTML = '';
+
+
     specialSelected = true;
-    document.getElementById("fromstation"+fromstation).checked = true;
-    document.getElementById("tostation"+tostation).checked = true;
-    
-    railTicketAjax('tickets', true, renderTicketSelector);
+    railTicketAjax('ticket_data', true, function(response) {
+        ticketdata = response;
+console.log(ticketdata);
+        renderTicketSelector();
+    } );
 }
 
 
@@ -445,25 +466,26 @@ function convert24hour(time) {
 }
 
 function renderTicketSelector() {
-    var jc = getFormValue('journeychoice');
-    var jcparts = jc.split('_');
-    journeytype = jcparts[0];
-    fromindex = getFormValue('fromstation');
-    toindex = jcparts[1];
+    if (!specialSelected) {
+        var jc = getFormValue('journeychoice');
+        var jcparts = jc.split('_');
+        journeytype = jcparts[0];
+        fromindex = getFormValue('fromstation');
+        toindex = jcparts[1];
 
-    for (si in stationData) {
-
-        if (stationData[si].stnid == fromindex) {
-            fromstationdata = stationData[si];
+        for (si in stationData) {
+            if (stationData[si].stnid == fromindex) {
+                fromstationdata = stationData[si];
+            }
+            if (stationData[si].stnid == toindex) {
+                tostationdata = stationData[si];
+            }
         }
-        if (stationData[si].stnid == toindex) {
-            tostationdata = stationData[si];
-        }
-    }
 
-    for (i in alljourneys) {
-        if (alljourneys[i].code == jc) {
-            journeychoicedata = alljourneys[i];
+        for (i in alljourneys) {
+            if (alljourneys[i].code == jc) {
+                journeychoicedata = alljourneys[i];
+            }
         }
     }
 
@@ -497,19 +519,19 @@ function getSelectionSummary() {
     var ddate = new Date(document.getElementById('dateoftravel').value);
     var tdate = ddate.getDate()+"-"+months[ddate.getMonth()]+"-"+ddate.getFullYear();
 
-    /** TODO Make specials work.... **/
     if (specialSelected) {
+        var selected = getFormValue('specials');
         var special = false;
         for (index in specialsData) {
-            if (specialsData[index].id == document.railticketbooking['specials'].value) {
+            if (specialsData[index].id == selected) {
                 special = specialsData[index];
             }
         }
 
-        return "<p>"+special.name+" - "+tdate+"</p><p class='railticket_arrtime'>"+special.description+"</p>";
+        return "<div class='railticket_container'><p>"+special.name+" - "+tdate+"</p><p class='railticket_arrtime'>"+special.description+"</p></div>";
     } else {
         var dep = deplegs[0].times[getFormValue('dep_0')];
-        return '<p>'+tdate+'. Departing from '+fromstationdata.name+" at "+dep.formatted+". "+journeychoicedata.journeydesc+".</p>";
+        return "<div class='railticket_container'><p>"+tdate+". Departing from "+fromstationdata.name+" at "+dep.formatted+". "+journeychoicedata.journeydesc+".</p></div>";
     }
 }
 
@@ -520,7 +542,6 @@ function travellersChanged() {
 function onlinePriceChanged() {
     railTicketAjax('ticket_data', true, function(response) {
         ticketdata = response;
-console.log(ticketdata);
         allocateTickets();
     } );
 }

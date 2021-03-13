@@ -32,30 +32,39 @@ class TicketBuilder {
 
         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
         $this->dateoftravel = $dateoftravel;
-        if ($fromstation !== false) {
-            $this->fromstation = $this->bookableday->timetable->get_station($fromstation);
-        } else {
-            $fromstation = false;
-        }
-        $jparts = explode('_', $journeychoice);
-        if (count($jparts) > 1) {
 
-            $this->journeytype = $jparts[0];
-            $this->tostation =  $this->bookableday->timetable->get_station($jparts[1]);
-            if ($this->journeytype == 'round') {
-                $this->rndtostation = $this->bookableday->timetable->get_station($this->bookableday->timetable->get_revision());
+        /* There should only be one leg for a special, so check the first leg for the special indicator **/
+        if ($times && count($times) > 0 && strpos($times[0], 's:') !== false) {
+            $this->special = Special::get_special(intval(substr($times[0], 2)));
+            // Specials stations won't be sent by the ticket selector, so force them here.
+            $this->fromstation = $this->special->get_from_station();
+            $this->tostation = $this->special->get_to_station();
+            $this->rndtostation = false;
+            // Specials are booked as a single leg, so treat it as a single here.
+            $this->journeytype = 'single';
+        } else {
+            $this->special = false;
+            if ($fromstation !== false && strlen($fromstation) > 0) {
+                $this->fromstation = $this->bookableday->timetable->get_station($fromstation);
             } else {
+                $fromstation = false;
+            }
+            $jparts = explode('_', $journeychoice);
+            if (count($jparts) > 1) {
+
+                $this->journeytype = $jparts[0];
+                $this->tostation =  $this->bookableday->timetable->get_station($jparts[1]);
+                if ($this->journeytype == 'round') {
+                    $this->rndtostation = $this->bookableday->timetable->get_station($this->bookableday->timetable->get_revision());
+                } else {
+                    $this->rndtostation = false;
+                }
+            } else {
+                $this->journeytype = false;
+                $this->tostation = false;
                 $this->rndtostation = false;
             }
-        } else {
-             $this->journeytype = false;
-             $this->tostation = false;
-             $this->rndtostation = false;
         }
-
-        /* TODO Deal with Specials here */
-        //if (strpos($outtime, 's:') === false) {
-        $this->special = false;
         $this->times = $times;
 
         $this->ticketselections = $ticketselections;
@@ -250,18 +259,16 @@ class TicketBuilder {
     public function get_bookable_stations() {
         global $wpdb;
         $bookable = array();
+        $bookable['specialonly'] = $this->bookableday->special_only();
+        if ($bookable['specialonly']) {
+            $bookable['stations'] = array();;
+        } else {
+            $bookable['stations'] = $this->bookableday->timetable->get_stations(true);
+        }
         $bookable['override'] = $this->bookableday->get_override();
-        $bookable['stations'] = $this->bookableday->timetable->get_stations(true);
 
         // Are their any specials today?
-
-        $specials = $this->bookableday->get_specials(true);
-        if ($specials && count($specials) > 0) {
-            $bookable['specials'] = $specials;
-        } else {
-            $bookable['specials'] = false;
-        }
-        $bookable['specialonly'] = $this->bookableday->special_only();
+        $bookable['specials'] = $this->bookableday->get_specials_onsale_data($this->is_guard());
 
         return $bookable;
     }
@@ -388,7 +395,7 @@ class TicketBuilder {
 
     public function get_ticket_data() {
         return $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
-            $this->is_guard(), $this->localprice, $this->discountcode);
+            $this->is_guard(), $this->localprice, $this->discountcode, $this->special);
     }
 
     public function get_bookable_trains() {
@@ -552,20 +559,9 @@ class TicketBuilder {
         } 
 
         $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated,
-            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discountcode);
+            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discountcode, $this->special);
 
         $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);
-
-/* TODO: Fix specials here... If they need fixing?
-        if ($this->special) {
-
-            $outtime = "s:".$this->outtime;
-            $rettime = "s:".$this->rettime;
-        } else {
-            $outtime = $this->outtime;
-            $rettime = $this->rettime;
-        }
-*/
 
         if ($this->manual) {
             $data = array(

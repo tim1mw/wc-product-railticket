@@ -16,13 +16,15 @@ class Special {
 
     public static function get_specials($date, $dataonly = false) {
         global $wpdb;
-        $specials = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$date."'");   
+
+        $specials = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$date."'");
+
         if (count($specials) == 0) {
              return false;   
         }
 
         if ($dataonly) {
-            return false;
+            return $specials;
         }
 
         $sp = array();
@@ -31,6 +33,17 @@ class Special {
         }
 
         return $sp;
+    }
+
+    public function get_onsale_data() {
+        global $wpdb;
+
+        $data = new \stdclass();
+        $data->id = $this->data->id;
+        $data->name = $this->data->name;
+        $data->description = $this->data->description;
+
+        return $data;
     }
 
     public static function get_special($id) {
@@ -82,5 +95,9 @@ class Special {
 
     public function get_colour() {
         return $this->data->colour;
+    }
+
+    public function get_ticket_types() {
+        return json_decode($this->data->tickettypes);
     }
 }

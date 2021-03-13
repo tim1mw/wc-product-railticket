@@ -13,7 +13,7 @@
             <div class='railticket_stndesc'>{{description}}</div>
             </label>
         </li>
-        {{/mainstns}}
+    {{/mainstns}}
     </ul>
 </div>
 <div class='railticket_container'>
@@ -46,6 +46,25 @@
             {{/otherstnsright}} 
         </div>
     </div>
+</div>
+</script>
+
+<script id="specials_tmpl" type="x-tmpl-mustache">
+<div class='railticket_container'>
+<h3>Or choose one of today's specials</h3>
+    <ul>
+    {{#specials}}
+        <li>
+            <input type='radio' name='specials' id='special{{id}}' value='{{id}}'
+                class='railticket_specials {{classes}}' {{disabled}}/>
+            <label for='special{{id}}'>
+            {{name}}<br />
+            <div class='railticket_arrtime'>{{seatsleftstr}}</div>
+            <div class='railticket_stndesc'>{{description}}</div>
+            </label>
+        </li>
+    {{/specials}}
+    </ul>
 </div>
 </script>
 

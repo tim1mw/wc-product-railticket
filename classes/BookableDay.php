@@ -362,6 +362,36 @@ class BookableDay {
         return Special::get_specials($this->data->date, $dataonly);
     }
 
+    public function get_specials_onsale_data($nodisable) {
+        $sps = Special::get_specials($this->data->date);
+        $data = array();
+        if (!$sps) {
+            return $data;
+        }
+        foreach ($sps as $sp) {
+            $t = $sp->get_onsale_data();
+            $trainservice = new \wc_railticket\TrainService($this, $sp->get_from_station(), $sp->get_dep_id(), $sp->get_to_station());
+
+            $capused = $trainservice->get_inventory(false, false);
+            $t->seatsleft = $capused->totalseats;
+            if ($capused->totalseats == 0) {
+                $t->seatsleftstr = __('FULL - please try another train', 'wc_railticket');
+                $t->classes .= " railticket_full";
+                if ($nodisable) {
+                    $t->classes .= ' railticket_late';
+                } else {
+                    $t->disabled = 'disabled';
+                    $t->notbookable = true;
+                }
+            } else {
+                $t->seatsleftstr = $capused->totalseats.' '.__('empty seats', 'wc_railticket');
+            }
+
+            $data[] = $t;
+        }
+        return $data;
+    }
+
     public function get_bookable_trains(Station $from, Station $to, $nodisable, $after = false, $disableafter = false) {
         $direction = $from->get_direction($to);
         $times = $this->timetable->get_times($from, $direction, "deps", true, $to);

@@ -144,20 +144,37 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
 
     $bookings = $bookingorder->get_bookings();
 
-    $item_data[] = array(
-        'key'       => __("Journey", "wc_railticket"),
-        'value'     => $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
+    if ($bookings[0]->is_special()) {
+        $item_data[] = array(
+            'key'       => __("Special", "wc_railticket"),
+            'value'     => $bookings[0]->get_dep_time(true)
+       );
+
+        $item_data[] = array(
+            'key'       => __("Departing from ", "wc_railticket"),
+            'value'     => $bookings[0]->get_from_station()->get_name()
+       );
+
+        $item_data[] = array(
+            'key'       => __("Seating Bays", "wc_railticket"),
+            'value'     => $bookingorder->get_seats()
+       );
+    } else {
+        $item_data[] = array(
+            'key'       => __("Journey", "wc_railticket"),
+            'value'     => $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
                        $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
                        $bookings[0]->get_to_station()->get_name()
-    );
+       );
 
-    // TODO Hide bays for seat only allocation
-    foreach ($bookings as $booking) {
-        $item_data[] = array(
-            'key'       => $booking->get_dep_time(true)." ".__("departure from ", "wc_railticket").
+        // TODO Hide bays for seat only allocation
+        foreach ($bookings as $booking) {
+            $item_data[] = array(
+                'key'       => $booking->get_dep_time(true)." ".__("departure from ", "wc_railticket").
                                $booking->get_from_station()->get_name(),
-            'value'     => $booking->get_bays(true)
-        ); 
+                'value'     => $booking->get_bays(true)
+            ); 
+        }
     }
 
     $item_data[] = array(
@@ -242,17 +259,24 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                 if ($skey == false) {
                     $skey = $index;
                     $fm->display_key = __("Journey", "wc_railticket");
-                    $d =__("Date of Travel", "wc_railticket").": ".$bookingorder->get_date(true)."<br />".
-                       $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
+                    $d = "<br />".__("Date of Travel", "wc_railticket").": ".$bookingorder->get_date(true)."<br />";
+                    if ($bookings[0]->is_special()) {
+                        $d .= __("Total Seats", "wc_railticket").": ".$bookingorder->get_seats()."<br />".
+                            $bookings[0]->get_dep_time(true)."<br />".
+                            __("Departing from ", "wc_railticket").$bookings[0]->get_from_station()->get_name().
+                            "<br />".$bookings[0]->get_bays(true)."<br />";
+                    } else {
+                       $d .= $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
                        $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
-                       $bookings[0]->get_to_station()->get_name()."<br />".
-                       __("Total Seats", "wc_railticket").": ".$bookingorder->get_seats()."<br />";
+                       $bookings[0]->get_to_station()->get_name()."<br />";
+                        $d .= __("Total Seats", "wc_railticket").": ".$bookingorder->get_seats()."<br />";
 
-                    // TODO Hide bays for seat based capacity
-                    foreach ($bookings as $booking) {
-                       $d .= $booking->get_dep_time(true)." ".__("departure from ", "wc_railticket").$booking->get_from_station()->get_name().
-                             ": ".$booking->get_bays(true)."<br />";
+                        // TODO Hide bays for seat based capacity
+                        foreach ($bookings as $booking) {
+                           $d .= $booking->get_dep_time(true)." ".__("departure from ", "wc_railticket").$booking->get_from_station()->get_name().
+                                 ": ".$booking->get_bays(true)."<br />";
 
+                        }
                     }
 
                     $fm->display_value = $d;

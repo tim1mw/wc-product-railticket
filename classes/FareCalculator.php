@@ -107,7 +107,7 @@ class FareCalculator {
         return false;
     }
 
-    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discountcode) {
+    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discountcode, $special) {
         global $wpdb;
         $tickets = new \stdClass();
 
@@ -125,26 +125,16 @@ class FareCalculator {
             $pfield = 'price';
         }
 
-/* TODO Fix specials...
-        if ($this->special) {
-            $t = $wpdb->get_results("SELECT id, tickettypes FROM {$wpdb->prefix}wc_railticket_specials WHERE ".
-                "id = ".$this->outtime." AND onsale = '1'")[0];
-            $specialval = " AND special = 1 AND (";
-            $tkts = json_decode($t->tickettypes);
-            $first = true;
-            $tickets->travellers = array();
-            foreach ($tkts as $tkt) {
-                if (!$first) {
-                    $specialval .= " OR ";
-                }
-                $first = false;
-                $specialval .= " tickettype = '".$tkt."' ";
-            }
-            $specialval .= ")";
+        if ($special) {
+            $specialval = " AND tickettype IN ('";
+            $tkts = $special->get_ticket_types();
+            $specialval .= implode("','", $tkts)."')";
+            // Note journeytype is ignored for specials. Specials are treated as singles for booking purposes because there is only one leg.
+            // However the tickets could get entered as either round, return or single for presentation purposes.
+            $specialval .= " AND special = 1 ";
         } else {
-*/
-            $specialval = " AND special = 0 ";
-//        }
+            $specialval = " AND special = 0 AND journeytype = '".$journeytype."'";
+        }
 
         $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
             "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
@@ -158,8 +148,8 @@ class FareCalculator {
             "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
             "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
             "WHERE ((stationone = ".$fromstation->get_stnid()." AND stationtwo = ".$tostation->get_stnid().") OR ".
-            "(stationone = ".$tostation->get_stnid()." AND stationtwo = ".$fromstation->get_stnid().")) AND ".
-            "journeytype = '".$journeytype."' AND disabled = 0 AND ".
+            "(stationone = ".$tostation->get_stnid()." AND stationtwo = ".$fromstation->get_stnid().")) ".
+            " AND disabled = 0 AND ".
             "{$wpdb->prefix}wc_railticket_prices.revision = ".$this->revision." ".
             $specialval." ".$guard.
             "ORDER BY {$wpdb->prefix}wc_railticket_tickettypes.sequence ASC";
@@ -199,7 +189,8 @@ class FareCalculator {
         return $tickets;
     }
 
-    public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice, $nominimum, $discountcode) {
+    public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice,
+        $nominimum, $discountcode, $special) {
         if ($localprice) {
             $pfield = 'localprice';
         } else {
@@ -221,7 +212,7 @@ class FareCalculator {
         $pdata->revision = $this->revision;
 
         foreach ($ticketsallocated as $ttype => $qty) {
-            $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discountcode);
+            $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discountcode, $special);
             $pdata->price += floatval($price)*floatval($qty);
             $pdata->ticketprices[$ttype] = $price;
         }
@@ -240,10 +231,16 @@ class FareCalculator {
         return $pdata;
     }
 
-    public function get_fare(Station $from, Station $to, $journeytype, $ttype, $pfield, $discountcode) {
+    public function get_fare(Station $from, Station $to, $journeytype, $ttype, $pfield, $discountcode, $special) {
         global $wpdb;
-        $sql = "SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' AND ".
-            "journeytype = '".$journeytype."' AND revision = ".$this->revision." AND ".
+        if (!$special) {
+            $jt = " AND journeytype = '".$journeytype."' ";
+        } else {
+            $jt = "";
+        }
+
+        $sql = "SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' ".
+            $jt." AND revision = ".$this->revision." AND ".
             "((stationone = ".$from->get_stnid()." AND stationtwo = ".$to->get_stnid().") OR ".
             "(stationone = ".$to->get_stnid()." AND stationtwo = ".$from->get_stnid()."))";
         $price = $wpdb->get_var($sql);
