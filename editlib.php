@@ -1046,7 +1046,7 @@ function railticket_show_order_main($orderid) {
     $alldata = array(
         'dateofjourney' => $bookingorder->get_date(),
         'details' => $orderdata,
-        'bookings' => railticket_get_booking_render_data($bookingorder->get_bookings()),
+        'bookings' => railticket_get_booking_render_data($bookingorder),
         'timestr' => __('Departure Time', 'wc_railticket'),
         'tripstr' => __('Trip', 'wc_railticket'),
         'baystr' => __('Bays', 'wc_railticket'),
@@ -1073,7 +1073,8 @@ function railticket_show_order_main($orderid) {
     echo $template->render($alldata);
 }
 
-function railticket_get_booking_render_data($bookings) {
+function railticket_get_booking_render_data($bookingorder) {
+    $bookings = $bookingorder->get_bookings();
     $data = array();
 
     $count = 1;
@@ -1100,8 +1101,11 @@ function railticket_get_booking_render_data($bookings) {
         $bk['direction'] = $fromstn->get_direction($booking->get_to_station());
         $bk['ttrevison'] = $fromstn->get_revision();
         $bk['timekey'] = $booking->get_dep_time(false);
-        $bk['btnlabel'] = "Back to ".$bk['deptime']." from ".$fromstn->get_name();
-
+        if ($booking->is_special()) {
+            $bk['btnlabel'] = "Back to ".$bk['deptime'];
+        } else {
+            $bk['btnlabel'] = "Back to ".$bk['deptime']." from ".$fromstn->get_name();
+        }
         $data[] = $bk;
         $count++;
     }

@@ -147,6 +147,10 @@ class Booking {
         return false;
     }
 
+    public function is_special() {
+        return $this->special;
+    }
+
     public function get_order_id() {
         if ($this->data->manual > 0) {
             return "M".$this->data->manual;
