@@ -41,7 +41,11 @@ class OrderSummary extends Report{
             } else {
                 $line[] = $bookings[0]->get_to_station()->get_name();
             }
-            $line[] = $bookingorder->get_journeytype(true);
+            if ($bookings[0]->is_special()) {
+                $line[] = __("Special", "wc_railticket");
+            } else {
+                $line[] = $bookingorder->get_journeytype(true);
+            }
             $line[] = $bookingorder->get_tickets(true);
             $line[] = $bookingorder->get_seats();
             $line[] = $bookingorder->get_supplement();
