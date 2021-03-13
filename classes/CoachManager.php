@@ -37,12 +37,32 @@ class CoachManager {
     public static function format_bay($bay, $num) {
         $parts = explode('_', $bay);
         switch ($parts[1]) {
-            case 'normal': $name = $parts[0].' '.__('Seat Bay'); break;
-            case 'priority': $name = $parts[0].' '.__('Seat Disabled Bay'); break;
+            case 'normal': $name = $parts[0].' '.__('Seat Bay', 'wc_railticket'); break;
+            case 'priority': $name = $parts[0].' '.__('Seat Disabled Bay', 'wc_railticket'); break;
             default: $name = $i; break;
         }
 
         return $num."x ".$name;
+    }
+
+    public static function format_booking_bays($bays) {
+        $c = array();
+        foreach ($bays as $bay) {
+            if ($bay->num > 0) {
+                $c[] = self::format_booking_bay($bay);
+            }
+        }
+        return implode(', ', $c);
+    }
+
+    public static function format_booking_bay($bay) {
+        if ($bay->priority) {
+            $name = __('Seat Disabled Bay', 'wc_railticket');
+        } else {
+            $name = __('Seat Bay', 'wc_railticket');
+        }
+
+        return $bay->num."x ".$bay->baysize." ".$name;
     }
 
     public static function format_composition($comp, $daytype) {

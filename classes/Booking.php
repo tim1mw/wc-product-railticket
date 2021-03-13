@@ -115,20 +115,10 @@ class Booking {
 
     public function get_bays($format = false) {
         if (!$format) {
-            return $this->data->bays;
+            return $this->bays;
         }
 
-        $fb = '';
-        foreach ($this->bays as $bay) {
-            $fb .= $bay->num."x ".$bay->baysize. " ".__('seat', 'wc_railticket')." ";
-            if ($bay->priority) {
-                $fb.= " ".__('disabled', 'wc_railticket');
-            }
-            $fb.= __('bay', 'wc_railticket').", ";
-        }
-        $fb = substr($fb, 0, strlen($fb)-2);
-
-        return $fb;
+        return CoachManager::format_booking_bays($this->bays);
     }
 
     public function get_seats() {
