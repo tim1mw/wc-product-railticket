@@ -635,7 +635,8 @@ class TicketBuilder {
             'usebays' => 1,
             'created' => time(),
             'expiring' => 0,
-            'manual' => $manual
+            'manual' => $manual,
+            'priority' => $this->disabledrequest
         );
         if ($manual && $this->dateoftravel == $this->today) {
             $dbdata['collected'] = true;
