@@ -1296,6 +1296,7 @@ function railticket_editorder() {
     }
 
     $orderid = railticket_getpostfield('orderid');
+    $notify = railticket_gettfpostfield('notify');
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
     $dateoftravel = railticket_getpostfield('dateoftravel');
     $legs = json_decode(stripslashes($_REQUEST['legs']));
@@ -1320,6 +1321,10 @@ function railticket_editorder() {
         if (!$nfrom->matches($ofrom) || !$nto->matches($oto) || $bookings[$i]->get_dep_time() != $legs[$i]->dep) {
             $bookings[$i]->set_dep($nfrom, $nto, $legs[$i]->dep);
         }
+    }
+
+    if ($notify) {
+        $bookingorder->notify();
     }
 
     $edit->message = 'Order update saved';

@@ -33,9 +33,11 @@
     </tr>
     {{/bookings}}
     <tr>
-        <td colspan='3'><div id='railticket_commitmessage' style='font-weight:bold;font-size:large;color:blue;text-align:center;'></div></td>
-        <td style='text-align:right;padding-top:10px;'><input type='button' name='commit' id='railticket_commit'
-            value='Commit Changes' /></td>
+        <td colspan='2'><div id='railticket_commitmessage' style='font-weight:bold;font-size:large;color:blue;text-align:center;'></div></td>
+        <td colspan='2' style='text-align:right;padding-top:10px;'>
+            <input type='button' name='commit' id='railticket_commit' value='Commit Changes' /><br />
+            <input type='checkbox' name='notify' {{notify}} />Send email confirmation to customer
+        </td>
     </tr>
 </table>
 </form>

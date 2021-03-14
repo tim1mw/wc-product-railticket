@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", setupEditor);
 
+var notify = true;
 
 function setupEditor() {
     renderEditor(defaultData);
@@ -39,6 +40,11 @@ function editCommitted(response) {
 function renderEditor(data) {
     var mvtempl = document.getElementById('movebooking_tmpl').innerHTML;
     var mv=document.getElementById('railticket_movebooking');
+
+    if (notify) {
+        data.notify = 'checked';
+    }
+
     mv.innerHTML = Mustache.render(mvtempl, data);
 
     var eles = document.getElementsByClassName('railticket_refeshdata');
@@ -74,11 +80,14 @@ function railTicketEditAjax(datareq, spinner, callback) {
         }
     };
 
+    notify = getCBFormValue('notify');
+
     var data = new FormData();
     data.append('action', 'railticket_adminajax');
     data.append('orderid', orderid);
     data.append('function', datareq);
     data.append('dateoftravel', getFormValue('dateoftravel'));
+    data.append('notify', notify);
     var legs = [];
     for (i=0; i < defaultData.bookings.length; i++) {
         legs[i] = {};

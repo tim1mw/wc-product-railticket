@@ -52,7 +52,7 @@ class BookingOrder {
                 " meta_key='_line_total' AND order_item_id = ".$wooorderitem."");
             $this->supplement = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
                 " meta_key='supplement' AND order_item_id = ".$wooorderitem."");
-             $this->createdby = 0;
+            $this->createdby = 0;
 
             // This object might get created prior to the order being fully setup in Woocommerce, so skip this if there is no order
             $order = wc_get_order($orderid);
@@ -140,6 +140,34 @@ class BookingOrder {
             $data->$key = $woometa->meta_value;
         }
         return $data;
+    }
+
+    public function notify() {
+        if ($this->bookings[0]->is_manual()) {
+            return;
+        }
+        $order = wc_get_order($this->bookings[0]->get_order_id());
+        $wc_emails = WC()->mailer()->get_emails();
+
+        if (empty($wc_emails)) {
+            return;
+        }
+
+        if ($order->has_status( 'on-hold' )) {
+            $email_id = 'customer_on_hold_order';
+        } elseif ($order->has_status( 'processing' )) {
+            $email_id = 'customer_processing_order';
+        } elseif ($order->has_status( 'completed' )) {
+            $email_id = 'customer_completed_order';
+        } else {
+            $email_id = "nothing";
+        }
+
+        foreach ($wc_emails as $wc_mail) {
+            if ($wc_mail->id == $email_id) {
+                $wc_mail->trigger($order->get_id());
+            }
+        }
     }
 
     public function other_items() {
