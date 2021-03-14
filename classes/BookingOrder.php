@@ -325,6 +325,12 @@ class BookingOrder {
         return $this->bookings[0]->get_date($format, $nottoday);
     }
 
+
+    public function is_special() {
+        // Bookings for a single order are always for the same day, so we can shortcut this safely
+        return $this->bookings[0]->is_special();
+    }
+
     public function get_seats() {
         // Bookings for a single order are always for the same day, so we can shortcut this safely
         return $this->bookings[0]->get_seats();
@@ -349,6 +355,11 @@ class BookingOrder {
             return false;
         }
 
+        // Specials are booked as singles underneath, but shown as specials when the formatted.
+        if ($this->bookings[0]->is_special()) {
+            return __('Special', 'wc_railticket');
+        }
+
         switch (count($this->bookings)) {
             case 1: return __('Single', 'wc_railticket');
             case 2: return __('Return', 'wc_railticket');
@@ -367,6 +378,15 @@ class BookingOrder {
         if ($this->manual) {
             $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$this->orderid);
         }  
+    }
+
+    public function set_date(BookableDay $bk) {
+        $this->bookableday = $bk;
+
+        foreach ($this->bookings as $booking) {
+            $booking->set_date($bk);
+        }
+        return true;
     }
 
 }

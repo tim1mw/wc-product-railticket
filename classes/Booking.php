@@ -6,8 +6,8 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class Booking {
 
-    private $data, $bookableday, $bays;
-    public $special;
+    private $data, $bays;
+    public $special, $bookableday;
 
     public function __construct($data, BookableDay $bkd) {
         global $wpdb;
@@ -113,6 +113,10 @@ class Booking {
         return Station::get_station($this->data->tostation, $this->bookableday->timetable->get_revision());
     }
 
+    public function get_direction() {
+        return $this->data->direction;
+    }
+
     public function get_bays($format = false) {
         if (!$format) {
             return $this->bays;
@@ -176,4 +180,23 @@ class Booking {
         $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_bookings WHERE id = ".$this->data->id);
     }
 
+    public function set_date(BookableDay $bk) {
+        $this->bookableday = $bk;
+        $this->data->date = $bk->get_date();
+        $this->update_record();
+    }
+
+    public function set_dep(Station $from, Station $to, $time) {
+        $this->data->fromstation = $from->get_stnid();
+        $this->data->tostation = $to->get_stnid();
+        $this->data->time = $time;
+        $this->update_record();
+    }
+
+    private function update_record() {
+        global $wpdb;
+        $wpdb->update($wpdb->prefix.'wc_railticket_bookings',
+            get_object_vars($this->data),
+            array('id' => $this->data->id));
+    }
 }

@@ -246,6 +246,11 @@
     display:none;
 }
 
+.railticket_error{
+    color:#880000;
+    font-weight:bold;
+}
+
 .railticket_travellers_numbers label {
     font-size:x-large;
     font-weight:bold;

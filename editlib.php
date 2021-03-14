@@ -11,6 +11,7 @@ add_action ('admin_post_waybill.csv', 'railticket_get_waybillcsv');
 // Add simple_role capabilities, priority must be after the initial role definition.
 add_action( 'init', 'railticket_roles', 11 );
 add_action ('admin_post_ordersummary.csv', 'railticket_get_ordersummary_csv');
+add_action( 'wp_ajax_railticket_adminajax', 'railticket_ajax_adminrequest');
 
 function railticket_register_settings() {
    add_option('wc_product_railticket_woocommerce_product', '');
@@ -97,6 +98,9 @@ function railticket_view_bookings() {
             case 'deletemanual';
                 railticket_delete_manual_order();
                 break;
+            case 'editorderbook';
+                railticket_show_edit_order();
+                break;
             case 'filterbookings':
             default:
                 railticket_summary_selector();
@@ -106,6 +110,19 @@ function railticket_view_bookings() {
         railticket_summary_selector();
     }
 
+}
+
+function railticket_ajax_adminrequest() {
+    $function = railticket_getpostfield('function');
+    switch ($function) {
+        case 'moveorderdata':
+            $result = railticket_get_moveorderdata();
+            break;
+        case 'editorder':
+            $result = railticket_editorder();
+            break;
+    }
+    wp_send_json_success($result);
 }
 
 function railticket_get_page_url() {
@@ -1071,11 +1088,16 @@ function railticket_show_order_main($orderid) {
         $alldata['otheritemsstyle'] = 'display:none';
     }
 
+    $alldata['extrabuttons'] = '';
+
+    if (current_user_can('admin_tickets')) {
+         $template = $rtmustache->loadTemplate('edit_order_button');
+         $alldata['extrabuttons'] .= $template->render($alldata)."<br />";
+    }
+
     if ($bookingorder->is_manual() && current_user_can('delete_tickets')) {
          $template = $rtmustache->loadTemplate('delete_order_button');
-         $alldata['extrabuttons'] = $template->render($alldata);
-    } else {
-         $alldata['extrabuttons'] = '';
+         $alldata['extrabuttons'] .= $template->render($alldata);
     }
 
     $template = $rtmustache->loadTemplate('showorder');
@@ -1122,6 +1144,188 @@ function railticket_get_booking_render_data($bookingorder) {
     return $data;
 }
 
+function railticket_show_edit_order() {
+    global $rtmustache;
+
+    $orderid = sanitize_text_field($_REQUEST['orderid']);
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
+    if (!$bookingorder) {
+        echo "<p>Invalid order number or no tickets were purchased with this order.</p>";
+        railticket_summary_selector();
+        return;
+    }
+
+    wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/mustache.min.js'));
+    wp_register_script('railticket_script_builder', plugins_url('wc-product-railticket/ticketeditor.js'));
+    wp_enqueue_script('railticket_script_mustache');
+    wp_enqueue_script('railticket_script_builder');
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+
+    $orderdata = array();
+    $orderdata[] = array('item' => __('Order ID', 'wc_railticket'), 'value' => $orderid);
+    $orderdata[] = array('item' => __('Name', 'wc_railticket'), 'value' => $bookingorder->get_customer_name());
+    $orderdata[] = array('item' => __('Price', 'wc_railticket'), 'value' => $bookingorder->get_price(true));
+    $orderdata[] = array('item' => __('Price Breakdown', 'wc_railticket'), 'value' => $bookingorder->get_ticket_prices(true));
+    $orderdata[] = array('item' => __('Supplement', 'wc_railticket'), 'value' => $bookingorder->get_supplement(true));
+    $orderdata[] = array('item' => __('Tickets'), 'value' => $bookingorder->get_tickets(true));
+    $orderdata[] = array('item' => __('Journey Type'), 'value' => $bookingorder->get_journeytype(true));
+    $orderdata[] = array('item' => __('Seats'), 'value' => $bookingorder->get_seats());
+
+    $bkdata = new \stdclass();
+    $bkdata->bookings = array();
+    $bkdata->date = $bookingorder->get_date();
+    $tripdata = array();
+    $count = 1;
+    $allstns = \wc_railticket\Station::get_stations($bookingorder->bookableday->timetable->get_revision());
+    foreach ($bookingorder->get_bookings() as $booking) {
+        $from = $booking->get_from_station();
+        $to = $booking->get_to_station();
+
+        $data = new \stdclass();
+        $trip = new stdclass();
+        $data->num = $count;
+        $trip->num = $count;
+
+        $trip->from = $from->get_name();
+        $trip->to = $to->get_name();
+        $trip->dep = $booking->get_dep_time(true);
+        $tripdata[] = $trip;
+
+        $data->fromstns = railticket_get_stnselect($from, $allstns);
+        $data->tostns = railticket_get_stnselect($to, $allstns);
+        $data->deps = railticket_get_depselect($booking->bookableday, $from, $to, $booking->get_dep_time(), $bookingorder->get_bookings());
+        $bkdata->bookings[] = $data;
+        $count++;
+    }
+
+    $alldata = array(
+        'date' => $bookingorder->get_date(true),
+        'actionurl' => railticket_get_page_url(),
+        'details' => $orderdata,
+        'orderid' => $orderid,
+        'ajaxurl' => admin_url( 'admin-ajax.php', 'relative' ),
+        'defaultdata' => json_encode($bkdata),
+        'tripdata' => $tripdata
+    );
+    $template = $rtmustache->loadTemplate('editorder');
+    echo $template->render($alldata);
+    echo file_get_contents(dirname(__FILE__).'/edit-templates.html');
+}
+
+function railticket_get_moveorderdata() {
+    $orderid = railticket_getpostfield('orderid');
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
+    $dateoftravel = railticket_getpostfield('dateoftravel');
+    $legs = json_decode(stripslashes($_REQUEST['legs']));
+    $bkdata = new \stdclass();
+    $bkdata->bookings = array();
+
+    $bk = \wc_railticket\BookableDay::get_bookable_day($dateoftravel);
+    if (!$bk) {
+        $bkdata->bkerror = "Date not bookable";
+        return $bkdata;
+    }
+
+    $bkdata->bkerror = false;
+
+    $bkdata = new \stdclass();
+    $bkdata->bookings = array();
+    $bkdata->date = $dateoftravel;
+
+    $count = 1;
+    $allstns = \wc_railticket\Station::get_stations($bk->timetable->get_revision());
+    foreach ($legs as $leg) {
+        $data = new \stdclass();
+        $data->num = $count;
+        $from = \wc_railticket\Station::get_station($leg->from, $bk->timetable->get_revision());
+        $to = \wc_railticket\Station::get_station($leg->to, $bk->timetable->get_revision());
+
+        $data->fromstns = railticket_get_stnselect($from, $allstns);
+        $data->tostns = railticket_get_stnselect($to, $allstns);
+
+        if ($from->matches($to)) {
+            $data->deps = array();
+        } else {
+            $data->deps = railticket_get_depselect($bk, $from, $to, $leg->dep, $bookingorder->get_bookings());
+        }
+        $bkdata->bookings[] = $data;
+        $count++;
+    }
+
+
+    return $bkdata;
+}
+
+function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket\Station $from, \wc_railticket\Station $to, $dt, $exclude) {
+    $method = 'get_'.$from->get_direction($to).'_deps';
+    $deps = $bk->timetable->$method($from, true, $to);
+
+    for ($i = 0; $i < count($deps); $i++) {
+        if ($deps[$i]->key == $dt) {
+            $deps[$i]->selected = 'selected';
+        }
+        $trainservice = new \wc_railticket\TrainService($bk, $from, $deps[$i]->key, $to);
+        $capused = $trainservice->get_inventory(false, false, false, $exclude);
+        $deps[$i]->seats = $capused->totalseats;
+    }
+
+    return $deps;
+}
+
+function railticket_get_stnselect(\wc_railticket\Station $selected, $allstns) {
+    $data = array();
+    foreach ($allstns as $stn) {
+        $e = new \stdclass();
+        $e->name = $stn->get_name();
+        $e->stnid = $stn->get_stnid();
+        if ($stn->matches($selected)) {
+            $e->selected = 'selected';
+        }
+        $data[] = $e;
+    }
+
+    return $data;
+}
+
+function railticket_editorder() {
+    $edit = new \stdclass();
+    if (!current_user_can('admin_tickets')) {
+        $edit->message = 'You do not have permission to do this.';
+        return $edit;
+    }
+
+    $orderid = railticket_getpostfield('orderid');
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
+    $dateoftravel = railticket_getpostfield('dateoftravel');
+    $legs = json_decode(stripslashes($_REQUEST['legs']));
+
+    if ($dateoftravel != $bookingorder->get_date()) {
+        $bk = \wc_railticket\BookableDay::get_bookable_day($dateoftravel);
+        if (!$bk) {
+            $edit->message = 'Unable to make changes - date not bookable';
+            return $edit;
+        }
+        $bookingorder->set_date($bk);
+    }
+
+    $bookings = $bookingorder->get_bookings();
+
+    for ($i=0; $i < count($legs); $i++) {
+        $nfrom = \wc_railticket\Station::get_station($legs[$i]->from, $bookingorder->bookableday->timetable->get_revision());
+        $nto = \wc_railticket\Station::get_station($legs[$i]->to, $bookingorder->bookableday->timetable->get_revision());
+        $ofrom = $bookings[$i]->get_from_station();
+        $oto = $bookings[$i]->get_to_station();
+
+        if (!$nfrom->matches($ofrom) || !$nto->matches($oto) || $bookings[$i]->get_dep_time() != $legs[$i]->dep) {
+            $bookings[$i]->set_dep($nfrom, $nto, $legs[$i]->dep);
+        }
+    }
+
+    $edit->message = 'Order update saved';
+    return $edit;
+}
+
 function railticket_get_waybillcsv() {
     railticket_get_waybill(true);
 }
@@ -1131,7 +1335,6 @@ function railticket_get_waybill($iscsv) {
     $wb = new \wc_railticket\Waybill($date);
     $wb->show_waybill($iscsv);
 }
-
 
 function railticket_get_ordersummary_csv() {
     railticket_get_ordersummary(true);

@@ -68,4 +68,12 @@ class Station {
         }
         return false;
     }
+
+    public function matches(Station $stn) {
+        if ($stn->get_stnid() == $this->data->stnid && $stn->get_revision() == $this->data->revision) {
+            return true;
+        }
+
+        return false;
+    }
 }

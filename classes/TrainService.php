@@ -188,7 +188,7 @@ class TrainService {
         return false;
     }
 
-    public function get_inventory($baseonly = false, $noreserve = false, $onlycollected = false) {
+    public function get_inventory($baseonly = false, $noreserve = false, $onlycollected = false, $excludes = false) {
         global $wpdb;
 
         if ($this->bookableday->sold_out() || !$this->bookableday->is_bookable()) {
@@ -228,6 +228,14 @@ class TrainService {
 
         if ($onlycollected) {
             $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ";
+        }
+
+        if ($excludes) {
+            $ids = array();
+            foreach ($excludes as $exclude) {
+                $ids[] = $exclude->get_id();
+            }
+            $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.id NOT IN (".implode(',', $ids).")";
         }
 
         $bookings = $wpdb->get_results($sql);
