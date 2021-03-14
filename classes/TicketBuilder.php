@@ -471,7 +471,7 @@ class TicketBuilder {
         switch ($this->journeytype) {
             case 'round':
                 $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
-                $capdata->capacity[] = $ts-->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts->get_capacity(false, $seatsreq, $this->disabledrequest);
                 $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->rndstation);
                 $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
                 $ts2 = new TrainService($this->bookableday, $this->rndstation, $this->times[2], $this->tostation);
@@ -596,72 +596,27 @@ class TicketBuilder {
 
         switch ($this->journeytype) {
             case 'round':
-                $this->insertBooking($itemkey, $this->times[0], $this->fromstation, $this->tostation, $totalseats,
-                    $allocatedbays->capacity[0]->bays, $mid);
-                $this->insertBooking($itemkey, $this->times[1], $this->tostation, $this->rndstation, $totalseats,
-                    $allocatedbays->capacity[1]->bays, $mid);
-                $this->insertBooking($itemkey, $this->times[2], $this->rndstation, $this->fromstation, $totalseats,
-                    $allocatedbays->capacity[2]->bays, $mid);
+                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[0], $this->fromstation, $this->tostation, $totalseats,
+                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest);
+                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[1], $this->tostation, $this->rndstation, $totalseats,
+                    $allocatedbays->capacity[1]->bays, $mid, $this->disabledrequest);
+                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[2], $this->rndstation, $this->fromstation, $totalseats,
+                    $allocatedbays->capacity[2]->bays, $mid, $this->disabledrequest);
                 break;
             case 'single':
-                $this->insertBooking($itemkey, $legbayinfo[0]->deptime, $this->fromstation, $this->tostation, $totalseats,
-                    $allocatedbays->capacity[0]->bays, $mid);
+                Booking::insertBooking($this->dateoftravel, $itemkey, $legbayinfo[0]->deptime, $this->fromstation, $this->tostation, $totalseats,
+                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest);
                 break;
             case 'return':
-                $this->insertBooking($itemkey, $legbayinfo[0]->deptime, $this->fromstation, $this->tostation, $totalseats,
-                    $allocatedbays->capacity[0]->bays, $mid);
-                $this->insertBooking($itemkey, $legbayinfo[1]->deptime, $this->tostation, $this->fromstation, $totalseats,
-                    $allocatedbays->capacity[1]->bays, $mid);
+                Booking::insertBooking($this->dateoftravel, $itemkey, $legbayinfo[0]->deptime, $this->fromstation, $this->tostation, $totalseats,
+                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest);
+                Booking::insertBooking($this->dateoftravel, $itemkey, $legbayinfo[1]->deptime, $this->tostation, $this->fromstation, $totalseats,
+                    $allocatedbays->capacity[1]->bays, $mid, $this->disabledrequest);
         }
 
         $purchase->ok = true;
 
         return $purchase;
-    }
-
-    private function insertBooking($itemkey, $time, Station $fromstation, Station $tostation, $totalseats, $allocatedbays, $manual) {
-        global $wpdb;
-
-        $direction = $fromstation->get_direction($tostation);
-
-        $dbdata = array(
-            'woocartitem' => $itemkey,
-            'date' => $this->dateoftravel,
-            'time' => $time,
-            'fromstation' => $fromstation->get_stnid(),
-            'tostation' => $tostation->get_stnid(),
-            'direction' => $direction,
-            'seats' => $totalseats,
-            'usebays' => 1,
-            'created' => time(),
-            'expiring' => 0,
-            'manual' => $manual,
-            'priority' => $this->disabledrequest
-        );
-        if ($manual && $this->dateoftravel == $this->today) {
-            $dbdata['collected'] = true;
-        }
-
-        $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
-
-        $id = $wpdb->insert_id;
-
-        // TODO This needs to be skipped for seat based bookings
-        foreach ($allocatedbays as $bay => $num) {
-            $bayd = CoachManager::get_bay_details($bay);
-            if ($bayd[1] == 'priority') {
-                $pr = true;
-            } else {
-                $pr = false;
-            }
-            $bdata = array(
-                'bookingid' => $id,
-                'num' => $num,
-                'baysize' => $bayd[0],
-                'priority' => $pr
-            );
-            $wpdb->insert("{$wpdb->prefix}wc_railticket_booking_bays", $bdata);
-        }
     }
 
     private function get_javascript() {

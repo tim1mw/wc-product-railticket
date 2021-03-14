@@ -64,6 +64,55 @@ class Booking {
             array('woocartitem' => $key));
     }
 
+    public static function insertBooking($dateoftravel, $itemkey, $time, Station $fromstation, Station $tostation, $totalseats, $allocatedbays, $manual, $disabledrequest) {
+        global $wpdb;
+
+        $direction = $fromstation->get_direction($tostation);
+
+        $dbdata = array(
+            'woocartitem' => $itemkey,
+            'date' => $dateoftravel,
+            'time' => $time,
+            'fromstation' => $fromstation->get_stnid(),
+            'tostation' => $tostation->get_stnid(),
+            'direction' => $direction,
+            'seats' => $totalseats,
+            'usebays' => 1,
+            'created' => time(),
+            'expiring' => 0,
+            'manual' => $manual,
+            'priority' => $disabledrequest
+        );
+        if ($manual && $dateoftravel == $this->today) {
+            $dbdata['collected'] = true;
+        }
+
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings", $dbdata);
+
+        $id = $wpdb->insert_id;
+        // TODO This needs to be skipped for seat based bookings
+        self::insertBays($id, $allocatedbays);
+    }
+
+    public static function insertBays($id, $allocatedbays) {
+        global $wpdb;
+        foreach ($allocatedbays as $bay => $num) {
+            $bayd = CoachManager::get_bay_details($bay);
+            if ($bayd[1] == 'priority') {
+                $pr = true;
+            } else {
+                $pr = false;
+            }
+            $bdata = array(
+                'bookingid' => $id,
+                'num' => $num,
+                'baysize' => $bayd[0],
+                'priority' => $pr
+            );
+            $wpdb->insert("{$wpdb->prefix}wc_railticket_booking_bays", $bdata);
+        }
+    }
+
     public function get_date($format = false, $nottoday = false) {
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
@@ -174,6 +223,10 @@ class Booking {
         return $this->data->wooorderitem;
     }
 
+    public function get_priority() {
+        return $this->data->priority;
+    }
+
     public function delete() {
         global $wpdb;
         $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$this->data->id);
@@ -186,11 +239,19 @@ class Booking {
         $this->update_record();
     }
 
-    public function set_dep(Station $from, Station $to, $time) {
+    public function set_dep(Station $from, Station $to, $time, $bays) {
         $this->data->fromstation = $from->get_stnid();
         $this->data->tostation = $to->get_stnid();
         $this->data->time = $time;
         $this->update_record();
+
+        if (!$bays) {
+            return;
+        }
+        global $wpdb;
+        // Remove the old bays and add the new ones.
+        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$this->data->id);
+        $this->insertBays($this->data->id, $bays);
     }
 
     private function update_record() {

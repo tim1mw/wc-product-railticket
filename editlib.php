@@ -1370,7 +1370,9 @@ function railticket_editorder() {
         $oto = $bookings[$i]->get_to_station();
 
         if (!$nfrom->matches($ofrom) || !$nto->matches($oto) || $bookings[$i]->get_dep_time() != $legs[$i]->dep) {
-            $bookings[$i]->set_dep($nfrom, $nto, $legs[$i]->dep);
+            $ts = new \wc_railticket\TrainService($bookingorder->bookableday, $nfrom, $legs[$i]->dep, $nto, $bookings);
+            $capdata = $ts->get_capacity(false, $bookings[$i]->get_seats(), $bookings[$i]->get_priority());
+            $bookings[$i]->set_dep($nfrom, $nto, $legs[$i]->dep, $capdata->bays);
         }
     }
 
