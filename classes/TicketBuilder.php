@@ -665,8 +665,8 @@ class TicketBuilder {
     }
 
     private function get_javascript() {
-        wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/mustache.min.js'));
-        wp_register_script('railticket_script_builder', plugins_url('wc-product-railticket/ticketbuilder.js'));
+        wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/js/mustache.min.js'));
+        wp_register_script('railticket_script_builder', plugins_url('wc-product-railticket/js/ticketbuilder.js'));
         wp_enqueue_script('railticket_script_mustache');
         wp_enqueue_script('railticket_script_builder');
 
@@ -676,7 +676,7 @@ class TicketBuilder {
             $minprice = $opt;
         }
         
-        $str = file_get_contents(dirname(__FILE__).'/../remote-templates.html').
+        $str = file_get_contents(dirname(__FILE__).'/../templates/remote-templates.html').
             "\n<script type='text/javascript'>\n".
             "var ajaxurl = '".admin_url( 'admin-ajax.php', 'relative' )."';\n".
             "var today = '".$this->today->format('Y-m-d')."'\n".

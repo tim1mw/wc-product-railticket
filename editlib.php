@@ -1206,8 +1206,8 @@ function railticket_show_edit_order() {
         return;
     }
 
-    wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/mustache.min.js'));
-    wp_register_script('railticket_script_builder', plugins_url('wc-product-railticket/ticketeditor.js'));
+    wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/js/mustache.min.js'));
+    wp_register_script('railticket_script_builder', plugins_url('wc-product-railticket/js/ticketeditor.js'));
     wp_enqueue_script('railticket_script_mustache');
     wp_enqueue_script('railticket_script_builder');
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
@@ -1261,7 +1261,7 @@ function railticket_show_edit_order() {
     );
     $template = $rtmustache->loadTemplate('editorder');
     echo $template->render($alldata);
-    echo file_get_contents(dirname(__FILE__).'/edit-templates.html');
+    echo file_get_contents(dirname(__FILE__).'/templates/edit-templates.html');
 }
 
 function railticket_get_moveorderdata() {
