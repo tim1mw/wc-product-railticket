@@ -1,0 +1,42 @@
+<script id="movebooking_tmpl" type="x-tmpl-mustache">
+<form action='{{actionurl}}' method='post' name='movebooking'>
+<table border='1' class='railticket_admintable' style='width:100%;'>
+    <tr>
+        <th>Date</th>
+        <td><input type='date' value='{{date}}' name='dateoftravel' class='railticket_refeshdata' /></td>
+        <td colspan='2'><div id='railticket_bkerror' class='railticket_error'></div></td>
+    </tr>
+    <tr>
+        <th></th>
+        <th>From</th>
+        <th>To</th>
+        <th>Departure</th>
+    </tr>
+    {{#bookings}}
+    <tr>
+        <th>Trip {{num}}</th>
+        <td><select name='fromstation{{num}}' class='railticket_refeshdata'>
+        {{#fromstns}}
+            <option value='{{stnid}}' {{selected}}>{{name}}</option>
+        {{/fromstns}}
+        </select></td>
+        <td><select name='tostation{{num}}' class='railticket_refeshdata'>
+        {{#tostns}}
+            <option value='{{stnid}}' {{selected}}>{{name}}</option>
+        {{/tostns}}
+        </select></td>
+        <td><select name='dep{{num}}'>
+        {{#deps}}
+            <option value='{{key}}' {{selected}}>{{formatted}} ({{seats}} Seats)</option>
+        {{/deps}}
+        </select></td>
+    </tr>
+    {{/bookings}}
+    <tr>
+        <td colspan='3'><div id='railticket_commitmessage' style='font-weight:bold;font-size:large;color:blue;text-align:center;'></div></td>
+        <td style='text-align:right;padding-top:10px;'><input type='button' name='commit' id='railticket_commit'
+            value='Commit Changes' /></td>
+    </tr>
+</table>
+</form>
+</script>

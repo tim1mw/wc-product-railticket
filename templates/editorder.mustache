@@ -1,0 +1,46 @@
+<div style='max-width:550px;margin-left:0px;margin-right:auto;'>
+    <h1>Move Bookings</h1>
+    <table border='1' class='railticket_admintable' style='width:100%;'>
+    {{# details }}
+        <tr><th width='30%' style='text-align:right'>{{item}}</th><td class='railticket_meta'>{{{value}}}</td></tr>
+    {{/ details }}
+    </table>
+    <br />
+
+    <table border='1' class='railticket_admintable' style='width:100%;'>
+        <tr>
+            <th>Date</th>
+            <td style='text-align:center'>{{date}}</td>
+        </tr><tr>
+            <th></th>
+            <th>From</th>
+            <th>To</th>
+            <th>Departure</th>
+        </tr>
+        {{#tripdata}}
+        <tr>
+            <th>Trip {{num}}</th>
+            <td style='text-align:center'>{{from}}</td>
+            <td style='text-align:center'>{{to}}</td>
+            <td style='text-align:center'>{{dep}}</td>
+        </tr>
+        {{/tripdata}}
+    </table>
+
+    <h3>Set new trip details</h3>
+    <div id="pleasewait" class="railticket_loading"></div>
+    <div id='railticket_movebooking'></div>
+
+    <p>Note: Train capacites shown exclude the seats used for the order being moved,
+    no actual changes will be made until the commit button is clicked.</p>
+    <script type='text/javascript'>
+        var orderid = '{{orderid}}';
+        var ajaxurl = '{{ajaxurl}}';
+        var defaultData = {{{defaultdata}}};
+    </script>
+    <form action="" method="post" id='railticket_backtoview'>
+        <input type="hidden" name="action" value="showorder">
+        <input type="hidden" name="orderid" value="{{orderid}}">
+        <input type="submit" value="Back to {{orderid}} full order view">
+    </form>
+</div>
