@@ -258,6 +258,12 @@ function railticket_bookable_days() {
             case 'showbookableday':
                 railticket_showbookableday();
                 break;
+            case 'addbookable':
+                railticket_addbookableday();
+                break;
+            case 'deletebookable':
+                railticket_deletebookableday();
+                break;
         }
     } else {
         railticket_show_cal_selector();
@@ -277,13 +283,11 @@ function railticket_show_cal_selector() {
     <form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='filterbookable' />    
         <table><tr>
-            <td>Select Year</td>
+            <th>Year</th>
+            <th>Month</th>
+        </tr><tr>
             <td><?php echo wc_railticket_getyearselect();?></td>
-        </tr><tr>
-            <td>Month</td>
             <td><?php echo wc_railticket_getmonthselect($month);?></td>
-        </tr><tr>
-            <td></td>
             <td><input type='submit' value='Show Bookable Days' /></td>
         </tr></table>
     </form>
@@ -512,8 +516,13 @@ function railticket_showcalendaredit($year, $month) {
         $render->days[] = $data;
     }
 
-    if (count($render->days) == 0) {
-        return '';
+    $timetables = \wc_railticket\Timetable::get_timetables();
+    $render->timetables = array();
+    foreach ($timetables as $tt) {
+        $cl = new \stdclass();
+        $cl->name = $tt->get_name();
+        $cl->ttid = $tt->get_timetableid();
+        $render->timetables[] = $cl;
     }
 
     $template = $rtmustache->loadTemplate('bookable_calendar');
@@ -580,9 +589,21 @@ function railticket_showbookableday() {
         }
     }
 
-    $alldata->ttcolour = $bookable->timetable->get_colour();
-    $alldata->ttbackground = $bookable->timetable->get_background();
-    $alldata->timetable = $bookable->timetable->get_name();
+    $chosentt = $bookable->timetable->get_timetableid();
+    $timetables = \wc_railticket\Timetable::get_timetables($chosenttr);
+    $alldata->timetables = array();
+    foreach ($timetables as $tt) {
+        $cl = new \stdclass();
+        if ($tt->get_timetableid() == $chosentt) {
+            $cl->selected = 'selected';
+        } else {
+            $cl->selected = '';
+        }
+        $cl->name = $tt->get_name();
+        $cl->ttid = $tt->get_timetableid();
+        $alldata->timetables[] = $cl;
+    }
+    $alldata->ttrevision = $timetables[0]->get_revision();
     $alldata->override = $bookable->get_override();
 
     $template = $rtmustache->loadTemplate('bookableday');
@@ -607,6 +628,10 @@ function railticket_editbookableday() {
         $pr = sanitize_text_field($_REQUEST['pricerevision']);
         $ndata->pricerevision = $pr;
     }
+    if (array_key_exists('timetable', $_REQUEST)) {
+        $tt = sanitize_text_field($_REQUEST['timetable']);
+        $ndata->timetableid = $tt;
+    }
     $ndata->bookable = railticket_get_cbval('bookable');
     $ndata->specialonly = railticket_get_cbval('specialonly');
     $ndata->sellreserve = railticket_get_cbval('sellreserve');
@@ -619,6 +644,32 @@ function railticket_editbookableday() {
     wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-days&month='.$p[1].'&year='.$p[0].'&action=filterbookable');
 }
 
+function railticket_addbookableday() {
+    $date = sanitize_text_field($_REQUEST['date']);
+    $ttid = sanitize_text_field($_REQUEST['timetable']);
+    // Not using this for now...
+    //$ttr = sanitize_text_field($_REQUEST['ttrevision']);
+
+    \wc_railticket\BookableDay::create_timetable_date($date, $ttid);
+    $d = DateTime::createFromFormat('Y-m-d', $date);
+    railticket_show_cal_selector();
+    railticket_showcalendaredit(intval($d->format("Y")), intval($d->format("n")));
+}
+
+function railticket_deletebookableday() {
+    $date = sanitize_text_field($_REQUEST['date']);
+    $sure = railticket_gettfpostfield('sure');
+    if ($sure) {
+        \wc_railticket\BookableDay::delete_timetable_date($date);
+    } else {
+       echo "<h3>".__("You weren't sure about deleting the date!", "wc_railticket")."</h3>";
+       railticket_showbookableday();
+       return;
+    }
+    $d = DateTime::createFromFormat('Y-m-d', $date);
+    railticket_show_cal_selector();
+    railticket_showcalendaredit(intval($d->format("Y")), intval($d->format("n")));
+}
 
 function railticket_summary_selector() {
     if (array_key_exists('dateofjourney', $_REQUEST)) {

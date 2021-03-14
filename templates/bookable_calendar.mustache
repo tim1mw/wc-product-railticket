@@ -36,3 +36,25 @@
     </tr>
     {{/ days }}
 </table>
+
+<h3>Add new timetable date</h3>
+<p>
+<form action='{{actionurl}}' method='POST'>
+<input type='hidden' name='action' value='addbookable' />
+<input type='hidden' name='ttrevision' value='{{ttrevision}}' />
+<table>
+    <tr>
+        <td>Date</td>
+        <td><input type='date' name='date' required /></td>
+    </tr><tr>
+        <td>Timetable</td>
+        <td><select name='timetable'>
+        {{#timetables}}
+            <option value='{{ttid}}'>{{name}}</option>
+        {{/timetables}}
+        </select></td>
+    </tr>
+    <tr><td></td><td><input type='submit' value='Add' /></td></tr>
+</table>
+</form>
+</p>

@@ -44,6 +44,26 @@ class Timetable {
         return false;
     }
 
+    public static function get_timetables($revision = false) {
+        global $wpdb;
+
+        if ($revision == false) {
+            $date = new \DateTime();
+            $date = $date->format('Y-m-d');
+            $revision = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE ".
+                "datefrom <= '".$date."' AND dateto >= '".$date."'");
+        }
+
+        $tts = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_timetables WHERE revision = ".$revision);
+
+        $alltt = array();
+        foreach ($tts as $tt) {
+            $alltt[] = new Timetable($tt);
+        }
+
+        return $alltt;
+    }
+
     public static function get_timetable_by_date($date) {
         global $wpdb;
 

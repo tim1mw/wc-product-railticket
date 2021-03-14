@@ -166,6 +166,34 @@ class BookableDay {
         return $randstring;
     }
 
+    public static function create_timetable_date($date, $timetableid) {
+        global $wpdb;
+        // Check the date doesn't exist already
+        $datecheck = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_dates WHERE date='".$date."'");
+        if ($datecheck) {
+            return false;
+        }
+
+        $data = array('date' => $date, 'timetableid' => $timetableid);
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_dates", $data);
+        return true;
+    }
+
+    public static function delete_timetable_date($date, $checkempty = true) {
+        global $wpdb;
+
+        if ($checkempty) {
+            $bk = self::get_bookable_day($date);
+            if ($bk && $bk->count_bookings() > 0) {
+                return false;
+            }
+        }
+
+        $data = array('date' => $date);
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_dates", $data);
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_bookable", $data);
+        return true;
+    }
 
     public function update_bookable($ndata) {
         global $wpdb;
@@ -221,6 +249,9 @@ class BookableDay {
             $this->id = $wpdb->insert_id;
         } else {
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable", $filtered, array('id' => $this->data->id));
+
+            $wpdb->update("{$wpdb->prefix}wc_railticket_dates", array('timetableid' => $filtered['timetableid']),
+                array('date' => $this->data->date));
         }
     }
 

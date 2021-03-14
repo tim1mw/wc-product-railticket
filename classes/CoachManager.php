@@ -72,7 +72,7 @@ class CoachManager {
             case 'pertrain':
                 $str = '';
                 foreach ($comp->coachsets as $key => $set) {
-                    $str .= $key.":&nbsp;".format_coachset($set->coachset)."<br />";
+                    $str .= $key.":&nbsp;".self::format_coachset($set->coachset)."<br />";
                 }
                return $str;
         }

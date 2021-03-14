@@ -6,7 +6,14 @@
 <table border='1' style='border-collapse:collapse;background:#ffffff;font-size:large;'>
     <tr>
         <td>Timetable</td>
-        <td style='color:#{{ttcolour}};background:#{{ttbackground}};font-weight:bold;'>{{timetable}}</td>
+        <!--<td style='color:#{{ttcolour}};background:#{{ttbackground}};font-weight:bold;'>{{timetable}}</td>-->
+        <td>
+            <select name='timetable' {{disabled}}>
+            {{# timetables }}
+                <option value='{{ttid}}' {{selected}}>{{name}}</option>    
+            {{/ timetables }}
+            </select> <span style='font-size:small'>{{locknote}}</span>
+        </td>
     </tr><tr>
         <td>Timetable Revision</td>
         <td>
@@ -47,5 +54,13 @@
 </table>
 <h2>Service Parameters (don't edit unless you really know what you are doing)</h2>
 <p><textarea name='composition' rows='10' cols='60'>{{{composition}}}</textarea>
+<div id='composition-edit'></div>
 <p><input type='submit' value='Update' style='padding-left:0px;padding-right:0px;'/></p>
 </form>
+<br />
+<p><form action='{{actionurl}}' method='post'>
+    <input type='hidden' name='date' value='{{date}}' />
+    <input type='hidden' name='action' value='deletebookable' />
+    <input type='submit' value='Delete' style='padding-left:0px;padding-right:0px;' {{disabled}} /><br />
+    I really want to delete this! <input type='checkbox' name='sure' value='true' {{disabled}} />
+</form></p>
