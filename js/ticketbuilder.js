@@ -390,7 +390,7 @@ console.log(deplegs);
 
         if (a_deptime) {
             for (i in deplegs[0].times) {
-                if (deplegs[0].times[i].key == a_deptime) {
+                if (deplegs[0].times[i].key == a_deptime && deplegs[0].times[i].notbookable == false) {
                     var adep = document.getElementById('dep_0_'+deplegs[0].times[i].index);
                     adep.checked = true;
                     break;
