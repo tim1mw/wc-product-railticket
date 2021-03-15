@@ -131,11 +131,11 @@ function validateOverride() {
     var odiv = document.getElementById('overridevalid');
     if (overridecode != false &&
         document.getElementById('overrideval').value.trim() == overridecode) {
-        overridevalid = 1;
+        overridevalid = true;
         odiv.innerHTML='<p>Override code valid - booking options unlocked.</p>';
         doStations();
     } else {
-        overridevalid = 0;
+        overridevalid = false;
         odiv.innerHTML='<p>Override code invalid - please try again.</p>';
     }
 }

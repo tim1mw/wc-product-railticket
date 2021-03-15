@@ -93,7 +93,7 @@ function railticket_getticketbuilder() {
     $dateoftravel = railticket_getpostfield('dateoftravel');
     $fromstation = railticket_getpostfield('fromstation');
     $journeychoice = railticket_getpostfield('journeychoice');
-    $overridevalid = railticket_getpostfield('overridevalid');
+    $overridevalid = railticket_gettfpostfield('overridevalid');
     $disabledrequest = railticket_gettfpostfield('disabledrequest');
     $notes = railticket_getpostfield('notes');
     $nominimum = railticket_gettfpostfield('nominimum');
@@ -125,7 +125,7 @@ function railticket_getticketbuilder() {
 function railticket_gettfpostfield($field) {
     if (array_key_exists($field, $_REQUEST)) {
         $t = sanitize_text_field($_REQUEST[$field]);
-        if ($t == 'true' || $t === true) {
+        if ($t == 'true' || $t === true || $t == 1) {
             return true;
         }
     }
