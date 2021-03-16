@@ -53,7 +53,27 @@
     </tr>
 </table>
 <h2>Service Parameters (don't edit unless you really know what you are doing)</h2>
-<p><textarea name='composition' rows='10' cols='60'>{{{composition}}}</textarea>
+<p>Note, if you change the timetable or timetable revision, please save and reload the page before editing the service parameters.</p>
+
+<script type='text/javascript'>
+// Service parameters
+
+var coaches = {{{coaches}}};
+var dep_times_up = {{{dep_times_up}}};
+var dep_times_down = {{{dep_times_down}}};
+
+// This may be configurable in the future, hard-wire for now since it isn't.
+var baytypes = {
+    'priority': 'Disabled',
+    'normal': 'Normal'
+}
+
+</script>
+<div id='railticket_serviceeditor'></div>
+
+<p><textarea name='composition' rows='10' cols='60'>{{{composition}}}</textarea></p>
+
+
 <div id='composition-edit'></div>
 <p><input type='submit' value='Update' style='padding-left:0px;padding-right:0px;'/></p>
 </form>

@@ -545,6 +545,11 @@ function railticket_showbookableday() {
         $bookable = \wc_railticket\BookableDay::create_bookable_day($bkdate);
     }
 
+    wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/js/mustache.min.js'));
+    wp_register_script('railticket_script_sp', plugins_url('wc-product-railticket/js/serviceparams.js'));
+    wp_enqueue_script('railticket_script_mustache');
+    wp_enqueue_script('railticket_script_sp');
+
     $alldata = $bookable->get_data();
     $alldata->dateformatted = $bookable->get_date(true);
     $cbs = array('bookable', 'soldout', 'sameservicereturn', 'sellreserve', 'specialonly');
@@ -605,6 +610,14 @@ function railticket_showbookableday() {
     }
     $alldata->ttrevision = $timetables[0]->get_revision();
     $alldata->override = $bookable->get_override();
+
+    // Sort out the fixed data for the service parameter editor
+
+    $alldata->coaches = json_encode(\wc_railticket\CoachManager::get_all_coachset_data());
+    $upterm = $bookable->timetable->get_terminal('up');
+    $downterm = $bookable->timetable->get_terminal('down');
+    $alldata->dep_times_up = json_encode($bookable->timetable->get_up_deps($downterm));
+    $alldata->dep_times_down = json_encode($bookable->timetable->get_down_deps($upterm));
 
     $template = $rtmustache->loadTemplate('bookableday');
     echo $template->render($alldata);

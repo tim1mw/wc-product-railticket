@@ -9,6 +9,20 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class CoachManager {
     private $composition, $reserve, $bays;
 
+    public static function get_all_coachset_data() {
+        global $wpdb;
+        $coaches = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_coachtypes");
+        $chs = array();
+        foreach ($coaches as $coach) {
+            $coach->composition = json_decode($coach->composition);
+            $code = $coach->code;
+            unset($coach->code);
+            unset($coach->id);
+            $chs[$code] = $coach;
+        }
+        return $chs;
+    }
+
     public static function format_reserve($res, $daytype) {
         switch ($daytype) {
             case 'simple':
