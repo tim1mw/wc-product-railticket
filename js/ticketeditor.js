@@ -56,7 +56,7 @@ function renderEditor(data) {
 
     var disable = false;
     for (i in data.bookings) {
-       if (data.bookings[i].deps.length == 0) {
+        if (data.bookings[i].deps.length == 0) {
             disable = true;
         }
     }

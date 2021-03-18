@@ -1,5 +1,5 @@
 <h1>Editing Bookable Day: {{dateformatted}}</h1>
-<form method='post' action='{{adminurl}}'>
+<form method='post' action='{{adminurl}}' name='bookableday'>
 <input type='hidden' name='date' value='{{date}}' />
 <input type='hidden' name='id' value='{{id}}' />
 <input type='hidden' name='action' value='railticket-editbookableday' />
@@ -52,8 +52,6 @@
         <td><input type='text' name='override' value='{{override}}' /></td>
     </tr>
 </table>
-<h2>Service Parameters (don't edit unless you really know what you are doing)</h2>
-<p>Note, if you change the timetable or timetable revision, please save and reload the page before editing the service parameters.</p>
 
 <script type='text/javascript'>
 // Service parameters
@@ -66,11 +64,25 @@ var dep_times_down = {{{dep_times_down}}};
 var baytypes = {
     'priority': 'Disabled',
     'normal': 'Normal'
+};
+
+var daytypes = {
+    'simple': 'Simple',
+    'pertrain': 'Per Train'
 }
 
-</script>
-<div id='railticket_serviceeditor'></div>
+var allocateby = {
+    'seat' : 'Seat',
+    'bay' : 'Bay'
+};
 
+</script>
+<div id='railticket_serviceeditor_sp'></div>
+<div id='railticket_serviceeditor_c'></div>
+<div id='railticket_serviceeditor_a'></div>
+
+<h2>Service Parameter Data (don't edit unless you really know what you are doing)</h2>
+<p>Note, if you change the timetable or timetable revision, please save and reload the page before editing the service parameters.</p>
 <p><textarea name='composition' rows='10' cols='60'>{{{composition}}}</textarea></p>
 
 
