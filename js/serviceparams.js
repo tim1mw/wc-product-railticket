@@ -100,10 +100,47 @@ function renderServiceAllocation() {
         return;
     }
 
-    var adata = {};
+    var adata = {
+        "alldeps": [],
+        "sets": []
+    };
+    var total = dep_times_up.length;
+    // Sanity check....
+    if (dep_times_down.length > dep_times_up.length) {
+        total = dep_times_down.length;
+    }
+
+    for (i=0; i<total; i++) {
+        var row = {};
+        row.upkey = dep_times_up[i].key;
+        row.uptime = dep_times_up[i].formatted;
+        row.downkey = dep_times_down[i].key;
+        row.downtime = dep_times_down[i].formatted;
+        adata.alldeps.push(row);
+    }
+
+    var setkeys = Object.keys(data.coachsets);
+    for (i in setkeys) {
+        var parts = setkeys[i].split('_');
+
+        var row = {
+            "value": setkeys[i],
+            "name": "Set "+(parseInt(parts[1])+1)
+        };
+        adata.sets.push(row);
+    }
 
     var atempl = document.getElementById('depallocation_tmpl').innerHTML;
     a.innerHTML = Mustache.render(atempl, adata);
+
+    var elements = document.getElementsByClassName('railticketdep');
+    for (i=0; i<elements.length; i++) {
+        var e = elements[i];
+        e.addEventListener('change', dep_set_changed);
+        var parts=e.id.split('_');
+        var selected = data[parts[0]][parts[2]];
+        e.value = selected;
+    }
 }
 
 function renderEditorData() {
@@ -316,8 +353,23 @@ function deleteCoachSet(evt) {
 
     var delkey = 'set_'+parts[1];
     delete data.coachsets[delkey];
+
+    // Remove this set from the allocatiosn
+    remove_set_from_allocation(delkey, data.up);
+    remove_set_from_allocation(delkey, data.down);
+
     renderEditorData();
     renderEditorCoachSets();
+    renderServiceAllocation();
+}
+
+function remove_set_from_allocation(delkey, allocation) {
+    var setkeys = Object.keys(data.coachsets);
+    for (i in allocation) {
+        if (allocation[i] == delkey) {
+            allocation[i] = setkeys[0];
+        }
+    }
 }
 
 function addCoachSet(evt) {
@@ -352,6 +404,7 @@ function addCoachSet(evt) {
 
     renderEditorData();
     renderEditorCoachSets();
+    renderServiceAllocation();
 }
 
 function coachSetCount(evt) {
@@ -436,7 +489,8 @@ function setSPOpt(evt) {
             data.allocateby = evt.target.value;
             break;
     }
-    renderEditorCoachSets()
+    renderEditorCoachSets();
+    renderServiceAllocation();
     renderEditorData();
 }
 
@@ -545,4 +599,10 @@ function check_dep_times(ctimes, ttimes) {
     }
 
     return ntimes;
+}
+
+function dep_set_changed(evt) {
+    var parts = evt.target.id.split('_');
+    data[parts[0]][parts[2]] = evt.target.value;
+    renderEditorData();
 }

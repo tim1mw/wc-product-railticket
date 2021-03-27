@@ -616,8 +616,8 @@ function railticket_showbookableday() {
     $alldata->coaches = json_encode(\wc_railticket\CoachManager::get_all_coachset_data());
     $upterm = $bookable->timetable->get_terminal('up');
     $downterm = $bookable->timetable->get_terminal('down');
-    $alldata->dep_times_up = json_encode($bookable->timetable->get_up_deps($downterm));
-    $alldata->dep_times_down = json_encode($bookable->timetable->get_down_deps($upterm));
+    $alldata->dep_times_up = json_encode($bookable->timetable->get_up_deps($downterm, true));
+    $alldata->dep_times_down = json_encode($bookable->timetable->get_down_deps($upterm, true));
 
     echo file_get_contents(dirname(__FILE__).'/templates/serviceparams.html');
 

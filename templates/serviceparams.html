@@ -78,11 +78,34 @@
 
 <script id="depallocation_tmpl" type="x-tmpl-mustache">
 <h3>Coach Set Departure Allocations</h3>
-
+<table border='1' style='border-collapse:collapse;background:#ffffff;font-size:large;text-align:center'>
+    <tr><th>Up Deps</th><th>Coach Set</th><td style='width:10px;background:blue;'></td><th>Down Deps</th><th>Coach Set</th></tr>
+    {{#alldeps}}
+    <tr>
+        <td>{{downtime}}</td>
+        <td>
+            <select name='down_dep_{{downkey}}' id='down_dep_{{downkey}}' class='railticketdep' />
+            {{#sets}}
+                <option value='{{value}}'>{{name}}</option>
+            {{/sets}}
+            </select>
+        </td>
+        <td style='width:10px;background:blue;'></td>
+        <td>{{uptime}}</td>
+        <td>
+            <select name='up_dep_{{upkey}}' id='up_dep_{{upkey}}' class='railticketdep' />
+            {{#sets}}
+                <option value='{{value}}'>{{name}}</option>
+            {{/sets}}
+            </select>
+        </td>
+    </tr>
+    {{/alldeps}}
+</table>
 </script>
 
 <script id="servicedata_tmpl" type="x-tmpl-mustache">
-<input type='button' id='showserviceparams' value='Show service parameter data' />
+<p><input type='button' id='showserviceparams' value='Show service parameter data' /></p>
 <div id='railticket_serviceparameters' style='display:none'>
 <h2>Service Parameter Data (don't edit unless you really know what you are doing)</h2>
 <p><textarea name='composition' rows='10' cols='60' id='servicecomp'>{{composition}}</textarea></p>
