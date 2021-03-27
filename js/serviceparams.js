@@ -2,8 +2,20 @@ document.addEventListener("DOMContentLoaded", setupEditor);
 
 var coachesAV = [];
 var defaultcoachimg = false;
+var dep_times_up_keys = {};
+var dep_times_down_keys = {};
 
 function setupEditor() {
+
+    for (i in dep_times_up) {
+        dep_times_up_keys[dep_times_up[i].key] = i;
+    }
+
+    for (i in dep_times_down) {
+        dep_times_down_keys[dep_times_down[i].key] = i;
+    }
+
+    check_all_dep_times();
 
     for (i in coaches) {
         var ch = {};
@@ -82,7 +94,16 @@ function renderEditorCoachSets() {
 }
 
 function renderServiceAllocation() {
+    var a = document.getElementById('railticket_serviceeditor_a');
+    if (data.daytype == 'simple') {
+        a.innerHTML = '';
+        return;
+    }
 
+    var adata = {};
+
+    var atempl = document.getElementById('depallocation_tmpl').innerHTML;
+    a.innerHTML = Mustache.render(atempl, adata);
 }
 
 function renderEditorData() {
@@ -459,12 +480,36 @@ function get_dep_times(times) {
     var tt = {}
     var count = 0;
     for (i in times) {
-        tt[times[i].key] = "set_"+count;
-        count++;
-        if (count > 1) {
-            count = 0;
-        }
+        tt[times[i].key] = '';
     }
 
     return tt;
+}
+
+function check_all_dep_times() {
+    if (data.daytype == 'simple') {
+        return;
+    }
+
+    // Do a sanity check on the dep times in the config against the ones for the time configured at load time.
+
+    check_dep_times(data.up, dep_times_up_keys);
+    check_dep_times(data.down, dep_times_down_keys);
+}
+
+function check_dep_times(ctimes, ttimes) {
+    // Remove any times that don't exist.
+    for (i in ctimes) {
+        if (ttimes.hasOwnProperty(i)) {
+            continue;
+        }
+        delete ctimes[i];
+    }
+
+    for (i in ttimes) {
+        if (ctimes.hasOwnProperty(i)) {
+            continue;
+        }
+        ctimes[i] = '';
+    }
 }
