@@ -403,6 +403,7 @@ class BookableDay {
         }
         foreach ($sps as $sp) {
             $t = $sp->get_onsale_data();
+            $t->classes = '';
             $trainservice = new \wc_railticket\TrainService($this, $sp->get_from_station(), $sp->get_dep_id(), $sp->get_to_station());
 
             $capused = $trainservice->get_inventory(false, false);

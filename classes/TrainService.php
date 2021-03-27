@@ -203,8 +203,7 @@ class TrainService {
             case 'pertrain':
                 $direction = $this->direction;
                 $formations = $this->bookableday->get_bays();
-                $deptime = $this->deptime;
-                $set = $formations->$direction->$deptime;
+                $set = $this->get_setkey($formations);
                 $basebays = (array) $formations->coachsets->$set;
                 break;
         }
@@ -293,9 +292,7 @@ class TrainService {
                 break;
             case 'pertrain':
                 $comp = $this->bookableday->get_composition();
-                $direction = $this->direction;
-                $deptime = $this->deptime;
-                $setkey = $comp->$direction->$deptime;
+                $setkey = $this->get_setkey($comp);
                 $resset = $res->$setkey;
                 break;
         }
@@ -315,9 +312,7 @@ class TrainService {
                 $cset = $comp->coachset;
                 break;
             case 'pertrain':
-                $direction = $this->direction;
-                $deptime = $this->deptime;
-                $setkey = $comp->$direction->$deptime;
+                $setkey = $this->get_setkey($comp);
                 $cset = $comp->coachsets->$setkey->coachset;
                 break;
         }
@@ -326,6 +321,17 @@ class TrainService {
             return $cset;
         }
         return CoachManager::format_coachset($cset);
+    }
+
+    private function get_setkey($comp) {
+        if ($this->special) {
+            $sid = $this->special->get_id();
+            return $comp->specials->$sid;
+        } else {
+            $direction = $this->direction;
+            $deptime = $this->deptime;
+            return $comp->$direction->$deptime;
+        }
     }
 
 }

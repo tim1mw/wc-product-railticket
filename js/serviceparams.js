@@ -576,6 +576,7 @@ function check_all_dep_times() {
            for (i in specials) {
                data.specials[specials[i].id] = sets[0];
            }
+
        } else {
            data.specials = check_dep_times(data.specials, specials_keys, true);
        }

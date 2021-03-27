@@ -186,7 +186,9 @@ class CoachManager {
         }
         $data->up = $parsed->up;
         $data->down = $parsed->down;
-
+        if (property_exists($parsed, 'specials')) {
+            $data->specials = $parsed->specials;
+        }
         return $data;
     }
 

@@ -61,6 +61,10 @@ class Special {
         return false;
     }
 
+    public function get_id() {
+        return $this->data->id;
+    }
+
     public function get_dep_id() {
         return "s:".$this->data->id;
     }
