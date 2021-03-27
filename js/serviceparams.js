@@ -22,7 +22,6 @@ function setupEditor() {
 }
 
 function renderEditorSP() {
-console.log(data);
     var sp = document.getElementById('railticket_serviceeditor_sp');
     var sptempl = document.getElementById('serviceparams_tmpl').innerHTML;
     var spdata = {};
@@ -63,11 +62,18 @@ function renderEditorCoachSets() {
     addActionListeners('reserveselect', 'change', coachSetReserve);
 
     document.getElementById('addsetbtn', 'click', addCoachSet).addEventListener('click', addCoachSet);
-    document.getElementById('deleteset_0').style.disabled;
 
     if (data.daytype == 'simple') {
-        document.getElementById('addsetbtn').style.disabled;
+        document.getElementById('addsetbtn').style.display = 'none';
+        document.getElementById('deleteset_0').style.display = 'none';
+    } else {
+        if (Object.keys(data.coachsets).length < 3) {
+            document.getElementById('deleteset_0').style.display = 'none';
+            document.getElementById('deleteset_1').style.display = 'none';
+        }
     }
+
+
 }
 
 function renderServiceAllocation() {
@@ -156,7 +162,52 @@ function processCoachSet(num, set, reserve) {
         c.reserve.push(r);
     }
 
+    var stats = getCoachSetStats(set);
+    c.seats = stats.seats;
+    c.bays = formatBays(stats.bays);
+
     return c;
+}
+
+function formatBays(bays) {
+    var data = [];
+    for (i in bays) {
+        var parts = i.split('_');
+        if (parts[1] == 'priority') {
+            data.push(bays[i]+"x "+parts[0]+" Seat Disabled Bay");    
+        } else {
+            data.push(bays[i]+"x "+parts[0]+" Seat Normal Bay");  
+        }
+    }
+    return data;
+}
+
+function getCoachSetStats(coachset) {
+    var data = {
+        "seats": 0,
+        "bays": {}
+    };
+    for (i in coachset) {
+        var coachdata = coaches[i];
+        for (ci in coachdata.composition) {
+            var bay = coachdata.composition[ci];
+            var baykey = '';
+            if (bay.priority) {
+                baykey = bay.baysize+'_priority';
+            } else {
+                baykey = bay.baysize+'_normal';
+            }
+
+            if (data.bays.hasOwnProperty(baykey)) {
+                data.bays[baykey]+=bay.quantity*coachset[i];
+            } else {
+                data.bays[baykey]=bay.quantity*coachset[i];
+            }
+            data.seats += bay.quantity*bay.baysize;
+        }
+    }
+
+    return data;
 }
 
 function processSelect(sdata, selected) {
@@ -195,7 +246,6 @@ function railTicketSPAjax(datareq, spinner, callback) {
     data.append('action', 'railticket_adminajax');
     data.append('function', datareq);
 
-
     request.send(data);
 }
 
@@ -224,17 +274,37 @@ function addCoachToSet(evt) {
     } else {
         coachset[coach] = 1;
     }
+
+    validateReserve(setid);
     renderEditorData();
     renderEditorCoachSets();
 }
 
 function deleteCoachSet(evt) {
+    // Sanity check....
+    if (data.daytype == 'simple') {
+        console.log("This is a simple day...");
+        return;
+    }
     console.log(evt.target.id);
     //var coachid = getCoachID(evt.target.id);
 }
 
 function addCoachSet(evt) {
+    // Sanity check....
+    if (data.daytype == 'simple') {
+        console.log("This is a simple day...");
+        return;
+    }
     console.log(evt.target.id);
+    Object.keys(data.coachsets).length;
+
+    data.coachsets['set_'+Object.keys(data.coachsets).length] = {
+        "coachset": {},
+        "reserve": {}
+    };
+    renderEditorData();
+    renderEditorCoachSets();
 }
 
 function coachSetCount(evt) {
@@ -246,6 +316,7 @@ function coachSetCount(evt) {
 
     if (coachset[parts[2]] < 1) {
         delete  coachset[coach];
+        validateReserve(setid);
     }
 
     renderEditorData();
@@ -258,6 +329,11 @@ function coachSetReserve(evt) {
     resset[parts[2]] = evt.target.value;
     renderEditorData();
     renderEditorCoachSets();
+}
+
+function validateReserve(setid) {
+    //var bays = getCoachSetStats(setid);
+    var coachset = getCoachSet(setid);
 }
 
 function getCoachSet(setid) {

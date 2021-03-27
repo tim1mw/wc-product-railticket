@@ -20,6 +20,7 @@
 <script id="coachsets_tmpl" type="x-tmpl-mustache">
 <h3>Coach Set(s)<h3>
 <p>Note, if you change the timetable or timetable revision with a "per train" day type, please save and reload the page before editing the coach sets.</p>
+<p>Simple day types only have one coach set for all services, per train days must have 2 coachsets or more, allocated to specific departures.</p>
 <table border='1' style='border-collapse:collapse;background:#ffffff;font-size:large;'>
 {{#sets}}
     <tr>
@@ -39,7 +40,7 @@
                     {{#reserve}}
                         <li><input type='number' min='0' size='5' value='{{value}}' class='reserveselect' id='reserveselect-{{num}}-{{key}}'/> {{{desc}}}</li>
                     {{/reserve}}
-                </ol><td>
+                </ol></td>
             </tr>
             </table>
         </td>
@@ -50,6 +51,18 @@
             {{/avcoaches}}</select>
             <input type='button' value='Add Coach' id='addcoach_{{num}}' class='addcoachbtn' /><br /><br />
             <input type='button' value='Delete Set' id='deleteset_{{num}}' class='deleteset' {{disabled}} />
+            <table style='width:100%'>
+            <tr>
+                <td style='border-top:1px solid black;vertical-align:top'>Totals</td>
+                <td style='border-top:1px solid black;'><ol style='margin-left:4px;list-style:none;margin-top:0px;'>
+                    {{#bays}}
+                        <li style='margin-left:0px;'>{{{.}}}</li>
+                    {{/bays}}
+                </ol></td>
+            </tr><tr>
+               <td>Seats</td><td>{{seats}}</td>
+            <tr>
+            </table>
         </td>
     </tr>
 {{/sets}}
