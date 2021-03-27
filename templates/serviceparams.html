@@ -22,9 +22,10 @@
 <p>Note, if you change the timetable or timetable revision with a "per train" day type, please save and reload the page before editing the coach sets.</p>
 <p>Simple day types only have one coach set for all services, per train days must have 2 coachsets or more, allocated to specific departures.</p>
 <table border='1' style='border-collapse:collapse;background:#ffffff;font-size:large;'>
+    <tr><td colspan='3' style='background:blue;height:2px;'></td></tr>
 {{#sets}}
     <tr>
-        <th>Set {{disp}}</th>
+        <th style='background:#eeeeee;'>Set {{disp}}</th>
         <td>
             <table style='width:100%'>
             {{#selectedcoaches}}<tr>
@@ -64,10 +65,12 @@
             <tr>
             </table>
         </td>
+    </tr><tr>
+        <td colspan='3' style='background:blue;height:2px;'></td>
     </tr>
 {{/sets}}
     <tr>
-        <td></td><td></td><td style='padding-top:8px;padding-bottom:9px;'><input type='button' value='Add New Set' id='addsetbtn' /></td>
+        <td colspan='3' style='padding-top:8px;padding-bottom:9px;text-align:right;'><input type='button' value='Add New Coach Set' id='addsetbtn' /></td>
     </tr>
 </table>
 <br />
