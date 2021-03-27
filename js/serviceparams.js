@@ -20,7 +20,7 @@ function setupEditor() {
         specials_keys[specials[i].id] = i;
     }
 
-console.log(data.specials);
+    console.log(data.specials);
 
     check_all_dep_times();
 

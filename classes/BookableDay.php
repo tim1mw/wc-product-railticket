@@ -252,8 +252,10 @@ class BookableDay {
         } else {
             $wpdb->update("{$wpdb->prefix}wc_railticket_bookable", $filtered, array('id' => $this->data->id));
 
-            $wpdb->update("{$wpdb->prefix}wc_railticket_dates", array('timetableid' => $filtered['timetableid']),
-                array('date' => $this->data->date));
+            if (array_key_exists('timetableid', $filtered)) {
+                $wpdb->update("{$wpdb->prefix}wc_railticket_dates", array('timetableid' => $filtered['timetableid']),
+                    array('date' => $this->data->date));
+            }
         }
     }
 
