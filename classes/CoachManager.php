@@ -30,8 +30,8 @@ class CoachManager {
             case 'pertrain':
                 $c = array();
                 foreach ($res as $key => $set) {
-                    $c[] = $key.":&nbsp;".self::format_bays($set);
-                    //$str .= $key.":&nbsp;".self::get_string($set)."<br />";
+                    $kparts = explode('_', $key);
+                    $c[] = __('Set', 'wc_railticket')."&nbsp;".(intval($kparts[1])+1).":&nbsp;".self::format_bays($set);
                 }
                return implode('<br />', $c);
         }
@@ -86,7 +86,8 @@ class CoachManager {
             case 'pertrain':
                 $str = '';
                 foreach ($comp->coachsets as $key => $set) {
-                    $str .= $key.":&nbsp;".self::format_coachset($set->coachset)."<br />";
+                    $kparts = explode('_', $key);
+                    $str .= __('Set', 'wc_railticket')."&nbsp;".(intval($kparts[1])+1).":&nbsp;".self::format_coachset($set->coachset)."<br />";
                 }
                return $str;
         }
