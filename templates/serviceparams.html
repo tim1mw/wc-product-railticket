@@ -38,7 +38,7 @@
                 <td style='border-top:1px solid black;'>Reserve</td>
                 <td colspan='2' style='border-top:1px solid black;'><ol style='list-style:none'>
                     {{#reserve}}
-                        <li><input type='number' min='0' size='5' value='{{value}}' class='reserveselect' id='reserveselect-{{num}}-{{key}}'/> {{{desc}}}</li>
+                        <li><input type='number' min='0' max='{{max}}' size='5' value='{{value}}' class='reserveselect' id='reserveselect-{{num}}-{{key}}'/> {{{desc}}}</li>
                     {{/reserve}}
                 </ol></td>
             </tr>

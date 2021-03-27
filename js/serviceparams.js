@@ -153,18 +153,19 @@ function processCoachSet(num, set, reserve) {
         c.selectedcoaches.push(tc);
     }
 
+    var stats = getCoachSetStats(set);
+    c.seats = stats.seats;
+    c.bays = formatBays(stats.bays);
+
     for (i in reserve) {
         var type = i.split('_');
         var r = {};
         r.desc = type[0]+"&nbsp;Seat&nbsp;"+baytypes[type[1]];
         r.value = reserve[i];
         r.key = i;
+        r.max = stats.bays[i];
         c.reserve.push(r);
     }
-
-    var stats = getCoachSetStats(set);
-    c.seats = stats.seats;
-    c.bays = formatBays(stats.bays);
 
     return c;
 }
@@ -332,8 +333,25 @@ function coachSetReserve(evt) {
 }
 
 function validateReserve(setid) {
-    //var bays = getCoachSetStats(setid);
     var coachset = getCoachSet(setid);
+    var bays = getCoachSetStats(coachset).bays;
+    var reserve = getReserve(setid);
+
+    // Check all the bays in the current reserve exist in the set and remove those that don't
+    for (i in reserve) {
+        if (bays.hasOwnProperty(i)) {
+            continue;
+        }
+
+        delete reserve[i];
+    }
+
+    // Add any bay types in that are missing
+    for (i in bays) {
+        if (!reserve.hasOwnProperty(i)) {
+            reserve[i] = 0;
+        }
+    }
 }
 
 function getCoachSet(setid) {
