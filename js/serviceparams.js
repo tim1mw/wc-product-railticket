@@ -203,7 +203,7 @@ function getCoachSetStats(coachset) {
             } else {
                 data.bays[baykey]=bay.quantity*coachset[i];
             }
-            data.seats += bay.quantity*bay.baysize;
+            data.seats += (bay.quantity*bay.baysize)*coachset[i];
         }
     }
 
