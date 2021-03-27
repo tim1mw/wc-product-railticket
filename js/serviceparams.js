@@ -446,8 +446,9 @@ function convertDayType() {
     if (data.hasOwnProperty('coachsets')) {
         if (data.daytype == 'simple') {
             // Convert Structure
-            data.coachset = data.coachsets['set_0'].coachset;
-            data.reserve = data.coachsets['set_0'].reserve;
+            var sets = Object.keys(data.coachsets);
+            data.coachset = data.coachsets[sets[0]].coachset;
+            data.reserve = data.coachsets[sets[0]].reserve;
             delete data.coachsets;
             delete data.down;
             delete data.up;
@@ -479,8 +480,14 @@ function convertDayType() {
 function get_dep_times(times) {
     var tt = {}
     var count = 0;
+    var sets = Object.keys(data.coachsets);
+
     for (i in times) {
-        tt[times[i].key] = '';
+        tt[times[i].key] = sets[count];
+        count++;
+        if (count >= sets.length) {
+            count = 0;
+        }
     }
 
     return tt;
@@ -492,9 +499,8 @@ function check_all_dep_times() {
     }
 
     // Do a sanity check on the dep times in the config against the ones for the time configured at load time.
-
-    check_dep_times(data.up, dep_times_up_keys);
-    check_dep_times(data.down, dep_times_down_keys);
+    data.up = check_dep_times(data.up, dep_times_up_keys);
+    data.down = check_dep_times(data.down, dep_times_down_keys);
 }
 
 function check_dep_times(ctimes, ttimes) {
@@ -506,10 +512,37 @@ function check_dep_times(ctimes, ttimes) {
         delete ctimes[i];
     }
 
+    var sets = Object.keys(data.coachsets);
+    var count = 0;
+
     for (i in ttimes) {
         if (ctimes.hasOwnProperty(i)) {
             continue;
         }
-        ctimes[i] = '';
+        ctimes[i] = sets[count];
+        count++;
+        if (count >= sets.length) {
+            count = 0;
+        }
     }
+
+    var keys = Object.keys(ctimes);
+    keys.sort(function(a, b) {
+        var partsa = a.split('.');
+        var partsb = b.split('.');
+        var ta = parseInt(partsa[0]+""+partsa[1]);
+        var tb = parseInt(partsb[0]+""+partsb[1]);
+
+        if (ta > tb) {
+            return true;
+        }
+        return false;
+    });
+
+    var ntimes = {};
+    for (i = 0; i < keys.length; i++) {
+        ntimes[keys[i]] = ctimes[keys[i]];
+    }
+
+    return ntimes;
 }
