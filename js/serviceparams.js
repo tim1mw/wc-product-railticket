@@ -65,11 +65,16 @@ function renderEditorCoachSets() {
 
     if (data.daytype == 'simple') {
         document.getElementById('addsetbtn').style.display = 'none';
-        document.getElementById('deleteset_0').style.display = 'none';
+        var dels = document.getElementsByClassName('deleteset');
+        for (i=0; i<dels.length; i++) {
+            dels[i].style.display = 'none';
+        }
     } else {
         if (Object.keys(data.coachsets).length < 3) {
-            document.getElementById('deleteset_0').style.display = 'none';
-            document.getElementById('deleteset_1').style.display = 'none';
+            var dels = document.getElementsByClassName('deleteset');
+            for (i=0; i<dels.length; i++) {
+                dels[i].style.display = 'none';
+            }
         }
     }
 
@@ -126,7 +131,6 @@ function addActionListeners(clss, event, method) {
 }
 
 function setCoachImage(evt) {
-    console.log(evt.target.value);
     var parts = evt.target.value.split('_');
     var img = document.getElementById('addcoachimg_'+parts[1]);
     img.src = coaches[parts[0]].image;
@@ -287,8 +291,12 @@ function deleteCoachSet(evt) {
         console.log("This is a simple day...");
         return;
     }
-    console.log(evt.target.id);
-    //var coachid = getCoachID(evt.target.id);
+    var parts = evt.target.id.split('_');
+
+    var delkey = 'set_'+parts[1];
+    delete data.coachsets[delkey];
+    renderEditorData();
+    renderEditorCoachSets();
 }
 
 function addCoachSet(evt) {
@@ -297,13 +305,30 @@ function addCoachSet(evt) {
         console.log("This is a simple day...");
         return;
     }
-    console.log(evt.target.id);
-    Object.keys(data.coachsets).length;
 
-    data.coachsets['set_'+Object.keys(data.coachsets).length] = {
-        "coachset": {},
-        "reserve": {}
-    };
+    for (i = 0; i<100; i++) {
+        var setkey = "set_"+i;
+        if (data.coachsets.hasOwnProperty(setkey)) {
+            continue;
+        }
+
+        data.coachsets['set_'+i] = {
+            "coachset": {},
+            "reserve": {}
+        };
+        break;
+    }
+
+    var keys = Object.keys(data.coachsets);
+    keys.sort();
+
+    var ncoachsets = {};
+    for (i = 0; i < keys.length; i++) {
+        ncoachsets[keys[i]] = data.coachsets[keys[i]];
+    }
+
+    data.coachsets = ncoachsets;
+
     renderEditorData();
     renderEditorCoachSets();
 }
