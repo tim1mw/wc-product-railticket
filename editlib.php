@@ -619,9 +619,6 @@ function railticket_showbookableday() {
     $alldata->dep_times_up = json_encode($bookable->timetable->get_up_deps($downterm));
     $alldata->dep_times_down = json_encode($bookable->timetable->get_down_deps($upterm));
 
-    // Pretify the data so it's easy to work with if the user clicks show code.
-    $alldata->composition = json_encode(json_decode($alldata->composition) , JSON_PRETTY_PRINT);
-
     echo file_get_contents(dirname(__FILE__).'/templates/serviceparams.html');
 
     $template = $rtmustache->loadTemplate('bookableday');

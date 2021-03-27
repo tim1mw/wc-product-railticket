@@ -219,6 +219,8 @@ class BookableDay {
                     $this->data->reserve = $coaches->reserve;
                     $this->data->bays = $coaches->bays;
                     break;
+
+                // These parameters are a cache based on the composition so should only be updated via the composition to ensure consistency
                 case 'daytype':
                 case 'allocateby':
                 case 'reserve':

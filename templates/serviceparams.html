@@ -4,13 +4,13 @@
 <table border='1' style='border-collapse:collapse;background:#ffffff;font-size:large;'>
     <tr>
         <td>Day Type</td>
-        <td><select name='sp_daytype' class='tailticket_sp_opt'>
-            {{#daytypes}}<option value='{{.}}' {{selected}}>{{name}}</option>{{/daytypes}}
+        <td><select name='sp_daytype' class='railticket_sp_opt' id='daytypesel'>
+            {{#daytypes}}<option value='{{value}}' {{selected}}>{{name}}</option>{{/daytypes}}
         </select></td>
     </tr><tr>
         <td>Allocate By</td>
-        <td><select name='sp_allocateby' class='tailticket_sp_opt'>
-            {{#allocateby}}<option value='{{.}}' {{selected}}>{{name}}</option>{{/allocateby}}
+        <td><select name='sp_allocateby' class='railticket_sp_opt' id='alocatebysel'>
+            {{#allocateby}}<option value='{{value}}' {{selected}}>{{name}}</option>{{/allocateby}}
         </select></td>
     </tr>
 </table>
@@ -19,35 +19,58 @@
 
 <script id="coachsets_tmpl" type="x-tmpl-mustache">
 <h3>Coach Set(s)<h3>
+<p>Note, if you change the timetable or timetable revision with a "per train" day type, please save and reload the page before editing the coach sets.</p>
 <table border='1' style='border-collapse:collapse;background:#ffffff;font-size:large;'>
 {{#sets}}
     <tr>
         <th>Set {{disp}}</th>
         <td>
-            <table style='width:100%'>{{#selectedcoaches}}<tr>
-                <td style='width:20px'>{{count}}x</td><td>{{name}}</td>
-                <td style='width:70px'><img src='{{img}}' width='70px' /></td>
-                <td style='text-align:right;width:140px;'>
-                    <input type='button' value='-' id='decrement_{{code}}' class='decrementcoach' /><input type='button' value='+' id='increment_{{code}}' class='incrementcoach' />
+            <table style='width:100%'>
+            {{#selectedcoaches}}<tr>
+                <td style='width:20px'>
+                    <input type='number' min='0' size='5' value='{{count}}' class='coachcount' id='coachcount_{{num}}_{{code}}'/>
                 </td>
-            </tr>{{/selectedcoaches}}</table>
+                <td>{{name}}</td>
+                <td style='width:70px'><img src='{{img}}' width='70px' /></td>
+            </tr>{{/selectedcoaches}}
+            <tr>
+                <td style='border-top:1px solid black;'>Reserve</td>
+                <td colspan='2' style='border-top:1px solid black;'><ol style='list-style:none'>
+                    {{#reserve}}
+                        <li><input type='number' min='0' size='5' value='{{value}}' class='reserveselect' id='reserveselect-{{num}}-{{key}}'/> {{{desc}}}</li>
+                    {{/reserve}}
+                </ol><td>
+            </tr>
+            </table>
         </td>
         <td>
-            <select name='coaches{{num}}' style='width:160px;vertical-align:top;' class='addcoachsel'>{{#avcoaches}}
+            <div style='text-align:center'><img src='{{defaultcoachimg}}' id='addcoachimg_{{num}}' width='240px' /></div><br />
+            <select name='coaches{{num}}' id='coaches_{{num}}' style='width:160px;vertical-align:top;' class='addcoachsel'>{{#avcoaches}}
                 <option value='{{key}}_{{num}}'>{{name}}</option>
             {{/avcoaches}}</select>
             <input type='button' value='Add Coach' id='addcoach_{{num}}' class='addcoachbtn' /><br /><br />
-            <div style='text-align:center'><img src='{{defaultcoachimg}}' id='addcoachimg_{{num}}' width='240px' /></div><br /><br />
             <input type='button' value='Delete Set' id='deleteset_{{num}}' class='deleteset' {{disabled}} />
         </td>
     </tr>
 {{/sets}}
+    <tr>
+        <td></td><td></td><td style='padding-top:8px;padding-bottom:9px;'><input type='button' value='Add New Set' id='addsetbtn' /></td>
+    </tr>
 </table>
 <br />
-<input type='button' value='Add New Set' id='addsetbtn' />
 </script>
 
 <script id="trainallocations_tmpl" type="x-tmpl-mustache">
 <h4>Train allocations</h4>
 
+</script>
+
+<script id="servicedata_tmpl" type="x-tmpl-mustache">
+<input type='button' id='showserviceparams' value='Show service parameter data' />
+<div id='railticket_serviceparameters' style='display:none'>
+<h2>Service Parameter Data (don't edit unless you really know what you are doing)</h2>
+<p><textarea name='composition' rows='10' cols='60' id='servicecomp'>{{composition}}</textarea></p>
+<div id='serviceparseerror' style='display:none;'></div>
+<input type='button' id='setserviceparams' value='Set Service Parameters' /> 
+</div>
 </script>
