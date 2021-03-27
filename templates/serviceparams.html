@@ -102,6 +102,25 @@
     </tr>
     {{/alldeps}}
 </table>
+
+<div id='specials' style='{{specialhidden}}'>
+<h3>Coach Set Allocations for Specials</h3>
+<table border='1' style='border-collapse:collapse;background:#ffffff;font-size:large;text-align:center'>
+    <tr><th>Special</th><th>Coach Set</th></tr>
+    {{#specials}}
+    <tr>
+        <td>{{name}}</td>
+        <td>
+            <select name='specials_dep_{{id}}' id='specials_dep_{{id}}' class='railticketdep' />
+            {{#sets}}
+                <option value='{{value}}'>{{name}}</option>
+            {{/sets}}
+            </select>
+        </td>
+    </tr>
+    {{/specials}}
+</table>
+</div>
 </script>
 
 <script id="servicedata_tmpl" type="x-tmpl-mustache">

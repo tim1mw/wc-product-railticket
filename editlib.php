@@ -618,6 +618,7 @@ function railticket_showbookableday() {
     $downterm = $bookable->timetable->get_terminal('down');
     $alldata->dep_times_up = json_encode($bookable->timetable->get_up_deps($downterm, true));
     $alldata->dep_times_down = json_encode($bookable->timetable->get_down_deps($upterm, true));
+    $alldata->specials = json_encode($bookable->get_specials(true));
 
     echo file_get_contents(dirname(__FILE__).'/templates/serviceparams.html');
 

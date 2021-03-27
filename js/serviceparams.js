@@ -4,6 +4,7 @@ var coachesAV = [];
 var defaultcoachimg = false;
 var dep_times_up_keys = {};
 var dep_times_down_keys = {};
+var specials_keys = {};
 
 function setupEditor() {
 
@@ -14,6 +15,12 @@ function setupEditor() {
     for (i in dep_times_down) {
         dep_times_down_keys[dep_times_down[i].key] = i;
     }
+
+    for (i in specials) {
+        specials_keys[specials[i].id] = i;
+    }
+
+console.log(data.specials);
 
     check_all_dep_times();
 
@@ -102,8 +109,14 @@ function renderServiceAllocation() {
 
     var adata = {
         "alldeps": [],
-        "sets": []
+        "sets": [],
+        "specials": specials
     };
+
+    if (specials.length == 0) {
+        adata.hidespecials = 'display:none';
+    }
+
     var total = dep_times_up.length;
     // Sanity check....
     if (dep_times_down.length > dep_times_up.length) {
@@ -553,11 +566,25 @@ function check_all_dep_times() {
     }
 
     // Do a sanity check on the dep times in the config against the ones for the time configured at load time.
-    data.up = check_dep_times(data.up, dep_times_up_keys);
-    data.down = check_dep_times(data.down, dep_times_down_keys);
+    data.up = check_dep_times(data.up, dep_times_up_keys, false);
+    data.down = check_dep_times(data.down, dep_times_down_keys, false);
+
+    if (specials.length > 0) {
+       if (!data.hasOwnProperty('specials')) {
+           data.specials = {};
+           var sets = Object.keys(data.coachsets);
+           for (i in specials) {
+               data.specials[specials[i].id] = sets[0];
+           }
+       } else {
+           data.specials = check_dep_times(data.specials, specials_keys, true);
+       }
+    } else {
+       delete data.specials;
+    }
 }
 
-function check_dep_times(ctimes, ttimes) {
+function check_dep_times(ctimes, ttimes, nosort) {
     // Remove any times that don't exist.
     for (i in ctimes) {
         if (ttimes.hasOwnProperty(i)) {
@@ -578,6 +605,10 @@ function check_dep_times(ctimes, ttimes) {
         if (count >= sets.length) {
             count = 0;
         }
+    }
+
+    if (nosort) {
+        return ctimes;
     }
 
     var keys = Object.keys(ctimes);
