@@ -655,10 +655,19 @@ function railticket_editbookableday() {
     $ndata->sameservicereturn = railticket_get_cbval('sameservicereturn');
 
     // Make sure the json is crunched here for efficieny.
-    $ndata->composition = json_encode(json_decode(stripslashes($_REQUEST['composition'])));
+    $composition = json_decode(stripslashes($_REQUEST['composition']));
+    $ndata->composition = json_encode($composition);
     $bookable->update_bookable($ndata);
 
     $p = explode('-', $bkdate);
+
+    if (railticket_get_cbval('compdefault')) {
+        $tts = json_decode(get_option('wc_product_railticket_defaultcoaches'));
+        $composition->copy = false;
+        $timetable = $bookable->timetable->get_key_name();
+        $tts->$timetable = $composition;
+        update_option('wc_product_railticket_defaultcoaches', json_encode($tts, JSON_PRETTY_PRINT));
+    }
     wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-days&month='.$p[1].'&year='.$p[0].'&action=filterbookable');
 }
 

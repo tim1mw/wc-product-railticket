@@ -145,6 +145,7 @@ class CoachManager {
             } else {
                 $parsed = $parsed->$timetable;
             }
+            unset($parsed->copy);
         }
     
         $r = new \stdclass();
