@@ -1,13 +1,15 @@
 document.addEventListener("DOMContentLoaded", setupEditor);
 
 var notify = true;
+var notifyover = true;
 
 function setupEditor() {
     renderEditor(defaultData);
+    renderOverride(defaultData)
 }
 
 function dataChanged(e) {
-    railTicketEditAjax('moveorderdata', true, dataUpdated);
+    railTicketEditAjax(getEditFormData('moveorderdata'), true, dataUpdated);
 }
 
 function dataUpdated(response) {
@@ -25,7 +27,7 @@ function dataUpdated(response) {
 }
 
 function commitEdit() {
-    railTicketEditAjax('editorder', true, editCommitted);
+    railTicketEditAjax(getEditFormData('editorder'), true, editCommitted);
 }
 
 function editCommitted(response) {
@@ -62,9 +64,25 @@ function renderEditor(data) {
     }
     var cb = document.getElementById('railticket_commit');
     cb.disabled = disable;
+
+    var nodes = document.getElementById('railticket_overridebays').getElementsByTagName('*');
+    for(var i = 0; i < nodes.length; i++){
+        nodes[i].disabled = true;
+    }
+}
+    
+
+function renderOverride(data) {
+    var ovtempl = document.getElementById('overridebays_tmpl').innerHTML;
+    var ov=document.getElementById('railticket_overridebays'); 
+    ov.disabled = false;
+    ov.innerHTML = Mustache.render(ovtempl, data);
+
+    var over = document.getElementById('railticket_commitover');
+    over.addEventListener('click', commitOverride);
 }
 
-function railTicketEditAjax(datareq, spinner, callback) {
+function railTicketEditAjax(data, spinner, callback) {
     if (spinner) {
         var spinnerdiv = document.getElementById('pleasewait');
         spinnerdiv.style.display = 'block';
@@ -73,6 +91,7 @@ function railTicketEditAjax(datareq, spinner, callback) {
     var request = new XMLHttpRequest();
     request.open('POST', ajaxurl, true);
     request.onload = function () {
+console.log(request);
         if (request.status >= 200 && request.status < 400) {
             callback(JSON.parse(request.responseText).data);
             var spinnerdiv = document.getElementById('pleasewait');
@@ -80,8 +99,11 @@ function railTicketEditAjax(datareq, spinner, callback) {
         }
     };
 
-    notify = getCBFormValue('notify');
+    request.send(data);
+}
 
+function getEditFormData(datareq) {
+    notify = getCBFormValue('notify');
     var data = new FormData();
     data.append('action', 'railticket_adminajax');
     data.append('orderid', orderid);
@@ -97,8 +119,7 @@ function railTicketEditAjax(datareq, spinner, callback) {
     }
 
     data.append('legs', JSON.stringify(legs));
-
-    request.send(data);
+    return data;
 }
 
 function getCBFormValue(param) {
@@ -117,3 +138,51 @@ function getFormValue(param) {
     return false;
 }
 
+function commitOverride() {
+    railTicketEditAjax( getOverFormData(), true, overrideCommitted);
+}
+
+function overrideCommitted(response) {
+    var r = document.getElementById('railticket_commitovermessage');
+    r.innerHTML = response.message;
+    setTimeout(function () {
+        var back = document.getElementById('railticket_backtoview');
+        back.submit();
+    }, 1500);
+}
+
+function getOverFormData() {
+    notifyover = getCBFormValue('notify');
+    var data = new FormData();
+    data.append('action', 'railticket_adminajax');
+    data.append('orderid', orderid);
+    data.append('function', 'overridebays');
+    data.append('notify', notifyover);
+    var legbays = [];
+    for (i=0; i < defaultData.bookings.length; i++) {
+        legbays[i] = {};
+        for (bi=0; bi < defaultData.bookings[i].bays.length; bi++) {
+            key = defaultData.bookings[i].bays[bi].key;
+            legbays[i][key] = getOverFormValue('leg|'+(i+1)+'|'+key);
+        }
+    }
+
+    data.append('legbays', JSON.stringify(legbays));
+    return data;
+}
+
+function getCBOverFormValue(param) {
+    if (param in document.bayeditor) {
+        return document.bayeditor[param].checked;
+    }
+
+    return false;
+}
+
+function getOverFormValue(param) {
+    if (param in document.bayeditor) {
+        return document.bayeditor[param].value;
+    }
+
+    return 0;
+}

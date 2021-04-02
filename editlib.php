@@ -121,6 +121,9 @@ function railticket_ajax_adminrequest() {
         case 'editorder':
             $result = railticket_editorder();
             break;
+        case 'overridebays':
+            $result = railticket_overridebays();
+            break;
     }
     wp_send_json_success($result);
 }
@@ -1262,17 +1265,19 @@ function railticket_show_edit_order() {
 
         $data = new \stdclass();
         $trip = new stdclass();
-        $data->num = $count;
+        $data->legnum = $count;
         $trip->num = $count;
 
         $trip->from = $from->get_name();
         $trip->to = $to->get_name();
         $trip->dep = $booking->get_dep_time(true);
+        $trip->seats = $booking->get_bays(true);
         $tripdata[] = $trip;
 
         $data->fromstns = railticket_get_stnselect($from, $allstns);
         $data->tostns = railticket_get_stnselect($to, $allstns);
         $data->deps = railticket_get_depselect($booking->bookableday, $from, $to, $booking->get_dep_time(), $bookingorder->get_bookings());
+        $data->bays = $booking->get_bays(true, true);
         $bkdata->bookings[] = $data;
         $count++;
     }
@@ -1315,7 +1320,7 @@ function railticket_get_moveorderdata() {
     $allstns = \wc_railticket\Station::get_stations($bk->timetable->get_revision());
     foreach ($legs as $leg) {
         $data = new \stdclass();
-        $data->num = $count;
+        $data->legnum = $count;
         $from = \wc_railticket\Station::get_station($leg->from, $bk->timetable->get_revision());
         $to = \wc_railticket\Station::get_station($leg->to, $bk->timetable->get_revision());
 
@@ -1327,6 +1332,7 @@ function railticket_get_moveorderdata() {
         } else {
             $data->deps = railticket_get_depselect($bk, $from, $to, $leg->dep, $bookingorder->get_bookings());
         }
+
         $bkdata->bookings[] = $data;
         $count++;
     }
@@ -1408,6 +1414,31 @@ function railticket_editorder() {
     }
 
     $edit->message = 'Order update saved';
+    return $edit;
+}
+
+function railticket_overridebays() {
+    $edit = new \stdclass();
+    if (!current_user_can('admin_tickets')) {
+        $edit->message = 'You do not have permission to do this.';
+        return $edit;
+    }
+
+    $orderid = railticket_getpostfield('orderid');
+    $notify = railticket_gettfpostfield('notify');
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
+    $legbays = json_decode(stripslashes($_REQUEST['legbays']));
+    $bookings = $bookingorder->get_bookings();
+
+    for ($i=0; $i < count($legbays); $i++) {
+        $bookings[$i]->update_bays($legbays[$i]);
+    }
+
+    if ($notify) {
+        $bookingorder->notify();
+    }
+
+    $edit->message = 'Order bay update saved';
     return $edit;
 }
 

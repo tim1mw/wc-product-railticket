@@ -16,6 +16,7 @@
             <th>From</th>
             <th>To</th>
             <th>Departure</th>
+            <th>Seats/Bays</th>
         </tr>
         {{#tripdata}}
         <tr>
@@ -23,6 +24,7 @@
             <td style='text-align:center'>{{from}}</td>
             <td style='text-align:center'>{{to}}</td>
             <td style='text-align:center'>{{dep}}</td>
+            <td style='text-align:center'>{{seats}}</td>
         </tr>
         {{/tripdata}}
     </table>
@@ -38,6 +40,12 @@
         var ajaxurl = '{{ajaxurl}}';
         var defaultData = {{{defaultdata}}};
     </script>
+
+    <h3>Override Bay Allocations</h3>
+    <p>Note: bays are automatically allocated when trip details are updated, so this must always be done after trip details are changed.</p>
+
+    <div id='railticket_overridebays'></div>
+
     <form action="" method="post" id='railticket_backtoview'>
         <input type="hidden" name="action" value="showorder">
         <input type="hidden" name="orderid" value="{{orderid}}">

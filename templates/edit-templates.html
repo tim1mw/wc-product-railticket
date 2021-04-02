@@ -14,18 +14,18 @@
     </tr>
     {{#bookings}}
     <tr>
-        <th>Trip {{num}}</th>
-        <td><select name='fromstation{{num}}' class='railticket_refeshdata'>
+        <th>Trip {{legnum}}</th>
+        <td><select name='fromstation{{legnum}}' class='railticket_refeshdata'>
         {{#fromstns}}
             <option value='{{stnid}}' {{selected}}>{{name}}</option>
         {{/fromstns}}
         </select></td>
-        <td><select name='tostation{{num}}' class='railticket_refeshdata'>
+        <td><select name='tostation{{legnum}}' class='railticket_refeshdata'>
         {{#tostns}}
             <option value='{{stnid}}' {{selected}}>{{name}}</option>
         {{/tostns}}
         </select></td>
-        <td><select name='dep{{num}}'>
+        <td><select name='dep{{legnum}}'>
         {{#deps}}
             <option value='{{key}}' {{selected}}>{{formatted}} ({{seats}} Seats)</option>
         {{/deps}}
@@ -37,6 +37,29 @@
         <td colspan='2' style='text-align:right;padding-top:10px;'>
             <input type='button' name='commit' id='railticket_commit' value='Commit Changes' /><br />
             <input type='checkbox' name='notify' {{notify}} />Send email confirmation to customer
+        </td>
+    </tr>
+</table>
+</form>
+</script>
+
+
+<script id="overridebays_tmpl" type="x-tmpl-mustache">
+<form action='{{actionurl}}' method='post' name='bayeditor'>
+<table border='1' class='railticket_admintable' style='width:100%;'>
+    {{#bookings}}
+    <tr>
+        <th>Trip {{legnum}}</th>
+        {{#bays}}
+        <td><input name='leg|{{legnum}}|{{key}}' type='number' value='{{num}}' max='{{total}}' min='0' size='3'/>&nbsp;{{formatted}}</td>
+        {{/bays}}
+    </tr>
+    {{/bookings}}
+    <tr>
+        <td colspan='2'><div id='railticket_commitovermessage' style='font-weight:bold;font-size:large;color:blue;text-align:center;'></div></td>
+        <td colspan='2' style='text-align:right;padding-top:10px;'>
+            <input type='button' name='commit' id='railticket_commitover' value='Commit Changes' /><br />
+            <input type='checkbox' name='notifyover' {{notify}} />Send email confirmation to customer
         </td>
     </tr>
 </table>

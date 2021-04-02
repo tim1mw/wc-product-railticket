@@ -76,7 +76,17 @@ class CoachManager {
             $name = __('Seat Bay', 'wc_railticket');
         }
 
-        return $bay->num."x ".$bay->baysize." ".$name;
+        return $bay->num."x ".self::format_bay_name($bay);
+    }
+
+    public static function format_bay_name($bay) {
+        if ($bay->priority) {
+            $name = __('Seat Disabled Bay', 'wc_railticket');
+        } else {
+            $name = __('Seat Bay', 'wc_railticket');
+        }
+
+        return $bay->baysize." ".$name;
     }
 
     public static function format_composition($comp, $daytype) {

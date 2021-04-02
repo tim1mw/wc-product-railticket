@@ -113,6 +113,11 @@ class Booking {
         }
     }
 
+    public function update_bays($bays) {
+        $this->delete_bays();
+        $this->insertBays($this->data->id, $bays);
+    }
+
     public function get_date($format = false, $nottoday = false) {
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
@@ -166,7 +171,35 @@ class Booking {
         return $this->data->direction;
     }
 
-    public function get_bays($format = false) {
+    public function get_bays($format = false, $all = false) {
+        if ($all) {
+            $ts = new TrainService($this->bookableday, $this->get_from_station(), $this->get_dep_time(), $this->get_to_station());
+            $cap = $ts->get_inventory(true);
+            $nbays = array();
+            foreach ($cap as $k => $c) {
+                $parts = CoachManager::get_bay_details($k);
+                $nbay = new \stdclass();
+                $nbay->key = $k;
+                $nbay->baysize = $parts[0];
+                $nbay->total = $c;
+                if ($parts[1] == 'priority') {
+                    $nbay->priority = 1;
+                } else {
+                    $nbay->priority = 0;
+                }
+                $nbay->num = 0;
+                foreach ($this->bays as $bay) {
+                    if ($bay->baysize == $parts[0] && $bay->priority == $nbay->priority) {
+                        $nbay->num = $bay->num;
+                        break;
+                    }
+                }
+                $nbays[] = $nbay;
+                $nbay->formatted = CoachManager::format_bay_name($nbay);
+            }
+            return $nbays;
+        }
+
         if (!$format) {
             return $this->bays;
         }
@@ -229,8 +262,13 @@ class Booking {
 
     public function delete() {
         global $wpdb;
-        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$this->data->id);
+        $this->delete_bays();
         $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_bookings WHERE id = ".$this->data->id);
+    }
+
+    public function delete_bays() {
+        global $wpdb;
+        $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$this->data->id);
     }
 
     public function set_date(BookableDay $bk) {
