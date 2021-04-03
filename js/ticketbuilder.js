@@ -373,7 +373,6 @@ function getDepTimes() {
         var data = {};
         data.legs = [];
         for (i in deplegs) {
-console.log(deplegs[i]);
             for (t in deplegs[i].times) {
                 if (deplegs[i].times[t].hasOwnProperty('seatsleftstr') && deplegs[i].times[t].seatsleftstr.length > 0) {
                     deplegs[i].times[t].sep = ', ';
