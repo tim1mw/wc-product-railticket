@@ -92,9 +92,9 @@ class Timetable {
 
         foreach ($revisions as $rev) {
             $jdate = \DateTime::createFromFormat('Y-m-d', $rev->datefrom, $this->railticket_timezone);
-            $rev->datefromformat = strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+            $rev->datefromformat = railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
             $jdate = \DateTime::createFromFormat('Y-m-d', $rev->dateto, $this->railticket_timezone);
-            $rev->datetoformat = strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+            $rev->datetoformat = railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
         }
 
         return $revisions;
@@ -135,7 +135,7 @@ class Timetable {
         }
 
         $jdate = \DateTime::createFromFormat('Y-m-d', $this->date, $this->railticket_timezone);
-        return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+        return railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
     public function get_times(Station $station, $direction, $type, $format, Station $stopsat = null) {
@@ -169,7 +169,7 @@ class Timetable {
             $fmt = get_option('wc_railticket_time_format');
             foreach ($times as $time) {
                 $dtime = \DateTime::createFromFormat("H:i", $time->hour.":".$time->min, $this->railticket_timezone);
-                $time->formatted = trim(strftime($fmt, $dtime->getTimeStamp()));
+                $time->formatted = trim(railticket_timefunc($fmt, $dtime->getTimeStamp()));
             }
         }
 

@@ -58,7 +58,7 @@ class TicketCalendar
         $calendar .= '<thead>';
         $calendar .= '<tr class="calendar-title">';
         $calendar .= '<th colspan="7">';
-        $calendar .= strftime('%B %Y', $date->getTimestamp());
+        $calendar .= railticket_timefunc('%B %Y', $date->getTimestamp());
         $calendar .= '</th>';
         $calendar .= '</tr>';
         $calendar .= '<tr class="calendar-header">';
@@ -165,7 +165,7 @@ class TicketCalendar
         $timestamp = strtotime('next Sunday');
         $days = array();
         for ($i = 0; $i < 7; $i++) {
-            $days[] = substr(strftime('%A', $timestamp), 0, 1);
+            $days[] = substr(railticket_timefunc('%A', $timestamp), 0, 1);
             $timestamp = strtotime('+1 day', $timestamp);
         }
         return $days;

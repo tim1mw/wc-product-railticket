@@ -277,16 +277,6 @@ print_r($ldeptime);
         return $bookable;
     }
 
-    private function timefunc($fmt, $time) {
-        $tz = date_default_timezone_get();
-        date_default_timezone_set($this->railticket_timezone->getName());
-
-        $result = strftime($fmt, strtotime($time));
-
-        date_default_timezone_set($tz);
-        return $result;
-    }
-
     public function get_journey_options() {
 
         $allpopular = array();

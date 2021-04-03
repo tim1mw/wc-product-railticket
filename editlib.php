@@ -173,11 +173,11 @@ function railticket_options() {
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_railticket_date_format">Display Date format</label></th>
-            <td><input type="text" id="wc_railticket_date_format" name="wc_railticket_date_format" value="<?php echo get_option('wc_railticket_date_format'); ?>" /> Use <a href='https://www.php.net/manual/en/function.strftime' target='_blank'>PHP strftime formatting parameters</a> here</td>
+            <td><input type="text" id="wc_railticket_date_format" name="wc_railticket_date_format" value="<?php echo get_option('wc_railticket_date_format'); ?>" /> Use <a href='https://www.php.net/manual/en/function.railticket_timefunc' target='_blank'>PHP railticket_timefunc formatting parameters</a> here</td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for=wc_railticket_time_format">Display Time format</label></th>
-            <td><input type="text" id="wc_railticket_time_format" name="wc_railticket_time_format" value="<?php echo get_option('wc_railticket_time_format'); ?>" /> Use <a href='https://www.php.net/manual/en/function.strftime' target='_blank'>PHP strftime formatting parameters</a> here</td>
+            <td><input type="text" id="wc_railticket_time_format" name="wc_railticket_time_format" value="<?php echo get_option('wc_railticket_time_format'); ?>" /> Use <a href='https://www.php.net/manual/en/function.railticket_timefunc' target='_blank'>PHP railticket_timefunc formatting parameters</a> here</td>
         </tr>
         <tr><td colspan="2"><h3>Defaults for new bookable days<h3></td></tr>
         <tr valign="top">
@@ -952,7 +952,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             $dt->key = $deptime;
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
             $depname = \DateTime::createFromFormat("H.i", $deptime, $railticket_timezone);
-            $dt->formatted = strftime(get_option('wc_railticket_time_format'), $depname->getTimeStamp());
+            $dt->formatted = railticket_timefunc(get_option('wc_railticket_time_format'), $depname->getTimeStamp());
             $deptime = $dt;
         } 
     } else {

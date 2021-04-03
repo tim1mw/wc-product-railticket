@@ -18,6 +18,18 @@ add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
 add_filter( 'cron_schedules', 'railticket_add_every_two_minutes' );
 add_action( 'railticket_add_every_two_minutes', 'railticket_every_two_minutes_event_func' );
 
+/*
+* Work around method for WordPress's very inconsistent handling of timezones.
+**/
+
+function railticket_timefunc($fmt, $time) {
+    $tz = date_default_timezone_get();
+    date_default_timezone_set(get_option('timezone_string'));
+    $result = strftime($fmt, $time);
+    date_default_timezone_set($tz);
+    return $result;
+}
+
 function railticket_selector() {
     $ticketbuilder = railticket_getticketbuilder();
     return $ticketbuilder->render();
@@ -152,7 +164,7 @@ function railticket_get_special_button($attr) {
     $special = $specials[0];
     $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
     $evtdate = Datetime::createFromFormat('Y-m-d', $attr['date'], $railticket_timezone);
-    $date = strftime(get_option('wc_railticket_date_format'), $evtdate->getTimestamp());
+    $date = railticket_timefunc(get_option('wc_railticket_date_format'), $evtdate->getTimestamp());
 
     if ($special->onsale == 0) {
         echo "Sorry, the \"".$special->name."\" on ".$evtdate." is not currently on sale";

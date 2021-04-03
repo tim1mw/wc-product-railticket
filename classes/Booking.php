@@ -125,11 +125,11 @@ class Booking {
             $now = new \DateTime();
             $now->setTimeZone($railticket_timezone);
             if ($nottoday && $now != $jdate) {
-                return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp()).
+                return railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp()).
                     " <span style='color:red;font-weight:bold;font-size:small;'>(".__("Booking not for Today", "wc_railticket").")</span>";
             }
 
-            return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+            return railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
         }
 
         return $this->data->date;
@@ -150,7 +150,7 @@ class Booking {
             $dtime = \DateTime::createFromFormat("H.i", $this->data->time, $railticket_timezone);
             if ($dtime) {
                 // Despite the config option not having a space, this is contriving to put in a leading space I don't want. Trim it!
-                return trim(strftime(get_option('wc_railticket_time_format'), $dtime->getTimeStamp()));
+                return trim(railticket_timefunc(get_option('wc_railticket_time_format'), $dtime->getTimeStamp()));
             }
         }
         return $this->data->time;

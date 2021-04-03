@@ -51,7 +51,7 @@ class TimetableRevisionManager {
 
         $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->$key, $railticket_timezone);
-        return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+        return railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
     public function get_date_from($format = false) {

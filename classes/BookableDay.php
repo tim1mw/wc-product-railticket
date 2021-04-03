@@ -284,7 +284,7 @@ class BookableDay {
         }
 
         $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->date, $this->railticket_timezone);
-        return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+        return railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
     public function get_override() {
