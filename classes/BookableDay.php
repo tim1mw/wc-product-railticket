@@ -8,6 +8,7 @@ class BookableDay {
     public $timetable, $fares;
 
     private function __construct($data, $timetable = false, $fares = false) {
+        $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         if (!$timetable) {
             $this->timetable = Timetable::get_timetable($data->timetableid, $data->ttrevision, $data->date);
         } else {
@@ -74,6 +75,8 @@ class BookableDay {
         global $wpdb;
 
         $today = new \DateTime();
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $today->setTimeZone($railticket_timezone);
         $nowm = (intval($today->format('H')) * 60) + intval($today->format('i'));
         $today->setTime(0,0,0);
         if ($date < $today) {
@@ -280,8 +283,7 @@ class BookableDay {
             return $this->data->date;
         }
 
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-        $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->date, $railticket_timezone);
+        $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->date, $this->railticket_timezone);
         return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
@@ -438,9 +440,8 @@ class BookableDay {
         if ($disableafter) {
             $disableafter = ($disableafter->hour*60) + $disableafter->min;
         }
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $nowdt = new \DateTime();
-        $nowdt->setTimezone($railticket_timezone);
+        $nowdt->setTimezone($this->railticket_timezone);
 
         if ($nowdt->format('Y-m-d') == $this->data->date) {
             $today = true;

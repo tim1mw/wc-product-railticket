@@ -161,9 +161,13 @@ class TicketBuilder {
             "<input type='hidden' name='show' value='1' />".
             "</form><br />";
 
-        $str .= $this->get_preset_form($fstation, $lstation, $fdeptime);
-        $str .= $this->get_preset_form($lstation, $fstation, $ldeptime);
-
+        if ($fdeptime !== false) {
+            $str .= $this->get_preset_form($fstation, $lstation, $fdeptime);
+        }
+        if ($ldeptime !== false) {
+print_r($ldeptime);
+            $str .= $this->get_preset_form($lstation, $fstation, $ldeptime);
+        }
         $str .= "</div></div>";
 
         return $str;
@@ -411,9 +415,8 @@ class TicketBuilder {
             return $data;
         }
 
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $nowdt = new \DateTime();
-        $nowdt->setTimezone($railticket_timezone);
+        $nowdt->setTimezone($this->railticket_timezone);
         if ($nowdt->format('Y-m-d') == $this->dateoftravel) {
             $today = true;
         } else {
@@ -726,7 +729,7 @@ class TicketBuilder {
 
 
         foreach ($nexttrains as $t) {
-            $date = \DateTime::createFromFormat("Y-m-d", $t->date);
+            $date = \DateTime::createFromFormat("Y-m-d", $t->date, $this->railticket_timezone);
 
             $str .= "<input type='button' value='".$date->format('j-M-Y')."' title='Click to travel on ".$date->format('j-M-Y')."' ".
                 "class='railticket_datebuttons' data='".$date->format("Y-m-d")."' />";

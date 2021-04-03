@@ -13,6 +13,8 @@ class Timetable {
         $this->data = $data;
         $this->date = $date;
         $this->data->colsmeta = json_decode($data->colsmeta);
+        $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+
 
         if ($date) {
             $specials = \wc_railticket\Special::get_specials($date);
@@ -89,9 +91,9 @@ class Timetable {
         $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
 
         foreach ($revisions as $rev) {
-            $jdate = \DateTime::createFromFormat('Y-m-d', $rev->datefrom, $railticket_timezone);
+            $jdate = \DateTime::createFromFormat('Y-m-d', $rev->datefrom, $this->railticket_timezone);
             $rev->datefromformat = strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
-            $jdate = \DateTime::createFromFormat('Y-m-d', $rev->dateto, $railticket_timezone);
+            $jdate = \DateTime::createFromFormat('Y-m-d', $rev->dateto, $this->railticket_timezone);
             $rev->datetoformat = strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
         }
 
@@ -132,8 +134,7 @@ class Timetable {
             return $this->date;
         }
 
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-        $jdate = \DateTime::createFromFormat('Y-m-d', $this->date, $railticket_timezone);
+        $jdate = \DateTime::createFromFormat('Y-m-d', $this->date, $this->railticket_timezone);
         return strftime(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
@@ -161,14 +162,13 @@ class Timetable {
             $dtimes[$loop]->key = $dtimes[$loop]->hour.".".$dtimes[$loop]->min;
         }
 
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-        $date = \DateTime::createFromFormat("Y-m-d", $this->date, $railticket_timezone);
+        $date = \DateTime::createFromFormat("Y-m-d", $this->date, $this->railticket_timezone);
         $times = $this->apply_rules($dtimes, $date);
 
         if ($format) {
             $fmt = get_option('wc_railticket_time_format');
             foreach ($times as $time) {
-                $dtime = \DateTime::createFromFormat("H:i", $time->hour.":".$time->min, $railticket_timezone);
+                $dtime = \DateTime::createFromFormat("H:i", $time->hour.":".$time->min, $this->railticket_timezone);
                 $time->formatted = trim(strftime($fmt, $dtime->getTimeStamp()));
             }
         }
@@ -239,7 +239,7 @@ class Timetable {
                 }
                 break;
             case 8:
-                $tdate = \DateTime::createFromFormat("Ymd", $str);
+                $tdate = \DateTime::createFromFormat("Ymd", $str, $this->railticket_timezone);
                 if ($tdate == $date) {
                     return true;
                 }

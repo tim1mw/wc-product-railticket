@@ -150,8 +150,8 @@ function railticket_get_special_button($attr) {
         return;
     }
     $special = $specials[0];
-
-    $evtdate = Datetime::createFromFormat('Y-m-d', $attr['date']);
+    $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+    $evtdate = Datetime::createFromFormat('Y-m-d', $attr['date'], $railticket_timezone);
     $date = strftime(get_option('wc_railticket_date_format'), $evtdate->getTimestamp());
 
     if ($special->onsale == 0) {

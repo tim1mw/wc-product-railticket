@@ -424,11 +424,12 @@ function railticket_importtimetable() {
 
     //Update the timetables for days, only in the range specified
     if (railticket_get_cbval('upttdates')) {  
-        $datefrom = DateTime::createFromFormat('d-m-Y', $revision['datefrom']);
-        $dateto = DateTime::createFromFormat('d-m-Y', $revision['dateto']);
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $datefrom = DateTime::createFromFormat('d-m-Y', $revision['datefrom'], $railticket_timezone);
+        $dateto = DateTime::createFromFormat('d-m-Y', $revision['dateto'], $railticket_timezone);
 
         foreach($data->dates as $dateentry) {
-            $thisdate = DateTime::createFromFormat('d-m-Y', $dateentry->date);
+            $thisdate = DateTime::createFromFormat('d-m-Y', $dateentry->date, $railticket_timezone);
             if ($thisdate >= $datefrom && $thisdate <= $dateto) {
                 $existing = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates WHERE date = '".$dateentry->date."'");
                 if ($existing && count($existing) > 0) {
@@ -681,7 +682,8 @@ function railticket_addbookableday() {
     //$ttr = sanitize_text_field($_REQUEST['ttrevision']);
 
     \wc_railticket\BookableDay::create_timetable_date($date, $ttid);
-    $d = DateTime::createFromFormat('Y-m-d', $date);
+    $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+    $d = DateTime::createFromFormat('Y-m-d', $date, $railticket_timezone);
     railticket_show_cal_selector();
     railticket_showcalendaredit(intval($d->format("Y")), intval($d->format("n")));
 }
@@ -696,7 +698,8 @@ function railticket_deletebookableday() {
        railticket_showbookableday();
        return;
     }
-    $d = DateTime::createFromFormat('Y-m-d', $date);
+    $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+    $d = DateTime::createFromFormat('Y-m-d', $date, $railticket_timezone);
     railticket_show_cal_selector();
     railticket_showcalendaredit(intval($d->format("Y")), intval($d->format("n")));
 }
@@ -726,8 +729,9 @@ function railticket_summary_selector() {
         } else {
             $chosenday = intval(date_i18n("j"));
         }
-
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $date = new DateTime();
+        $date->setTimezone($railticket_timezone);
         $date->setDate($chosenyear, $chosenmonth, $chosenday);
         $dateofjourney = $date->format('Y-m-d');
     }

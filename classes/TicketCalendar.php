@@ -39,17 +39,20 @@ class TicketCalendar
         $calendar = '';
 
         $yesterday = new \DateTime();
+        $yesterday->setTimezone($this->railticket_timezone);
         $yesterday->modify('-1 day');
 
         if ($date) {
-            $date = \DateTime::createFromFormat('Y-m-d', $date);
+            $date = \DateTime::createFromFormat('Y-m-d', $date, $this->railticket_timezone);
             $date->modify('first day of this month');
         } else {
             $date = new \DateTime();
+            $date->setTimezone($this->railticket_timezone);
             $date->modify('first day of this month');
         }
 
         $today = new \DateTime();
+        $today->setTimezone($this->railticket_timezone);
         $total_days_in_month = (int) $date->format('t');
         $calendar .= '<table class="calendar ticket-calendar">';
         $calendar .= '<thead>';
@@ -86,7 +89,7 @@ class TicketCalendar
             $datesoldout = \wc_railticket\BookableDay::is_date_sold_out($running_day);
 
             if ($timetable) {
-                $timetabledate = \DateTime::createFromFormat('Y-m-d', $timetable->get_date());
+                $timetabledate = \DateTime::createFromFormat('Y-m-d', $timetable->get_date(), $this->railticket_timezone);
                 if ($timetabledate > $yesterday) {
                     if ($datebookable) {
                         if ($datesoldout) {
