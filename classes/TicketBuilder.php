@@ -446,7 +446,7 @@ print_r($ldeptime);
             $data->legs[1]->header = __('2nd Train', 'wc_railticket');
             $data->legs[2]->header = __('3rd Train', 'wc_railticket');
         }
-file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', print_r($data->legs, true));
+
         return $data;
     }
 
