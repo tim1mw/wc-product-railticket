@@ -362,8 +362,6 @@ function getDepTimes() {
         var div = document.getElementById('deptimes_data');
         deplegs = response['legs'];
         ticketdata = response['tickets'];
-console.log(ticketdata);
-console.log(deplegs);
 
         if (deplegs.length == 0) {
             div.innerHTML = '<p>No bookable services found. Sorry!</p>';
@@ -375,6 +373,12 @@ console.log(deplegs);
         var data = {};
         data.legs = [];
         for (i in deplegs) {
+console.log(deplegs[i]);
+            for (t in deplegs[i].times) {
+                if (deplegs[i].times[t].hasOwnProperty('seatsleftstr') && deplegs[i].times[t].seatsleftstr.length > 0) {
+                    deplegs[i].times[t].sep = ', ';
+                }
+            }
             data.legs.push(Mustache.render(deptemplate, deplegs[i]));
         }
 
