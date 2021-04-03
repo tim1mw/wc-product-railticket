@@ -428,31 +428,32 @@ print_r($ldeptime);
         if ($this->journeytype == 'return') {
             $data->legs[1] = new \stdclass();
             $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->fromstation, $this->overridevalid,
-                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled($data->legs[0]->times)->stopsat);
+                reset($data->legs[0]->times)->stopsat,
+                $this->get_first_enabled_stopsat($data->legs[0]->times));
             $data->legs[1]->leg = 1;
             $data->legs[0]->header = __('Outbound', 'wc_railticket');
             $data->legs[1]->header = __('Return', 'wc_railticket');
         } elseif ($this->journeytype == 'round') {
             $data->legs[1] = new \stdclass();
             $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->rndtostation, $this->overridevalid,
-                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled($data->legs[0]->times)->stopsat);
+                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled_stopsat($data->legs[0]->times));
             $data->legs[1]->leg = 1;
             $data->legs[2] = new \stdclass();
             $data->legs[2]->times = $this->bookableday->get_bookable_trains($this->rndtostation, $this->fromstation, $this->overridevalid,
-                reset($data->legs[1]->times)->stopsat, $this->get_first_enabled($data->legs[1]->times)->stopsat);
+                reset($data->legs[1]->times)->stopsat, $this->get_first_enabled_stopsat($data->legs[1]->times));
             $data->legs[2]->leg = 1;
             $data->legs[0]->header = __('1st Train', 'wc_railticket');
             $data->legs[1]->header = __('2nd Train', 'wc_railticket');
             $data->legs[2]->header = __('3rd Train', 'wc_railticket');
         }
-
+file_put_contents('/home/httpd/balashoptest.my-place.org.uk/x.txt', print_r($data->legs, true));
         return $data;
     }
 
-    public function get_first_enabled($times) {
+    public function get_first_enabled_stopsat($times) {
         foreach ($times as $time) {
             if (!$time->notbookable) {
-                return $time;
+                return $time->stopsat;
             }
         }
 
