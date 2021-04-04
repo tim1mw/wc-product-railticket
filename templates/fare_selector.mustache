@@ -1,0 +1,114 @@
+<h3>Manage Fares</h3>
+<form method='post' action='{{actionurl}}'>
+<table>
+    <tr>
+        <td>Price revision</td>
+        <td>
+    <select name='pricerevision'>
+    {{# farerevisions }}
+        <option value='{{value}}' {{selected}}>{{name}}</option>    
+    {{/ farerevisions }}
+    </select>
+        </td>
+    </tr>
+    <tr>
+        <td>Journeys From</td>
+        <td><select name='stn'>
+        {{# stations}}
+            <option value='{{stnid}}' {{selected}}>{{name}}</option>
+        {{/ stations}}
+        </select></td>
+        <td><input type='submit' value='Show' /></td>
+    </tr>
+</table>
+</form>
+<br /><br />
+<h3>Fares From {{stationname}}</h3>
+<p>Note all fares are reciprocal.</p>
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='stn' value='{{fromstnid}}' />
+<input type='hidden' name='pricerevision' value='{{pricerevision}}' />
+<input type='hidden' name='action' value='updatefare' />
+<input type='hidden' name='ids' value='{{ids}}' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <th>Going to</th>
+        <th>Ticket Type</th>
+        <th>Special</th>
+        <th>Guard Only</th>
+        <th>Journey Type</th>
+        <th>Online Price</th>
+        <th>Guards Price</th>
+        <th>Disabled</th>
+        <th>Image</th>
+        <th></th>
+    </tr>
+    {{#fares}}
+    <tr>
+        <td style='text-align:center'>{{tostation}}</td>
+        <td style='text-align:center'>{{name}}</td>
+        <td style='text-align:center'>{{special}}</td>
+        <td style='text-align:center'>{{guardonly}}</td>
+        <td style='text-align:center'>{{journeytype}}</td>
+        <td><input type='number' step='any' name='price_{{id}}' value='{{price}}' size='5' /></td>
+        <td><input type='number' step='any' name='localprice_{{id}}' value='{{localprice}}' size='5' /></td>
+        <td style='text-align:center'><input type='checkbox' name='disabled_{{id}}' {{disabled}} value='1' /></td>
+        <td><input type='text' name='image_{{id}}' value='{{image}}' size='25' /></td>
+        <td><a href='?action=deletefare&page=railticket-bookable-fares&id={{id}}'>Delete</a></td>
+    </tr>
+    {{/fares}}
+</table>
+<p><input type='submit' value='Update' /></p>
+</form>
+
+<br />
+<h3>Add New Fare</h3>
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='stn' value='{{fromstnid}}' />
+<input type='hidden' name='pricerevision' value='{{pricerevision}}' />
+<input type='hidden' name='action' value='addfare' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <td>Journey From</td>
+        <td><select name='n_stnfrom'>
+        {{# stations}}
+            <option value='{{stnid}}' {{selected}}>{{name}}</option>
+        {{/ stations}}
+        </select></td>
+    </tr><tr>
+        <td>Journey To</td>
+        <td><select name='n_stnto'>
+        {{# stations}}
+            <option value='{{stnid}}' {{selected}}>{{name}}</option>
+        {{/ stations}}
+        </select></td>
+    </tr><tr>
+        <td>Ticket Type</td>
+        <td><select name='n_tickettype'>
+        {{#tickettypes}}
+            <option value='{{code}}'>{{name}}</option>
+        {{/tickettypes}}
+        </select></td>
+    </tr><tr>
+        <td>Journey Type</td>
+        <td><select name='n_journeytype'>
+        {{#journeytypes}}
+            <option value='{{.}}'>{{.}}</option>
+        {{/journeytypes}}
+        </select></td>
+    </tr><tr>
+        <td>Online Price</td>
+        <td><input type='number' step='any' name='n_price' value='0' size='5' />
+    </tr><tr>
+        <td>Guard Price</td>
+        <td><input type='number' step='any' name='n_localprice' value='0' size='5' />
+    </tr><tr>
+        <td>Disabled</td>
+        <td><input type='checkbox' name='n_disabled' value='1' />
+    </tr><tr>
+        <td>Image</td>
+        <td><input type='text' name='n_image' value='' size='25' />
+    </tr>
+</table>
+<p><input type='submit' value='Add Fare' /></p>
+</form>
