@@ -24,6 +24,11 @@ class FareCalculator {
         return new FareCalculator($revision);
     }
 
+    public static function get_last_revision_id() {
+        global $wpdb;
+        return $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_pricerevisions ORDER BY id DESC LIMIT 1");
+    }
+
     public static function get_fares_by_date($date) {
         global $wpdb;
         $revision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_pricerevisions WHERE ".
@@ -50,6 +55,15 @@ class FareCalculator {
         return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$ticket."'");
     }
 
+    public static function get_all_ticket_types() {
+        global $wpdb;
+        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes");
+    }
+
+    public static function get_all_journey_types() {
+        return array('return', 'round', 'single');
+    }
+
     private function get_date($key) {
         if (!$format) {
             return $this->data->$key;
@@ -66,6 +80,10 @@ class FareCalculator {
 
     public function get_date_to($format = false) {
         return $this->get_date('datefrom', $format);
+    }
+
+    public function get_first_timetable() {
+        return Timetable::get_first_timetable($this->data->datefrom, $this->data->dateto);
     }
 
     public function get_name() {
@@ -105,6 +123,32 @@ class FareCalculator {
         }
 
         return false;
+    }
+
+    public function get_tickets_from(Station $fromstation, $showdisabled) {
+        global $wpdb;
+        $tickets = new \stdclass();
+
+        if (!$showdisabled) {
+            $hd = " AND disabled = 0 ";
+        } else {
+            $hd = "";
+        }
+
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
+            "{$wpdb->prefix}wc_railticket_prices.*, ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.guardonly, ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.special ".
+            "FROM {$wpdb->prefix}wc_railticket_prices ".
+            "INNER JOIN {$wpdb->prefix}wc_railticket_tickettypes ON ".
+            "{$wpdb->prefix}wc_railticket_tickettypes.code = {$wpdb->prefix}wc_railticket_prices.tickettype ".
+            "WHERE (stationone = ".$fromstation->get_stnid()." OR stationtwo = ".$fromstation->get_stnid().") AND ".
+            "{$wpdb->prefix}wc_railticket_prices.revision = ".$this->revision." ".$hd.
+            "ORDER BY {$wpdb->prefix}wc_railticket_prices.stationone, {$wpdb->prefix}wc_railticket_prices.stationtwo, ".
+            "{$wpdb->prefix}wc_railticket_prices.journeytype, {$wpdb->prefix}wc_railticket_tickettypes.special, {$wpdb->prefix}wc_railticket_tickettypes.sequence ASC";
+
+        return $wpdb->get_results($sql, OBJECT);
     }
 
     public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discountcode, $special) {
@@ -260,5 +304,50 @@ class FareCalculator {
             $total += $val;
         }
         return $total;
+    }
+
+    public function delete_fare($id) {
+        global $wpdb;
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_prices", array('id' => $id));
+    }
+
+    public function update_fare($id, $price, $localprice, $disabled, $image) {
+        global $wpdb;
+
+        $data = array(
+            'price' => $price,
+            'localprice' => $localprice,
+            'disabled' => $disabled,
+            'image' => $image
+        );
+
+        $wpdb->update("{$wpdb->prefix}wc_railticket_prices", $data, array('id' => $id));
+    }
+
+    public function add_fare($stnone, $stntwo, $tickettype, $journeytype, $price, $localprice, $disabled, $image) {
+        global $wpdb;
+
+        $id = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_prices WHERE revision = ".$this->revision." AND ".
+            "tickettype = '".$tickettype."' AND journeytype='".$journeytype."' AND stationone = ".$stnone." AND stationtwo = '".$stntwo."' ");
+
+        if ($id) {
+            return false;
+        }
+
+        $data = array(
+            'revision' => $this->revision,
+            'stationone' => $stnone,
+            'stationtwo' => $stntwo,
+            'tickettype' => $tickettype,
+            'journeytype' => $journeytype,
+            'price' => $price,
+            'localprice' => $localprice,
+            'disabled' => $disabled,
+            'image' => $image
+        );
+
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_prices", $data);
+
+        return true;
     }
 }

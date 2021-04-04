@@ -37,6 +37,7 @@ function railticket_add_pages() {
         '', 30);
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
+    add_submenu_page('railticket-top-level-handle', "Fares", "Fares", 'manage_options', 'railticket-bookable-fares', 'railticket_fares');
     add_submenu_page('railticket-top-level-handle', "Import Timetable", "Import Timetable", 'manage_options', 'railticket-import-timetable', 'railticket_import_timetable');
 }
 
@@ -574,19 +575,8 @@ function railticket_showbookableday() {
         $alldata->locknote = 'Bookings present, revision locked';
     } 
 
-    $allfares = \wc_railticket\FareCalculator::get_all_revisions();
     $chosenfr = $bookable->fares->get_revision();
-    foreach ($allfares as $fare) {
-        $f = new stdclass();
-        $f->name = $fare->get_name();
-        $f->value = $fare->get_revision();
-        if ($f->value == $chosenfr) {
-            $f->selected = 'selected';
-        } else {
-            $f->selected = '';
-        }
-        $alldata->fares[] = $f;
-    }
+    $alldata->fares = railtimetable_get_all_pricerevisions($chosenfr);
 
     $chosenttr = $bookable->timetable->get_revision();
     $alldata->ttrevs = \wc_railticket\Timetable::get_all_revisions();
@@ -628,6 +618,23 @@ function railticket_showbookableday() {
 
     $template = $rtmustache->loadTemplate('bookableday');
     echo $template->render($alldata);
+}
+
+function railtimetable_get_all_pricerevisions($chosenfr) {
+    $allfares = \wc_railticket\FareCalculator::get_all_revisions();
+    $ret = array();
+    foreach ($allfares as $fare) {
+        $f = new stdclass();
+        $f->name = $fare->get_name();
+        $f->value = $fare->get_revision();
+        if ($f->value == $chosenfr) {
+            $f->selected = 'selected';
+        } else {
+            $f->selected = '';
+        }
+        $ret[] = $f;
+    }
+    return $ret;
 }
 
 function railticket_editbookableday() {
@@ -1465,3 +1472,127 @@ function railticket_get_ordersummary($iscsv = false) {
     $os = new \wc_railticket\OrderSummary($date);
     $os->show_summary($iscsv);
 }
+
+function railticket_fares() {
+    global $rtmustache;
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+
+    $pricerevisionid = railticket_getpostfield('pricerevision');
+    if ($pricerevisionid == false) {
+        $pricerevisionid = \wc_railticket\FareCalculator::get_last_revision_id();
+    }
+    $stnchoice = railticket_getpostfield('stn');
+    $showdisabled = railticket_gettfpostfield('showdisabled');
+
+    $farecalc = \wc_railticket\FareCalculator::get_fares($pricerevisionid); 
+    $timetable = $farecalc->get_first_timetable();
+    $alldata = new \stdclass();
+    $alldata->stations = $timetable->get_stations(true);
+    if ($stnchoice == false) {
+        $stnchoice = reset($alldata->stations)->stnid;
+    }
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'updatefare':
+                railticket_updatefares($stnchoice, $farecalc);
+                break;
+            case 'addfare':
+                railticket_addfare($stnchoice, $farecalc);
+                break;
+            case 'deletefare':
+                $id = railticket_getpostfield('id');
+                $farecalc->delete_fare($id);
+                break;
+        }
+    }
+
+
+    $alldata->actionurl = railticket_get_page_url();
+    $alldata->farerevisions = railtimetable_get_all_pricerevisions($pricerevisionid);
+    $alldata->pricerevision = $pricerevisionid;
+    $alldata->showdisabled = $showdisabled;
+    if ($showdisabled) {
+        $alldata->showdisabledcheck = 'checked';
+    }
+    $alldata->fromstnid = $stnchoice;
+
+    $stnchoice = \wc_railticket\Station::get_station($stnchoice, $timetable->get_revision());
+    foreach ($alldata->stations as $id => $stn) {
+        if ($stn->stnid == $stnchoice->get_stnid()) {
+            $stn->selected = 'selected';
+        }
+    }
+    $alldata->stationname = $stnchoice->get_name();
+    $fares = $farecalc->get_tickets_from($stnchoice, $showdisabled);
+
+    $alldata->fares = array_values($fares);
+    $alldata->ids = array(); 
+    foreach ($fares as $fare) {
+        if ($fare->stationone == $stnchoice->get_stnid()) {
+            $stnto = \wc_railticket\Station::get_station($fare->stationtwo, $timetable->get_revision());
+        } else {
+            $stnto = \wc_railticket\Station::get_station($fare->stationone, $timetable->get_revision());
+        }
+        $fare->tostation = $stnto->get_name();
+
+        if ($fare->disabled) {
+            $fare->disabled = 'checked';
+        }
+
+        if ($fare->special) {
+            $fare->special = 'Y';
+        } else {
+            $fare->special = 'N';
+        }
+
+        if ($fare->guardonly) {
+            $fare->guardonly = 'Y';
+        } else {
+            $fare->guardonly = 'N';
+        }
+
+        $fare->price = number_format($fare->price, 2);
+        $fare->localprice = number_format($fare->localprice, 2);
+        $alldata->ids[] = $fare->id;
+    }
+    $alldata->ids = implode(',', $alldata->ids);
+    $alldata->tickettypes = array_values($farecalc->get_all_ticket_types());
+    $alldata->journeytypes = $farecalc->get_all_journey_types();
+
+    $template = $rtmustache->loadTemplate('fare_selector');
+    echo $template->render($alldata);
+}
+
+function railticket_updatefares($stnchoice, $farecalc) {
+    $ids = explode(',', railticket_getpostfield('ids'));
+
+    foreach ($ids as $id) {
+        $price = railticket_getpostfield('price_'.$id);
+        $localprice = railticket_getpostfield('localprice_'.$id);
+        $disabled = railticket_gettfpostfield('disabled_'.$id);
+        $image = railticket_getpostfield('image_'.$id);
+
+        $farecalc->update_fare($id, $price, $localprice, $disabled, $image);
+    }
+}
+
+function railticket_addfare($stnchoice, $farecalc) {
+    $stnfrom = railticket_getpostfield('n_stnfrom');
+    $stnto = railticket_getpostfield('n_stnto');
+    $tickettype = railticket_getpostfield('n_tickettype');
+    $journeytype = railticket_getpostfield('n_journeytype');
+    $price = railticket_getpostfield('n_price');
+    $localprice = railticket_getpostfield('n_localprice');
+    $disabled = railticket_gettfpostfield('n_disabled');
+    $image = railticket_getpostfield('n_image');
+
+    $s = $farecalc->add_fare($stnfrom, $stnto, $tickettype, $journeytype, $price, $localprice, $disabled, $image);
+    if ($s) {
+        return;
+    }
+
+    echo "<p style='color:red'>Error: A fare with this configuration already exists in this revision.</p>";
+}
+

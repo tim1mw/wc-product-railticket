@@ -18,6 +18,10 @@
             <option value='{{stnid}}' {{selected}}>{{name}}</option>
         {{/ stations}}
         </select></td>
+    <tr><tr>
+        <td>Show Disabled Fares</td>
+        <td><input type='checkbox' name='showdisabled' value='1' {{showdisabledcheck}} />
+    </tr><tr>
         <td><input type='submit' value='Show' /></td>
     </tr>
 </table>
@@ -30,6 +34,7 @@
 <input type='hidden' name='pricerevision' value='{{pricerevision}}' />
 <input type='hidden' name='action' value='updatefare' />
 <input type='hidden' name='ids' value='{{ids}}' />
+<input type='hidden' name='showdisabled' value='{{showdisabled}}' />
 <table border='1' class='railticket_admintable'>
     <tr>
         <th>Going to</th>
@@ -67,6 +72,7 @@
 <input type='hidden' name='stn' value='{{fromstnid}}' />
 <input type='hidden' name='pricerevision' value='{{pricerevision}}' />
 <input type='hidden' name='action' value='addfare' />
+<input type='hidden' name='showdisabled' value='{{showdisabled}}' />
 <table border='1' class='railticket_admintable'>
     <tr>
         <td>Journey From</td>
