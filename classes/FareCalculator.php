@@ -55,10 +55,70 @@ class FareCalculator {
         return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$ticket."'");
     }
 
-    public static function get_all_ticket_types() {
+    public static function get_all_ticket_types($showhidden = false) {
         global $wpdb;
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes");
+        if ($showhidden) {
+            $where = "";
+        } else {
+            $where = " WHERE hidden = 0";
+        }
+        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes".$where." ORDER BY sequence ASC");
     }
+
+    public static function add_ticket_type($code, $name, $description, $special, $guardonly) {
+        global $wpdb;
+
+        $code = self::clean_code($code);
+
+        $t = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code='".$code."'");
+        if ($t != false) {
+            return false;
+        }
+
+        $seq = $wpdb->get_var("SELECT sequence FROM {$wpdb->prefix}wc_railticket_tickettypes ORDER BY sequence DESC LIMIT 1") + 1;
+
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_tickettypes",
+            array('code' => $code, 'name' => $name, 'description' => $description, 'guardonly' => $guardonly,
+            'special' => $special, 'composition' => '{}', 'depends' => '[]', 'sequence' => $seq));
+
+        return true;
+    }
+
+    public static function update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends) {
+        global $wpdb;
+
+        $composition = json_encode($composition);
+        $depends = json_encode($depends);
+
+        $wpdb->update("{$wpdb->prefix}wc_railticket_tickettypes",
+            array('name' => $name, 'description' => $description, 'guardonly' => $guardonly,
+            'special' => $special, 'hidden' => $hidden, 'composition' => $composition, 'depends' => $depends),
+            array('id' => $id));
+    }
+
+    public static function delete_ticket_type($id) {
+        global $wpdb;
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_tickettypes", array('id' => $id));
+
+        // Fix the sequence
+        $tickets = self::get_all_ticket_types(true);
+        for ($loop = 0; $loop < count($tickets); $loop++) {
+            $wpdb->update($wpdb->prefix.'wc_railticket_tickettypes', array('sequence' => $loop),  array('id' => $tickets[$loop]->id));
+        }
+    }
+
+    public static function move_ticket($id, $inc, $inchidden) {
+        global $wpdb;
+        $current = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE id = '".$id."'");
+        $swap = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE sequence = '".($current->sequence+$inc)."'");
+        $wpdb->update($wpdb->prefix.'wc_railticket_tickettypes', array('sequence' => $current->sequence),  array('id' => $swap->id));
+        $wpdb->update($wpdb->prefix.'wc_railticket_tickettypes', array('sequence' => $swap->sequence),  array('id' => $current->id));
+        // Check if we need to move this ticket above the next visibile ticket
+        if ($swap->hidden && $inchidden) {
+            self::move_ticket($id, $inc, $inchidden);
+        }
+    }
+
 
     public static function get_all_journey_types() {
         return array('return', 'round', 'single');
@@ -71,6 +131,7 @@ class FareCalculator {
 
     public static function add_traveller($code, $name, $description, $seats, $guardonly) {
         global $wpdb;
+        $code = self::clean_code($code);
 
         $t = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$code."'");
         if ($t != false) {
@@ -81,6 +142,11 @@ class FareCalculator {
             array('code' => $code, 'name' => $name, 'description' => $description, 'seats' => $seats, 'guardonly' => $guardonly));
 
         return true;
+    }
+
+    private static function clean_code($code) {
+        $code = strtolower(str_replace('|', '_', $code));
+        return str_replace(' ', '_', $code);
     }
 
     public static function update_traveller($id, $name, $description, $seats, $guardonly) {
@@ -94,8 +160,6 @@ class FareCalculator {
         global $wpdb;
         $wpdb->delete("{$wpdb->prefix}wc_railticket_travellers", array('id' => $id));
     }
-
-
 
     private function get_date($key) {
         if (!$format) {

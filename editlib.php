@@ -38,6 +38,7 @@ function railticket_add_pages() {
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
     add_submenu_page('railticket-top-level-handle', "Travellers", "Travellers", 'manage_options', 'railticket-bookable-travellers', 'railticket_travellers');
+    add_submenu_page('railticket-top-level-handle', "Ticket Types", "Ticket Types", 'manage_options', 'railticket-bookable-tickets', 'railticket_tickets');
     add_submenu_page('railticket-top-level-handle', "Fares", "Fares", 'manage_options', 'railticket-bookable-fares', 'railticket_fares');
     add_submenu_page('railticket-top-level-handle', "Import Timetable", "Import Timetable", 'manage_options', 'railticket-import-timetable', 'railticket_import_timetable');
 }
@@ -1603,9 +1604,6 @@ function railticket_travellers() {
     wp_enqueue_style('railticket_style');
 
     if (array_key_exists('action', $_REQUEST)) {
-
-
-
         switch ($_REQUEST['action']) {
             case 'updatetra':
                 railticket_update_travellers();
@@ -1624,6 +1622,7 @@ function railticket_travellers() {
             case 'deletetra':
                 $id = railticket_getpostfield('id');
                 \wc_railticket\FareCalculator::delete_traveller($id);
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-travellers');
                 break;
         }
     }
@@ -1646,7 +1645,7 @@ function railticket_travellers() {
 
 function railticket_update_travellers() {
     $ids = explode(',', railticket_getpostfield('ids'));
-print_r($ids);
+
     foreach ($ids as $id) {
         $code = railticket_getpostfield('code_'.$id);
         $name = railticket_getpostfield('name_'.$id);
@@ -1655,5 +1654,160 @@ print_r($ids);
         $guardonly = railticket_gettfpostfield('guardonly_'.$id);
         \wc_railticket\FareCalculator::update_traveller($id, $name, $description, $seats, $guardonly);
     }
+}
 
+function railticket_tickets() {
+    global $rtmustache;
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+
+    $showhidden = railticket_gettfpostfield('showhidden');
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'updatetickets':
+                railticket_update_tickettypes();
+                break;
+            case 'addticket':
+                $code = railticket_getpostfield('code');
+                $name = railticket_getpostfield('name');
+                $description = railticket_getpostfield('description');
+                $special = railticket_gettfpostfield('special');
+                $guardonly = railticket_gettfpostfield('guardonly');
+                $res = \wc_railticket\FareCalculator::add_ticket_type($code, $name, $description, $special, $guardonly);
+                if (!$res) {
+                    echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
+                }
+                break;
+            case 'deleteticket':
+                $id = railticket_getpostfield('id');
+                \wc_railticket\FareCalculator::delete_ticket_type($id);
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-tickets');
+                break;
+            case 'downticket':
+                $id = railticket_getpostfield('id');
+                \wc_railticket\FareCalculator::move_ticket($id, 1, !$showhidden);
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-tickets');
+                break;
+            case 'upticket':
+                $id = railticket_getpostfield('id');
+                \wc_railticket\FareCalculator::move_ticket($id, -1, !$showhidden);
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-tickets');
+                break;
+        }
+    }
+
+    $alldata = new \stdclass;
+    $alldata->ids = array();
+    $alldata->showhidden = $showhidden;
+    if ($alldata->showhidden == true) {
+        $alldata->showhiddencheck = 'checked';
+    }
+
+    $travellers = $alldata->travellers = array_values(\wc_railticket\FareCalculator::get_all_travellers());
+    $alldata->tickets = array_values(\wc_railticket\FareCalculator::get_all_ticket_types($showhidden));
+    $alltickets = \wc_railticket\FareCalculator::get_all_ticket_types(true);
+    foreach ($alldata->tickets as $ticket) {
+        $alldata->ids[] = $ticket->id;
+
+        if ($ticket->hidden) {
+            $ticket->hidden = 'checked';
+        }
+        if ($ticket->guardonly) {
+            $ticket->guardonly = 'checked';
+        }
+        if ($ticket->special) {
+            $ticket->special = 'checked';
+        }
+
+        $ticket->depends = json_decode($ticket->depends);
+        $ticket->depselect = array();
+        foreach ($alltickets as $tkt) {
+            $isdep = in_array($tkt->code, $ticket->depends);
+            if ((!$isdep && $tkt->hidden) || $tkt->code == $ticket->code || ($tkt->sequence > $ticket->sequence && !$isdep) ) {
+                // This ticket it hidden and is not a dependency of the ticket we are displaying
+                // Also hide the ticket in it's own dependency list!
+                // Finally hide higher lower priority tickets. You must only be dependent on tickets with a higher priority.
+                continue;
+            }
+            $dp = new \stdclass();
+            $dp->code = $tkt->code;
+            $dp->name = $tkt->name;
+            if ($isdep) {
+                $dp->selected = 'selected';
+            }
+            $ticket->depselect[] = $dp;
+        }
+
+        $ticket->composition = json_decode($ticket->composition);
+        $ticket->tcomp = array();
+        for ($i=0; $i< count($travellers); $i++) {
+            $traveller = $travellers[$i];
+            $tr = new \stdclass();
+            $tr->id = $ticket->id;
+            $tr->code1 = $traveller->code;
+            $tr->name1 = $traveller->name;
+            $code = $traveller->code;
+            if (property_exists($ticket->composition, $code)) {
+                $tr->value1 = $ticket->composition->$code;
+            } else {
+                $tr->value1 = 0;
+            }
+
+            $i++;
+            if ($i >= count($travellers)) {
+                $ticket->tcomp[] = $tr;
+                break;
+            }
+            $traveller = $travellers[$i];
+            $tr->code2 = $traveller->code;
+            $tr->name2 = $traveller->name;
+            $code = $traveller->code;
+            if (property_exists($ticket->composition, $code)) {
+                $tr->value2 = $ticket->composition->$code;
+            } else {
+                $tr->value2 = 0;
+            }
+            $ticket->tcomp[] = $tr;
+        }
+    }
+
+    reset($alldata->tickets)->showup = 'display:none';
+    end($alldata->tickets)->showdown = 'display:none';
+
+    $alldata->ids = implode(',', $alldata->ids);
+    $template = $rtmustache->loadTemplate('tickettypes');
+    echo $template->render($alldata);
+}
+
+function railticket_update_tickettypes() {
+    $ids = explode(',', railticket_getpostfield('ids'));
+    $alltravellers = \wc_railticket\FareCalculator::get_all_travellers();
+
+    foreach ($ids as $id) {
+        $name = railticket_getpostfield('name_'.$id);
+        $description = railticket_getpostfield('description_'.$id);
+        $special = railticket_gettfpostfield('special_'.$id);
+        $guardonly = railticket_gettfpostfield('guardonly_'.$id);
+        $hidden = railticket_gettfpostfield('hidden_'.$id);
+        $composition = new \stdclass();
+        foreach ($alltravellers as $tr) {
+            $code = $tr->code;
+            $value = railticket_getpostfield('composition_'.$id."_".$code);
+
+            if ($value == 0) {
+                continue;
+            }
+            $composition->$code = $value;
+        }
+
+        $depends = array();
+        if (array_key_exists('depends_'.$id, $_REQUEST)) {
+            foreach ($_REQUEST['depends_'.$id] as $dep) {
+                $depends[] = sanitize_text_field($dep);
+            }
+         }
+
+        \wc_railticket\FareCalculator::update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends);
+    }
 }

@@ -1,0 +1,100 @@
+<h3>Manage Ticket Types</h3>
+
+<form method='post' action='{{actionurl}}'>
+<table>
+    <tr>
+        <td>Show Hidden Ticket Types</td>
+        <td><input type='checkbox' name='showhidden' value='1' {{showhiddencheck}} />
+    </tr><tr>
+        <td><input type='submit' value='Update Listing' /></td>
+    </tr>
+</table>
+</form>
+
+<p style='font-weight:bold;'>Warning: Deleting ticket types that have been used for sales is really bad idea, they should just be disabled. There will be a sanity check for this in due course....</p>
+
+<p>Note: hidden ticket types will be hidden when creating new fares, but will continue to be used for any active fares that incorporate them,
+it is a convenience to hide ticket types that are no longer used for new fares. To disable the sale of a ticket type, you must
+disable the fares associated with them.</p>
+
+
+<form method='post' action='{{actionurl}}' enctype="multipart/form-data">
+<input type='hidden' name='action' value='updatetickets' />
+<input type='hidden' name='ids' value='{{ids}}' />
+<input type='hidden' name='showhidden' value='{{showhidden}}' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Specials Only</th>
+        <th>Guard Only</th>
+        <th>Hidden</th>
+        <th>Traveller Composition</th>
+        <th>Depends On</th>
+        <th></th>
+        <th></th>
+    </tr>
+    {{#tickets}}
+    <tr>
+        <td style='text-align:center;'>{{code}}</td>
+        <td><input type='text' name='name_{{id}}' value='{{name}}' size='10' required /></td>
+        <td><input type='text' name='description_{{id}}' size='20' value='{{description}}' /></td>
+        <td style='text-align:center;'><input type='checkbox' name='special_{{id}}' value='1' {{special}} /></td>
+        <td style='text-align:center;'><input type='checkbox' name='guardonly_{{id}}' value='1' {{guardonly}} /></td>
+        <td style='text-align:center;'><input type='checkbox' name='hidden_{{id}}' value='1' {{hidden}} /></td>
+        <td><table>
+            {{#tcomp}}
+            <tr>
+                <td>{{name1}}</td>
+                <td style='border-right:1px solid black;padding-right:4px;'><input type='number' value='{{value1}}' name='composition_{{id}}_{{code1}}' min='0' max='99' size='2' /></td>
+                <td>{{name2}}</td>
+                <td><input type='number' value='{{value2}}' name='composition_{{id}}_{{code2}}' min='0' max='99' size='2' /></td>
+            </tr>
+            {{/tcomp}}
+        </table></td>
+        <td>
+            <select style='width:100%' name='depends_{{id}}[]' multiple>
+            {{#depselect}}
+                <option value='{{code}}' {{selected}}>{{name}}</option>
+            {{/depselect}}
+            </select>
+        </td>
+        <td style='text-align:center'>
+            <a href='?action=upticket&page=railticket-bookable-tickets&id={{id}}&showhidden={{showhidden}}' style='{{showup}}'>Move Up</a><br />
+            <a href='?action=downticket&page=railticket-bookable-tickets&id={{id}}&showhidden={{showhidden}}' style='{{showdown}}'>Move Down</a>
+        </td>
+        <td><a href='?action=deleteticket&page=railticket-bookable-tickets&id={{id}}&showhidden={{showhidden}}'>Delete</a></td>
+    </tr>
+    {{/tickets}}
+</table>
+<br />
+<input type='submit' value='Update' />
+</form>
+
+<h3>Add New Ticket Type</h3>
+<p>Note: Traveller Composition, Dependencies and Sequence position are set after the ticket has been added.
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='showhidden' value='{{showhidden}}' />
+<input type='hidden' name='action' value='addticket' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <td>Unique Code</td>
+        <td><input type='text' name='code' value='' size='10' max='10' required /> (lower case only, no spaces or pipe symbols)</td>
+    </tr><tr>
+        <td>Name</td>
+        <td><input type='text' name='name' value='' size='15' required /></td>
+    </tr><tr>
+        <td>Description</td>
+        <td><input type='text' name='description' value='' size='30' /></td>
+    </tr><tr>
+        <td>Specials Only</td>
+        <td><input type='checkbox' name='special' value='1' /></td>
+    </tr><tr>
+        <td>Guard Only</td>
+        <td><input type='checkbox' name='guardonly' value='1' /></td>
+    </tr>
+</table>
+<br />
+<input type='submit' value='Add' />
+</form>

@@ -1,0 +1,53 @@
+<h3>Manage Travellers</h3>
+
+<p style='font-weight:bold;'>Warning: Deleting travellers that are used in active ticket types is really bad idea. There will be a sanity check in this in due course....</p>
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='action' value='updatetra' />
+<input type='hidden' name='ids' value='{{ids}}' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Seats</th>
+        <th>Guard Only</th>
+    </tr>
+    {{#travellers}}
+    <tr>
+        <td style='text-align:center;'>{{code}}</td>
+        <td><input type='text' name='name_{{id}}' value='{{name}}' size='10' required /></td>
+        <td><input type='text' name='description_{{id}}' size='20' value='{{description}}' /></td>
+        <td><input type='number' name='seats_{{id}}' value='{{seats}}' size='2' max='99' min='0' /></td>
+        <td style='text-align:center;'><input type='checkbox' name='guardonly_{{id}}' value='1' {{guardonly}} /></td>
+        <td><a href='?action=deletetra&page=railticket-bookable-travellers&id={{id}}'>Delete</a></td>
+    </tr>
+    {{/travellers}}
+</table>
+<br />
+<input type='submit' value='Update' />
+</form>
+
+<h3>Add New Traveller</h3>
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='action' value='addtra' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <td>Unique Code</td>
+        <td><input type='text' name='code' value='' size='10' max='10' required /> (lower case only, no spaces or pipe symbols)</td>
+    </tr><tr>
+        <td>Name</td>
+        <td><input type='text' name='name' value='' size='15' required /></td>
+    </tr><tr>
+        <td>Description</td>
+        <td><input type='text' name='description' value='' size='30' /></td>
+    </tr><tr>
+        <td>Seats</td>
+        <td><input type='number' name='seats' value='1' size='2' max='99' min='0' /></td>
+    </tr><tr>
+        <td>Guard Only</td>
+        <td><input type='checkbox' name='guardonly' value='1' /></td>
+    </tr>
+</table>
+<br />
+<input type='submit' value='Add' />
+</form>
