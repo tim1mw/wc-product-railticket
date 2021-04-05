@@ -37,6 +37,7 @@ function railticket_add_pages() {
         '', 30);
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
+    add_submenu_page('railticket-top-level-handle', "Travellers", "Travellers", 'manage_options', 'railticket-bookable-travellers', 'railticket_travellers');
     add_submenu_page('railticket-top-level-handle', "Fares", "Fares", 'manage_options', 'railticket-bookable-fares', 'railticket_fares');
     add_submenu_page('railticket-top-level-handle', "Import Timetable", "Import Timetable", 'manage_options', 'railticket-import-timetable', 'railticket_import_timetable');
 }
@@ -1596,3 +1597,63 @@ function railticket_addfare($stnchoice, $farecalc) {
     echo "<p style='color:red'>Error: A fare with this configuration already exists in this revision.</p>";
 }
 
+function railticket_travellers() {
+    global $rtmustache;
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+
+    if (array_key_exists('action', $_REQUEST)) {
+
+
+
+        switch ($_REQUEST['action']) {
+            case 'updatetra':
+                railticket_update_travellers();
+                break;
+            case 'addtra':
+                $code = railticket_getpostfield('code');
+                $name = railticket_getpostfield('name');
+                $description = railticket_getpostfield('description');
+                $seats = railticket_getpostfield('seats');
+                $guardonly = railticket_gettfpostfield('guardonly');
+                $res = \wc_railticket\FareCalculator::add_traveller($code, $name, $description, $seats, $guardonly);
+                if (!$res) {
+                    echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
+                }
+                break;
+            case 'deletetra':
+                $id = railticket_getpostfield('id');
+                \wc_railticket\FareCalculator::delete_traveller($id);
+                break;
+        }
+    }
+
+    $alldata = new \stdclass;
+    $alldata->travellers = array_values(\wc_railticket\FareCalculator::get_all_travellers());
+    $alldata->ids = array();
+    foreach ($alldata->travellers as $tra) {
+        if ($tra->guardonly) {
+            $tra->guardonly = 'checked';
+        } else {
+            $tra->guardonly = '';
+        }
+        $alldata->ids[] = $tra->id;
+    }
+    $alldata->ids = implode(',', $alldata->ids);
+    $template = $rtmustache->loadTemplate('travellers');
+    echo $template->render($alldata);
+}
+
+function railticket_update_travellers() {
+    $ids = explode(',', railticket_getpostfield('ids'));
+print_r($ids);
+    foreach ($ids as $id) {
+        $code = railticket_getpostfield('code_'.$id);
+        $name = railticket_getpostfield('name_'.$id);
+        $description = railticket_getpostfield('description_'.$id);
+        $seats = railticket_getpostfield('seats_'.$id);
+        $guardonly = railticket_gettfpostfield('guardonly_'.$id);
+        \wc_railticket\FareCalculator::update_traveller($id, $name, $description, $seats, $guardonly);
+    }
+
+}

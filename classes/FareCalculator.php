@@ -64,6 +64,39 @@ class FareCalculator {
         return array('return', 'round', 'single');
     }
 
+    public static function get_all_travellers() {
+        global $wpdb;
+        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers");
+    }
+
+    public static function add_traveller($code, $name, $description, $seats, $guardonly) {
+        global $wpdb;
+
+        $t = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$code."'");
+        if ($t != false) {
+            return false;
+        }
+
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_travellers",
+            array('code' => $code, 'name' => $name, 'description' => $description, 'seats' => $seats, 'guardonly' => $guardonly));
+
+        return true;
+    }
+
+    public static function update_traveller($id, $name, $description, $seats, $guardonly) {
+        global $wpdb;
+        $wpdb->update("{$wpdb->prefix}wc_railticket_travellers",
+            array('name' => $name, 'description' => $description, 'seats' => $seats, 'guardonly' => $guardonly),
+            array('id' => $id));
+    }
+
+    public static function delete_traveller($id) {
+        global $wpdb;
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_travellers", array('id' => $id));
+    }
+
+
+
     private function get_date($key) {
         if (!$format) {
             return $this->data->$key;
