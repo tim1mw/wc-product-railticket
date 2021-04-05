@@ -37,9 +37,9 @@ function railticket_add_pages() {
         '', 30);
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
-    add_submenu_page('railticket-top-level-handle', "Travellers", "Travellers", 'manage_options', 'railticket-bookable-travellers', 'railticket_travellers');
-    add_submenu_page('railticket-top-level-handle', "Ticket Types", "Ticket Types", 'manage_options', 'railticket-bookable-tickets', 'railticket_tickets');
-    add_submenu_page('railticket-top-level-handle', "Fares", "Fares", 'manage_options', 'railticket-bookable-fares', 'railticket_fares');
+    add_submenu_page('railticket-top-level-handle', "Travellers", "Travellers", 'manage_options', 'railticket-travellers', 'railticket_travellers');
+    add_submenu_page('railticket-top-level-handle', "Ticket Types", "Ticket Types", 'manage_options', 'railticket-tickets', 'railticket_tickets');
+    add_submenu_page('railticket-top-level-handle', "Fares", "Fares", 'manage_options', 'railticket-fares', 'railticket_fares');
     add_submenu_page('railticket-top-level-handle', "Import Timetable", "Import Timetable", 'manage_options', 'railticket-import-timetable', 'railticket_import_timetable');
 }
 
@@ -1622,7 +1622,7 @@ function railticket_travellers() {
             case 'deletetra':
                 $id = railticket_getpostfield('id');
                 \wc_railticket\FareCalculator::delete_traveller($id);
-                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-travellers');
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-travellers');
                 break;
         }
     }
@@ -1682,17 +1682,17 @@ function railticket_tickets() {
             case 'deleteticket':
                 $id = railticket_getpostfield('id');
                 \wc_railticket\FareCalculator::delete_ticket_type($id);
-                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-tickets');
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-tickets');
                 break;
             case 'downticket':
                 $id = railticket_getpostfield('id');
                 \wc_railticket\FareCalculator::move_ticket($id, 1, !$showhidden);
-                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-tickets');
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-tickets');
                 break;
             case 'upticket':
                 $id = railticket_getpostfield('id');
                 \wc_railticket\FareCalculator::move_ticket($id, -1, !$showhidden);
-                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-bookable-tickets');
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-tickets');
                 break;
         }
     }
