@@ -151,7 +151,7 @@ function doStations() {
 
         stationData = response['stations'];
         specialsData = response['specials'];
-console.log(response);
+
         var stc = document.getElementById('stations_container');
         if (response['specialonly'] == 0) {
             renderFromStations();
@@ -277,7 +277,6 @@ function fromStationChanged(evt) {
     }
 
     railTicketAjax('journey_opts', true, function(response) {
-        console.log(response);
 
         alljourneys = response['popular'].concat(response['other']);
 
@@ -338,7 +337,6 @@ function specialClicked(evt) {
     specialSelected = true;
     railTicketAjax('ticket_data', true, function(response) {
         ticketdata = response;
-console.log(ticketdata);
         renderTicketSelector();
     } );
 }
@@ -603,6 +601,9 @@ function allocateTickets() {
             }
             
             for (i in allocation) {
+                if (typeof tkt.composition[i] == "undefined") {
+                    continue;
+                }
                 allocation[i] = allocation[i] - tkt.composition[i];
                 allocationTotal = allocationTotal - tkt.composition[i];
             }
@@ -677,7 +678,6 @@ function checkCapacity() {
 }
 
 function showCapacity(response) {
-console.log(response.capacity);
 
     var allok = true, anyerror = false, anydisablewarn = false;
 
@@ -775,6 +775,7 @@ function matchTicket(allocation) {
        var tkt = ticketdata.prices[i];
        var matches = 0;
        var count = 0;
+
        for (ci in tkt.composition) {
            if (tkt.composition[ci] == 0) {
                continue;
