@@ -144,7 +144,7 @@ class FareCalculator {
         return true;
     }
 
-    private static function clean_code($code) {
+    public static function clean_code($code) {
         $code = strtolower(str_replace('|', '_', $code));
         return str_replace(' ', '_', $code);
     }

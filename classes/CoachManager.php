@@ -9,9 +9,50 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class CoachManager {
     private $composition, $reserve, $bays;
 
-    public static function get_all_coachset_data() {
+    public static function add_coach($code, $name, $capacity, $maxcapacity, $image) {
         global $wpdb;
-        $coaches = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_coachtypes");
+        $code = FareCalculator::clean_code($code);
+
+        $c = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code='".$code."'");
+        if ($c != false) {
+            return false;
+        }
+
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_coachtypes", 
+            array('code' => $code, 'name' => $name, 'capacity' => $capacity, 'maxcapacity' => $maxcapacity,
+                'image' => $image, 'composition' => '[]'));
+        return true;
+    }
+
+    public static function delete_coach($id) {
+        global $wpdb;
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_coachtypes", array('id' => $id));
+    }
+
+    public static function update_coach($id, $name, $capacity, $maxcapacity, $image, $hidden, $composition) {
+        global $wpdb;
+
+        $wpdb->update("{$wpdb->prefix}wc_railticket_coachtypes", 
+            array('name' => $name, 'capacity' => $capacity, 'maxcapacity' => $maxcapacity, 'image' => $image,
+                'hidden' => $hidden, 'composition' => $composition), array('id' => $id));
+        return true;
+    }
+
+    public static function get_all_coachset_data($inchidden = true, $noprocess = false) {
+        global $wpdb;
+
+        if ($inchidden) {
+            $where = "";
+        } else {
+            $where = " WHERE hidden = 0";
+        }
+
+        $coaches = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_coachtypes".$where);
+
+        if ($noprocess) {
+            return $coaches;
+        }
+
         $chs = array();
         foreach ($coaches as $coach) {
             $coach->composition = json_decode($coach->composition);

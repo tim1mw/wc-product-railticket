@@ -1,0 +1,76 @@
+<h3>Manage Coaches</h3>
+
+<form method='post' action='{{actionurl}}'>
+<table>
+    <tr>
+        <td>Show Hidden Coach Types</td>
+        <td><input type='checkbox' name='showhidden' value='1' {{showhiddencheck}} />
+    </tr><tr>
+        <td><input type='submit' value='Update Listing' /></td>
+    </tr>
+</table>
+</form>
+
+<p style='font-weight:bold;'>Warning: Deleting coaches that in active use is a really bad idea. There will be a sanity check in this in due course....</p>
+<p>To remove a bay type, set the quantity to 0</p>
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='action' value='updatecoach' />
+<input type='hidden' name='showhidden' value='{{showhidden}}' />
+<input type='hidden' name='ids' value='{{ids}}' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Hidden</th>
+        <th>Seats<br />on Sale</th>
+        <th>Maximum<br />Capacity</th>
+        <th>Bay Composition</th>
+        <th>Image</th>
+ 
+        <th></th>
+    </tr>
+    {{#coaches}}
+    <tr>
+        <td style='text-align:center;'>{{code}}</td>
+        <td><input type='text' name='name_{{id}}' value='{{name}}' size='25' required /></td>
+        <td style='text-align:center;'><input type='checkbox' name='hidden_{{id}}' value='1' {{hidden}} /></td>
+        <td><input type='number' name='capacity_{{id}}' value='{{capacity}}' size='3' max='999' min='0' /></td>
+        <td><input type='number' name='maxcapacity_{{id}}' value='{{maxcapacity}}' size='3' max='999' min='0' /></td>
+        <td>
+            <div id='railticket-composition_{{id}}'></div>
+            <textarea name='composition_{{id}}' id='composition_{{id}}' class='railticket-coachcomp' style='display:none'>{{{composition}}}</textarea>
+        </td>
+        <td><input type='text' name='image_{{id}}' size='20' value='{{image}}' /></td>
+        <td><a href='?action=deletecoach&page=railticket-coach-types&id={{id}}&showhidden={{showhidden}}'>Delete</a></td>
+    </tr>
+    {{/coaches}}
+</table>
+<br />
+<input type='submit' value='Update' id='railticket-update-coach' />
+</form>
+
+<h3>Add New Coaches</h3>
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='action' value='addcoach' />
+<input type='hidden' name='showhidden' value='{{showhidden}}' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <td>Unique Code</td>
+        <td><input type='text' name='code' value='' size='10' max='10' required /> (lower case only, no spaces or pipe symbols)</td>
+    </tr><tr>
+        <td>Name</td>
+        <td><input type='text' name='name' value='' size='25' required /></td>
+    </tr><tr>
+        <td>Seats on Sale</td>
+        <td><input type='number' name='capacity' value='0' size='2' max='99' min='0' /></td>
+    </tr><tr>
+        <td>Maximum Capacity</td>
+        <td><input type='number' name='maxcapacity' value='0' size='2' max='99' min='0' /></td>
+    </tr><tr>
+        <td>Image</td>
+        <td><input type='text' name='image' value='' size='30' /></td>
+    </tr>
+</table>
+<br />
+<input type='submit' value='Add' />
+</form>

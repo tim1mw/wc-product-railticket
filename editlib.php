@@ -37,6 +37,7 @@ function railticket_add_pages() {
         '', 30);
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
+    add_submenu_page('railticket-top-level-handle', "Coach Types", "Coach Types", 'manage_options', 'railticket-coach-types', 'railticket_coach_types');
     add_submenu_page('railticket-top-level-handle', "Travellers", "Travellers", 'manage_options', 'railticket-travellers', 'railticket_travellers');
     add_submenu_page('railticket-top-level-handle', "Ticket Types", "Ticket Types", 'manage_options', 'railticket-tickets', 'railticket_tickets');
     add_submenu_page('railticket-top-level-handle', "Fares", "Fares", 'manage_options', 'railticket-fares', 'railticket_fares');
@@ -1809,5 +1810,76 @@ function railticket_update_tickettypes() {
          }
 
         \wc_railticket\FareCalculator::update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends);
+    }
+}
+
+function railticket_coach_types() {
+    global $rtmustache;
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+    wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/js/mustache.min.js'));
+    wp_register_script('railticket_script_ct', plugins_url('wc-product-railticket/js/coachtypes.js'));
+    wp_enqueue_script('railticket_script_mustache');
+    wp_enqueue_script('railticket_script_ct');
+
+    $showhidden = railticket_gettfpostfield('showhidden');
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'updatecoach':
+                railticket_update_coaches();
+                break;
+            case 'addcoach':
+                $code = railticket_getpostfield('code');
+                $name = railticket_getpostfield('name');
+                $capacity = railticket_getpostfield('capacity');
+                $maxcapacity = railticket_getpostfield('maxcapacity');
+                $image = railticket_getpostfield('image');
+                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $maxcapacity, $image);
+                if (!$res) {
+                    echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
+                }
+                break;
+            case 'deletecoach':
+                $id = railticket_getpostfield('id');
+                \wc_railticket\CoachManager::delete_coach($id);
+                wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-coach-types');
+                break;
+        }
+    }
+
+    $alldata = new \stdclass();
+    $alldata->ids = array();
+    $alldata->showhidden = $showhidden;
+    if ($alldata->showhidden == true) {
+        $alldata->showhiddencheck = 'checked';
+    }
+
+    $alldata->coaches = array_values(\wc_railticket\CoachManager::get_all_coachset_data($showhidden, true));
+    foreach ($alldata->coaches as $c) {
+        $alldata->ids[] = $c->id;
+        if ($c->hidden) {
+            $c->hidden = 'checked';
+        }
+    }
+
+    $alldata->ids = implode(',', $alldata->ids);
+    $template = $rtmustache->loadTemplate('coachtypes');
+    echo file_get_contents(dirname(__FILE__).'/templates/coachtypes-templates.html');
+    echo $template->render($alldata);
+}
+
+function railticket_update_coaches() {
+    $ids = explode(',', railticket_getpostfield('ids'));
+
+    foreach ($ids as $id) {
+        $name = railticket_getpostfield('name_'.$id);
+        $capacity = railticket_getpostfield('capacity_'.$id);
+        $maxcapacity = railticket_getpostfield('maxcapacity_'.$id);
+        $image = railticket_getpostfield('image_'.$id);
+        $hidden = railticket_gettfpostfield('hidden_'.$id);
+        $composition = stripslashes(railticket_getpostfield('composition_'.$id));
+
+        \wc_railticket\CoachManager::update_coach($id, $name, $capacity, $maxcapacity, $image, $hidden, $composition);
     }
 }
