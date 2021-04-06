@@ -12,7 +12,10 @@
 </form>
 
 <p style='font-weight:bold;'>Warning: Deleting coaches that in active use is a really bad idea. There will be a sanity check in this in due course....</p>
-<p>To remove a bay type, set the quantity to 0</p>
+<p>To remove a bay type, set the quantity to 0.</p>
+<p>Bay type configuration is not used to calculate seats on sale and maximum capacity, these need to be set individually. Bay Composition is
+only used for bookable days that allocate seats by bay, seat counts are only used for seat based allocation. If you do not intend to use one
+or the other, then the settings do not need to be entered.</p>
 <form method='post' action='{{actionurl}}'>
 <input type='hidden' name='action' value='updatecoach' />
 <input type='hidden' name='showhidden' value='{{showhidden}}' />
@@ -50,6 +53,8 @@
 </form>
 
 <h3>Add New Coaches</h3>
+
+<p>Bay types can be configured after the coach has been added.</p>
 <form method='post' action='{{actionurl}}'>
 <input type='hidden' name='action' value='addcoach' />
 <input type='hidden' name='showhidden' value='{{showhidden}}' />
