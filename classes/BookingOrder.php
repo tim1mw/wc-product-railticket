@@ -33,7 +33,11 @@ class BookingOrder {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = json_decode($mb->tickets);
             $this->travellers = json_decode($mb->travellers);
-            $this->ticketprices = json_decode($mb->ticketprices);
+            if (property_exists($mb, 'ticketprices')) {
+                $this->ticketprices = json_decode($mb->ticketprices);
+            } else {
+                $this->ticketprices = new \stdclass();
+            }
             $this->price = $mb->price;
             $this->supplement = $mb->supplement;
             $this->notes = $mb->notes;
