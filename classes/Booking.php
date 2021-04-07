@@ -83,7 +83,13 @@ class Booking {
             'manual' => $manual,
             'priority' => $disabledrequest
         );
-        if ($manual && $dateoftravel == $this->today) {
+
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $today = new \DateTime();
+        $today->setTimezone($railticket_timezone);
+        $today->setTime(0,0,0);
+
+        if ($manual && $dateoftravel == $today->format('Y-m-d')) {
             $dbdata['collected'] = true;
         }
 
