@@ -1726,14 +1726,14 @@ function railticket_tickets() {
         foreach ($alltickets as $tkt) {
             $isdep = in_array($tkt->code, $ticket->depends);
             if ((!$isdep && $tkt->hidden) || $tkt->code == $ticket->code || ($tkt->sequence > $ticket->sequence && !$isdep) ) {
-                // This ticket it hidden and is not a dependency of the ticket we are displaying
+                // This ticket is hidden and is not a dependency of the ticket we are displaying
                 // Also hide the ticket in it's own dependency list!
                 // Finally hide higher lower priority tickets. You must only be dependent on tickets with a higher priority.
                 continue;
             }
             $dp = new \stdclass();
             $dp->code = $tkt->code;
-            $dp->name = $tkt->name;
+            $dp->name = $tkt->code;
             if ($isdep) {
                 $dp->selected = 'selected';
             }
