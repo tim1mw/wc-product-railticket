@@ -1,10 +1,5 @@
 <?php
 
-/**
- * Plugin Name: WooCommerce Ticket Product Type
- * Description: Works with railtimetable
- */
-
 if ( ! defined( 'ABSPATH' ) ) {
     return;
 }
