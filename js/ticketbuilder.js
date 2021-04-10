@@ -731,7 +731,7 @@ function showCapacity(response) {
                 baydata = legcap.bays[bi]+'x '+desc[0];
                 switch(desc[1]) {
                     case 'normal': baydata += ' seat bay'; break;
-                    case 'priority': baydata += ' seat bay (with disabled space)'; break;
+                    case 'priority': baydata += ' seat bay (with wheelchair space)'; break;
                 }
                 legdata.bays.push(baydata);
             }

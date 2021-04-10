@@ -165,7 +165,6 @@ class TicketBuilder {
             $str .= $this->get_preset_form($fstation, $lstation, $fdeptime);
         }
         if ($ldeptime !== false) {
-print_r($ldeptime);
             $str .= $this->get_preset_form($lstation, $fstation, $ldeptime);
         }
         $str .= "</div></div>";

@@ -170,7 +170,7 @@ class CoachManager {
             $bayd = self::get_bay_details($bay);
             $str .= $num.'x '.$bayd[0].' '.__('seat bay', 'wc_railticket');
             if ($bayd[1] == 'priority') {
-                $str .= ' '.__('(with disabled space)', 'wc_railticket');
+                $str .= ' '.__('(with wheelchair space)', 'wc_railticket');
             }
             $str .=', ';
         }
