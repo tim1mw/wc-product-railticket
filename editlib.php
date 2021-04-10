@@ -301,7 +301,7 @@ function wc_railticket_getyearselect($currentyear = false) {
         $chosenyear = $p[0];
     }
 
-    $firstdate = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railticket_dates ORDER BY date ASC LIMIT 1 ");
+    $firstdate = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_dates ORDER BY date ASC LIMIT 1 ");
     if ($firstdate) {
         $d = reset($firstdate);
         $startdate = intval(explode('-', $d->date)[0]);
