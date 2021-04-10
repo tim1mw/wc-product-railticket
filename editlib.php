@@ -205,56 +205,6 @@ function railticket_options() {
     <?php submit_button(); ?>
     </form>
     <?php
-    if (array_key_exists('action', $_POST)) {
-        switch ($_POST['action']) {
-            case 'mapbookable':
-                railticket_remapbookable();
-        }
-    }
-    ?>
-    <form action='' method='post'>
-    <input type='hidden' name='action' value='mapbookable' />
-    <input type='submit' value='Update Database' />
-    </form>
-    <?php
-}
-
-function railticket_remapbookable() {
-    global $wpdb;
-
-    $bookables = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookable");
-    foreach ($bookables as $bookable) {
-        if ($bookable->dateid == 0) {
-            continue;
-        }
-
-        $date = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}railtimetable_dates WHERE id = ".$bookable->dateid);
-        $bookable->date = $date->date;
-        $bookable->timetableid = $date->timetableid;
-
-        $ttrevision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE datefrom <= '".$date->date."' AND ".
-            "dateto >= '".$date->date."'");
-        $bookable->ttrevision = $ttrevision->id;
-
-        $prevision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_pricerevisions WHERE datefrom <= '".$date->date."' AND ".
-            "dateto >= '".$date->date."'");
-        $bookable->pricerevision = $prevision->id;
-
-        $bookable = (array) $bookable;
-        $wpdb->update("{$wpdb->prefix}wc_railticket_bookable", $bookable, array('id' => $bookable['id']));
-
-    }
-
-    // Move price revision 0 to 1 and set localprice same as price
-    $prices = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_prices WHERE revision = 0");
-    foreach ($prices as $price) {
-        $price->localprice = $price->price;
-        $price->revision = 1;
-        $price = (array) $price;
-        $wpdb->update("{$wpdb->prefix}wc_railticket_prices", $price, array('id' => $price['id']));
-    }
-
-    echo "<p>DB Upgraded</p>";
 }
 
 
@@ -351,7 +301,7 @@ function wc_railticket_getyearselect($currentyear = false) {
         $chosenyear = $p[0];
     }
 
-    $firstdate = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railtimetable_dates ORDER BY date ASC LIMIT 1 ");
+    $firstdate = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}railticket_dates ORDER BY date ASC LIMIT 1 ");
     if ($firstdate) {
         $d = reset($firstdate);
         $startdate = intval(explode('-', $d->date)[0]);
@@ -584,7 +534,7 @@ function railticket_showbookableday() {
     } 
 
     $chosenfr = $bookable->fares->get_revision();
-    $alldata->fares = railtimetable_get_all_pricerevisions($chosenfr);
+    $alldata->fares = railticket_get_all_pricerevisions($chosenfr);
 
     $chosenttr = $bookable->timetable->get_revision();
     $alldata->ttrevs = \wc_railticket\Timetable::get_all_revisions();
@@ -628,7 +578,7 @@ function railticket_showbookableday() {
     echo $template->render($alldata);
 }
 
-function railtimetable_get_all_pricerevisions($chosenfr) {
+function railticket_get_all_pricerevisions($chosenfr) {
     $allfares = \wc_railticket\FareCalculator::get_all_revisions();
     $ret = array();
     foreach ($allfares as $fare) {
@@ -1527,7 +1477,7 @@ function railticket_fares() {
 
 
     $alldata->actionurl = railticket_get_page_url();
-    $alldata->farerevisions = railtimetable_get_all_pricerevisions($pricerevisionid);
+    $alldata->farerevisions = railticket_get_all_pricerevisions($pricerevisionid);
     $alldata->pricerevision = $pricerevisionid;
     $alldata->showdisabled = $showdisabled;
     if ($showdisabled) {

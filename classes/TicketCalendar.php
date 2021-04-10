@@ -54,14 +54,14 @@ class TicketCalendar
         $today = new \DateTime();
         $today->setTimezone($this->railticket_timezone);
         $total_days_in_month = (int) $date->format('t');
-        $calendar .= '<table class="calendar ticket-calendar">';
+        $calendar .= '<table class="railticket-calendar ticket-calendar">';
         $calendar .= '<thead>';
-        $calendar .= '<tr class="calendar-title">';
+        $calendar .= '<tr class="railticket-calendar-title">';
         $calendar .= '<th colspan="7">';
         $calendar .= railticket_timefunc('%B %Y', $date->getTimestamp());
         $calendar .= '</th>';
         $calendar .= '</tr>';
-        $calendar .= '<tr class="calendar-header">';
+        $calendar .= '<tr class="railticket-calendar-header">';
         $calendar .= '<th>';
         $calendar .= implode('</th><th>', $this->daysofweek());
         $calendar .= '</th>';

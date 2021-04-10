@@ -1,16 +1,79 @@
-.ticket-calendar tbody tr td.day {
+/* Calendar styles **/
+
+.railticket-calendar-wrapper {
+    text-align:center;
+    margin-left:auto;
+    margin-right:auto;
+    width:100%;
+    overflow:auto;
+    border:1px solid #eeeeee;
+    white-space: nowrap;
+    padding-top:25px;
+    padding-left:25px;
+    padding-right:25px;
+    background: #fafafa;
+}
+
+.railticket-calendar-box-wrapper {
+    display: inline-block;
+    margin:2px;
+    vertical-align:top;
+}
+
+.railticket-calendar{
+    background: #f4f2b3;
+    color: #880000;
+    table-layout:fixed;
+    padding:0px;
+    margin:0px;
+}
+
+
+.railticket-calendar-title th {
+    font-size: large;
+    font-weight: bold;
+    padding: 0px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.railticket-calendar-header th {
+    padding: 0px;
+    text-align: center;
+    font-size:large;
+}
+
+.railticket-calendar tbody tr td{
+    text-align: center;
+    vertical-align: top;
+}
+
+.railticket-calendar tbody tr td.pad{
+    background: rgba(255, 255, 255, 0.5);
+    padding:0px;
+    line-height:8px;
+    font-size:small;
+    padding:6px;
+}
+
+.railticket-calendar tbody tr td.day {
+    padding:0px;
+    line-height:8px;
     font-size:large;
     padding:11px;
+    background:#eeeeee;
 }
 
-
-.ticket-calendar th {
-    font-size:large;
+.railticket-calendar tbody tr td.today {
+    border:1px solid red;
 }
 
-.ticket-calendar .calendar-title th {
-    font-size:large;
+.railticket-calendar-special {
+    font-weight:bold;
+    text-decoration: underline;
 }
+
+/** Ticket styles **/
 
 .railticket_stageblock {
     border: 1px solid #eeeeee;
@@ -535,3 +598,6 @@ input[type="submit"],
 -webkit-appearance: none;
 border-radius: 0;
 }
+
+
+

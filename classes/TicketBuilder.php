@@ -681,7 +681,7 @@ class TicketBuilder {
 
         for ($year=$startyear; $year<$endyear+1; $year++) {
             for ($month=$startmonth; $month<$stop; $month++) {
-                $cal .= "<div class='calendar-box-wrapper' id='railtimetable-cal-".$year."-".$month."'>".$calendar->draw(date_i18n($year."-".$month."-01"), $this->is_guard())."</div>";
+                $cal .= "<div class='railticket-calendar-box-wrapper' id='railticket-cal-".$year."-".$month."'>".$calendar->draw(date_i18n($year."-".$month."-01"), $this->is_guard())."</div>";
              }
              $startmonth = 1;
              $stop = $endmonth+1;
@@ -689,7 +689,7 @@ class TicketBuilder {
 
         $str = "<div id='datechoosetitle' class='railticket_stageblock' style='display:block;'><h3>Choose Date of Travel</h3>";
         $str .= "<p>".get_option('wc_product_railticket_top_comment')."</p></div>".
-            "<div id='railtimetable-cal' class='calendar-wrapper'>.$cal.</div>";
+            "<div id='railticket-cal' class='railticket-calendar-wrapper'>.$cal.</div>";
 
         $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>".
             "<p class='railticket_help'>Choose a date from the calendar above, or use the buttons below.<br />Dates marked with an X are sold out.</p>";
