@@ -740,10 +740,18 @@ function showCapacity(response) {
     }
 
     if (allok) {
-        // TODO Account for seat only allocation here
+        // TODO Account for seat only allocation here       
         renderdata.message = 'The following seating bay(s) are available for your journey:';
+        
+        if (getCBFormValue('disabledrequest')) {
+            renderdata.disabledrequest = 'If there is more than one wheelchair user, or you need to communicate any other special requests '+
+                'for the disabled traveller, please add the details in additional information box on the checkout page.';
+        } else {
+            renderdata.hidedisabledrequest = 'display:none;';
+        }
     } else {
         renderdata.message = 'Sorry, but we do not have space for a party of this size on your chosen departure(s).';
+        renderdata.hidedisabledrequest = 'display:none;';
     }
 
     if (anydisablewarn) {
