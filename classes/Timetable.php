@@ -335,6 +335,7 @@ class Timetable {
     public function next_train_from(Station $from) {
         $alldeps = array_merge($this->get_down_deps($from), $this->get_up_deps($from));
         $now = new \DateTime();
+        $now->setTimezone($this->railticket_timezone);
         $nowtime = ($now->format('G')*60) + $now->format('i');
         foreach ($alldeps as $dep) {
             $time = (intval($dep->hour)*60) + intval($dep->min) + intval(get_option("wc_product_railticket_bookinggrace"));
