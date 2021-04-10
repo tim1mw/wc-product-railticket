@@ -184,7 +184,7 @@ print_r($ldeptime);
 
         $disabled = new \stdclass();
         $disabled->name = 'disabledrequest';
-        $disabled->title = __('Request space for disabled visitor', 'wc_railticket');
+        $disabled->title = __('Request Wheelchair Space', 'wc_railticket');
         $alldata->ticket_opts[] = $disabled;
 
         $alldata->fields = array();
