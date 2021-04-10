@@ -25,6 +25,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_prioritynotify');
 
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
@@ -195,6 +196,10 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_bookinglimits">Booking limits</label></th>
             <td><textarea rows='10' cols='60' id="wc_product_railticket_bookinglimits" name="wc_product_railticket_bookinglimits"><?php echo get_option('wc_product_railticket_bookinglimits'); ?></textarea></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_prioritynotify">Notify these email addresses when a wheelchair booking is made<br />(comma seperated list)</label></th>
+            <td><input size='60'  type="text" id="wc_product_railticket_prioritynotify" name="wc_product_railticket_prioritynotify" value="<?php echo get_option('wc_product_railticket_prioritynotify'); ?>" /></td>
         </tr>
     </table>
     <?php submit_button(); ?>
@@ -1152,8 +1157,26 @@ function railticket_show_order_main($orderid) {
         return;
     }
 
+    $alldata = railticket_get_booking_order_data($bookingorder);
+    $alldata['extrabuttons'] = '';
+
+    if (current_user_can('admin_tickets')) {
+         $template = $rtmustache->loadTemplate('edit_order_button');
+         $alldata['extrabuttons'] .= $template->render($alldata)."<br />";
+    }
+
+    if ($bookingorder->is_manual() && current_user_can('delete_tickets')) {
+         $template = $rtmustache->loadTemplate('delete_order_button');
+         $alldata['extrabuttons'] .= $template->render($alldata);
+    }
+
+    $template = $rtmustache->loadTemplate('showorder');
+    echo $template->render($alldata);
+}
+
+function railticket_get_booking_order_data(\wc_railticket\BookingOrder $bookingorder) {
     $orderdata = array();
-    $orderdata[] = array('item' => __('Order ID', 'wc_railticket'), 'value' => $orderid);
+    $orderdata[] = array('item' => __('Order ID', 'wc_railticket'), 'value' => $bookingorder->get_order_id());
     $orderdata[] = array('item' => __('Name', 'wc_railticket'), 'value' => $bookingorder->get_customer_name());
     $orderdata[] = array('item' => __('Postcode', 'wc_railticket'), 'value' => $bookingorder->get_postcode());
     $orderdata[] = array('item' => __('Paid', 'wc_railticket'), 'value' => $bookingorder->is_paid(true));
@@ -1177,7 +1200,7 @@ function railticket_show_order_main($orderid) {
         'baystr' => __('Bays', 'wc_railticket'),
         'otheritemsstr' => __('Shop Items to Collect', 'wc_railticket'),
         'collectedstr' => __('Collected', 'wc_railticket'),
-        'orderid' => $orderid,
+        'orderid' => $bookingorder->get_order_id(),
         'actionurl' => railticket_get_page_url(),
         'buttonstyle' => 'width:100%;',
         'otheritems' => $bookingorder->other_items()
@@ -1187,20 +1210,7 @@ function railticket_show_order_main($orderid) {
         $alldata['otheritemsstyle'] = 'display:none';
     }
 
-    $alldata['extrabuttons'] = '';
-
-    if (current_user_can('admin_tickets')) {
-         $template = $rtmustache->loadTemplate('edit_order_button');
-         $alldata['extrabuttons'] .= $template->render($alldata)."<br />";
-    }
-
-    if ($bookingorder->is_manual() && current_user_can('delete_tickets')) {
-         $template = $rtmustache->loadTemplate('delete_order_button');
-         $alldata['extrabuttons'] .= $template->render($alldata);
-    }
-
-    $template = $rtmustache->loadTemplate('showorder');
-    echo $template->render($alldata);
+    return $alldata;
 }
 
 function railticket_get_booking_render_data($bookingorder) {

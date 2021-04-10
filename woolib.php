@@ -334,10 +334,30 @@ function railticket_cart_complete($order_id) {
                 $key = $item->get_meta( '_cart_item_key' );
                 \wc_railticket\Booking::cart_purchased($order_id, $item_id, $key);
             }
+
+            $pn = get_option('wc_product_railticket_prioritynotify');
+            if (strlen($pn) > 0) {
+                $bo = \wc_railticket\BookingOrder::get_booking_order($order_id);
+                if ($bo->priority_requested() > 0) {
+                    railticket_send_priority_notify($bo, $pn);
+                }
+            }
         }
         $order->update_meta_data( '_railticket_thankyou_action_done', true );
         $order->save();
     }
+}
+
+function railticket_send_priority_notify(\wc_railticket\BookingOrder $bo, $pn) {
+    global $rtmustache;
+    $alldata = railticket_get_booking_order_data($bo);
+
+    $template = $rtmustache->loadTemplate('priorityemail');
+    $message = $template->render($alldata);
+    $content_type = function() { return 'text/html'; };
+    add_filter( 'wp_mail_content_type', $content_type );
+    wp_mail(explode(',', $pn), "Wheelchair booking for ".$bo->get_date(true), $message);
+    remove_filter( 'wp_mail_content_type', $content_type );
 }
 
 /**

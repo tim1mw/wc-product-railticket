@@ -194,6 +194,10 @@ class BookingOrder {
         return $orderitems;
     }
 
+    public function get_order_id() {
+        return $this->bookings[0]->get_order_id();
+    }
+
     public function is_manual() {
         return $this->manual;
     }
