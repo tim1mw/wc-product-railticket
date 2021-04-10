@@ -22,7 +22,8 @@ function setupTickets() {
     railTicketAddListener('validateOverrideIn', 'click', validateOverride);
     railTicketAddListener('confirmchoices', 'click', checkCapacity);
     railTicketAddListener('addtocart_button', 'click', cartTickets);
-
+    railTicketAddListener('disabledrequest', 'change', disabledRequest);
+    
     if (guard) {
         railTicketAddListener('createbooking', 'click', manualTickets);
         railTicketAddListener('nominimum', 'click', allocateTickets);
@@ -872,6 +873,12 @@ function submitTickets() {
             errordiv.style.display='block';
         }
     });
+}
+
+function disabledRequest() {
+    var capacitydiv = document.getElementById('ticket_capacity');
+    capacitydiv.style.display = 'none';
+    showTicketStages('tickets', false);
 }
 
 
