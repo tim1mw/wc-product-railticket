@@ -747,7 +747,7 @@ function showCapacity(response) {
     }
 
     if (anydisablewarn) {
-        renderdata.warning = 'WARNING: We could not allocate disabled space for all or part of your journey. '
+        renderdata.warning = 'WARNING: We could not allocate a wheelchair space for all or part of your journey. '
             'You may continue with the selection shown, or try a different train.';
         renderdata.hidewarning = '';
     } else {
