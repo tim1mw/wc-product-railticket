@@ -1,0 +1,28 @@
+<html>
+<head></head>
+<body>
+    <table border='1'>
+    {{# details }}
+        <tr><th style='text-align:right'>{{item}}</th><td class='railticket_meta'>{{{value}}}</td></tr>
+    {{/ details }}
+    </table>
+
+    <br />
+
+    {{# bookings }}
+        <h2>{{title}}</h2>
+        <table border='1'  class='railticket_admintable'>
+            <tr><th style='text-align:right'>{{tripstr}}</th><td class='railticket_meta'>{{stns}}</td></tr>
+            <tr><th style='text-align:right'>{{timestr}}</th><td class='railticket_meta'>{{deptime}}</td></tr>
+            <tr><th style='text-align:right'>{{baystr}}</th><td class='railticket_meta'>{{bays}}</td></tr>
+            <tr><th style='text-align:right'>{{collectedstr}}</th><td class='railticket_meta'>{{collected}}</td></tr>
+        </table>
+    {{/ bookings }}
+
+    <h2>{{otheritemsstr}}</h2>
+    <table border='1'>
+    {{# otheritems }}
+        <tr><th style='text-align:right'>{{qty}} x</th><td class='railticket_meta'>{{{name}}}</td></tr>
+    {{/ otheritems }}
+    </table>
+</body>
