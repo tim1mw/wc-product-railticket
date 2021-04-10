@@ -188,6 +188,17 @@ class TrainService {
         return false;
     }
 
+    public function count_priority_requested() {
+        global $wpdb;
+        $sql = "SELECT COUNT(id) FROM ".
+            "{$wpdb->prefix}wc_railticket_bookings WHERE ".
+            "fromstation = '".$this->fromstation->get_stnid()."' AND ".
+            "date = '".$this->bookableday->get_date()."' AND ".
+            "time = '".$this->deptime."' AND priority = 1";
+
+        return $wpdb->get_var($sql);
+    }
+
     public function get_inventory($baseonly = false, $noreserve = false, $onlycollected = false, $excludes = false) {
         global $wpdb;
 

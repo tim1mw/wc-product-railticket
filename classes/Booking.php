@@ -263,7 +263,15 @@ class Booking {
         return $this->data->wooorderitem;
     }
 
-    public function get_priority() {
+    public function get_priority($format = false) {
+        if ($format) {
+            if ($this->data->priority) {
+                return __('Yes', 'wc_railticket');
+            }
+
+            return __('No', 'wc_railticket');
+        }
+
         return $this->data->priority;
     }
 

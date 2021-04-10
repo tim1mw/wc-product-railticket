@@ -1000,6 +1000,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<tr><th>Time</td><th>".$deptime->formatted."</th></tr>".
             "<tr><th>Direction</th><th>".$direction."</th></tr>".
             "<tr><th>Total Orders</th><th>".count($bookings)."</th></tr>".
+            "<tr><th>Wheelchair requests</th><th>".$trainservice->count_priority_requested()."</th></tr>".
             "<tr><th>Seats Used</th><th>".$seats."</th></tr>".
             "<tr><th>Seats Available</th><th>".$capused->totalseats."</th></tr>".
             "</table></div><br />";
@@ -1030,6 +1031,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             <th>Name</th>
             <th>To</th>
             <th>Seats</th>
+            <th>Wheelchair<br />Request</th>
             <th>Bays</th>
             <th>Collected</th>
         </tr>
@@ -1049,6 +1051,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         echo "<td>".$booking->get_order_name()."</td>".
             "<td>".$booking->get_to_station()->get_name()."</td>".
             "<td>".$booking->get_seats()."</td>".
+            "<td>".$booking->get_priority(true)."</td>".
             "<td>";
         echo $booking->get_bays(true);
         echo "</td>";
@@ -1161,6 +1164,7 @@ function railticket_show_order_main($orderid) {
     $orderdata[] = array('item' => __('Date'), 'value' => $bookingorder->get_date(true, true));
     $orderdata[] = array('item' => __('Journey Type'), 'value' => $bookingorder->get_journeytype(true));
     $orderdata[] = array('item' => __('Seats'), 'value' => $bookingorder->get_seats());
+    $orderdata[] = array('item' => __('Wheelchair space requested'), 'value' => $bookingorder->priority_requested(true));
     $orderdata[] = array('item' => __('Booked by'), 'value' => $bookingorder->get_created_by(true));
     $orderdata[] = array('item' => __('Notes'), 'value' => $bookingorder->get_notes());
 

@@ -250,7 +250,7 @@ function formatBays(bays) {
     for (i in bays) {
         var parts = i.split('_');
         if (parts[1] == 'priority') {
-            data.push(bays[i]+"x "+parts[0]+" Seat Disabled Bay");    
+            data.push(bays[i]+"x "+parts[0]+" Seat Wheelchair Bay");    
         } else {
             data.push(bays[i]+"x "+parts[0]+" Seat Normal Bay");  
         }

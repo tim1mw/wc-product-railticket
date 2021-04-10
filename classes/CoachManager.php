@@ -93,7 +93,7 @@ class CoachManager {
         $parts = explode('_', $bay);
         switch ($parts[1]) {
             case 'normal': $name = $parts[0].' '.__('Seat Bay', 'wc_railticket'); break;
-            case 'priority': $name = $parts[0].' '.__('Seat Disabled Bay', 'wc_railticket'); break;
+            case 'priority': $name = $parts[0].' '.__('Seat Wheelchair Bay', 'wc_railticket'); break;
             default: $name = $i; break;
         }
 
@@ -112,7 +112,7 @@ class CoachManager {
 
     public static function format_booking_bay($bay) {
         if ($bay->priority) {
-            $name = __('Seat Disabled Bay', 'wc_railticket');
+            $name = __('Seat Wheelchair Bay', 'wc_railticket');
         } else {
             $name = __('Seat Bay', 'wc_railticket');
         }
@@ -122,7 +122,7 @@ class CoachManager {
 
     public static function format_bay_name($bay) {
         if ($bay->priority) {
-            $name = __('Seat Disabled Bay', 'wc_railticket');
+            $name = __('Seat Wheelchair Bay', 'wc_railticket');
         } else {
             $name = __('Seat Bay', 'wc_railticket');
         }

@@ -368,6 +368,10 @@ class BookingOrder {
         return $this->bookings[0]->get_seats();
     }
 
+    public function priority_requested($format = false) {
+        return $this->bookings[0]->get_priority($format);
+    }
+
     public function get_journeys() {
         $j = 0;
         foreach ($this->bookings as $bk) {
