@@ -356,7 +356,6 @@ function uncheckAll(classname) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
-
         sameservicereturn = response['sameservicereturn'];
         var div = document.getElementById('deptimes_data');
         deplegs = response['legs'];
@@ -427,6 +426,12 @@ function depTimeChanged(evt) {
     var legselections = [];
     for (var leg = 0; leg < deplegs.length; leg++) {
         legselections[leg] = parseInt(getFormValue('dep_'+leg));
+        var deptime = 0;
+        var offset = 0;
+        if (leg > 0) {
+            offset = (deplegs[leg-1].times.length - deplegs[leg].times.length);
+            deptime = (legselections[leg-1].hour * 60) + legselections[leg-1].min;
+        }
 
         for (var ti = 0; ti < deplegs[leg].times.length; ti++) {
             var time = deplegs[leg].times[ti];
@@ -436,7 +441,7 @@ function depTimeChanged(evt) {
 
             var ele = document.getElementById('dep_'+leg+'_'+time.index);
 
-            if (leg > 0 && time.index < legselections[leg-1]) {
+            if (leg > 0 && time.index-offset < legselections[leg-1]) {
                 ele.disabled = true;
                 ele.checked = false;
             } else {
