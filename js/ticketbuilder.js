@@ -539,7 +539,14 @@ function getSelectionSummary() {
 
         return "<div class='railticket_container'><p>"+special.name+" - "+tdate+"</p><p class='railticket_arrtime'>"+special.description+"</p></div>";
     } else {
-        var dep = deplegs[0].times[getFormValue('dep_0')];
+        var index = getFormValue('dep_0');
+        var dep;
+        for (i in deplegs[0].times) {
+            if (deplegs[0].times[i].index == index) {
+                dep = deplegs[0].times[i];
+                break;
+            }
+        }
         return "<div class='railticket_container'><p>"+tdate+". Departing from "+fromstationdata.name+" at "+dep.formatted+". "+journeychoicedata.journeydesc+".</p></div>";
     }
 }
