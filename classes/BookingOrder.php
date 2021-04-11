@@ -241,12 +241,7 @@ class BookingOrder {
         if ($format) {
             $fmt = array();
             foreach ($this->tickets as $ticket => $num) {
-                 $tparts = explode('/', $ticket);
-                 $name = $num."x ".$this->bookableday->fares->get_ticket_name($tparts[0]);
-                 if ($this->discount && $this->discount->ticket_has_discount($tparts[0]) && count($tparts) > 1) {
-                     $name .= " ".$this->discount->get_name();
-                 }
-                 $fmt[] = $name;
+                $fmt[] = $num."x ".$this->bookableday->fares->get_ticket_name($ticket, $this->discount);
             }
             return implode(', ', $fmt);
         }
@@ -313,8 +308,10 @@ class BookingOrder {
                 if (strpos($tpcode, '__') === 0) {
                     continue;
                 }
-                // TODO Sort out currency symblos properly....
-                $filtered[] = $this->bookableday->fares->get_ticket_name($tpcode).' £'.number_format($tpprice, 2).' '.__('each', 'wc_railticket');
+                $name = $this->bookableday->fares->get_ticket_name($tpcode, $this->discount);
+
+                // TODO Sort out currency symbols properly....
+                $filtered[] = $name.' £'.number_format($tpprice, 2).' '.__('each', 'wc_railticket');
             }
             return implode(', ', $filtered);
         }
@@ -339,19 +336,8 @@ class BookingOrder {
         return false;
     }
 
-    public function get_discount_type($format = false) {
-        if ($this->ticketprices && array_key_exists('__discounttype', $this->ticketprices)) {
-
-            if (!$format) {
-                return $this->ticketprices['__discounttype'];
-            }
-
-            // TODO Lookup discount type name here!
-
-            return $this->ticketprices['discounttype'];
-        }
-
-        return '';
+    public function get_discount_type() {
+        return $this->discount;
     }
 
     public function get_discount() {

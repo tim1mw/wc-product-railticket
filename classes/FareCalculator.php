@@ -50,9 +50,14 @@ class FareCalculator {
         return $r;
     }
 
-    public static function get_ticket_name($ticket) {
+    public static function get_ticket_name($ticket, $discount = false) {
         global $wpdb;
-        return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$ticket."'");
+        $tparts = explode('/', $ticket);
+        $name = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$tparts[0]."'");
+        if ($discount && $discount->ticket_has_discount($tparts[0]) && count($tparts) > 1) {
+            $name .= " ".$discount->get_name();
+        }
+        return $name;
     }
 
     public static function get_all_ticket_types($showhidden = false) {
@@ -146,6 +151,7 @@ class FareCalculator {
 
     public static function clean_code($code) {
         $code = strtolower(str_replace('|', '_', $code));
+        $code = str_replace('/', '_', $code);
         return str_replace(' ', '_', $code);
     }
 
@@ -350,7 +356,7 @@ class FareCalculator {
             // PHP only performs a shallow copy of the object with clone(), that's no good. So use json to clone!
             $customticket = json_decode(json_encode($ticketd));
             $customticket->tickettype = $customticket->tickettype.'/'.$discount->get_shortname();
-            $customticket->price = $discount->apply_price_rule($ticketd->tickettype, $ticketd->price);
+            $customticket->price = $discount->apply_price_rule($customticket->tickettype, $ticketd->price);
             $customticket->description = $discount->get_name();
             $customticket->composition = new \stdclass();
             $comp = (array) $ticketd->composition;
@@ -448,8 +454,8 @@ class FareCalculator {
             "(stationone = ".$to->get_stnid()." AND stationtwo = ".$from->get_stnid()."))";
         $price = $wpdb->get_var($sql);
 
-        if ($discount && count($tparts) > 1) {
-            $price = $discount->apply_price_rule($tparts[0], $price);
+        if ($discount) {
+            $price = $discount->apply_price_rule($ttype, $price);
         }
 
         return $price;
@@ -461,7 +467,7 @@ class FareCalculator {
         $tkts = (array) $ticketselections;
 
         foreach ($tkts as $ttype => $number) {
-            // Check if this is a discounted traveller
+            // Strip out any discount code we may have from the ticket type
             $parts = explode('/', $ttype);
 
             $val = $wpdb->get_var("SELECT seats FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$parts[0]."'") * $number;

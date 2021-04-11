@@ -46,11 +46,26 @@ class DiscountType {
     }
 
     public function apply_price_rule($tickettype, $price) {
-        if (!property_exists($this->data->rules->discounts, $tickettype)) {
+        $tparts = explode('/', $tickettype);
+        if (!property_exists($this->data->rules->discounts, $tparts[0])) {
             return $price;
         }
 
-        $rule = $this->data->rules->discounts->$tickettype;
+        // We should be given the full ticket type code here, if it has the discount string on the end
+        // Then we should apply the discount id this is a customtype.
+        $tc = count($tparts);
+        if ($tc == 1 && $this->data->customtype == true) {
+            return $price;
+        }
+
+        // Sanity check, this ticketype is for this discount!
+        if ($tc == 2 && $tparts[1] != $this->data->shortname) {
+            return $price;
+        }
+
+        $k = $tparts[0];
+
+        $rule = $this->data->rules->discounts->$k;
 
         switch ($rule->type) {
             case 'percent': 

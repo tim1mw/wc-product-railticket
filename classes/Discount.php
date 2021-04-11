@@ -40,7 +40,7 @@ class Discount extends DiscountType {
         $data = $wpdb->get_row("SELECT discounts.*, codes.code, codes.start, codes.end, codes.single, codes.disabled ".
             "FROM {$wpdb->prefix}wc_railticket_discountcodes codes ".
             "INNER JOIN {$wpdb->prefix}wc_railticket_discounts discounts ON discounts.shortname = codes.shortname ".
-            "WHERE codes.code = '".$code."'");
+            "WHERE codes.code = '".strtolower($code)."'");
 
         if (!$data) {
             return false;

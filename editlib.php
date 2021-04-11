@@ -1125,12 +1125,17 @@ function railticket_show_order_main($orderid) {
 }
 
 function railticket_get_booking_order_data(\wc_railticket\BookingOrder $bookingorder) {
+    $discount = $bookingorder->get_discount_type();
+
     $orderdata = array();
     $orderdata[] = array('item' => __('Order ID', 'wc_railticket'), 'value' => $bookingorder->get_order_id());
     $orderdata[] = array('item' => __('Name', 'wc_railticket'), 'value' => $bookingorder->get_customer_name());
     $orderdata[] = array('item' => __('Postcode', 'wc_railticket'), 'value' => $bookingorder->get_postcode());
     $orderdata[] = array('item' => __('Paid', 'wc_railticket'), 'value' => $bookingorder->is_paid(true));
     $orderdata[] = array('item' => __('Price', 'wc_railticket'), 'value' => $bookingorder->get_price(true));
+    if ($discount) {
+        $orderdata[] = array('item' => __('Discount Type Applied', 'wc_railticket'), 'value' => $discount->get_name(), 'style' => 'color:blue');
+    }
     $orderdata[] = array('item' => __('Price Breakdown', 'wc_railticket'), 'value' => $bookingorder->get_ticket_prices(true));
     $orderdata[] = array('item' => __('Supplement', 'wc_railticket'), 'value' => $bookingorder->get_supplement(true));
     $orderdata[] = array('item' => __('Tickets'), 'value' => $bookingorder->get_tickets(true));
