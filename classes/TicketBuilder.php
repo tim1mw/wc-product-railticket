@@ -99,6 +99,9 @@ class TicketBuilder {
         }
 
         $this->discount = \wc_railticket\Discount::get_discount($discountcode);
+        if ($this->discount && $this->fromstation && $this->tostation) {
+            $this->discount->apply_stations($this->fromstation, $this->tostation);
+        }
     }
 
     private function is_guard() {

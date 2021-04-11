@@ -4,14 +4,34 @@ namespace wc_railticket;
 
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
-class Discount {
+class Discount extends DiscountType {
     public function __construct($data) {
         $this->data = $data;
+        $this->data->rules = json_decode($this->data->rules);
 
         $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $this->today = new \DateTime();
         $this->today->setTimezone($this->railticket_timezone);
         $this->today->setTime(0,0,0);
+
+        $this->valid = !$this->data->disabled;
+
+        if ($this->data->start != null) {
+            $startdate = DateTime::createFromFormat('Y-m-d', $this->data->start);
+            $startdate->setTimezone($this->railticket_timezone);
+            if ($today < $startdate) {
+                $this->valid;
+            }
+        }
+
+        if ($this->data->end != null) {
+            $enddate = DateTime::createFromFormat('Y-m-d', $this->data->end);
+            $enddate->setTimezone($this->railticket_timezone);
+            if ($today > $enddate) {
+                $this->valid;
+            }
+        }
+
     }
 
     public static function get_discount($code) {
@@ -29,49 +49,24 @@ class Discount {
         return new Discount($data);
     }
 
-    public function get_shortname() {
-        return $this->data->shortname;
+    public function apply_stations(Station $from, Station $to) {
+        // Check the station rules!
     }
 
     public function get_code() {
         return $this->data->code;
     }
 
-    public function get_name() {
-        return $this->data->name;
-    }
-
-    public function get_baseprice_field() {
-        return $this->data->basefare;
-    }
-
-    public function check_price_field($prefered) {
-        if ($this->data->basefare == 'auto') {
-            return $prefered;
+    public function ticket_has_discount($tickettype) {
+        if (!$this->valid) {
+            return false;
         }
 
-        return $this->data->basefare;
+        return parent::ticket_has_discount($tickettype);
     }
 
     public function is_valid() {
-
-        if ($this->data->start != null) {
-            $startdate = DateTime::createFromFormat('Y-m-d', $this->data->start);
-            $startdate->setTimezone($this->railticket_timezone);
-            if ($today < $startdate) {
-                return false;
-            }
-        }
-
-        if ($this->data->end != null) {
-            $enddate = DateTime::createFromFormat('Y-m-d', $this->data->end);
-            $enddate->setTimezone($this->railticket_timezone);
-            if ($today > $enddate) {
-                return false;
-            }
-        }
-
-        return !$this->data->disabled;
+        return $this->valid;
     }
 
     public function use() {

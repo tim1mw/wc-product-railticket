@@ -161,7 +161,8 @@ function validateDiscount(evt) {
             dv.innerHTML = '<p><span>Sorry, this discount is not valid.<span></p>';
         }
         ticketdata = response['tickets'];
-        allocateTickets();
+console.log(ticketdata);
+        renderTicketSelector();
     });
 }
 
