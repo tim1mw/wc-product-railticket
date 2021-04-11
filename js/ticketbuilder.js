@@ -156,12 +156,11 @@ function validateDiscount(evt) {
     railTicketAjax('validate_discount', true, function(response) {
         var dv = document.getElementById('discountvalid');
         if (response.valid) {
-            dv.innerHTML = '<p><span>Discount validated: '+response.name+'<span></p>';
+            dv.innerHTML = '<p><span>'+response.message+'<span></p>';
         } else {
-            dv.innerHTML = '<p><span>Sorry, this discount is not valid.<span></p>';
+            dv.innerHTML = '<p><span>'+response.message+'<span></p>';
         }
         ticketdata = response['tickets'];
-console.log(ticketdata);
         renderTicketSelector();
     });
 }
@@ -369,6 +368,7 @@ function specialClicked(evt) {
     specialSelected = true;
     railTicketAjax('ticket_data', true, function(response) {
         ticketdata = response;
+        document.getElementById('discountvalid').innerHTML = '';
         renderTicketSelector();
     } );
 }
@@ -387,6 +387,7 @@ function uncheckAll(classname) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
+        document.getElementById('discountvalid').innerHTML = '';
         sameservicereturn = response['sameservicereturn'];
         var div = document.getElementById('deptimes_data');
         deplegs = response['legs'];

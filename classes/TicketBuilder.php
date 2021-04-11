@@ -98,10 +98,7 @@ class TicketBuilder {
             $this->disabledrequest = false;
         }
 
-        $this->discount = \wc_railticket\Discount::get_discount($discountcode);
-        if ($this->discount && $this->fromstation && $this->tostation) {
-            $this->discount->apply_stations($this->fromstation, $this->tostation);
-        }
+        $this->discount = \wc_railticket\Discount::get_discount($discountcode, $this->fromstation, $this->tostation, $this->journeytype);
     }
 
     private function is_guard() {
@@ -749,13 +746,14 @@ class TicketBuilder {
 
 
     public function get_validate_discount() {
-        if ($this->discount == false || !$this->discount->is_valid()) {
+        if ($this->discount == false) {
             return array('valid' => false,
+                'message' => __('Sorry, this discount code is not valid', 'wc_railticket'),
                 'tickets' => $this->get_ticket_data());
         }
 
-        return array('valid' => true,
-            'name' => $this->discount->get_name(),
+        return array('valid' => $this->discount->is_valid(),
+            'message' => $this->discount->get_message(),
             'tickets' => $this->get_ticket_data());
     }
 } 
