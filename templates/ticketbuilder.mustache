@@ -29,7 +29,15 @@
 <div id='tickets' class='railticket_stageblock'>
     <h3>Choose Tickets</h3>
     <div class='railicket_selected_service' id='railticket_summary_service'></div>
-    <p class='railticket_help'>Use the boxes on the left to enter the number of tickets required</p>
+    <p class='railticket_help'>Use the boxes on the left to enter the number of tickets required.<br />
+    If you have a discount code, please enter it fist and click apply to validate it.</p>
+    <div id='ticket_discountcode' class='railticket_container railticket_travellers'>
+        <div class='railticket_travellers_numbers'><div class='quantity'>
+            <input type='text' name='discountcode' value='' size='12' id='discountcode' />
+            <label for='discountcode'><span><input type='button' name='applydiscount' id='applydiscount_button' value='Apply Discount Code'/></span></label>
+            <div id='discountvalid'></div>
+        </div></div>
+    </div>
     <div id='ticket_travellers' class='railticket_container'></div>
     <div id='ticket_summary' class='railticket_container'></div>
     <div id='ticket_capbutton' class='railticket_container'>

@@ -22,6 +22,8 @@ function setupTickets() {
     railTicketAddListener('validateOverrideIn', 'click', validateOverride);
     railTicketAddListener('confirmchoices', 'click', checkCapacity);
     railTicketAddListener('addtocart_button', 'click', cartTickets);
+    railTicketAddListener('applydiscount_button', 'click', validateDiscount);
+    railTicketAddListener('discountcode', 'keypress', discountCodeBox);
     railTicketAddListener('disabledrequest', 'change', disabledRequest);
     
     if (guard) {
@@ -108,6 +110,7 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('notes', getFormValue('notes'));
     data.append('nominimum', getCBFormValue('nominimum'));
     data.append('onlineprice', getCBFormValue('onlineprice'));
+    data.append('discountcode', getFormValue('discountcode').trim());
     data.append('manual', manual);
     request.send(data);
 }
@@ -138,6 +141,33 @@ function validateOverride() {
     } else {
         overridevalid = false;
         odiv.innerHTML='<p>Override code invalid - please try again.</p>';
+    }
+}
+
+function validateDiscount(evt) {
+    evt.preventDefault();
+    var dc = getFormValue('discountcode').trim();
+    if (dc.length == 0) {
+        var dv = document.getElementById('discountvalid');
+        dv.innerHTML = '<p><span>No code entered.<span></p>';
+        return;
+    }
+
+    railTicketAjax('validate_discount', true, function(response) {
+        var dv = document.getElementById('discountvalid');
+        if (response.valid) {
+            dv.innerHTML = '<p><span>Discount validated: '+response.name+'<span></p>';
+        } else {
+            dv.innerHTML = '<p><span>Sorry, this discount is not valid.<span></p>';
+        }
+        ticketdata = response['tickets'];
+        allocateTickets();
+    });
+}
+
+function discountCodeBox(evt) {
+    if (evt.charCode == 13) {
+        validateDiscount(evt);
     }
 }
 

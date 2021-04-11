@@ -248,7 +248,7 @@ class FareCalculator {
         return $wpdb->get_results($sql, OBJECT);
     }
 
-    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discountcode, $special) {
+    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discount, $special) {
         global $wpdb;
         $tickets = new \stdClass();
 
@@ -264,6 +264,11 @@ class FareCalculator {
             $pfield = 'localprice';
         } else {
             $pfield = 'price';
+        }
+
+        // Check that the discount code doesn't override the price choice here
+        if ($discount) {
+            $pfield = $discount->check_price_field($pfield);
         }
 
         if ($special) {
@@ -331,7 +336,7 @@ class FareCalculator {
     }
 
     public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice,
-        $nominimum, $discountcode, $special) {
+        $nominimum, $discount, $special) {
         if ($localprice) {
             $pfield = 'localprice';
         } else {
@@ -348,12 +353,17 @@ class FareCalculator {
         $pdata->price = 0;
         $pdata->ticketprices = array();
         $pdata->ticketprices['__pfield'] = $pfield;
-        $pdata->ticketprices['__discountcode'] = $discountcode;
-        $pdata->ticketprices['__discounttype'] = '';
+        if ($discount) {
+            $pdata->ticketprices['__discountcode'] = $discount->get_code();
+            $pdata->ticketprices['__discounttype'] = $discount->get_shortname();
+        } else {
+            $pdata->ticketprices['__discountcode'] = false;
+            $pdata->ticketprices['__discounttype'] = '';   
+        }
         $pdata->revision = $this->revision;
 
         foreach ($ticketsallocated as $ttype => $qty) {
-            $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discountcode, $special);
+            $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discount, $special);
             $pdata->price += floatval($price)*floatval($qty);
             $pdata->ticketprices[$ttype] = $price;
         }
@@ -372,7 +382,7 @@ class FareCalculator {
         return $pdata;
     }
 
-    public function get_fare(Station $from, Station $to, $journeytype, $ttype, $pfield, $discountcode, $special) {
+    public function get_fare(Station $from, Station $to, $journeytype, $ttype, $pfield, $discount, $special) {
         global $wpdb;
         if (!$special) {
             $jt = " AND journeytype = '".$journeytype."' ";

@@ -10,7 +10,7 @@ class TicketBuilder {
 
     public function __construct($dateoftravel, $fromstation, $journeychoice, $times,
         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes,
-        $nominimum, $show, $localprice, $manual) {
+        $nominimum, $show, $localprice, $manual, $discountcode) {
         global $wpdb;
         $this->show = $show;
 
@@ -98,8 +98,7 @@ class TicketBuilder {
             $this->disabledrequest = false;
         }
 
-        // TODO Actually set the discount code here
-        $this->discountcode = false;
+        $this->discount = \wc_railticket\Discount::get_discount($discountcode);
     }
 
     private function is_guard() {
@@ -126,7 +125,7 @@ class TicketBuilder {
 
         $ua = htmlentities($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, 'UTF-8');
         if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; rv:11.0') !== false)) {
-            return "<p>Sorry, the ticket booking system isn't supported on Internet Explorer. If you are using Windows 10, then please swtich to ".
+            return "<p>Sorry, the ticket booking system isn't supported on Internet Explorer. If you are using Windows 10, then please switch to ".
                 "the Microsoft Edge browser which has replaced Internet Explorer to continue your purchase. Users of older Windows versions ".
                 "will need to use Chrome or Firefox.</p>";
         }
@@ -388,7 +387,7 @@ class TicketBuilder {
 
     public function get_ticket_data() {
         return $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
-            $this->is_guard(), $this->localprice, $this->discountcode, $this->special);
+            $this->is_guard(), $this->localprice, $this->discount, $this->special);
     }
 
     public function get_bookable_trains() {
@@ -558,7 +557,7 @@ class TicketBuilder {
         } 
 
         $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated,
-            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discountcode, $this->special);
+            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discount, $this->special);
 
         $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);
 
@@ -745,4 +744,15 @@ class TicketBuilder {
         return $str;
     }
 
+
+    public function get_validate_discount() {
+        if ($this->discount == false || !$this->discount->is_valid()) {
+            return array('valid' => false,
+                'tickets' => $this->get_ticket_data());
+        }
+
+        return array('valid' => true,
+            'name' => $this->discount->get_name(),
+            'tickets' => $this->get_ticket_data());
+    }
 } 
