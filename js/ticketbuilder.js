@@ -461,7 +461,7 @@ function depTimeChanged(evt) {
     }
 
     if (count == deplegs.length) {
-        renderTicketSelector();
+        setTimeout(renderTicketSelector, 500);
     } else {
         showTicketStages('deptimes', false); 
     }
