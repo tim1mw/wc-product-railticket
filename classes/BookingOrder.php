@@ -125,6 +125,17 @@ class BookingOrder {
         return new BookingOrder($bookings, $cart_item['key'], false, $cart_item);
     }
 
+    public static function get_booking_order_bycartkey($key) {
+        global $wpdb;
+
+        $bookings = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$key."' ORDER BY time ASC");
+        if (count($bookings) == 0) {
+            return false;
+        }
+
+        return new BookingOrder($bookings, $key, false, false);
+    }
+
     public static function get_booking_order_itemid($itemid) {
         global $wpdb;
 
