@@ -24,6 +24,7 @@ add_action('woocommerce_checkout_create_order_line_item', 'railticket_cart_order
 add_action('woocommerce_before_thankyou', 'railticket_cart_complete', 10, 1);
 add_action('woocommerce_before_checkout_form', 'railticket_cart_check_cart');
 add_action('woocommerce_before_cart', 'railticket_cart_check_cart');
+add_action('woocommerce_new_order', 'railticket_cart_check_cart_at_checkout');
 add_action('woocommerce_order_status_refunded', 'railticket_order_cancel_refund');
 add_action('woocommerce_order_status_cancelled', 'railticket_order_cancel_refund');
 //add_action('woocommerce_after_single_product_summary', 'railticket_product_front');
@@ -213,20 +214,36 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     // Older orders are missing the itemid param.
     // We can get the cart item id by using the key from a meta data and get the order item
     // ID from it's DB entry. Sometimes the keys here in the formatted data are invalid, so loop till we get a good one.
-    if (!$itemid) {
+    if ($itemid == 0 || strlen($itemid) == 0) {
         foreach (array_keys($formatted_meta) as $key) {
             $itemid = $wpdb->get_var("SELECT order_item_id FROM {$wpdb->prefix}woocommerce_order_itemmeta ".
                 "WHERE meta_id = ".$key);
 
-            if ($itemid) {
+            if ($itemid != 0) {
                 break;
             }
         }
     }
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order_itemid($itemid);
+
     if (!$bookingorder) {
-        return array();
+        // This is getting silly.... Sometimes this is called with the DB in an inconsistent state, so try the cart item
+        foreach ($formatted_meta as $item) {
+            if ($item->key == 'cart_item_key') {
+                $cartid = $item->value;
+                $bookingorder = \wc_railticket\BookingOrder::get_booking_order_bycartkey($cartid);
+                break;
+            }
+        }
+    }
+
+    if (!$bookingorder) {
+        $retmeta = array();
+        $fm = reset($formatted_meta);
+        $fm->display_key = __("Order Problem", "wc_railticket");
+        $fm->display_value = __("Your booking data is missing, this is very unusual, your tickets may have expired in the basket while the payment process was being completed. Please contact the railway ASAP with your booking ID to have this corrected.", "wc_railticket");
+        return array($fm);
     }
     $bookings = $bookingorder->get_bookings();
 
@@ -293,17 +310,20 @@ function railticket_cart_updated($cart_item_key, $cart) {
     \wc_railticket\Booking::delete_booking_order_cart($cart_item_key);
 }
 
-function railticket_cart_order_item_metadata( $item, $cart_item_key, $values, $order ) {
+function railticket_cart_order_item_metadata($item, $cart_item_key, $values, $order ) {
     railticket_product_add_new_order_line_item($item, $values, 'ticketselections');
     railticket_product_add_new_order_line_item($item, $values, 'ticketsallocated');
     railticket_product_add_new_order_line_item($item, $values, 'ticketprices');
-    $item->update_meta_data('supplement', $values['supplement']);
+    if (array_key_exists('supplement', $values)) {
+        $item->update_meta_data('supplement', $values['supplement']);
+    }
     $item->update_meta_data('itemid', $item->get_id());
+    $item->update_meta_data('cart_item_key', $cart_item_key);
 
     \wc_railticket\Booking::set_cart_itemid($item->get_id(), $values['key']);
 
     // Save the cart item key as hidden order item meta data
-    $item->update_meta_data( '_cart_item_key', $cart_item_key );
+    //$item->update_meta_data( '_cart_item_key', $cart_item_key );
 }
 
 function railticket_product_add_new_order_line_item($item, $values, $key) {
@@ -331,17 +351,24 @@ function railticket_cart_complete($order_id) {
             // Get the product Id
             $product_id = $product->get_id();
             if ($product_id == get_option('wc_product_railticket_woocommerce_product')) {
-                $key = $item->get_meta( '_cart_item_key' );
+                $key = $item->get_meta( 'cart_item_key' );
                 \wc_railticket\Booking::cart_purchased($order_id, $item_id, $key);
-            }
 
-            $pn = get_option('wc_product_railticket_prioritynotify');
-            if (strlen($pn) > 0) {
+                $pn = get_option('wc_product_railticket_prioritynotify');
+                // Sanity check just in case somebody managed to get past all the expiry checks and the order
+                // took so long the booking expired....
                 $bo = \wc_railticket\BookingOrder::get_booking_order($order_id);
-                if ($bo->priority_requested() > 0) {
-                    railticket_send_priority_notify($bo, $pn);
+                if ($bo == false) {
+                    railticket_send_broken_order($order_id, $pn, $key);
+                    continue;
                 }
-            }
+
+                if (strlen($pn) > 0) {
+                    if ($bo->priority_requested() > 0) {
+                        railticket_send_priority_notify($bo, $pn);
+                    }
+                }
+            } 
         }
         $order->update_meta_data( '_railticket_thankyou_action_done', true );
         $order->save();
@@ -360,13 +387,24 @@ function railticket_send_priority_notify(\wc_railticket\BookingOrder $bo, $pn) {
     remove_filter( 'wp_mail_content_type', $content_type );
 }
 
+function railticket_send_broken_order($order, $pn) {
+    global $rtmustache;
+    $alldata = new stdclass();
+    $alldata->orderid = $order;
+    $template = $rtmustache->loadTemplate('brokenorderemail');
+    $message = $template->render($alldata);
+    $content_type = function() { return 'text/html'; };
+    add_filter( 'wp_mail_content_type', $content_type );
+    wp_mail(explode(',', $pn), "Broken order id:".$order, $message);
+    remove_filter( 'wp_mail_content_type', $content_type );
+}
+
 /**
  * Check any rail tickets are still valid
  *
  */
 function railticket_cart_check_cart() {
 	global $woocommerce, $wpdb;
-    $items = $woocommerce->cart->get_cart();
     $ticketid = get_option('wc_product_railticket_woocommerce_product');
     $items = $woocommerce->cart->get_cart();
     foreach($items as $item => $values) { 
@@ -375,10 +413,36 @@ function railticket_cart_check_cart() {
             $bookingids = $wpdb->get_results($sql);
             if (count($bookingids) === 0) {
                 $woocommerce->cart->remove_cart_item($item);
-                echo "<p>Your rail journey tickets have expired and have been removed from the basket. Sorry.</p>";
+                echo "<p style='color:red;font-weight:bold;'>Your rail journey tickets have expired and have been removed from the basket. Sorry.</p>";
             }
         }
-    } 
+    }
+}
+
+function railticket_cart_check_cart_at_checkout($callable) {
+	global $woocommerce, $wpdb;
+    $ticketid = get_option('wc_product_railticket_woocommerce_product');
+    $items = $woocommerce->cart->get_cart();
+    foreach($items as $item => $values) { 
+        if ($ticketid == $values['data']->get_id()) {
+            // Allow them through here even if the tickets are expiring.
+            $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem = '".$item."'";
+            $bookingids = $wpdb->get_results($sql);
+            if (count($bookingids) === 0) {
+                $res = new \stdclass();
+                $res->result = 'failure';
+                $res->messages = "<p style='color:red;font-weight:bold;'>Your rail journey tickets have expired and have been removed from the basket. Sorry.</p>";
+                $res->refresh = false;
+                $res->reload = true;
+                echo json_encode($res);
+                exit;
+            }
+
+            // If they have gotten this far, they are probably serious about the booking, so lets re-set the clock.
+            // This will also give us more accurate time of purchase.
+            \wc_railticket\Booking::reset_expire($item);
+        }
+    }
 }
 
 function railticket_order_cancel_refund($order_id) {

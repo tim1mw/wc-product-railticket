@@ -64,6 +64,13 @@ class Booking {
             array('woocartitem' => $key));
     }
 
+    public static function reset_expire($key) {
+        global $wpdb;
+        $wpdb->update("{$wpdb->prefix}wc_railticket_bookings",
+            array('expiring' => 0, 'created' => time()),
+            array('woocartitem' => $key));
+    }
+
     public static function insertBooking($dateoftravel, $itemkey, $time, Station $fromstation, Station $tostation, $totalseats, $allocatedbays, $manual, $disabledrequest) {
         global $wpdb;
 
