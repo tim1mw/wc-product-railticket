@@ -669,8 +669,9 @@ class TicketBuilder {
 
         $startyear = $this->today->format('Y');
         $startmonth = $this->today->format('n');
-        $endyear = date_i18n("Y", strtotime("+1 month"));
-        $endmonth = date_i18n("n", strtotime("+2 month"));
+        $calmonths = get_option('wc_product_railticket_calmonths');
+        $endyear = date_i18n("Y", strtotime("+".$calmonths." month"));
+        $endmonth = date_i18n("n", strtotime("+".$calmonths." month"));
 
         if ($endmonth < $startmonth) {
             $stop = 13;
@@ -681,7 +682,9 @@ class TicketBuilder {
 
         for ($year=$startyear; $year<$endyear+1; $year++) {
             for ($month=$startmonth; $month<$stop; $month++) {
-                $cal .= "<div class='railticket-calendar-box-wrapper' id='railticket-cal-".$year."-".$month."'>".$calendar->draw(date_i18n($year."-".$month."-01"), $this->is_guard())."</div>";
+                if (BookableDay::is_month_bookable($month, $year)) {
+                    $cal .= "<div class='railticket-calendar-box-wrapper' id='railticket-cal-".$year."-".$month."'>".$calendar->draw(date_i18n($year."-".$month."-01"), $this->is_guard())."</div>";
+                }
              }
              $startmonth = 1;
              $stop = $endmonth+1;
@@ -692,7 +695,7 @@ class TicketBuilder {
             "<div id='railticket-cal' class='railticket-calendar-wrapper'>.$cal.</div>";
 
         $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>".
-            "<p class='railticket_help'>Choose a date from the calendar above, or use the buttons below.<br />Dates marked with an X are sold out.</p>";
+            "<p class='railticket_help'>Choose a date from the calendar above (scroll the calendar left and right to see other months), or use the buttons below.<br />Dates marked with an X are sold out.</p>";
         $toshow = 6;
         $act = false;
 
@@ -715,8 +718,6 @@ class TicketBuilder {
         } else {
             $nexttrains = \wc_railticket\BookableDay::get_next_bookable_dates($this->tomorrow->format('Y-m-d'), $toshow);
         }
-
-
 
         foreach ($nexttrains as $t) {
             $date = \DateTime::createFromFormat("Y-m-d", $t->date, $this->railticket_timezone);

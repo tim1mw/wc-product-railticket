@@ -26,6 +26,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_prioritynotify');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_calmonths');
 
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
@@ -155,6 +156,10 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_top_comment">Top Comment</label></th>
             <td><textarea rows='10' cols='60' id="wc_product_railticket_top_comment" name="wc_product_railticket_top_comment"><?php echo get_option('wc_product_railticket_top_comment'); ?></textarea></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_min_price">Max number of months ahead to show</label></th>
+            <td><input size='2' type="number" min='1' max='12' id="wc_product_railticket_" name="wc_product_railticket_calmonths" value="<?php echo get_option('wc_product_railticket_calmonths'); ?>" /></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_min_price">Minimum Ticket Order Price</label></th>
