@@ -45,6 +45,8 @@ function setupTickets() {
     } else {
         showTicketStages('date', true);
     }
+    
+    document.getElementById('railticket-cal').scrollLeft = 0;
 }
 
 function railTicketAddListener(id, type, func) {

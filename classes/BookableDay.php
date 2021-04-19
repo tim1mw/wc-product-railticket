@@ -71,6 +71,26 @@ class BookableDay {
         }
     }
 
+    public static function is_month_bookable($month, $year) {
+        global $wpdb;
+
+        $firstday = $year."-".str_pad($month, 2, '0', STR_PAD_LEFT)."-01";
+        $lastday = date("Y-m-t", strtotime($firstday));
+        $today = new \DateTime();
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $today->setTimeZone($railticket_timezone);
+
+        $data = $wpdb->get_var("SELECT COUNT(id) FROM {$wpdb->prefix}wc_railticket_bookable ".
+            "WHERE date >= '".$firstday."' AND date <= '".$lastday."' AND date >= '".$today->format('Y-m-d')."' AND bookable = 1 ");
+
+        if ($data > 0) {
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public static function is_date_bookable(\DateTime $date, $skiptime = false) {
         global $wpdb;
 
