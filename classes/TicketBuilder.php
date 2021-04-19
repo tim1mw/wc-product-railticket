@@ -694,7 +694,7 @@ class TicketBuilder {
             "<div id='railticket-cal' class='railticket-calendar-wrapper'>.$cal.</div>";
 
         $str .= "<div id='datechooser' class='railticket_stageblock'><div class='railticket_container'>".
-            "<p class='railticket_help'>Choose a date from the calendar above (scroll the calendar left and right to see other months), or use the buttons below.<br />Dates marked with an X are sold out.</p>";
+            "<p class='railticket_help'>Choose a date from the calendar above (scroll left/right to see other months if available), or use the buttons below.<br />Dates marked with an X are sold out.</p>";
         $toshow = 6;
         $act = false;
 
