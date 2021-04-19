@@ -49,6 +49,11 @@ class OrderSummary extends Report{
             $line[] = $bookingorder->get_tickets(true);
             $line[] = $bookingorder->get_seats();
             $line[] = $bookingorder->get_supplement();
+            if ($bookingorder->is_guard_price()) {
+                $line[] = 'Guard';
+            } else {
+                $line[] = 'Online';
+            }
             $discount = $bookingorder->get_discount_type();
             if ($discount) {
                 $line[] = $discount->get_name();
@@ -74,7 +79,7 @@ class OrderSummary extends Report{
         });
 
         $header = array('Order ID', 'Name', 'Email', 'Phone', 'From', 'To', 'Journey', 
-            'Tickets', 'Seats', 'Supp.', 'Discount Type', 'Discount', 'Total Price', 'Notes');
+            'Tickets', 'Seats', 'Supp.', 'Fare Type', 'Discount Type', 'Discount', 'Total Price', 'Notes');
 
         if ($iscsv) {
             header('Content-Type: application/csv');
