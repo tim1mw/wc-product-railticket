@@ -353,12 +353,18 @@ class BookingOrder {
         return $this->discount;
     }
 
-    public function get_discount() {
+    public function get_discount($format = false) {
         if ($this->ticketprices && array_key_exists('__discounttotal', $this->ticketprices)) {
-            return $this->ticketprices['discounttotal'];
+            $d =  $this->ticketprices['__discounttotal'];
+        } else {
+            $d = 0;
         }
 
-        return 0;
+        if ($format) {
+            // TODO Deal with currency symbol
+            return "£".number_format($d, 2);
+        }
+        return $d;
     }
 
     public function get_date($format = false, $nottoday = false) {

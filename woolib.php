@@ -201,6 +201,10 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
             'key'       => __("Discount Type", "wc_railticket"),
             'value'     => $discount->get_name()
         ); 
+        $item_data[] = array(
+            'key'       => __("Discount Savings", "wc_railticket"),
+            'value'     => $bookingorder->get_discount(true)
+        ); 
     }
 
     return $item_data;
@@ -314,7 +318,7 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                     $discount = $bookingorder->get_discount_type();
                     if ($discount) {
                         $fm->display_key = __("Discount Type", "wc_railticket");
-                        $fm->display_value = $discount->get_name();
+                        $fm->display_value = $discount->get_name().", ".__("saving", "wc_railticket")." ".$bookingorder->get_discount(true);
                         $retmeta[$index] = $fm;
                     }
                     $dkey = true;

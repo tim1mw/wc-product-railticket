@@ -411,9 +411,10 @@ class FareCalculator {
         if ($discount) {
             $pdata->ticketprices['__discountcode'] = $discount->get_code();
             $pdata->ticketprices['__discounttype'] = $discount->get_shortname();
+            $pdata->ticketprices['__discounttotal'] = 0;
         } else {
             $pdata->ticketprices['__discountcode'] = false;
-            $pdata->ticketprices['__discounttype'] = '';   
+            $pdata->ticketprices['__discounttype'] = '';
         }
         $pdata->revision = $this->revision;
 
@@ -421,6 +422,12 @@ class FareCalculator {
             $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discount, $special);
             $pdata->price += floatval($price)*floatval($qty);
             $pdata->ticketprices[$ttype] = $price;
+            if ($discount) {
+                // What was the price without the discount?
+                $nodiscountprice = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, false, $special);
+                $ds = floatval($nodiscountprice) - floatval($price);
+                $pdata->ticketprices['__discounttotal'] += $ds*floatval($qty);
+            }
         }
 
         if ($nominimum || $pdata->price == 0) {
@@ -432,6 +439,14 @@ class FareCalculator {
             $mprice=floatval($mprice);
             $pdata->supplement = floatval($mprice) - floatval($pdata->price);
             $pdata->price = $mprice;
+
+            // Offset the discount by the value of the supplement
+            if ($discount) {
+                $pdata->ticketprices['__discounttotal'] -= $pdata->supplement;
+                if ($pdata->ticketprices['__discounttotal'] < 0) {
+                    $pdata->ticketprices['__discounttotal'] = 0;
+                }
+            }
         }
 
         return $pdata;
