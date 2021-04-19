@@ -735,7 +735,7 @@ class TicketBuilder {
             "<div id='datechosen' class='railticket_container'>Tap or click a date to choose</div>".
             "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' />".
             "  <div id='overridecodediv' class='railticket_overridecode railticket_container'>".
-            "  <label for='override'>Override code</label>&nbsp;&nbsp;<input id='overrideval' type='text' size='6' name='override' />".
+            "  <label for='override'>Override code</label>&nbsp;&nbsp;<input id='overrideval' type='text' size='6' name='override' autocomplete='off' autocorrect='off' autocapitalize='none'  />".
             "  <input type='button' value='Validate' id='validateOverrideIn' /> ".
             "  <div id='overridevalid'>".
             "  <p class='railticket_overridedesc'>The override code can be used to unlock services not available for booking below, ".
