@@ -49,7 +49,12 @@ class OrderSummary extends Report{
             $line[] = $bookingorder->get_tickets(true);
             $line[] = $bookingorder->get_seats();
             $line[] = $bookingorder->get_supplement();
-            $line[] = $bookingorder->get_discount_type();
+            $discount = $bookingorder->get_discount_type();
+            if ($discount) {
+                $line[] = $discount->get_name();
+            } else {
+                $line[] = '-';
+            }
             $line[] = $bookingorder->get_discount();
             $line[] = $bookingorder->get_price();
             $line[] = $bookingorder->get_notes();
