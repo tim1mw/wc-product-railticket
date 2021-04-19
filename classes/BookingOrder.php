@@ -86,6 +86,8 @@ class BookingOrder {
         }
         if ($this->ticketprices && array_key_exists('__discounttype', $this->ticketprices)) {
             $this->discount = DiscountType::get_discount_type($this->ticketprices['__discounttype']);
+        } else {
+            $this->discount = false;
         }
     }
 

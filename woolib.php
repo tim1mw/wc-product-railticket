@@ -195,6 +195,14 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
         );
     }
 
+    $discount = $bookingorder->get_discount_type();
+    if ($discount) {
+        $item_data[] = array(
+            'key'       => __("Discount Type", "wc_railticket"),
+            'value'     => $discount->get_name()
+        ); 
+    }
+
     return $item_data;
 }
 
@@ -255,6 +263,7 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     $tkey = false;
     $skey = false;
     $pkey = false;
+    $dkey = false;
 
     foreach ($formatted_meta as $index => $fm) {
         $fmparts = explode("-", $fm->key);
@@ -283,9 +292,9 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                             __("Departing from ", "wc_railticket").$bookings[0]->get_from_station()->get_name().
                             "<br />".$bookings[0]->get_bays(true)."<br />";
                     } else {
-                       $d .= $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
-                       $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
-                       $bookings[0]->get_to_station()->get_name()."<br />";
+                        $d .= $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
+                        $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
+                        $bookings[0]->get_to_station()->get_name()."<br />";
                         $d .= __("Total Seats", "wc_railticket").": ".$bookingorder->get_seats()."<br />";
 
                         // TODO Hide bays for seat based capacity
@@ -298,6 +307,17 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
 
                     $fm->display_value = $d;
                     $retmeta[$index] = $fm;
+                }
+                break;
+            case 'ticketprices':
+                if ($dkey == false) {
+                    $discount = $bookingorder->get_discount_type();
+                    if ($discount) {
+                        $fm->display_key = __("Discount Type", "wc_railticket");
+                        $fm->display_value = $discount->get_name();
+                        $retmeta[$index] = $fm;
+                    }
+                    $dkey = true;
                 }
                 break;
         }
