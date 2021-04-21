@@ -33,6 +33,22 @@ class DiscountType {
         return $this->data->name;
     }
 
+    public function get_comment() {
+        return $this->data->comment;
+    }
+
+    public function show_notes() {
+        return $this->data->shownotes;
+    }
+
+    public function get_note_instructions() {
+        return $this->data->noteinstructions;
+    }
+
+    public function get_pattern() {
+        return $this->data->pattern;
+    }
+
     public function get_baseprice_field() {
         return $this->data->basefare;
     }

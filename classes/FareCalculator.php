@@ -391,6 +391,8 @@ class FareCalculator {
             $tickets->prices[$customticket->tickettype] = $customticket;
         }
 
+        $tickets->dcomment = '';
+
         ksort($tickets->travellers);
         if ($discount) {
             ksort($dtravellers);

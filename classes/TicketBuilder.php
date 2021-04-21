@@ -755,6 +755,10 @@ class TicketBuilder {
 
         return array('valid' => $this->discount->is_valid(),
             'message' => $this->discount->get_message(),
+            'dcomment' => $this->discount->get_comment(),
+            'shownotes' => $this->discount->show_notes(),
+            'pattern' => $this->discount->get_pattern(),
+            'notesinstructions' => $this->discount->get_note_instructions(),
             'tickets' => $this->get_ticket_data());
     }
 } 

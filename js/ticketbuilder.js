@@ -110,6 +110,7 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('overridevalid', overridevalid);
     data.append('disabledrequest', getCBFormValue('disabledrequest'));
     data.append('notes', getFormValue('notes'));
+    data.append('dnotes', getFormValue('dnotes'));
     data.append('nominimum', getCBFormValue('nominimum'));
     data.append('onlineprice', getCBFormValue('onlineprice'));
     data.append('discountcode', getFormValue('discountcode').trim());
@@ -158,14 +159,55 @@ function validateDiscount(evt) {
     railTicketAjax('validate_discount', true, function(response) {
         var dv = document.getElementById('discountvalid');
         if (response.valid) {
-            dv.innerHTML = '<p><span>'+response.message+'<span></p>';
+            dv.innerHTML = '<p class="railticket_arrtime"><span>'+response.message+'</span><br />'+response.dcomment;
+            if (response.shownotes) {
+                dv.innerHTML += '<div class="quantity"><label for="dnotes"><span>'+response.notesinstructions+'</span></label>'+
+                    '<input type="text" name="dnotes" size="20" id="dnotes" pattern="'+response.pattern+'" /></div>';
+            }
+            dv.innerHTML += '</p>';
         } else {
             dv.innerHTML = '<p><span>'+response.message+'<span></p>';
         }
         ticketdata = response['tickets'];
-        console.log(ticketdata);
         renderTicketSelector();
+        if (response.valid && response.shownotes && response.pattern.length > 0) {
+            discountCheck(true);
+            document.getElementById('dnotes').addEventListener('input', validateDiscountNote);
+        } else {
+            discountCheck(false);
+        }
     });
+}
+
+function validateDiscountNote() {
+    console.log('here');
+    var ele = document.getElementById('dnotes');
+    if (ele.checkValidity() && ele.value.length > 0) {
+        discountCheck(false);
+    } else {
+        discountCheck( true);
+    }
+}
+
+function discountCheck(state) {
+    disableDiv('ticket_travellers', state);
+    disableDiv('ticket_capbutton', state);
+    disableDiv('ticket_summary', state);
+    disableDiv('ticket_capacity', state);
+    disableDiv('addtocart', state);
+}
+
+function disableDiv(name, state) {
+    var ele = document.getElementById(name);
+    var nodes = ele.getElementsByTagName('*');
+    for(var i = 0; i < nodes.length; i++){
+        nodes[i].disabled = state;
+        if (state) {
+            nodes[i].classList.add('railticket-dimmer');
+        } else {
+            nodes[i].classList.remove('railticket-dimmer');
+        }
+    }
 }
 
 function discountCodeBox(evt) {
