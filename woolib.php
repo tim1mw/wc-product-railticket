@@ -259,7 +259,7 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
             switch ($fmparts[0]) {
                 case 'cart_item_key':
                 case 'itemid':
-                    continue;
+                    break;
                 // If any of these fields are present and we don't have a ticket ID by now, this booking is broken....
                 // There has to be a better way to deal with this....
                 case 'supplement':
@@ -267,7 +267,7 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                 case 'ticketselections':
                 case 'ticketprices':
                     if ($found) {
-                        continue;
+                        break;
                     }
                     $item->display_key = __("Order Problem", "wc_railticket");
                     $item->display_value = __("Your booking data is missing, this is very unusual, your tickets may have expired in the basket while the payment process was being completed. Please contact the railway ASAP with your booking ID to have this corrected.", "wc_railticket");
