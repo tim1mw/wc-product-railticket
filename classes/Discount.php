@@ -8,6 +8,9 @@ class Discount extends DiscountType {
     public function __construct($data, $fromstation, $tostation, $journeytype) {
         $this->data = $data;
         $this->data->rules = json_decode($this->data->rules);
+        $this->data->customtype = (bool) $this->data->customtype;
+        $this->data->triptype = (bool) $this->data->triptype;
+        $this->data->shownotes = (bool) $this->data->shownotes;
 
         $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $this->today = new \DateTime();

@@ -110,11 +110,12 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('overridevalid', overridevalid);
     data.append('disabledrequest', getCBFormValue('disabledrequest'));
     data.append('notes', getFormValue('notes'));
-    data.append('dnotes', getFormValue('dnotes'));
     data.append('nominimum', getCBFormValue('nominimum'));
     data.append('onlineprice', getCBFormValue('onlineprice'));
     data.append('discountcode', getFormValue('discountcode').trim());
+    data.append('discountnote', getFormValue('dnotes'));
     data.append('manual', manual);
+console.log(getFormValue('dnotes'));
     request.send(data);
 }
 
@@ -157,6 +158,7 @@ function validateDiscount(evt) {
     }
 
     railTicketAjax('validate_discount', true, function(response) {
+console.log(response);
         var dv = document.getElementById('discountvalid');
         if (response.valid) {
             dv.innerHTML = '<p class="railticket_arrtime"><span>'+response.message+'</span><br />'+response.dcomment;

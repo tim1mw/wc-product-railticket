@@ -29,6 +29,7 @@ class BookingOrder {
             $this->paid = false;
             $this->incart = true;
             $this->createdby = 0;
+            $this->discountnote = $cart_item['discountnote'];
         } elseif ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = (array) json_decode($mb->tickets);
@@ -47,6 +48,7 @@ class BookingOrder {
             $this->customerphone = '';
             $this->createdby = $mb->createdby;
             $this->paid = true;
+            $this->discountnote = $mb->discountnote;
         } else {
             $wooorderitem = $bookings[0]->wooorderitem;
             $this->tickets = (array) $this->get_woo_meta('ticketsallocated-', $wooorderitem);
@@ -56,6 +58,8 @@ class BookingOrder {
                 " meta_key='_line_total' AND order_item_id = ".$wooorderitem."");
             $this->supplement = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
                 " meta_key='supplement' AND order_item_id = ".$wooorderitem."");
+            $this->discountnote = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
+                " meta_key='discountnote' AND order_item_id = ".$wooorderitem."");
             $this->createdby = 0;
 
             // This object might get created prior to the order being fully setup in Woocommerce, so skip this if there is no order
@@ -351,6 +355,10 @@ class BookingOrder {
 
     public function get_discount_type() {
         return $this->discount;
+    }
+
+    public function get_discount_note() {
+        return $this->discountnote;
     }
 
     public function get_discount($format = false) {

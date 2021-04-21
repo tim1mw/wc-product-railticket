@@ -197,14 +197,19 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
 
     $discount = $bookingorder->get_discount_type();
     if ($discount) {
+        if ($discount->show_notes()) {
+            $dn = " (".$bookingorder->get_discount_note().")";
+        } else {
+            $dn = "";
+        }
         $item_data[] = array(
             'key'       => __("Discount Type", "wc_railticket"),
-            'value'     => $discount->get_name()
+            'value'     => $discount->get_name().$dn
         ); 
         $item_data[] = array(
             'key'       => __("Discount Savings", "wc_railticket"),
             'value'     => $bookingorder->get_discount(true)
-        ); 
+        );
     }
 
     return $item_data;
@@ -297,9 +302,11 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
         $fmparts = explode("-", $fm->key);
         switch ($fmparts[0]) {
             case 'supplement':
-                $fm->display_key = __("Supplement", "wc_railticket");
-                $fm->display_value = $bookingorder->get_supplement(true);
-                $retmeta[$index] = $fm;
+                if ($bookingorder->get_supplement() > 0) {
+                    $fm->display_key = __("Supplement", "wc_railticket");
+                    $fm->display_value = $bookingorder->get_supplement(true);
+                    $retmeta[$index] = $fm;
+                }
                 break;
             case 'ticketsallocated':
                 if ($tkey == false) {
@@ -341,8 +348,13 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                 if ($dkey == false) {
                     $discount = $bookingorder->get_discount_type();
                     if ($discount) {
-                        $fm->display_key = __("Discount Type", "wc_railticket");
-                        $fm->display_value = $discount->get_name().", ".__("saving", "wc_railticket")." ".$bookingorder->get_discount(true);
+                        if ($discount->show_notes()) {
+                            $dn = " (".$bookingorder->get_discount_note().")";
+                        } else {
+                            $dn = "";
+                        }
+                        $fm->display_key = __("Discount", "wc_railticket");
+                        $fm->display_value = $discount->get_name().$dn.", ".__("saving", "wc_railticket")." ".$bookingorder->get_discount(true);
                         $retmeta[$index] = $fm;
                     }
                     $dkey = true;
@@ -364,6 +376,9 @@ function railticket_cart_order_item_metadata($item, $cart_item_key, $values, $or
     railticket_product_add_new_order_line_item($item, $values, 'ticketprices');
     if (array_key_exists('supplement', $values)) {
         $item->update_meta_data('supplement', $values['supplement']);
+    }
+    if (array_key_exists('discountnote', $values)) {
+        $item->update_meta_data('discountnote', $values['discountnote']);
     }
     $item->update_meta_data('itemid', $item->get_id());
     $item->update_meta_data('cart_item_key', $cart_item_key);

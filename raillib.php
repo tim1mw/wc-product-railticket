@@ -112,6 +112,7 @@ function railticket_getticketbuilder() {
     $localprice = !railticket_gettfpostfield('onlineprice');
     $manual = railticket_gettfpostfield('manual');
     $discountcode = railticket_getpostfield('discountcode');
+    $discountnote = railticket_getpostfield('discountnote');
 
     $times = null;
     if (array_key_exists('times', $_REQUEST)) {
@@ -131,7 +132,7 @@ function railticket_getticketbuilder() {
 
     return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $journeychoice, $times,
          $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum,
-         $show, $localprice, $manual, $discountcode);
+         $show, $localprice, $manual, $discountcode, $discountnote);
 }
 
 function railticket_gettfpostfield($field) {

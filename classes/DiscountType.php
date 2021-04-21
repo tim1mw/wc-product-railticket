@@ -9,6 +9,9 @@ class DiscountType {
     public function __construct($data) {
         $this->data = $data;
         $this->data->rules = json_decode($this->data->rules);
+        $this->data->customtype = (bool) $this->data->customtype;
+        $this->data->triptype = (bool) $this->data->triptype;
+        $this->data->shownotes = (bool) $this->data->shownotes;
     }
 
     public static function get_discount_type($shortname) {

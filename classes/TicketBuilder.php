@@ -10,7 +10,7 @@ class TicketBuilder {
 
     public function __construct($dateoftravel, $fromstation, $journeychoice, $times,
         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes,
-        $nominimum, $show, $localprice, $manual, $discountcode) {
+        $nominimum, $show, $localprice, $manual, $discountcode, $discountnote) {
         global $wpdb;
         $this->show = $show;
 
@@ -70,6 +70,7 @@ class TicketBuilder {
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
         $this->notes = $notes;
+        $this->discountnote = $discountnote;
 
         if ($nominimum == 'true') {
             $this->nominimum = true;
@@ -571,7 +572,8 @@ class TicketBuilder {
                 'tickets' => json_encode($this->ticketsallocated),
                 'ticketprices' => json_encode($pricedata->ticketprices),
                 'notes' => $this->notes,
-                'createdby' => get_current_user_id()
+                'createdby' => get_current_user_id(),
+                'discountnote' => $this->discountnote
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
@@ -583,6 +585,10 @@ class TicketBuilder {
             $cart_item_data = array('custom_price' => $pricedata->price, 'ticketselections' => $this->ticketselections,
                 'ticketsallocated' => $this->ticketsallocated, 'supplement' => $pricedata->supplement,
                 'ticketprices' => $pricedata->ticketprices, 'unique' => uniqid());
+
+            if (strlen($this->discountnote)) {
+                $cart_item_data['discountnote'] = $this->discountnote;
+            }
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');
             $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
