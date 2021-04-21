@@ -341,6 +341,17 @@ class FareCalculator {
                 }
             }
 
+            // If we have a discount and we are inheriting dependencies for the discount, duplicate the dependencies with
+            // with the discount type. We may get some non-existent traveller types here, but this is of no consequence since
+            // they will never match 
+            if ($discount && $discount->inherit_deps()) {
+                $ndeps = array();
+                foreach ($ticketd->depends as $dep) {
+                    $ndeps[] = $dep."/".$discount->get_shortname();
+                }
+                $ticketd->depends = array_merge($ticketd->depends, $ndeps);
+            }
+
             // If we don't have any discounts, skip the rest...
             if (!$discount || !$discount->ticket_has_discount($ticketd->tickettype)) {
                 continue;

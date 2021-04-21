@@ -87,6 +87,10 @@ class DiscountType {
         return $this->data->customtype;
     }
 
+    public function inherit_deps() {
+        return $this->data->inheritdeps;
+    }
+
     public function ticket_has_discount($tickettype) {
         if (property_exists($this->data->rules->discounts, $tickettype)) {
             return true;
