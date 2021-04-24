@@ -8,6 +8,8 @@ const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "O
 var stationData = [];
 var fromstationdata, tostationdata, journeychoicedata, journeytypedata, alljourneys;
 var manual = false;
+var maxdiscountseats = 999;
+var customtravellers = false;
 
 
 function setupTickets() {
@@ -115,7 +117,6 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('discountcode', getFormValue('discountcode').trim());
     data.append('discountnote', getFormValue('dnotes'));
     data.append('manual', manual);
-console.log(getFormValue('dnotes'));
     request.send(data);
 }
 
@@ -154,11 +155,12 @@ function validateDiscount(evt) {
     if (dc.length == 0) {
         var dv = document.getElementById('discountvalid');
         dv.innerHTML = '<p><span>No code entered.<span></p>';
+        maxdiscountseats = 999;
+        customtravellers = false;
         return;
     }
 
     railTicketAjax('validate_discount', true, function(response) {
-console.log(response);
         var dv = document.getElementById('discountvalid');
         if (response.valid) {
             dv.innerHTML = '<p class="railticket_arrtime"><span>'+response.message+'</span><br />'+response.dcomment;
@@ -171,6 +173,8 @@ console.log(response);
             dv.innerHTML = '<p><span>'+response.message+'<span></p>';
         }
         ticketdata = response['tickets'];
+        maxdiscountseats = response['maxseats'];
+        customtravellers = response['customtravellers'];
         renderTicketSelector();
         if (response.valid && response.shownotes && response.pattern.length > 0) {
             discountCheck(true);
@@ -182,7 +186,6 @@ console.log(response);
 }
 
 function validateDiscountNote() {
-    console.log('here');
     var ele = document.getElementById('dnotes');
     if (ele.checkValidity() && ele.value.length > 0) {
         discountCheck(false);
@@ -597,6 +600,13 @@ function renderTicketSelector() {
     tn.style.display = "block";
     var tratemplate = document.getElementById('travellers_tmpl').innerHTML;
     tn.innerHTML = Mustache.render(tratemplate, ticketdata);
+
+    for (i in ticketdata.travellers) {
+        var code = ticketdata.travellers[i].code; 
+        var v=document.getElementById("q_"+code);
+        v.addEventListener('input', travellersChanged);
+    }
+
     travellersChanged();
 
     showTicketStages('tickets', true);
@@ -630,7 +640,29 @@ function getSelectionSummary() {
     }
 }
 
-function travellersChanged() {
+function travellersChanged(evt) {
+    if (maxdiscountseats < 999) {
+        var total = 0;
+        for (i in ticketdata.travellers) {
+            var code = ticketdata.travellers[i].code; 
+            if (customtravellers) {
+                var parts = code.split('/');
+                if (parts.length == 1) {
+                    continue;
+                }
+            }
+            var v=document.getElementById("q_"+code);
+            var tnum = 0;
+            if (v.value != '') {
+                tnum = parseInt(v.value);
+            }
+            total = total + tnum;
+        }
+        if (total > maxdiscountseats) {
+            evt.target.value = parseInt(evt.target.value)-1;
+        }
+    }
+
     setTimeout(allocateTickets, 10);
 }
 

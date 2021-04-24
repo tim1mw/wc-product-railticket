@@ -12,6 +12,7 @@ class DiscountType {
         $this->data->customtype = (bool) $this->data->customtype;
         $this->data->triptype = (bool) $this->data->triptype;
         $this->data->shownotes = (bool) $this->data->shownotes;
+        $this->data->nominimum = (bool) $this->data->nominimum;
     }
 
     public static function get_discount_type($shortname) {
@@ -50,6 +51,14 @@ class DiscountType {
 
     public function get_pattern() {
         return $this->data->pattern;
+    }
+
+    public function get_no_minimum() {
+        return $this->data->nominimum;
+    }
+
+    public function get_max_seats() {
+        return $this->data->maxseats;
     }
 
     public function get_baseprice_field() {

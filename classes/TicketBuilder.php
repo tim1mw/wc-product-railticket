@@ -71,6 +71,7 @@ class TicketBuilder {
         $this->ticketsallocated = $ticketsallocated;
         $this->notes = $notes;
         $this->discountnote = $discountnote;
+        $this->discount = \wc_railticket\Discount::get_discount($discountcode, $this->fromstation, $this->tostation, $this->journeytype);
 
         if ($nominimum == 'true') {
             $this->nominimum = true;
@@ -98,8 +99,6 @@ class TicketBuilder {
         } else {
             $this->disabledrequest = false;
         }
-
-        $this->discount = \wc_railticket\Discount::get_discount($discountcode, $this->fromstation, $this->tostation, $this->journeytype);
     }
 
     private function is_guard() {
@@ -765,6 +764,8 @@ class TicketBuilder {
             'shownotes' => $this->discount->show_notes(),
             'pattern' => $this->discount->get_pattern(),
             'notesinstructions' => $this->discount->get_note_instructions(),
-            'tickets' => $this->get_ticket_data());
+            'tickets' => $this->get_ticket_data(),
+            'maxseats' =>  $this->discount->get_max_seats(),
+            'customtravellers' => $this->discount->use_custom_type());
     }
 } 
