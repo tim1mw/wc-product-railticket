@@ -135,9 +135,10 @@ class Booking {
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
             $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->date, $railticket_timezone);
-            $now = new \DateTime();
-            $now->setTimeZone($railticket_timezone);
-            if ($nottoday && $now != $jdate) {
+            $today = new \DateTime();
+            $today->setTimezone($railticket_timezone);
+            $today->setTime(0,0,0);
+            if ($nottoday && $today->format('Y-m-d') != $this->data->date ) {
                 return railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp()).
                     " <span style='color:red;font-weight:bold;font-size:small;'>(".__("Booking not for Today", "wc_railticket").")</span>";
             }
