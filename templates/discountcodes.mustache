@@ -1,0 +1,71 @@
+<h3>Manange Discount Codes</h3>
+
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='ids' value='{{ids}}' />
+<input type='hidden' name='action' value='updatediscountcodes' />
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <th>Discount Type</th>
+        <th>Discount Code</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th>Single Use</th>
+        <th>Disabled</th>
+        <th>Notes</th>
+        <th></th>
+    </tr>
+    {{#dcodes}}
+    <tr>
+        <td>{{name}}</td>
+        <td><input type='text' name='code_{{id}}' value='{{code}}' size='12' minlength='4' maxlength='12' /></td>
+        <td><input type='date' name='start_{{id}}' value='{{start}}' /></td>
+        <td><input type='date' name='end_{{id}}' value='{{end}}' /></td>
+        <td style='text-align:center'><input type='checkbox' name='single_{{id}}' value='1' {{single}} /></td>
+        <td style='text-align:center'><input type='checkbox' name='disabled_{{id}}' value='1' {{disabled}} /></td>
+        <td><textarea name='notes_{{id}}' rows='1' cols='20'>{{notes}}</textarea></td>
+        <td><a href='?action=deletediscountcode&page=railticket-discount-codes&id={{id}}'>Delete</a></td>
+    </tr>
+    {{/dcodes}}
+</table><br />
+<input type='submit' value='Update' id='railticket-update-discount-codes' />
+</form>
+<hr />
+<h3>Add New Discount Code</h3>
+
+<form method='post' action='{{actionurl}}'>
+<input type='hidden' name='action' value='adddiscountcode' />
+<table>
+    <tr>
+        <td>Discount Type</td>
+        <td>
+            <select name='shortname'>
+            {{#dtypes}}
+                <option value='{{shortname}}'>{{name}}</option>
+            {{/dtypes}}
+            </select>
+        </td>
+    </tr><tr>
+        <td>Code</td>
+        <td><input type='text' name='code' size='12' minlength='4' maxlength='12' /></td>
+    </tr><tr>
+        <td>Start Date</td>
+        <td><input type='date' name='start' /></td>
+    </tr><tr>
+        <td>End Date</td>
+        <td><input type='date' name='end' /></td>
+    </tr><tr>
+        <td>Single Use</td>
+        <td><input type='checkbox' name='single' /></td>
+    </tr><tr>
+        <td>Disabled</td>
+        <td><input type='checkbox' name='disabled' /></td>
+    </tr><tr>
+        <td>Notes</td>
+        <td><textarea name='notes'></textarea></td>
+    </tr><tr>
+        <td></td>
+        <td><input type='submit' value='Add' id='railticket-add-discount-codes' /></td>
+    </tr>
+</table>
+
+</form>

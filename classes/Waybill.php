@@ -64,16 +64,30 @@ class Waybill extends Report {
             }
 
             // If no discount type, the set a placeholder which will sort to the top
-            $discountype = $bookingorder->get_discount_type();
-            if (strlen($discountype) == 0) {
-                $discountype = 'AAAAAAAAAAAAAAAAA';
-            } 
+            $discounttype = $bookingorder->get_discount_type();
 
             foreach ($bookingorder->get_tickets() as $ticket => $num) {
+                $discounttypesn = 'AAAAAAAAAAAAAAAAA';
+                // If we have a discount add it as a sorting key
+                if ($discounttype) {
+                    if ($discounttype->use_custom_type()) {
+                        // If we have custom travellers, check this is a custom traveller and that it is valid for the ticket type
+                        $tparts = explode('/', $ticket);
+                        if (count($tparts) == 2 && $discounttype->ticket_has_discount($tparts[0])) {
+                            $discounttypesn = $discounttype->get_shortname();
+                        }
+                    } else {
+                        // If we are not using custom travellers, then simply check if the discount is valid for the ticket type
+                        if ($discounttype->ticket_has_discount($ticket)) {
+                            $discounttypesn = $discounttype->get_shortname();
+                        }
+                    }
+                } 
+
                 $linekey = $bookings[0]->get_from_station()->get_stnid().'|'.
                     $tostn->get_stnid().'|'.
                     $bookingorder->get_journeytype().'|'.
-                    $ticket.'|'.$faretype.'|'.$discountype;
+                    $ticket.'|'.$faretype.'|'.$discounttypesn;
 
                 if ($bookings[0]->is_special()) {
                     $linekey .= '|special';
@@ -149,9 +163,8 @@ class Waybill extends Report {
                 $nline[] = __('Guard', 'wc_railticket');
             }
             if ($keyparts[5] != 'AAAAAAAAAAAAAAAAA') {
-                // TODO Lookup the discount name here when we have something to look it up from
-                $nline[] = $keyparts[5];
-                $dtype = $keyparts[5];
+                $dtype = DiscountType::get_discount_type($keyparts[5]);
+                $nline->discounttype = $dtype->get_name();
             } else {
                 $nline[] = '';
                 $dtype = '';
@@ -207,11 +220,10 @@ class Waybill extends Report {
                 $nline->faretype = __('Guard', 'wc_railticket');
             }
             if ($keyparts[5] != 'AAAAAAAAAAAAAAAAA') {
-                // TODO Lookup the discount name here when we have something to look it up from
-                $nline->discounttype = $keyparts[5];
-                $dtype = $keyparts[5];
+                $dtype = DiscountType::get_discount_type($keyparts[5]);
+                $nline->discounttype = $dtype->get_name();
             } else {
-                $dtype = '';
+                $dtype = false;
             }
 
             $nline->number = $linevalue;

@@ -50,9 +50,14 @@ class FareCalculator {
         return $r;
     }
 
-    public static function get_ticket_name($ticket) {
+    public static function get_ticket_name($ticket, $discount = false) {
         global $wpdb;
-        return $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$ticket."'");
+        $tparts = explode('/', $ticket);
+        $name = $wpdb->get_var("SELECT name FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$tparts[0]."'");
+        if ($discount && $discount->ticket_has_discount($tparts[0]) && count($tparts) > 1) {
+            $name .= " ".$discount->get_name();
+        }
+        return $name;
     }
 
     public static function get_all_ticket_types($showhidden = false) {
@@ -129,6 +134,11 @@ class FareCalculator {
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers");
     }
 
+    public static function get_traveller($code) {
+        global $wpdb;
+        return $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$code."'");
+    }
+
     public static function add_traveller($code, $name, $description, $seats, $guardonly) {
         global $wpdb;
         $code = self::clean_code($code);
@@ -146,6 +156,7 @@ class FareCalculator {
 
     public static function clean_code($code) {
         $code = strtolower(str_replace('|', '_', $code));
+        $code = str_replace('/', '_', $code);
         return str_replace(' ', '_', $code);
     }
 
@@ -248,7 +259,7 @@ class FareCalculator {
         return $wpdb->get_results($sql, OBJECT);
     }
 
-    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discountcode, $special) {
+    public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discount, $special) {
         global $wpdb;
         $tickets = new \stdClass();
 
@@ -264,6 +275,17 @@ class FareCalculator {
             $pfield = 'localprice';
         } else {
             $pfield = 'price';
+        }
+
+        // Check that the discount code doesn't override the price choice here
+        // Also exclude any ticket types that should not be used with this discount
+        $excludes = "";
+        if ($discount) {
+            $pfield = $discount->check_price_field($pfield);
+            if ($discount->has_excludes()) {
+                $excludes = " AND {$wpdb->prefix}wc_railticket_prices.tickettype NOT IN ".
+                " ('".implode(',', $discount->get_excludes())."')";
+            }
         }
 
         if ($special) {
@@ -292,16 +314,14 @@ class FareCalculator {
             "(stationone = ".$tostation->get_stnid()." AND stationtwo = ".$fromstation->get_stnid().")) ".
             " AND disabled = 0 AND ".
             "{$wpdb->prefix}wc_railticket_prices.revision = ".$this->revision." ".
-            $specialval." ".$guard.
+            $specialval." ".$guard." ".$excludes.
             "ORDER BY {$wpdb->prefix}wc_railticket_tickettypes.sequence ASC";
 
         $ticketdata = $wpdb->get_results($sql, OBJECT);
 
         $tickets->prices = array();
         $tickets->travellers = array();
-        $done = array();
-
-        // TODO Apply discounts here
+        $dtravellers = array();
 
         foreach($ticketdata as $ticketd) {
             $ticketd->composition = json_decode($ticketd->composition);
@@ -312,26 +332,84 @@ class FareCalculator {
                 if ($num == 0) {
                     continue;
                 } else {
-                    if (!in_array($code, $done)) {
-                        $done[] = $code;
+                    if (!array_key_exists($code, $tickets->travellers)) {
 
                         if (!$isguard) {
                             $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 AND ";
                         } else {
                             $guardtra = " WHERE ";
                         }
-                        $tickets->travellers[] = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra." ".
-                            " code = '".$code."'", OBJECT )[0];
+                        $tickets->travellers[$code] = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra." ".
+                            " code = '".$code."'", OBJECT );
+                        $tickets->travellers[$code]->max = 99;
                     }
                 }
             }
+
+            // If we have a discount and we are inheriting dependencies for the discount, duplicate the dependencies with
+            // with the discount type. We may get some non-existent traveller types here, but this is of no consequence since
+            // they will never match 
+            if ($discount && $discount->inherit_deps()) {
+                $ndeps = array();
+                foreach ($ticketd->depends as $dep) {
+                    $ndeps[] = $dep."/".$discount->get_shortname();
+                }
+                $ticketd->depends = array_merge($ticketd->depends, $ndeps);
+            }
+
+            // If we don't have any discounts, skip the rest...
+            if (!$discount || !$discount->ticket_has_discount($ticketd->tickettype)) {
+                continue;
+            }
+
+            // If we aren't using a custom ticket type+traveller here, just adjust the price and continue
+            if (!$discount->use_custom_type()) {
+                $ticketd->price = $discount->apply_price_rule($ticketd->tickettype, $ticketd->price);
+                continue;
+            }
+
+            // We need a custom traveller and custom ticket type cloned from the standard data
+            // PHP only performs a shallow copy of the object with clone(), that's no good. So use json to clone!
+            $customticket = json_decode(json_encode($ticketd));
+            $customticket->tickettype = $customticket->tickettype.'/'.$discount->get_shortname();
+            $customticket->price = $discount->apply_price_rule($customticket->tickettype, $ticketd->price);
+            $customticket->description = $discount->get_name();
+            $customticket->composition = new \stdclass();
+            $comp = (array) $ticketd->composition;
+
+            foreach ($comp as $otkey => $otvalue) {
+                $ntkey = $otkey."/".$discount->get_shortname();
+                $customticket->composition->$ntkey = $otvalue;
+
+                if (array_key_exists($ntkey, $dtravellers)) {
+                    continue;
+                }
+
+                // Add a new traveller type for this discount
+                $ntra = json_decode(json_encode($tickets->travellers[$otkey]));
+                $ntra->code = $ntkey;
+                $ntra->description = $discount->get_name();
+                $ntra->max = $discount->get_ticket_max_travellers($ticketd->tickettype);
+                $dtravellers[$ntkey] = $ntra;
+            }
+
+            $tickets->prices[$customticket->tickettype] = $customticket;
         }
 
+        $tickets->dcomment = '';
+
+        ksort($tickets->travellers);
+        if ($discount) {
+            ksort($dtravellers);
+            $tickets->travellers = array_merge($dtravellers, $tickets->travellers);
+        }
+        // The code was put in the index to make life easy for discounts, but the JS doesn't expect this, so strip it out.
+        $tickets->travellers = array_values($tickets->travellers);
         return $tickets;
     }
 
-    public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice,
-        $nominimum, $discountcode, $special) {
+    public function ticket_allocation_price($ticketsallocated, $ticketselections, Station $from, Station $to, $journeytype, $localprice,
+        $nominimum, $discount, $special) {
         if ($localprice) {
             $pfield = 'localprice';
         } else {
@@ -343,19 +421,53 @@ class FareCalculator {
             $from = $to;
         }
 
+        // If we have a discount, count up the seats used by discounted and non discounted travellers
+        $normalseats = 0;
+        $customseats = 0;
+        if ($discount) {
+            foreach ($ticketselections as $tcode => $num) {
+                if ($num == 0) {
+                    continue;
+                }
+                $parts = explode('/', $tcode);
+                $traveller = $this->get_traveller($parts[0]);
+                if (count($parts) == 2) {
+                    $customseats = $num * $traveller->seats;
+                } else {
+                    $normalseats = $num * $traveller->seats;
+                }
+            }
+        }
+
         $pdata = new \stdclass();
         $pdata->supplement = 0;
         $pdata->price = 0;
         $pdata->ticketprices = array();
         $pdata->ticketprices['__pfield'] = $pfield;
-        $pdata->ticketprices['__discountcode'] = $discountcode;
-        $pdata->ticketprices['__discounttype'] = '';
+        if ($discount) {
+            $pdata->ticketprices['__discountcode'] = $discount->get_code();
+            $pdata->ticketprices['__discounttype'] = $discount->get_shortname();
+            $pdata->ticketprices['__discounttotal'] = 0;
+        } else {
+            $pdata->ticketprices['__discountcode'] = false;
+            $pdata->ticketprices['__discounttype'] = '';
+        }
         $pdata->revision = $this->revision;
 
+        $discountpricetotal = 0;
         foreach ($ticketsallocated as $ttype => $qty) {
-            $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discountcode, $special);
+            $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discount, $special);
             $pdata->price += floatval($price)*floatval($qty);
             $pdata->ticketprices[$ttype] = $price;
+            if ($discount) {
+                // What was the price without the discount?
+                $nodiscountprice = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, false, $special);
+                $ds = floatval($nodiscountprice) - floatval($price);
+                if ($ds > 0) {
+                    $pdata->ticketprices['__discounttotal'] += $ds*floatval($qty);
+                    $discountpricetotal += floatval($price);
+                }
+            }
         }
 
         if ($nominimum || $pdata->price == 0) {
@@ -364,15 +476,29 @@ class FareCalculator {
 
         $mprice = get_option('wc_product_railticket_min_price');
         if (strlen($mprice) > 0 && $pdata->price < $mprice) {
+            // Deal with the special case of a 100% discount on some custom tickets, where there are also paying travellers
+            // that don't need seats (aka dogs). We don't charge the supplement just for a dog.
+            if ($discount && $customseats > 0 && $normalseats == 0 && $discountpricetotal == 0) {
+                return $pdata;
+            }
+
             $mprice=floatval($mprice);
             $pdata->supplement = floatval($mprice) - floatval($pdata->price);
             $pdata->price = $mprice;
+
+            // Offset the discount by the value of the supplement
+            if ($discount) {
+                $pdata->ticketprices['__discounttotal'] -= $pdata->supplement;
+                if ($pdata->ticketprices['__discounttotal'] < 0) {
+                    $pdata->ticketprices['__discounttotal'] = 0;
+                }
+            }
         }
 
         return $pdata;
     }
 
-    public function get_fare(Station $from, Station $to, $journeytype, $ttype, $pfield, $discountcode, $special) {
+    public function get_fare(Station $from, Station $to, $journeytype, $ttype, $pfield, $discount, $special) {
         global $wpdb;
         if (!$special) {
             $jt = " AND journeytype = '".$journeytype."' ";
@@ -380,13 +506,18 @@ class FareCalculator {
             $jt = "";
         }
 
-        $sql = "SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$ttype."' ".
+        // Strip out any discount code we may have from the ticket type
+        $tparts = explode('/', $ttype);
+
+        $sql = "SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$tparts[0]."' ".
             $jt." AND revision = ".$this->revision." AND ".
             "((stationone = ".$from->get_stnid()." AND stationtwo = ".$to->get_stnid().") OR ".
             "(stationone = ".$to->get_stnid()." AND stationtwo = ".$from->get_stnid()."))";
         $price = $wpdb->get_var($sql);
 
-        // TODO Apply Discounts here
+        if ($discount) {
+            $price = $discount->apply_price_rule($ttype, $price);
+        }
 
         return $price;
     }
@@ -397,7 +528,10 @@ class FareCalculator {
         $tkts = (array) $ticketselections;
 
         foreach ($tkts as $ttype => $number) {
-            $val = $wpdb->get_var("SELECT seats FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$ttype."'") * $number;
+            // Strip out any discount code we may have from the ticket type
+            $parts = explode('/', $ttype);
+
+            $val = $wpdb->get_var("SELECT seats FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$parts[0]."'") * $number;
             $total += $val;
         }
         return $total;

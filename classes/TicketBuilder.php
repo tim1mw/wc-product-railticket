@@ -10,7 +10,7 @@ class TicketBuilder {
 
     public function __construct($dateoftravel, $fromstation, $journeychoice, $times,
         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes,
-        $nominimum, $show, $localprice, $manual) {
+        $nominimum, $show, $localprice, $manual, $discountcode, $discountnote) {
         global $wpdb;
         $this->show = $show;
 
@@ -70,7 +70,12 @@ class TicketBuilder {
         $this->ticketselections = $ticketselections;
         $this->ticketsallocated = $ticketsallocated;
         $this->notes = $notes;
-
+        $this->discountnote = $discountnote;
+        if (strlen($discountcode) > 0) {
+            $this->discount = \wc_railticket\Discount::get_discount($discountcode, $this->fromstation, $this->tostation, $this->journeytype);
+        } else {
+            $this->discount = false;
+        }
         if ($nominimum == 'true') {
             $this->nominimum = true;
         } else {
@@ -97,9 +102,6 @@ class TicketBuilder {
         } else {
             $this->disabledrequest = false;
         }
-
-        // TODO Actually set the discount code here
-        $this->discountcode = false;
     }
 
     private function is_guard() {
@@ -126,7 +128,7 @@ class TicketBuilder {
 
         $ua = htmlentities($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, 'UTF-8');
         if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; rv:11.0') !== false)) {
-            return "<p>Sorry, the ticket booking system isn't supported on Internet Explorer. If you are using Windows 10, then please swtich to ".
+            return "<p>Sorry, the ticket booking system isn't supported on Internet Explorer. If you are using Windows 10, then please switch to ".
                 "the Microsoft Edge browser which has replaced Internet Explorer to continue your purchase. Users of older Windows versions ".
                 "will need to use Chrome or Firefox.</p>";
         }
@@ -388,7 +390,7 @@ class TicketBuilder {
 
     public function get_ticket_data() {
         return $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
-            $this->is_guard(), $this->localprice, $this->discountcode, $this->special);
+            $this->is_guard(), $this->localprice, $this->discount, $this->special);
     }
 
     public function get_bookable_trains() {
@@ -557,8 +559,8 @@ class TicketBuilder {
             $legbayinfo[$legnum] = $legbaydata;
         } 
 
-        $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated,
-            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discountcode, $this->special);
+        $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated, $this->ticketselections,
+            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discount, $this->special);
 
         $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);
 
@@ -572,7 +574,8 @@ class TicketBuilder {
                 'tickets' => json_encode($this->ticketsallocated),
                 'ticketprices' => json_encode($pricedata->ticketprices),
                 'notes' => $this->notes,
-                'createdby' => get_current_user_id()
+                'createdby' => get_current_user_id(),
+                'discountnote' => $this->discountnote
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
@@ -584,6 +587,13 @@ class TicketBuilder {
             $cart_item_data = array('custom_price' => $pricedata->price, 'ticketselections' => $this->ticketselections,
                 'ticketsallocated' => $this->ticketsallocated, 'supplement' => $pricedata->supplement,
                 'ticketprices' => $pricedata->ticketprices, 'unique' => uniqid());
+
+            if ($this->discount) {
+                if (strlen($this->discountnote)) {
+                    $cart_item_data['discountnote'] = $this->discountnote;
+                }
+                $this->discount->use();
+            }
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');
             $itemkey = $woocommerce->cart->add_to_cart($bridge_product, 1, 0, array(), $cart_item_data);
@@ -736,7 +746,7 @@ class TicketBuilder {
             "<div id='datechosen' class='railticket_container'>Tap or click a date to choose</div>".
             "<input type='hidden' id='dateoftravel' name='dateoftravel' value='' />".
             "  <div id='overridecodediv' class='railticket_overridecode railticket_container'>".
-            "  <label for='override'>Override code</label>&nbsp;&nbsp;<input id='overrideval' type='text' size='6' name='override' />".
+            "  <label for='override'>Override code</label>&nbsp;&nbsp;<input id='overrideval' type='text' size='6' name='override' autocomplete='off' autocorrect='off' autocapitalize='none'  />".
             "  <input type='button' value='Validate' id='validateOverrideIn' /> ".
             "  <div id='overridevalid'>".
             "  <p class='railticket_overridedesc'>The override code can be used to unlock services not available for booking below, ".
@@ -746,4 +756,22 @@ class TicketBuilder {
         return $str;
     }
 
+
+    public function get_validate_discount() {
+        if ($this->discount == false || $this->discount->is_disabled()) {
+            return array('valid' => false,
+                'message' => __('Sorry, this discount code is not valid', 'wc_railticket'),
+                'tickets' => $this->get_ticket_data());
+        }
+
+        return array('valid' => $this->discount->is_valid(),
+            'message' => $this->discount->get_message(),
+            'dcomment' => $this->discount->get_comment(),
+            'shownotes' => $this->discount->show_notes(),
+            'pattern' => $this->discount->get_pattern(),
+            'notesinstructions' => $this->discount->get_note_instructions(),
+            'tickets' => $this->get_ticket_data(),
+            'maxseats' =>  $this->discount->get_max_seats(),
+            'customtravellers' => $this->discount->use_custom_type());
+    }
 } 

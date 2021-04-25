@@ -324,12 +324,39 @@
     color:#880000;
 }
 
-.railticket_travellers_numbers input {
+.railticket_travellers_numbers input[type=number] {
     font-size:large;
     color:#880000 !important;
     border: 2px solid #880000 !important;
     border-radius: 4px;
     margin:4px;
+}
+
+.railticket_travellers_numbers input[type=text] {
+    color:#880000 !important;
+    border: 2px solid #880000 !important;
+    border-radius: 4px;
+    margin:4px;
+    background:white;
+    font-size:medium;
+    padding:3px;
+    text-align:center;
+}
+
+.railticket_travellers_numbers input[type=button] {
+    margin:4px;
+    font-size:medium;
+    padding-top:5px;
+    padding-bottom:5px;
+    padding-left:8px;
+    padding-right:8px;
+    border-radius:4px;
+}
+
+#ticket_discountcode .railticket_travellers_numbers {
+    text-align:center;
+    background:none;
+    border:none;
 }
 
 .railticket_terms {
@@ -599,5 +626,8 @@ input[type="submit"],
 border-radius: 0;
 }
 
-
+.railticket-dimmer {
+    background:#dddddd !important;
+    color:#cccccc !important;
+}
 

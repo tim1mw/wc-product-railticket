@@ -47,6 +47,9 @@ function railticket_ajax_request() {
         case 'ticket_data':
             $result = $ticketbuilder->get_ticket_data();
             break;
+        case 'validate_discount':
+            $result = $ticketbuilder->get_validate_discount();
+            break;
         case 'capacity':
             $result = $ticketbuilder->get_capacity();
             break;
@@ -108,6 +111,8 @@ function railticket_getticketbuilder() {
     // Invert this one so the visible option can be false by default
     $localprice = !railticket_gettfpostfield('onlineprice');
     $manual = railticket_gettfpostfield('manual');
+    $discountcode = railticket_getpostfield('discountcode');
+    $discountnote = railticket_getpostfield('discountnote');
 
     $times = null;
     if (array_key_exists('times', $_REQUEST)) {
@@ -126,7 +131,8 @@ function railticket_getticketbuilder() {
     // TODO Sanitize JSON?
 
     return new \wc_railticket\TicketBuilder($dateoftravel, $fromstation, $journeychoice, $times,
-         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum, $show, $localprice, $manual);
+         $ticketselections, $ticketsallocated, $overridevalid, $disabledrequest, $notes, $nominimum,
+         $show, $localprice, $manual, $discountcode, $discountnote);
 }
 
 function railticket_gettfpostfield($field) {

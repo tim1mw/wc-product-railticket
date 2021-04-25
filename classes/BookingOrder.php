@@ -16,9 +16,9 @@ class BookingOrder {
         $this->incart = false;
 
         if ($cart_item) {
-            $this->tickets = $cart_item['ticketsallocated'];
-            $this->travellers = $cart_item['ticketselections'];
-            $this->ticketprices = $cart_item['ticketprices'];
+            $this->tickets =(array) $cart_item['ticketsallocated'];
+            $this->travellers =  (array) $cart_item['ticketselections'];
+            $this->ticketprices = (array) $cart_item['ticketprices'];
             $this->price = $cart_item['custom_price'];
             $this->supplement = $cart_item['supplement'];
             $this->notes = '';
@@ -29,14 +29,19 @@ class BookingOrder {
             $this->paid = false;
             $this->incart = true;
             $this->createdby = 0;
+            if (array_key_exists('discountnote', $cart_item)) {
+                $this->discountnote = $cart_item['discountnote'];
+            } else {
+                $this->discountnote = '';
+            }
         } elseif ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
-            $this->tickets = json_decode($mb->tickets);
-            $this->travellers = json_decode($mb->travellers);
+            $this->tickets = (array) json_decode($mb->tickets);
+            $this->travellers = (array) json_decode($mb->travellers);
             if (property_exists($mb, 'ticketprices')) {
-                $this->ticketprices = json_decode($mb->ticketprices);
+                $this->ticketprices = (array) json_decode($mb->ticketprices);
             } else {
-                $this->ticketprices = new \stdclass();
+                $this->ticketprices = array();
             }
             $this->price = $mb->price;
             $this->supplement = $mb->supplement;
@@ -47,15 +52,18 @@ class BookingOrder {
             $this->customerphone = '';
             $this->createdby = $mb->createdby;
             $this->paid = true;
+            $this->discountnote = $mb->discountnote;
         } else {
             $wooorderitem = $bookings[0]->wooorderitem;
-            $this->tickets = $this->get_woo_meta('ticketsallocated-', $wooorderitem);
-            $this->travellers = $this->get_woo_meta('ticketselections-', $wooorderitem);
-            $this->ticketprices = $this->get_woo_meta('ticketprices-', $wooorderitem);
+            $this->tickets = (array) $this->get_woo_meta('ticketsallocated-', $wooorderitem);
+            $this->travellers = (array) $this->get_woo_meta('ticketselections-', $wooorderitem);
+            $this->ticketprices = (array) $this->get_woo_meta('ticketprices-', $wooorderitem);
             $this->price = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
                 " meta_key='_line_total' AND order_item_id = ".$wooorderitem."");
             $this->supplement = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
                 " meta_key='supplement' AND order_item_id = ".$wooorderitem."");
+            $this->discountnote = $wpdb->get_var("SELECT meta_value FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
+                " meta_key='discountnote' AND order_item_id = ".$wooorderitem."");
             $this->createdby = 0;
 
             // This object might get created prior to the order being fully setup in Woocommerce, so skip this if there is no order
@@ -83,6 +91,11 @@ class BookingOrder {
         $this->bookings = array();
         foreach ($bookings as $booking) {
             $this->bookings[] = new Booking($booking, $this->bookableday);
+        }
+        if ($this->ticketprices && array_key_exists('__discounttype', $this->ticketprices)) {
+            $this->discount = DiscountType::get_discount_type($this->ticketprices['__discounttype']);
+        } else {
+            $this->discount = false;
         }
     }
 
@@ -247,10 +260,9 @@ class BookingOrder {
 
     public function get_tickets($format = false) {
         if ($format) {
-            $ta = (array) $this->tickets;
             $fmt = array();
-            foreach ($ta as $ticket => $num) {
-                 $fmt[] = $num."x ".$this->bookableday->fares->get_ticket_name($ticket);
+            foreach ($this->tickets as $ticket => $num) {
+                $fmt[] = $num."x ".$this->bookableday->fares->get_ticket_name($ticket, $this->discount);
             }
             return implode(', ', $fmt);
         }
@@ -259,8 +271,7 @@ class BookingOrder {
 
     public function total_tickets() {
         $count = 0;
-        $ta = (array) $this->tickets;
-        foreach ($ta as $ticket => $num) {
+        foreach ($this->tickets as $ticket => $num) {
             $count += $num;
         }
         return $count;
@@ -318,8 +329,10 @@ class BookingOrder {
                 if (strpos($tpcode, '__') === 0) {
                     continue;
                 }
-                // TODO Sort out currency symblos properly....
-                $filtered[] = $this->bookableday->fares->get_ticket_name($tpcode).' £'.number_format($tpprice, 2).' '.__('each', 'wc_railticket');
+                $name = $this->bookableday->fares->get_ticket_name($tpcode, $this->discount);
+
+                // TODO Sort out currency symbols properly....
+                $filtered[] = $name.' £'.number_format($tpprice, 2).' '.__('each', 'wc_railticket');
             }
             return implode(', ', $filtered);
         }
@@ -335,8 +348,8 @@ class BookingOrder {
     }
 
     public function is_guard_price() {
-        if ($this->ticketprices && property_exists($this->ticketprices, '__pfield')) {
-            if ($this->ticketprices->__pfield == 'localprice') {
+        if ($this->ticketprices && array_key_exists('__pfield', $this->ticketprices)) {
+            if ($this->ticketprices['__pfield'] == 'localprice') {
                 return true;
             }
         }
@@ -344,27 +357,33 @@ class BookingOrder {
         return false;
     }
 
-    public function get_discount_type($format = false) {
-        if ($this->ticketprices && property_exists($this->ticketprices, '__discounttype')) {
+    public function get_discount_type() {
+        return $this->discount;
+    }
 
-            if (!$format) {
-                return $this->ticketprices->__discounttype;
-            }
+    public function get_discount_note() {
+        return $this->discountnote;
+    }
 
-            // TODO Lookup discount type name here!
-
-            return $this->ticketprices->__discounttype;
-        }
-
+    public function get_discount_code() {
+        if ($this->ticketprices && array_key_exists('__discountcode', $this->ticketprices)) {
+            return $this->ticketprices['__discountcode'];
+        } 
         return '';
     }
 
-    public function get_discount() {
-        if ($this->ticketprices && property_exists($this->ticketprices, '__discounttotal')) {
-            return $this->ticketprices->__discounttotal;
+    public function get_discount($format = false) {
+        if ($this->ticketprices && array_key_exists('__discounttotal', $this->ticketprices)) {
+            $d =  $this->ticketprices['__discounttotal'];
+        } else {
+            $d = 0;
         }
 
-        return 0;
+        if ($format) {
+            // TODO Deal with currency symbol
+            return "£".number_format($d, 2);
+        }
+        return $d;
     }
 
     public function get_date($format = false, $nottoday = false) {

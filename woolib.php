@@ -195,6 +195,23 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
         );
     }
 
+    $discount = $bookingorder->get_discount_type();
+    if ($discount) {
+        if ($discount->show_notes()) {
+            $dn = " (".$bookingorder->get_discount_note().")";
+        } else {
+            $dn = "";
+        }
+        $item_data[] = array(
+            'key'       => __("Discount Type", "wc_railticket"),
+            'value'     => $discount->get_name().$dn
+        );
+        $item_data[] = array(
+            'key'       => __("Discount Savings", "wc_railticket"),
+            'value'     => $bookingorder->get_discount(true)
+        );
+    }
+
     return $item_data;
 }
 
@@ -247,7 +264,7 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
             switch ($fmparts[0]) {
                 case 'cart_item_key':
                 case 'itemid':
-                    continue;
+                    break;
                 // If any of these fields are present and we don't have a ticket ID by now, this booking is broken....
                 // There has to be a better way to deal with this....
                 case 'supplement':
@@ -255,7 +272,7 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                 case 'ticketselections':
                 case 'ticketprices':
                     if ($found) {
-                        continue;
+                        break;
                     }
                     $item->display_key = __("Order Problem", "wc_railticket");
                     $item->display_value = __("Your booking data is missing, this is very unusual, your tickets may have expired in the basket while the payment process was being completed. Please contact the railway ASAP with your booking ID to have this corrected.", "wc_railticket");
@@ -279,14 +296,17 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     $tkey = false;
     $skey = false;
     $pkey = false;
+    $dkey = false;
 
     foreach ($formatted_meta as $index => $fm) {
         $fmparts = explode("-", $fm->key);
         switch ($fmparts[0]) {
             case 'supplement':
-                $fm->display_key = __("Supplement", "wc_railticket");
-                $fm->display_value = $bookingorder->get_supplement(true);
-                $retmeta[$index] = $fm;
+                if ($bookingorder->get_supplement() > 0) {
+                    $fm->display_key = __("Supplement", "wc_railticket");
+                    $fm->display_value = $bookingorder->get_supplement(true);
+                    $retmeta[$index] = $fm;
+                }
                 break;
             case 'ticketsallocated':
                 if ($tkey == false) {
@@ -307,9 +327,9 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                             __("Departing from ", "wc_railticket").$bookings[0]->get_from_station()->get_name().
                             "<br />".$bookings[0]->get_bays(true)."<br />";
                     } else {
-                       $d .= $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
-                       $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
-                       $bookings[0]->get_to_station()->get_name()."<br />";
+                        $d .= $bookingorder->get_journeytype(true)." ".__("from", "wc_railticket")." ".
+                        $bookings[0]->get_from_station()->get_name()." ".__("to", "wc_railticket")." ".
+                        $bookings[0]->get_to_station()->get_name()."<br />";
                         $d .= __("Total Seats", "wc_railticket").": ".$bookingorder->get_seats()."<br />";
 
                         // TODO Hide bays for seat based capacity
@@ -324,6 +344,22 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                     $retmeta[$index] = $fm;
                 }
                 break;
+            case 'ticketprices':
+                if ($dkey == false) {
+                    $discount = $bookingorder->get_discount_type();
+                    if ($discount) {
+                        if ($discount->show_notes()) {
+                            $dn = " (".$bookingorder->get_discount_note().")";
+                        } else {
+                            $dn = "";
+                        }
+                        $fm->display_key = __("Discount", "wc_railticket");
+                        $fm->display_value = $discount->get_name().$dn.", ".__("saving", "wc_railticket")." ".$bookingorder->get_discount(true);
+                        $retmeta[$index] = $fm;
+                    }
+                    $dkey = true;
+                }
+                break;
         }
     }
     
@@ -331,7 +367,11 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
 }
 
 function railticket_cart_updated($cart_item_key, $cart) {
-    \wc_railticket\Booking::delete_booking_order_cart($cart_item_key);
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($cart->cart_contents[$cart_item_key]);
+    if ($bookingorder) {
+        \wc_railticket\Discount::unuse($bookingorder->get_discount_code());
+        $bookingorder->delete();
+    }
 }
 
 function railticket_cart_order_item_metadata($item, $cart_item_key, $values, $order ) {
@@ -340,6 +380,9 @@ function railticket_cart_order_item_metadata($item, $cart_item_key, $values, $or
     railticket_product_add_new_order_line_item($item, $values, 'ticketprices');
     if (array_key_exists('supplement', $values)) {
         $item->update_meta_data('supplement', $values['supplement']);
+    }
+    if (array_key_exists('discountnote', $values)) {
+        $item->update_meta_data('discountnote', $values['discountnote']);
     }
     $item->update_meta_data('itemid', $item->get_id());
     $item->update_meta_data('cart_item_key', $cart_item_key);
@@ -437,6 +480,9 @@ function railticket_cart_check_cart() {
             $bookingids = $wpdb->get_results($sql);
             if (count($bookingids) === 0) {
                 $woocommerce->cart->remove_cart_item($item);
+                if (array_key_exists('__discountcode', $values['ticketprices'])) {
+                    \wc_railticket\Discount::unuse($values['ticketprices']['__discountcode']);
+                }
                 echo "<p style='color:red;font-weight:bold;'>Your rail journey tickets have expired and have been removed from the basket. Sorry.</p>";
             }
         }

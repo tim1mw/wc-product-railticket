@@ -8,6 +8,8 @@ const months = ["Jan", "Feb", "Mar","Apr", "May", "Jun", "Jul", "Aug", "Sep", "O
 var stationData = [];
 var fromstationdata, tostationdata, journeychoicedata, journeytypedata, alljourneys;
 var manual = false;
+var maxdiscountseats = 999;
+var customtravellers = false;
 
 
 function setupTickets() {
@@ -22,6 +24,8 @@ function setupTickets() {
     railTicketAddListener('validateOverrideIn', 'click', validateOverride);
     railTicketAddListener('confirmchoices', 'click', checkCapacity);
     railTicketAddListener('addtocart_button', 'click', cartTickets);
+    railTicketAddListener('applydiscount_button', 'click', validateDiscount);
+    railTicketAddListener('discountcode', 'keypress', discountCodeBox);
     railTicketAddListener('disabledrequest', 'change', disabledRequest);
     
     if (guard) {
@@ -110,6 +114,8 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('notes', getFormValue('notes'));
     data.append('nominimum', getCBFormValue('nominimum'));
     data.append('onlineprice', getCBFormValue('onlineprice'));
+    data.append('discountcode', getFormValue('discountcode').trim());
+    data.append('discountnote', getFormValue('dnotes'));
     data.append('manual', manual);
     request.send(data);
 }
@@ -140,6 +146,78 @@ function validateOverride() {
     } else {
         overridevalid = false;
         odiv.innerHTML='<p>Override code invalid - please try again.</p>';
+    }
+}
+
+function validateDiscount(evt) {
+    evt.preventDefault();
+    var dc = getFormValue('discountcode').trim();
+    if (dc.length == 0) {
+        var dv = document.getElementById('discountvalid');
+        dv.innerHTML = '<p><span>No code entered.<span></p>';
+        maxdiscountseats = 999;
+        customtravellers = false;
+        return;
+    }
+
+    railTicketAjax('validate_discount', true, function(response) {
+        var dv = document.getElementById('discountvalid');
+        if (response.valid) {
+            dv.innerHTML = '<p class="railticket_arrtime"><span>'+response.message+'</span><br />'+response.dcomment;
+            if (response.shownotes) {
+                dv.innerHTML += '<div class="quantity"><label for="dnotes"><span>'+response.notesinstructions+'</span></label>'+
+                    '<input type="text" name="dnotes" size="20" id="dnotes" pattern="'+response.pattern+'" /></div>';
+            }
+            dv.innerHTML += '</p>';
+        } else {
+            dv.innerHTML = '<p><span>'+response.message+'<span></p>';
+        }
+        ticketdata = response['tickets'];
+        maxdiscountseats = response['maxseats'];
+        customtravellers = response['customtravellers'];
+        renderTicketSelector();
+        if (response.valid && response.shownotes && response.pattern.length > 0) {
+            discountCheck(true);
+            document.getElementById('dnotes').addEventListener('input', validateDiscountNote);
+        } else {
+            discountCheck(false);
+        }
+    });
+}
+
+function validateDiscountNote() {
+    var ele = document.getElementById('dnotes');
+    if (ele.checkValidity() && ele.value.length > 0) {
+        discountCheck(false);
+    } else {
+        discountCheck( true);
+    }
+}
+
+function discountCheck(state) {
+    disableDiv('ticket_travellers', state);
+    disableDiv('ticket_capbutton', state);
+    disableDiv('ticket_summary', state);
+    disableDiv('ticket_capacity', state);
+    disableDiv('addtocart', state);
+}
+
+function disableDiv(name, state) {
+    var ele = document.getElementById(name);
+    var nodes = ele.getElementsByTagName('*');
+    for(var i = 0; i < nodes.length; i++){
+        nodes[i].disabled = state;
+        if (state) {
+            nodes[i].classList.add('railticket-dimmer');
+        } else {
+            nodes[i].classList.remove('railticket-dimmer');
+        }
+    }
+}
+
+function discountCodeBox(evt) {
+    if (evt.charCode == 13) {
+        validateDiscount(evt);
     }
 }
 
@@ -340,6 +418,7 @@ function specialClicked(evt) {
     specialSelected = true;
     railTicketAjax('ticket_data', true, function(response) {
         ticketdata = response;
+        document.getElementById('discountvalid').innerHTML = '';
         renderTicketSelector();
     } );
 }
@@ -358,6 +437,7 @@ function uncheckAll(classname) {
 
 function getDepTimes() {
     railTicketAjax('bookable_trains', true, function(response) {
+        document.getElementById('discountvalid').innerHTML = '';
         sameservicereturn = response['sameservicereturn'];
         var div = document.getElementById('deptimes_data');
         deplegs = response['legs'];
@@ -520,6 +600,13 @@ function renderTicketSelector() {
     tn.style.display = "block";
     var tratemplate = document.getElementById('travellers_tmpl').innerHTML;
     tn.innerHTML = Mustache.render(tratemplate, ticketdata);
+
+    for (i in ticketdata.travellers) {
+        var code = ticketdata.travellers[i].code; 
+        var v=document.getElementById("q_"+code);
+        v.addEventListener('input', travellersChanged);
+    }
+
     travellersChanged();
 
     showTicketStages('tickets', true);
@@ -553,7 +640,31 @@ function getSelectionSummary() {
     }
 }
 
-function travellersChanged() {
+function travellersChanged(evt) {
+    if (maxdiscountseats < 999) {
+        var total = 0;
+        for (i in ticketdata.travellers) {
+            var code = ticketdata.travellers[i].code; 
+            if (customtravellers) {
+                var parts = code.split('/');
+                if (parts.length == 1) {
+                    continue;
+                }
+            }
+            var v=document.getElementById("q_"+code);
+            var tnum = 0;
+            if (v.value != '') {
+                tnum = parseInt(v.value);
+            }
+            total = total + (tnum*ticketdata.travellers[i].seats);
+        }
+
+        while (total > maxdiscountseats) {
+            evt.target.value = parseInt(evt.target.value)-1;
+            total--;
+        }
+    }
+
     setTimeout(allocateTickets, 10);
 }
 
@@ -570,6 +681,7 @@ function allocateTickets() {
     capacitydiv.style.display = 'none';
     var allocation = new Array();
     allocationTotal = 0;
+    var customSeats = 0, normalSeats = 0;
     ticketsAllocated = {};
 
     for (i in ticketdata.travellers) {
@@ -584,6 +696,14 @@ function allocateTickets() {
             ticketSelections[code] = parseInt(v.value);
             allocation[code] = parseInt(v.value);
             allocationTotal += parseInt(v.value);
+
+            var parts = code.split('/');
+            if (parts.length == 2) {
+                customSeats = customSeats + (tnum*ticketdata.travellers[i].seats);
+            } else {
+                normalSeats = normalSeats + (tnum*ticketdata.travellers[i].seats);
+            }
+
         } else {
             v.value = '';
             ticketSelections[code] = 0;
@@ -642,9 +762,15 @@ function allocateTickets() {
     var td = {};
     td.allocated = [];
     td.total = 0;
+    td.totalcustom = 0;
     for (i in ticketsAllocated) {
         var tkt = ticketdata.prices[i];
         td.total += parseFloat(tkt.price) * ticketsAllocated[i];
+
+        var parts = i.split('/');
+        if (parts.length == 2) {
+            td.totalcustom += parseFloat(tkt.price) * ticketsAllocated[i];
+        }
 
         var t = {};
         t.num = ticketsAllocated[i];
@@ -660,7 +786,7 @@ function allocateTickets() {
     if (minprice !== false) {
         if (td.total < minprice && td.total != 0) {
             var nm = getCBFormValue('nominimum');
-            if (guard && nm == true) {
+            if ( (guard && nm == true) || (customSeats>0 && normalSeats==0 && td.totalcustom == 0)) {
                 td.supplement = 0;
             } else {
                 td.supplement = minprice - td.total;
