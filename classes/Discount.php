@@ -75,6 +75,69 @@ class Discount extends DiscountType {
         return new Discount($data, $fromstation, $tostation, $journeytype);
     }
 
+    public static function get_all_discount_data() {
+        global $wpdb;
+
+        return $wpdb->get_results("SELECT discounts.name, codes.* ".
+            "FROM {$wpdb->prefix}wc_railticket_discountcodes codes ".
+            "INNER JOIN {$wpdb->prefix}wc_railticket_discounts discounts ON discounts.shortname = codes.shortname ".
+            "ORDER BY codes.shortname, codes.code");
+    }
+
+    public static function delete_discount_code($id) {
+        global $wpdb;
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_discountcodes", array('id' => $id));
+    }
+
+    public static function add_discount_code($shortname, $code, $start, $end, $single, $disabled, $notes) {
+        global $wpdb;
+
+        if (strlen($end) == 0) {
+            $end = null;
+        }
+
+        if (strlen($start) == 0) {
+            $start = null;
+        }
+
+        $check = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_discountcodes WHERE code='".$code."'");
+        if ($check) {
+            return false;
+        }
+
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_discountcodes",
+            array('shortname' => $shortname, 'code' => $code, 'start' => $start, 'end' => $end,
+            'single' => $single, 'disabled' => $disabled, 'notes' => $notes));
+        return true;
+    }
+
+    public static function update_discount_code($id, $code, $start, $end, $single, $disabled, $notes) {
+        global $wpdb;
+
+        if (strlen($end) == 0) {
+            $end = null;
+        }
+
+        if (strlen($start) == 0) {
+            $start = null;
+        }
+
+        $check = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_discountcodes WHERE code='".$code."' AND id != ".$id);
+        if ($check) {
+            $wpdb->update("{$wpdb->prefix}wc_railticket_discountcodes",
+                array('start' => $start, 'end' => $end,
+                'single' => $single, 'disabled' => $disabled, 'notes' => $notes),
+                array('id' => $id));
+            return false;
+        }
+
+        $wpdb->update("{$wpdb->prefix}wc_railticket_discountcodes",
+            array('code' => $code, 'start' => $start, 'end' => $end,
+            'single' => $single, 'disabled' => $disabled, 'notes' => $notes),
+            array('id' => $id));
+        return true;
+    }
+
     public function get_code() {
         return $this->data->code;
     }

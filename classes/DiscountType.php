@@ -28,6 +28,13 @@ class DiscountType {
         return new DiscountType($data);
     }
 
+    public static function get_all_discount_type_mindata() {
+        global $wpdb;
+
+        return $wpdb->get_results("SELECT id, name, shortname FROM ".
+            "{$wpdb->prefix}wc_railticket_discounts");
+    }
+
     public function get_shortname() {
         return $this->data->shortname;
     }

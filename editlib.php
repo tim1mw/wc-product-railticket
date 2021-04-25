@@ -43,6 +43,8 @@ function railticket_add_pages() {
     add_submenu_page('railticket-top-level-handle', "Travellers", "Travellers", 'manage_options', 'railticket-travellers', 'railticket_travellers');
     add_submenu_page('railticket-top-level-handle', "Ticket Types", "Ticket Types", 'manage_options', 'railticket-tickets', 'railticket_tickets');
     add_submenu_page('railticket-top-level-handle', "Fares", "Fares", 'manage_options', 'railticket-fares', 'railticket_fares');
+    add_submenu_page('railticket-top-level-handle', "Discount Codes", "Discount Codes", 'manage_options', 'railticket-discount-codes', 'railticket_discount_codes');
+    add_submenu_page('railticket-top-level-handle', "Discount Types", "Discount Types", 'manage_options', 'railticket-discount-types', 'railticket_discount_types');
     add_submenu_page('railticket-top-level-handle', "Import Timetable", "Import Timetable", 'manage_options', 'railticket-import-timetable', 'railticket_import_timetable');
 }
 
@@ -1861,4 +1863,83 @@ function railticket_update_coaches() {
 
         \wc_railticket\CoachManager::update_coach($id, $name, $capacity, $maxcapacity, $image, $hidden, $composition);
     }
+}
+
+function railticket_discount_codes() {
+    global $rtmustache;
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'updatediscountcodes':
+                railticket_update_discountcodes();
+                break;
+            case 'adddiscountcode':
+                $shortname = railticket_getpostfield('shortname');
+                $code = railticket_getpostfield('code');
+                $start = railticket_getpostfield('start');
+                $end = railticket_getpostfield('end');
+                $single = railticket_gettfpostfield('single');
+                $disabled = railticket_gettfpostfield('disabled');
+                $notes = railticket_getpostfield('note');
+                $check = \wc_railticket\Discount::add_discount_code($shortname, $code, $start, $end, $single, $disabled, $notes);
+                if (!$check) {
+                    echo "<span style='color:red'>Duplicate discount code '".$code."' detected, cannot add.</span><br />";
+                }
+                break;
+            case 'deletediscountcode':
+                $id = railticket_getpostfield('id');
+                \wc_railticket\Discount::delete_discount_code($id);
+                break;
+        }
+    }
+
+    $alldata = new \stdclass();
+    $alldata->dtypes = array_values(\wc_railticket\DiscountType::get_all_discount_type_mindata());
+    $alldata->dcodes = array_values(\wc_railticket\Discount::get_all_discount_data());
+    $alldata->ids = array();
+    foreach ($alldata->dcodes as $dcode) {
+       $alldata->ids[] = $dcode->id;
+       if ($dcode->single == 1) {
+           $dcode->single = 'checked';
+       } else {
+           $dcode->single = '';
+       }
+       if ($dcode->disabled == 1) {
+           $dcode->disabled = 'checked';
+       } else {
+           $dcode->disabled = '';
+       }
+    }
+
+    $alldata->ids = implode(',', $alldata->ids);
+    $template = $rtmustache->loadTemplate('discountcodes');
+    echo $template->render($alldata);
+}
+
+function railticket_update_discountcodes() {
+    $ids = explode(',', railticket_getpostfield('ids'));
+
+    foreach ($ids as $id) {
+        $code = railticket_getpostfield('code_'.$id);
+        $start = railticket_getpostfield('start_'.$id);
+        $end = railticket_getpostfield('end_'.$id);
+        $single = railticket_gettfpostfield('single_'.$id);
+        $disabled = railticket_gettfpostfield('disabled_'.$id);
+        $notes = railticket_getpostfield('notes_'.$id);
+
+        $check = \wc_railticket\Discount::update_discount_code($id, $code, $start, $end, $single, $disabled, $notes);
+        if (!$check) {
+            echo "<span style='color:red'>Duplicate discount code '".$code."' detected, skipping.</span><br />";
+        }
+    }
+}
+
+function railticket_discount_types() {
+    global $rtmustache;
+    $alldata = new \stdclass();
+
+    $template = $rtmustache->loadTemplate('discounttypes');
+    echo $template->render($alldata);
 }
