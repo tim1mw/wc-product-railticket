@@ -588,8 +588,11 @@ class TicketBuilder {
                 'ticketsallocated' => $this->ticketsallocated, 'supplement' => $pricedata->supplement,
                 'ticketprices' => $pricedata->ticketprices, 'unique' => uniqid());
 
-            if (strlen($this->discountnote)) {
-                $cart_item_data['discountnote'] = $this->discountnote;
+            if ($this->discount) {
+                if (strlen($this->discountnote)) {
+                    $cart_item_data['discountnote'] = $this->discountnote;
+                }
+                $this->discount->use();
             }
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');
@@ -755,7 +758,7 @@ class TicketBuilder {
 
 
     public function get_validate_discount() {
-        if ($this->discount == false) {
+        if ($this->discount == false || $this->discount->is_disabled()) {
             return array('valid' => false,
                 'message' => __('Sorry, this discount code is not valid', 'wc_railticket'),
                 'tickets' => $this->get_ticket_data());

@@ -29,7 +29,11 @@ class BookingOrder {
             $this->paid = false;
             $this->incart = true;
             $this->createdby = 0;
-            $this->discountnote = $cart_item['discountnote'];
+            if (array_key_exists('discountnote', $cart_item)) {
+                $this->discountnote = $cart_item['discountnote'];
+            } else {
+                $this->discountnote = '';
+            }
         } elseif ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = (array) json_decode($mb->tickets);
@@ -359,6 +363,13 @@ class BookingOrder {
 
     public function get_discount_note() {
         return $this->discountnote;
+    }
+
+    public function get_discount_code() {
+        if ($this->ticketprices && array_key_exists('__discountcode', $this->ticketprices)) {
+            return $this->ticketprices['__discountcode'];
+        } 
+        return '';
     }
 
     public function get_discount($format = false) {

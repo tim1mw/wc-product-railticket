@@ -205,7 +205,7 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
         $item_data[] = array(
             'key'       => __("Discount Type", "wc_railticket"),
             'value'     => $discount->get_name().$dn
-        ); 
+        );
         $item_data[] = array(
             'key'       => __("Discount Savings", "wc_railticket"),
             'value'     => $bookingorder->get_discount(true)
@@ -367,7 +367,11 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
 }
 
 function railticket_cart_updated($cart_item_key, $cart) {
-    \wc_railticket\Booking::delete_booking_order_cart($cart_item_key);
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($cart->cart_contents[$cart_item_key]);
+    if ($bookingorder) {
+        \wc_railticket\Discount::unuse($bookingorder->get_discount_code());
+        $bookingorder->delete();
+    }
 }
 
 function railticket_cart_order_item_metadata($item, $cart_item_key, $values, $order ) {
@@ -476,6 +480,9 @@ function railticket_cart_check_cart() {
             $bookingids = $wpdb->get_results($sql);
             if (count($bookingids) === 0) {
                 $woocommerce->cart->remove_cart_item($item);
+                if (array_key_exists('__discountcode', $values['ticketprices'])) {
+                    \wc_railticket\Discount::unuse($values['ticketprices']['__discountcode']);
+                }
                 echo "<p style='color:red;font-weight:bold;'>Your rail journey tickets have expired and have been removed from the basket. Sorry.</p>";
             }
         }

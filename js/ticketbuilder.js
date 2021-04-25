@@ -108,7 +108,6 @@ function railTicketAjax(datareq, spinner, callback) {
 
     data.append('journeychoice', getFormValue('journeychoice'));
     data.append('ticketselections', JSON.stringify(ticketSelections));
-console.log(ticketSelections);
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
     data.append('overridevalid', overridevalid);
     data.append('disabledrequest', getCBFormValue('disabledrequest'));

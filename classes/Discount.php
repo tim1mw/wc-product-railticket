@@ -11,6 +11,8 @@ class Discount extends DiscountType {
         $this->data->customtype = (bool) $this->data->customtype;
         $this->data->triptype = (bool) $this->data->triptype;
         $this->data->shownotes = (bool) $this->data->shownotes;
+        $this->data->single = (bool) $this->data->single;
+        $this->data->disabled = (bool) $this->data->disabled;
 
         $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         $this->today = new \DateTime();
@@ -24,17 +26,17 @@ class Discount extends DiscountType {
         $this->valid = !$this->data->disabled;
 
         if ($this->data->start != null) {
-            $startdate = DateTime::createFromFormat('Y-m-d', $this->data->start);
+            $startdate = \DateTime::createFromFormat('Y-m-d', $this->data->start);
             $startdate->setTimezone($this->railticket_timezone);
-            if ($today < $startdate) {
+            if ($this->today < $startdate) {
                 $this->valid = false;
             }
         }
 
         if ($this->data->end != null) {
-            $enddate = DateTime::createFromFormat('Y-m-d', $this->data->end);
+            $enddate = \DateTime::createFromFormat('Y-m-d', $this->data->end);
             $enddate->setTimezone($this->railticket_timezone);
-            if ($today > $enddate) {
+            if ($this->today > $enddate) {
                 $this->valid = false;
             }
         }
@@ -161,12 +163,22 @@ class Discount extends DiscountType {
         return $this->valid;
     }
 
+    public function is_disabled() {
+        return $this->data->disabled;
+    }
+
     public function use() {
         if (!$this->data->single) {
             return;
         }
 
-        $this->disable_discount();
+        $this->disable();
+    }
+
+    public static function unuse($code) {
+        global $wpdb;
+        $wpdb->update("{$wpdb->prefix}wc_railticket_discountcodes",
+            array('disabled' => 0), array('code' => $code, 'single' => 1));
     }
 
     public function disable() {
@@ -175,4 +187,5 @@ class Discount extends DiscountType {
         $wpdb->update("{$wpdb->prefix}wc_railticket_discountcodes",
             array('disabled' => 1), array('code' => $this->data->code));
     }
+
 }
