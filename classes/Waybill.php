@@ -120,7 +120,7 @@ class Waybill extends Report {
             } else {
                 $gti->name = __('Unknown User', 'wc_railticket')." (id = ".$createdby.")";
             }
-            $gti->total = $total;
+            $gti->total = number_format($total, 2);
             $gts[] = $gti;
         }
 
@@ -164,7 +164,7 @@ class Waybill extends Report {
             }
             if ($keyparts[5] != 'AAAAAAAAAAAAAAAAA') {
                 $dtype = DiscountType::get_discount_type($keyparts[5]);
-                $nline->discounttype = $dtype->get_name();
+                $nline[] = $dtype->get_name();
             } else {
                 $nline[] = '';
                 $dtype = '';
@@ -172,8 +172,8 @@ class Waybill extends Report {
             $nline[] = $linevalue;
 
             $fare = $this->bookableday->fares->get_fare($from, $to, $keyparts[2], $keyparts[3], $keyparts[4], $dtype, $special);
-            $nline[] = $fare;
-            $nline[] = $linevalue * $fare;
+            $nline[] = number_format($fare, 2);
+            $nline[] = number_format($linevalue * $fare, 2);
             fputcsv($f, $nline);
         }
 
@@ -185,6 +185,13 @@ class Waybill extends Report {
         fputcsv($f, array('Total One Way Journeys', $this->totaljourneys, ' ', 'Total Guards Price Revenue', $this->totalguardprice));
         fputcsv($f, array('Total Supplement Revenue', $this->totalsupplements, ' ', 'Total Online Price Revenue', $this->totalonlineprice));
         fputcsv($f, array('Total Discount Deductions', $this->totaldiscounts, ' ', 'Total Revenue', $this->totalmanual + $this->totalwoo));
+
+        fputcsv($f, array());
+        fputcsv($f, array('Guard Breakdown'));
+        fputcsv($f, array());
+        foreach ($gts as $gt) {
+            fputcsv($f, array($gt->name, $gt->total));
+        }
 
         fclose($f);
         return;
@@ -228,7 +235,8 @@ class Waybill extends Report {
 
             $nline->number = $linevalue;
             $nline->fare = $this->bookableday->fares->get_fare($from, $to, $keyparts[2], $keyparts[3], $keyparts[4], $dtype, $special);
-            $nline->total = $linevalue * $nline->fare;
+            $nline->total = number_format($linevalue * $nline->fare, 2);
+            $nline->fare = number_format($nline->fare, 2);
             $plines[] = $nline;
         }
 
@@ -239,17 +247,17 @@ class Waybill extends Report {
 
         $alldata->lines = $plines;
 
-        $alldata->totalrevenue = $this->totalmanual + $this->totalwoo;
+        $alldata->totalrevenue = number_format($this->totalmanual + $this->totalwoo, 2);
         $alldata->totalseats = $this->totalseats;
         $alldata->totaltickets = $this->totaltickets;
         $alldata->totaljourneys = $this->totaljourneys;
         $alldata->guards = array_values($this->guardtotals);
-        $alldata->totalmanual = $this->totalmanual;
-        $alldata->totalwoo = $this->totalwoo;
-        $alldata->totalonlineprice = $this->totalonlineprice;
-        $alldata->totalguardprice = $this->totalguardprice;
-        $alldata->totaldiscounts = $this->totaldiscounts;
-        $alldata->totalsupplements = $this->totalsupplements;
+        $alldata->totalmanual = number_format($this->totalmanual, 2);
+        $alldata->totalwoo = number_format($this->totalwoo, 2);
+        $alldata->totalonlineprice = number_format($this->totalonlineprice, 2);
+        $alldata->totalguardprice = number_format($this->totalguardprice, 2);
+        $alldata->totaldiscounts = number_format($this->totaldiscounts, 2);
+        $alldata->totalsupplements = number_format($this->totalsupplements, 2);
 
         $alldata->guards = $gts;
 
