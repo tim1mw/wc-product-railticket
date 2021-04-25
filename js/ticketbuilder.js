@@ -656,7 +656,7 @@ function travellersChanged(evt) {
             if (v.value != '') {
                 tnum = parseInt(v.value);
             }
-            total = total + tnum;
+            total = total + (tnum*ticketdata.travellers[i].seats);
         }
 
         while (total > maxdiscountseats) {
