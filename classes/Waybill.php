@@ -186,6 +186,13 @@ class Waybill extends Report {
         fputcsv($f, array('Total Supplement Revenue', $this->totalsupplements, ' ', 'Total Online Price Revenue', $this->totalonlineprice));
         fputcsv($f, array('Total Discount Deductions', $this->totaldiscounts, ' ', 'Total Revenue', $this->totalmanual + $this->totalwoo));
 
+        fputcsv($f, array());
+        fputcsv($f, array('Guard Breakdown'));
+        fputcsv($f, array());
+        foreach ($gts as $gt) {
+            fputcsv($f, array($gt->name, $gt->total));
+        }
+
         fclose($f);
         return;
     }
