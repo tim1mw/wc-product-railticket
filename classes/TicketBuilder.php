@@ -71,8 +71,11 @@ class TicketBuilder {
         $this->ticketsallocated = $ticketsallocated;
         $this->notes = $notes;
         $this->discountnote = $discountnote;
-        $this->discount = \wc_railticket\Discount::get_discount($discountcode, $this->fromstation, $this->tostation, $this->journeytype);
-
+        if (strlen($discountcode) > 0) {
+            $this->discount = \wc_railticket\Discount::get_discount($discountcode, $this->fromstation, $this->tostation, $this->journeytype);
+        } else {
+            $this->discount = false;
+        }
         if ($nominimum == 'true') {
             $this->nominimum = true;
         } else {
@@ -556,7 +559,7 @@ class TicketBuilder {
             $legbayinfo[$legnum] = $legbaydata;
         } 
 
-        $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated,
+        $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated, $this->ticketselections,
             $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discount, $this->special);
 
         $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);

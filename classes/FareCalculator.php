@@ -134,6 +134,11 @@ class FareCalculator {
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers");
     }
 
+    public static function get_traveller($code) {
+        global $wpdb;
+        return $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$code."'");
+    }
+
     public static function add_traveller($code, $name, $description, $seats, $guardonly) {
         global $wpdb;
         $code = self::clean_code($code);
@@ -334,8 +339,8 @@ class FareCalculator {
                         } else {
                             $guardtra = " WHERE ";
                         }
-                        $tickets->travellers[$code] = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra." ".
-                            " code = '".$code."'", OBJECT )[0];
+                        $tickets->travellers[$code] = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers ".$guardtra." ".
+                            " code = '".$code."'", OBJECT );
                         $tickets->travellers[$code]->max = 99;
                     }
                 }
@@ -403,7 +408,7 @@ class FareCalculator {
         return $tickets;
     }
 
-    public function ticket_allocation_price($ticketsallocated, Station $from, Station $to, $journeytype, $localprice,
+    public function ticket_allocation_price($ticketsallocated, $ticketselections, Station $from, Station $to, $journeytype, $localprice,
         $nominimum, $discount, $special) {
         if ($localprice) {
             $pfield = 'localprice';
@@ -414,6 +419,24 @@ class FareCalculator {
         if ($journeytype == 'round') {
             // Round trips are priced as from > to the same station where available.
             $from = $to;
+        }
+
+        // If we have a discount, count up the seats used by discounted and non discounted travellers
+        $normalseats = 0;
+        $customseats = 0;
+        if ($discount) {
+            foreach ($ticketselections as $tcode => $num) {
+                if ($num == 0) {
+                    continue;
+                }
+                $parts = explode('/', $tcode);
+                $traveller = $this->get_traveller($parts[0]);
+                if (count($parts) == 2) {
+                    $customseats = $num * $traveller->seats;
+                } else {
+                    $normalseats = $num * $traveller->seats;
+                }
+            }
         }
 
         $pdata = new \stdclass();
@@ -431,6 +454,7 @@ class FareCalculator {
         }
         $pdata->revision = $this->revision;
 
+        $discountpricetotal = 0;
         foreach ($ticketsallocated as $ttype => $qty) {
             $price = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, $discount, $special);
             $pdata->price += floatval($price)*floatval($qty);
@@ -439,7 +463,10 @@ class FareCalculator {
                 // What was the price without the discount?
                 $nodiscountprice = $this->get_fare($from, $to, $journeytype, $ttype, $pfield, false, $special);
                 $ds = floatval($nodiscountprice) - floatval($price);
-                $pdata->ticketprices['__discounttotal'] += $ds*floatval($qty);
+                if ($ds > 0) {
+                    $pdata->ticketprices['__discounttotal'] += $ds*floatval($qty);
+                    $discountpricetotal += floatval($price);
+                }
             }
         }
 
@@ -449,6 +476,12 @@ class FareCalculator {
 
         $mprice = get_option('wc_product_railticket_min_price');
         if (strlen($mprice) > 0 && $pdata->price < $mprice) {
+            // Deal with the special case of a 100% discount on some custom tickets, where there are also paying travellers
+            // that don't need seats (aka dogs). We don't charge the supplement just for a dog.
+            if ($discount && $customseats > 0 && $normalseats == 0 && $discountpricetotal == 0) {
+                return $pdata;
+            }
+
             $mprice=floatval($mprice);
             $pdata->supplement = floatval($mprice) - floatval($pdata->price);
             $pdata->price = $mprice;

@@ -108,6 +108,7 @@ function railTicketAjax(datareq, spinner, callback) {
 
     data.append('journeychoice', getFormValue('journeychoice'));
     data.append('ticketselections', JSON.stringify(ticketSelections));
+console.log(ticketSelections);
     data.append('ticketallocated', JSON.stringify(ticketsAllocated));
     data.append('overridevalid', overridevalid);
     data.append('disabledrequest', getCBFormValue('disabledrequest'));
@@ -681,6 +682,7 @@ function allocateTickets() {
     capacitydiv.style.display = 'none';
     var allocation = new Array();
     allocationTotal = 0;
+    var customSeats = 0, normalSeats = 0;
     ticketsAllocated = {};
 
     for (i in ticketdata.travellers) {
@@ -695,6 +697,14 @@ function allocateTickets() {
             ticketSelections[code] = parseInt(v.value);
             allocation[code] = parseInt(v.value);
             allocationTotal += parseInt(v.value);
+
+            var parts = code.split('/');
+            if (parts.length == 2) {
+                customSeats = customSeats + (tnum*ticketdata.travellers[i].seats);
+            } else {
+                normalSeats = normalSeats + (tnum*ticketdata.travellers[i].seats);
+            }
+
         } else {
             v.value = '';
             ticketSelections[code] = 0;
@@ -753,9 +763,15 @@ function allocateTickets() {
     var td = {};
     td.allocated = [];
     td.total = 0;
+    td.totalcustom = 0;
     for (i in ticketsAllocated) {
         var tkt = ticketdata.prices[i];
         td.total += parseFloat(tkt.price) * ticketsAllocated[i];
+
+        var parts = i.split('/');
+        if (parts.length == 2) {
+            td.totalcustom += parseFloat(tkt.price) * ticketsAllocated[i];
+        }
 
         var t = {};
         t.num = ticketsAllocated[i];
@@ -771,7 +787,7 @@ function allocateTickets() {
     if (minprice !== false) {
         if (td.total < minprice && td.total != 0) {
             var nm = getCBFormValue('nominimum');
-            if (guard && nm == true) {
+            if ( (guard && nm == true) || (customSeats>0 && normalSeats==0 && td.totalcustom == 0)) {
                 td.supplement = 0;
             } else {
                 td.supplement = minprice - td.total;
