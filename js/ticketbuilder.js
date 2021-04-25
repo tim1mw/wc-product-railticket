@@ -658,8 +658,10 @@ function travellersChanged(evt) {
             }
             total = total + tnum;
         }
-        if (total > maxdiscountseats) {
+
+        while (total > maxdiscountseats) {
             evt.target.value = parseInt(evt.target.value)-1;
+            total--;
         }
     }
 
