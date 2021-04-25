@@ -22,7 +22,7 @@
         <td><input type='date' name='end_{{id}}' value='{{end}}' /></td>
         <td style='text-align:center'><input type='checkbox' name='single_{{id}}' value='1' {{single}} /></td>
         <td style='text-align:center'><input type='checkbox' name='disabled_{{id}}' value='1' {{disabled}} /></td>
-        <td><textarea name='notes_{{id}}'>{{notes}}</textarea></td>
+        <td><textarea name='notes_{{id}}' rows='1' cols='20'>{{notes}}</textarea></td>
         <td><a href='?action=deletediscountcode&page=railticket-discount-codes&id={{id}}'>Delete</a></td>
     </tr>
     {{/dcodes}}
