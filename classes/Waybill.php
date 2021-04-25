@@ -164,7 +164,7 @@ class Waybill extends Report {
             }
             if ($keyparts[5] != 'AAAAAAAAAAAAAAAAA') {
                 $dtype = DiscountType::get_discount_type($keyparts[5]);
-                $nline->discounttype = $dtype->get_name();
+                $nline[] = $dtype->get_name();
             } else {
                 $nline[] = '';
                 $dtype = '';
