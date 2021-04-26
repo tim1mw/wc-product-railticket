@@ -1992,7 +1992,7 @@ function railticket_rebook($action) {
     if ($sortby == 'date') {
         $sort = "time, created ASC";
     } else {
-        $sort = "time, seats DESC";
+        $sort = "time, priority DESC, seats DESC";
     }
 
     if ($action == 'rebookall') {
