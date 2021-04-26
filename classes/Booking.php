@@ -127,8 +127,10 @@ class Booking {
     }
 
     public function update_bays($bays) {
+        global $wpdb;
         $this->delete_bays();
         $this->insertBays($this->data->id, $bays);
+        $this->bays = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$this->data->id);
     }
 
     public function get_date($format = false, $nottoday = false) {

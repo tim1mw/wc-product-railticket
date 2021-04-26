@@ -282,6 +282,12 @@ class BookableDay {
         }
     }
 
+    public function set_bookable($bookable) {
+        global $wpdb;
+        $this->data->bookable = $bookable;
+        $wpdb->update("{$wpdb->prefix}wc_railticket_bookable", array('bookable' => $bookable), array('id' => $this->data->id));
+    }
+
     public function sold_out() {
         return (bool) $this->data->soldout;
     }
@@ -348,9 +354,13 @@ class BookableDay {
         return CoachManager::format_composition(json_decode($this->data->composition), $this->data->daytype);
     }
 
-    public function get_all_bookings() {
+    public function get_all_bookings($order = false) {
         global $wpdb;
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."'");
+        if ($order) {
+            $order = "ORDER BY ".$order;
+        }
+
+        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."' ".$order);
     }
 
     public function get_all_order_ids() {

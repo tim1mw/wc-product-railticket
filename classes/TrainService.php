@@ -202,9 +202,10 @@ class TrainService {
     public function get_inventory($baseonly = false, $noreserve = false, $onlycollected = false, $excludes = false) {
         global $wpdb;
 
-        if ($this->bookableday->sold_out() || !$this->bookableday->is_bookable()) {
-            return array();
-        }
+        // Taking this out because we sometimes need to check capcity on sold out or unbookable days.
+        //if ($this->bookableday->sold_out() || !$this->bookableday->is_bookable()) {
+        //    return array();
+        //}
 
         // TODO: Need to get origin station dep time here when intermediate stops are enabled!
         switch ($this->bookableday->get_daytype()) {

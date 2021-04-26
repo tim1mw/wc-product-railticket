@@ -75,7 +75,6 @@ function railticket_view_bookings() {
     <?php
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
-
     if (array_key_exists('action', $_REQUEST)) {
         switch($_REQUEST['action']) {
             case 'cancelcollected';
@@ -108,6 +107,9 @@ function railticket_view_bookings() {
                 break;
             case 'editorderbook';
                 railticket_show_edit_order();
+                break;
+            case 'rebookall':
+                railticket_rebookall();
                 break;
             case 'filterbookings':
             default:
@@ -779,6 +781,7 @@ function railticket_get_seatsummary() {
 
 
 function railticket_show_bookings_summary($dateofjourney) {
+    global $rtmustache;
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
 
     // If the override code is empty, this day has a timetable, but hasn't been initialised.
@@ -852,16 +855,10 @@ function railticket_show_bookings_summary($dateofjourney) {
     </tr></table>
     <?php
     if (current_user_can('admin_tickets')) {
-    ?>
-        <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
-        <input type='hidden' name='action' value='rebookall' />
-        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <table style='width:100%'><tr>
-            <td><input type='submit' name='submit' value='Rebook All Bays' style='width:100%' /></td>
-            <td><input type='checkbox' name='sure' value='1' />Are you really sure you want to do this?</td>
-        </tr></table>
-        </form></p>
-    <?php
+        $template = $rtmustache->loadTemplate('rebooking-button');
+        $alldata = new \stdclass();
+        $alldata->dateofjourney = $dateofjourney;
+        echo $template->render($alldata);
     }
     ?>
     </div>
@@ -1414,8 +1411,11 @@ function railticket_editorder() {
         $ofrom = $bookings[$i]->get_from_station();
         $oto = $bookings[$i]->get_to_station();
 
+        // TODO Will bay allocation fail if one booking is moving onto the train the other booking is on before that second booking
+        // is moved off? I'm not excluding any bookings here.
+
         if (!$nfrom->matches($ofrom) || !$nto->matches($oto) || $bookings[$i]->get_dep_time() != $legs[$i]->dep) {
-            $ts = new \wc_railticket\TrainService($bookingorder->bookableday, $nfrom, $legs[$i]->dep, $nto, $bookings);
+            $ts = new \wc_railticket\TrainService($bookingorder->bookableday, $nfrom, $legs[$i]->dep, $nto);
             $capdata = $ts->get_capacity(false, $bookings[$i]->get_seats(), $bookings[$i]->get_priority());
             $bookings[$i]->set_dep($nfrom, $nto, $legs[$i]->dep, $capdata->bays);
         }
@@ -1960,5 +1960,69 @@ function railticket_discount_types() {
     $alldata = new \stdclass();
 
     $template = $rtmustache->loadTemplate('discounttypes');
+    echo $template->render($alldata);
+}
+
+function railticket_rebookall() {
+    $sure = railticket_gettfpostfield('sure');
+    if (!$sure) {
+        echo "<p>You were not sure you wanted to do this!</p>";
+        return;
+    }
+    $dateofjourney = railticket_getpostfield('dateofjourney');
+    $sortby = railticket_getpostfield('sortby');
+
+    $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
+    if ($sortby == 'date') {
+        $sort = "time, created ASC";
+    } else {
+        $sort = "time, seats DESC";
+    }
+    $bookings = $bookableday->get_all_bookings($sort);
+    railticket_rebook_bookings_bays($bookableday, $bookings);
+}
+
+function railticket_rebook_bookings_bays($bookableday, $bookings) {
+    global $rtmustache;
+    // Close bookings while we do this since it's potentially dangerous if somebody is trying to book onto this service
+    //$bookableday->set_bookable(false);
+
+    $alldata = new \stdclass();
+    $alldata->date = $bookableday->get_date(true);
+    $alldata->dateofjourney = $bookableday->get_date();
+    $alldata->bookings = array();
+
+    // Delete the existing bookings bays
+    for ($i=0; $i<count($bookings); $i++) {
+       $alldata->bookings[$i] = $bookings[$i];
+       $bookings[$i] = new \wc_railticket\Booking($bookings[$i], $bookableday);
+       $alldata->bookings[$i]->oldbays = $bookings[$i]->get_bays(true);
+
+       $bookings[$i]->delete_bays();
+    }
+
+    for ($i=0; $i<count($bookings); $i++) {
+        $from = $bookings[$i]->get_from_station();
+        $to = $bookings[$i]->get_to_station();
+        $ts = new \wc_railticket\TrainService($bookableday, $from, $bookings[$i]->get_dep_time(), $to);
+        $capdata = $ts->get_capacity(false, $bookings[$i]->get_seats(), $bookings[$i]->get_priority());
+        $bookings[$i]->update_bays($capdata->bays);
+
+        $alldata->bookings[$i]->orderid = $bookings[$i]->get_order_id();
+        $alldata->bookings[$i]->time = $bookings[$i]->get_dep_time(true);
+        $alldata->bookings[$i]->fromstation = $from->get_name();
+        $alldata->bookings[$i]->tostation = $to->get_name();
+        $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
+        if ($alldata->bookings[$i]->newbays != $alldata->bookings[$i]->oldbays) {
+            $alldata->bookings[$i]->change = 'color:blue';
+        }
+    }
+
+//echo "<pre>";print_r($alldata);echo "</pre>";
+
+    // Reopen bookings
+    //$bookableday->set_bookable(true);
+
+    $template = $rtmustache->loadTemplate('rebooking');
     echo $template->render($alldata);
 }
