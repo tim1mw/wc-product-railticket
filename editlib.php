@@ -2043,8 +2043,13 @@ function railticket_rebook($action) {
 
 function railticket_rebook_bookings_bays($bookableday, $bookings, $clever) {
     global $rtmustache;
+
+    $isbookable = $bookableday->is_bookable();
+
     // Close bookings while we do this since it's potentially dangerous if somebody is trying to book onto this service
-    $bookableday->set_bookable(false);
+    if ($isbookable) {
+        $bookableday->set_bookable(false);
+    }
 
     $alldata = new \stdclass();
     $alldata->date = $bookableday->get_date(true);
@@ -2081,7 +2086,9 @@ function railticket_rebook_bookings_bays($bookableday, $bookings, $clever) {
     }
 
     // Reopen bookings
-    $bookableday->set_bookable(true);
+    if ($isbookable) {
+        $bookableday->set_bookable(true);
+    }
 
     $template = $rtmustache->loadTemplate('rebooking');
     echo $template->render($alldata);
