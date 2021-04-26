@@ -109,7 +109,8 @@ function railticket_view_bookings() {
                 railticket_show_edit_order();
                 break;
             case 'rebookall':
-                railticket_rebookall();
+            case 'rebookservice':
+                railticket_rebook($_REQUEST['action']);
                 break;
             case 'filterbookings':
             default:
@@ -858,6 +859,7 @@ function railticket_show_bookings_summary($dateofjourney) {
         $template = $rtmustache->loadTemplate('rebooking-button');
         $alldata = new \stdclass();
         $alldata->dateofjourney = $dateofjourney;
+        $alldata->action = 'rebookall';
         echo $template->render($alldata);
     }
     ?>
@@ -927,6 +929,7 @@ function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $stat
 }
 
 function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, $direction, $deptime, $summaryonly = false) {
+    global $rtmustache;
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
     $destination = $bookableday->timetable->get_terminal($direction);
     // If this is being called directly from a button click this will be a string
@@ -1070,6 +1073,19 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         <input type='hidden' name='a_deptime' value='<?php echo $deptime->key ?>' />
         <input type='submit' name='submit' value='Add Manual Booking' style='width:100%' />
     </form>
+    <?php
+    if (current_user_can('admin_tickets')) {
+        $template = $rtmustache->loadTemplate('rebooking-button');
+        $alldata = new \stdclass();
+        $alldata->dateofjourney = $dateofjourney;
+        $alldata->action = 'rebookservice';
+        $alldata->from = $station->get_stnid();
+        $alldata->ttrevision = $station->get_revision();
+        $alldata->direction = $direction;
+        $alldata->dep = $deptime->key;
+        echo $template->render($alldata);
+    }
+    ?>
     </div>
     <?php
 }
@@ -1963,7 +1979,7 @@ function railticket_discount_types() {
     echo $template->render($alldata);
 }
 
-function railticket_rebookall() {
+function railticket_rebook($action) {
     $sure = railticket_gettfpostfield('sure');
     if (!$sure) {
         echo "<p>You were not sure you wanted to do this!</p>";
@@ -1978,14 +1994,25 @@ function railticket_rebookall() {
     } else {
         $sort = "time, seats DESC";
     }
-    $bookings = $bookableday->get_all_bookings($sort);
+
+    if ($action == 'rebookall') {
+        $bookings = $bookableday->get_all_bookings($sort, true);
+    } else {
+        $deptime = railticket_getpostfield('dep');
+        $from = railticket_getpostfield('from');
+        $revision = railticket_getpostfield('ttrevision');
+        $station = \wc_railticket\Station::get_station($from, $revision);
+        $direction = railticket_getpostfield('direction');
+        $bookings = $bookableday->get_bookings_from_station($station, $deptime, $direction, $sort);
+    }
+
     railticket_rebook_bookings_bays($bookableday, $bookings);
 }
 
 function railticket_rebook_bookings_bays($bookableday, $bookings) {
     global $rtmustache;
     // Close bookings while we do this since it's potentially dangerous if somebody is trying to book onto this service
-    //$bookableday->set_bookable(false);
+    $bookableday->set_bookable(false);
 
     $alldata = new \stdclass();
     $alldata->date = $bookableday->get_date(true);
@@ -1994,8 +2021,7 @@ function railticket_rebook_bookings_bays($bookableday, $bookings) {
 
     // Delete the existing bookings bays
     for ($i=0; $i<count($bookings); $i++) {
-       $alldata->bookings[$i] = $bookings[$i];
-       $bookings[$i] = new \wc_railticket\Booking($bookings[$i], $bookableday);
+       $alldata->bookings[$i] = new \stdclass();
        $alldata->bookings[$i]->oldbays = $bookings[$i]->get_bays(true);
 
        $bookings[$i]->delete_bays();
@@ -2006,22 +2032,29 @@ function railticket_rebook_bookings_bays($bookableday, $bookings) {
         $to = $bookings[$i]->get_to_station();
         $ts = new \wc_railticket\TrainService($bookableday, $from, $bookings[$i]->get_dep_time(), $to);
         $capdata = $ts->get_capacity(false, $bookings[$i]->get_seats(), $bookings[$i]->get_priority());
-        $bookings[$i]->update_bays($capdata->bays);
+        if (count($capdata->bays) == 0) {
+            // We probably ran out of space. Allocate whatever is left if we can.
+            $cap = $ts->get_inventory(false);
+            $bookings[$i]->update_bays($cap->bays);
+            $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
+        } else {
+            $bookings[$i]->update_bays($capdata->bays);
+            $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
+            if ($alldata->bookings[$i]->newbays != $alldata->bookings[$i]->oldbays) {
+                $alldata->bookings[$i]->change = 'color:blue';
+            }
+        }
 
         $alldata->bookings[$i]->orderid = $bookings[$i]->get_order_id();
         $alldata->bookings[$i]->time = $bookings[$i]->get_dep_time(true);
         $alldata->bookings[$i]->fromstation = $from->get_name();
         $alldata->bookings[$i]->tostation = $to->get_name();
-        $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
-        if ($alldata->bookings[$i]->newbays != $alldata->bookings[$i]->oldbays) {
-            $alldata->bookings[$i]->change = 'color:blue';
-        }
+        $alldata->bookings[$i]->seats = $bookings[$i]->get_seats();
+        $alldata->bookings[$i]->priority = $bookings[$i]->get_priority(true);
     }
 
-//echo "<pre>";print_r($alldata);echo "</pre>";
-
     // Reopen bookings
-    //$bookableday->set_bookable(true);
+    $bookableday->set_bookable(true);
 
     $template = $rtmustache->loadTemplate('rebooking');
     echo $template->render($alldata);

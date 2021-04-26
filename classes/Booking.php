@@ -214,6 +214,7 @@ class Booking {
                 $nbays[] = $nbay;
                 $nbay->formatted = CoachManager::format_bay_name($nbay);
             }
+
             return $nbays;
         }
 
@@ -221,7 +222,22 @@ class Booking {
             return $this->bays;
         }
 
-        return CoachManager::format_booking_bays($this->bays);
+        $tseats = 0;
+        foreach ($this->bays as $bay) {
+            $tseats += $bay->baysize * $bay->num;
+        }
+
+        if ($tseats == 0) {
+            return '<span style="color:red">'.__('No Bays', 'wc_railticket').'</span>';
+        }
+
+        $str = CoachManager::format_booking_bays($this->bays);
+
+        if ($tseats < $this->data->seats) {
+            return '<span style="color:red">'.$str.', '.__('Insufficient Bays', 'wc_railticket').'</span>';
+        } else {
+            return $str;
+        }
     }
 
     public function get_seats() {

@@ -354,13 +354,25 @@ class BookableDay {
         return CoachManager::format_composition(json_decode($this->data->composition), $this->data->daytype);
     }
 
-    public function get_all_bookings($order = false) {
+    public function get_all_bookings($order = false, $objects = false) {
         global $wpdb;
         if ($order) {
             $order = "ORDER BY ".$order;
+        } else {
+            $order = '';
         }
 
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."' ".$order);
+        $bks = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."' ".$order);
+        if (!$objects) {
+            return $bks;
+        }
+
+        $bookings = array();
+        foreach ($bks as $bk) {
+            $bookings[] = new Booking($bk, $this);
+        }
+
+        return $bookings;
     }
 
     public function get_all_order_ids() {
@@ -397,13 +409,19 @@ class BookableDay {
     * @param $direction The direction of the service
     **/
 
-    public function get_bookings_from_station(Station $station, $deptime, $direction) {
+    public function get_bookings_from_station(Station $station, $deptime, $direction, $order = false) {
         global $wpdb;
+
+        if ($order) {
+            $order = "ORDER BY ".$order;
+        } else {
+            $order = '';
+        }
 
         $bks = $wpdb->get_results("SELECT bookings.* ".
             "FROM {$wpdb->prefix}wc_railticket_bookings bookings ".
             "WHERE bookings.date='".$this->data->date."' AND ".
-            "bookings.time = '".$deptime."' AND bookings.fromstation = ".$station->get_stnid()." AND bookings.direction = '".$direction."' ");
+            "bookings.time = '".$deptime."' AND bookings.fromstation = ".$station->get_stnid()." AND bookings.direction = '".$direction."' ".$order);
 
         $bookings = array();
         foreach ($bks as $bk) {
