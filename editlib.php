@@ -296,6 +296,12 @@ function wc_railticket_getmonthselect($chosenmonth = false) {
 
 function wc_railticket_getyearselect($currentyear = false) {
     global $wpdb;
+
+    // The guard only gets the current year
+    if (!current_user_can('admin_tickets')) {
+        return  $currentyear."<input type='hidden' value='".intval(date("Y"))."' name='year' />";
+    }
+
     if ($currentyear == false) {
         $currentyear = intval(date("Y"));
     }
