@@ -836,7 +836,11 @@ function railticket_show_bookings_summary($dateofjourney) {
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Order Summary'  style='width:100%'/>
     </form></td>
-    </tr><tr>
+    </tr>
+    <?php
+    if (current_user_can('admin_tickets')) {
+    ?>
+    <tr>
     <td><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='waybill.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
@@ -847,7 +851,9 @@ function railticket_show_bookings_summary($dateofjourney) {
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Order Summary Spreadsheet' style='width:100%;font-size:large;' />
     </form></td>
-    </tr><tr>
+    </tr>
+    <?php }?>
+    <tr>
     <td colspan='2'><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewseatsummary' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
