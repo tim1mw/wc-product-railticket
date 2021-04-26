@@ -319,6 +319,9 @@ class BookingOrder {
 
     public function get_ticket_prices($format = false) {
         if (!$this->ticketprices) {
+            if ($format) {
+                return '';
+            }
             return array();
         }
         $filtered = array();

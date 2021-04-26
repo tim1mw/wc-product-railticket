@@ -686,17 +686,31 @@ function railticket_deletebookableday() {
 }
 
 function railticket_summary_selector() {
+
+    $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+    $today = new \DateTime();
+    $today->setTimezone($railticket_timezone);
+    $today->setTime(0,0,0);
+
     if (array_key_exists('dateofjourney', $_REQUEST)) {
-        $dateofjourney = $_REQUEST['dateofjourney'];
+        if (current_user_can('admin_tickets')) {
+            $dateofjourney = $_REQUEST['dateofjourney'];
+        } else {
+            $dateofjourney = $today->format('Y-m-d');
+        }
         $parts = explode('-', $dateofjourney);
         $chosenyear = $parts[0];
         $chosenmonth = $parts[1];
         $chosenday =  $parts[2];
     } else {
-        if (array_key_exists('year', $_REQUEST)) {
-            $chosenyear = $_REQUEST['year'];
+        if (current_user_can('admin_tickets')) {
+            if (array_key_exists('year', $_REQUEST)) {
+                $chosenyear = $_REQUEST['year'];
+            } else {
+                $chosenyear = intval(date_i18n("Y"));
+            }
         } else {
-            $chosenyear = intval(date_i18n("Y"));
+            $chosenyear = $today->format('Y');
         }
 
         if (array_key_exists('month', $_REQUEST)) {
@@ -710,13 +724,14 @@ function railticket_summary_selector() {
         } else {
             $chosenday = intval(date_i18n("j"));
         }
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+
         $date = new DateTime();
         $date->setTimezone($railticket_timezone);
         $date->setDate($chosenyear, $chosenmonth, $chosenday);
         $dateofjourney = $date->format('Y-m-d');
     }
     railticket_show_order_form();
+
    ?>
     <hr />
     <h1>Service Summaries</h1>
@@ -739,7 +754,7 @@ function railticket_summary_selector() {
     <hr />
     <?php
 
-    railticket_show_bookings_summary($dateofjourney);
+    railticket_show_bookings_summary($dateofjourney, $today);
 }
 
 function railticket_show_order_form() {
@@ -787,7 +802,7 @@ function railticket_get_seatsummary() {
 }
 
 
-function railticket_show_bookings_summary($dateofjourney) {
+function railticket_show_bookings_summary($dateofjourney, $today) {
     global $rtmustache;
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
 
@@ -796,13 +811,6 @@ function railticket_show_bookings_summary($dateofjourney) {
         echo "<h3>Booking data not initiailised for this day - please make this day bookable.</h3>";
         return;
     }
-
-    $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-    $today = new \DateTime();
-    $today->setTimezone($railticket_timezone);
-    $today->setTime(0,0,0);
-    $today = $today->format('Y-m-d');
-
     echo "<h1>Summary for ".$bookableday->get_date(true);
     if ($dateofjourney != $today) {
         echo " <span style='color:red'>***".__('Not today', 'wc_railticket')."***</span>";
