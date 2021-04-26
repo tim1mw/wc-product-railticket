@@ -797,7 +797,17 @@ function railticket_show_bookings_summary($dateofjourney) {
         return;
     }
 
-    ?><h1>Summary for <?php echo $bookableday->get_date(true); ?></h1><?php
+    $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+    $today = new \DateTime();
+    $today->setTimezone($railticket_timezone);
+    $today->setTime(0,0,0);
+    $today = $today->format('Y-m-d');
+
+    echo "<h1>Summary for ".$bookableday->get_date(true);
+    if ($dateofjourney != $today) {
+        echo " <span style='color:red'>***".__('Not today', 'wc_railticket')."***</span>";
+    }
+    echo "</h1>";
 
     echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$bookableday->get_override()."</span></h2>";
 
