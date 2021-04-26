@@ -1892,6 +1892,8 @@ function railticket_discount_codes() {
                 $id = railticket_getpostfield('id');
                 \wc_railticket\Discount::delete_discount_code($id);
                 break;
+            case 'cleandiscountcode':
+                \wc_railticket\Discount::clean_discount_codes($id);
         }
     }
 

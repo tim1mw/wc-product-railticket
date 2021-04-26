@@ -91,6 +91,11 @@ class Discount extends DiscountType {
         $wpdb->delete("{$wpdb->prefix}wc_railticket_discountcodes", array('id' => $id));
     }
 
+    public static function clean_discount_codes($id) {
+        global $wpdb;
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_discountcodes", array('single' => 1, 'disabled' => 1));
+    }
+
     public static function add_discount_code($shortname, $code, $start, $end, $single, $disabled, $notes) {
         global $wpdb;
 
