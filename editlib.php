@@ -2021,8 +2021,10 @@ function railticket_rebook($action) {
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
     if ($sortby == 'date') {
         $sort = "time, created ASC";
+        $clever = false;
     } else {
         $sort = "time, priority DESC, seats DESC";
+        $clever = false;
     }
 
     if ($action == 'rebookall') {
@@ -2036,10 +2038,10 @@ function railticket_rebook($action) {
         $bookings = $bookableday->get_bookings_from_station($station, $deptime, $direction, $sort);
     }
 
-    railticket_rebook_bookings_bays($bookableday, $bookings);
+    railticket_rebook_bookings_bays($bookableday, $bookings, $clever);
 }
 
-function railticket_rebook_bookings_bays($bookableday, $bookings) {
+function railticket_rebook_bookings_bays($bookableday, $bookings, $clever) {
     global $rtmustache;
     // Close bookings while we do this since it's potentially dangerous if somebody is trying to book onto this service
     $bookableday->set_bookable(false);
@@ -2057,30 +2059,25 @@ function railticket_rebook_bookings_bays($bookableday, $bookings) {
        $bookings[$i]->delete_bays();
     }
 
-    for ($i=0; $i<count($bookings); $i++) {
-        $from = $bookings[$i]->get_from_station();
-        $to = $bookings[$i]->get_to_station();
-        $ts = new \wc_railticket\TrainService($bookableday, $from, $bookings[$i]->get_dep_time(), $to);
-        $capdata = $ts->get_capacity(false, $bookings[$i]->get_seats(), $bookings[$i]->get_priority());
-        if (count($capdata->bays) == 0) {
-            // We probably ran out of space. Allocate whatever is left if we can.
-            $cap = $ts->get_inventory(false);
-            $bookings[$i]->update_bays($cap->bays);
-            $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
-        } else {
-            $bookings[$i]->update_bays($capdata->bays);
-            $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
-            if ($alldata->bookings[$i]->newbays != $alldata->bookings[$i]->oldbays) {
-                $alldata->bookings[$i]->change = 'color:blue';
+    if ($clever) {
+        // Clever version which tries to avoid ending up with the smallest groups in the largest bays if that's all we have left.
+        // However, if the train is over booked, this tends to leave a larger group without a bay and manages to run out of space!
+        $stop = 0;
+        for ($i=0; $i<count($bookings); $i++) {
+            $count = railticket_processrebookentry($bookableday, $alldata, $bookings, $i);
+            if ($count == 1) {
+                $stop = $i;
+                break;
             }
         }
 
-        $alldata->bookings[$i]->orderid = $bookings[$i]->get_order_id();
-        $alldata->bookings[$i]->time = $bookings[$i]->get_dep_time(true);
-        $alldata->bookings[$i]->fromstation = $from->get_name();
-        $alldata->bookings[$i]->tostation = $to->get_name();
-        $alldata->bookings[$i]->seats = $bookings[$i]->get_seats();
-        $alldata->bookings[$i]->priority = $bookings[$i]->get_priority(true);
+        for ($i=count($bookings)-1; $i>$stop; $i--) {
+            railticket_processrebookentry($bookableday, $alldata, $bookings, $i);
+        }
+    } else {
+        for ($i=0; $i<count($bookings); $i++) {
+            $count = railticket_processrebookentry($bookableday, $alldata, $bookings, $i);
+        }
     }
 
     // Reopen bookings
@@ -2088,4 +2085,37 @@ function railticket_rebook_bookings_bays($bookableday, $bookings) {
 
     $template = $rtmustache->loadTemplate('rebooking');
     echo $template->render($alldata);
+}
+
+function railticket_processrebookentry($bookableday, &$alldata, &$bookings, $i) {
+    $from = $bookings[$i]->get_from_station();
+    $to = $bookings[$i]->get_to_station();
+    $ts = new \wc_railticket\TrainService($bookableday, $from, $bookings[$i]->get_dep_time(), $to);
+    $capdata = $ts->get_capacity(false, $bookings[$i]->get_seats(), $bookings[$i]->get_priority());
+    if (count($capdata->bays) == 0) {
+        // We probably ran out of space. Allocate whatever is left if we can.
+        $cap = $ts->get_inventory(false);
+        $bookings[$i]->update_bays($cap->bays);
+        $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
+    } else {
+        $bookings[$i]->update_bays($capdata->bays);
+        $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
+        if ($alldata->bookings[$i]->newbays != $alldata->bookings[$i]->oldbays) {
+            $alldata->bookings[$i]->change = 'color:blue';
+        }
+    }
+
+    $alldata->bookings[$i]->orderid = $bookings[$i]->get_order_id();
+    $alldata->bookings[$i]->time = $bookings[$i]->get_dep_time(true);
+    $alldata->bookings[$i]->fromstation = $from->get_name();
+    $alldata->bookings[$i]->tostation = $to->get_name();
+    $alldata->bookings[$i]->seats = $bookings[$i]->get_seats();
+    $alldata->bookings[$i]->priority = $bookings[$i]->get_priority(true);
+
+    $count = 0;
+    foreach ($bookings[$i]->get_bays() as $bay) {
+        $count += $bay->num;
+    }
+
+    return $count;
 }
