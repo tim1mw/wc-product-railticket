@@ -821,32 +821,49 @@ function railticket_show_bookings_summary($dateofjourney) {
     ?>
     <hr />
     <div class='railticket_editdate' style='max-width:550px;margin-left:0px;margin-right:auto;'>
-    <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+    <table style='width:100%'><tr>
+    <td><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewwaybill' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Way Bill' style='width:100%' />
-    </form></p>
-    <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='submit' name='submit' value='Way Bill' style='width:100%' />
+    </form></td>
+    <td><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewordersummary' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Order Summary'  style='width:100%'/>
-    </form></p>
-    <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
-        <input type='hidden' name='action' value='viewseatsummary' />
-        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Seat/Bay Usage Summary' style='width:100%' />
-    </form></p>
-    <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+        <input type='submit' name='submit' value='Order Summary'  style='width:100%'/>
+    </form></td>
+    </tr><tr>
+    <td><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='waybill.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Way Bill as Spreadsheet file' style='width:100%' />
-    </form></p>
-    <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+        <input type='submit' name='submit' value='Way Bill Spreadsheet' style='width:100%;font-size:large;' />
+    </form></td>
+    <td><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='ordersummary.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Order Summary Spreadsheet file' style='width:100%' />
-    </form></p>
-    </ul>
+        <input type='submit' name='submit' value='Order Summary Spreadsheet' style='width:100%;font-size:large;' />
+    </form></td>
+    </tr><tr>
+    <td colspan='2'><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='action' value='viewseatsummary' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Seat/Bay Usage Summary' style='width:100%' />
+    </form></td>
+    </tr></table>
+    <?php
+    if (current_user_can('admin_tickets')) {
+    ?>
+        <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+        <input type='hidden' name='action' value='rebookall' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <table style='width:100%'><tr>
+            <td><input type='submit' name='submit' value='Rebook All Bays' style='width:100%' /></td>
+            <td><input type='checkbox' name='sure' value='1' />Are you really sure you want to do this?</td>
+        </tr></table>
+        </form></p>
+    <?php
+    }
+    ?>
     </div>
     <?php
 }
