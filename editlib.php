@@ -1169,7 +1169,7 @@ function railticket_show_order_main($orderid) {
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
     if (!$bookingorder) {
-        echo "<p>Invalid order number or no tickets were purchased with this order.</p>";
+        echo "<p style='font-size:large;color:red;'>Invalid order number '".$orderid."' or no tickets were purchased with this order.</p>";
         railticket_summary_selector();
         return;
     }
@@ -1286,7 +1286,7 @@ function railticket_show_edit_order() {
     $orderid = sanitize_text_field($_REQUEST['orderid']);
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
     if (!$bookingorder) {
-        echo "<p>Invalid order number or no tickets were purchased with this order.</p>";
+        echo "<p style='font-size:large;color:red;'>Invalid order number or no tickets were purchased with this order.</p>";
         railticket_summary_selector();
         return;
     }
