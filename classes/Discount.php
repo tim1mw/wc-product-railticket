@@ -86,6 +86,24 @@ class Discount extends DiscountType {
             "ORDER BY codes.shortname, codes.code");
     }
 
+    public static function get_all_guard_discounts() {
+        global $wpdb;
+
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $today = new \DateTime();
+        $today->setTimezone($railticket_timezone);
+        $today->setTime(0,0,0);  
+        $today = $today->format('Y-m-d');
+
+        return $wpdb->get_results("SELECT DISTINCT codes.shortname, discounts.name, codes.code ".
+            "FROM {$wpdb->prefix}wc_railticket_discountcodes codes ".
+            "INNER JOIN {$wpdb->prefix}wc_railticket_discounts discounts ON discounts.shortname = codes.shortname ".
+            "WHERE codes.disabled = 0 AND codes.single = 0 AND discounts.notguard = 0 ".
+            "AND (codes.start IS NULL OR codes.start <= '".$today."') ".
+            "AND (codes.end IS NULL OR codes.end >= '".$today."') ".
+            "ORDER BY codes.shortname, codes.code");
+    }
+
     public static function delete_discount_code($id) {
         global $wpdb;
         $wpdb->delete("{$wpdb->prefix}wc_railticket_discountcodes", array('id' => $id));

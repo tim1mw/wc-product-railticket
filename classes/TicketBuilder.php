@@ -222,8 +222,10 @@ class TicketBuilder {
             $alldata->buttons[] = $manb;
 
             $alldata->hideterms = 'display:none;';
+
+            $alldata->guarddiscounts = \wc_railticket\Discount::get_all_guard_discounts();
         } else {
-            $alldata->hideterms = '';
+            $alldata->hideguardd = 'display:none;';
             $alldata->termspage = get_option('wc_product_railticket_termspage');
 
             $alldata->comment = "Your tickets will be reserved for ".
