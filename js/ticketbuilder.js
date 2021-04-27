@@ -151,14 +151,6 @@ function validateOverride() {
 
 function validateDiscount(evt) {
     evt.preventDefault();
-    var dc = getFormValue('discountcode').trim();
-    if (dc.length == 0) {
-        var dv = document.getElementById('discountvalid');
-        dv.innerHTML = '<p><span>No code entered.<span></p>';
-        maxdiscountseats = 999;
-        customtravellers = false;
-        return;
-    }
 
     railTicketAjax('validate_discount', true, function(response) {
         var dv = document.getElementById('discountvalid');
