@@ -165,6 +165,7 @@ function validateDiscount(evt) {
             dv.innerHTML = '<p><span>'+response.message+'<span></p>';
         }
         ticketdata = response['tickets'];
+console.log(ticketdata);
         maxdiscountseats = response['maxseats'];
         customtravellers = response['customtravellers'];
         renderTicketSelector();
