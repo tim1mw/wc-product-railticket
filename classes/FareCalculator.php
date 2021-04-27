@@ -275,7 +275,7 @@ class FareCalculator {
         $excludes = "";
         if ($discount && $discount->has_excludes()) {
             $excludes = " AND {$wpdb->prefix}wc_railticket_prices.tickettype NOT IN ".
-                " ('".implode(',', $discount->get_excludes())."')";
+                " ('".implode("','", $discount->get_excludes())."')";
         }
 
         if ($special) {
