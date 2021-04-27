@@ -1203,7 +1203,10 @@ function railticket_get_booking_order_data(\wc_railticket\BookingOrder $bookingo
     if ($discount) {
         $orderdata[] = array('item' => __('Discount Type Applied', 'wc_railticket'), 'value' => $discount->get_name(), 'style' => 'color:blue');
         if ($discount->show_notes()) {
-            $orderdata[] = array('item' => __('Discount Validation', 'wc_railticket'), 'value' => $bookingorder->get_discount_note());
+            $orderdata[] = array('item' => $discount->get_note_type(),
+                'value' => '<div style="text-align:center;">'.
+                    '<span style="font-weight:bold;color:blue">Attention! Check this with the customer:<br /> '.
+                    '<span style="font-weight:bold;color:red;font-size:x-large;">'.$bookingorder->get_discount_note().'</span></div>');
         } else {
             $orderdata[] = array('item' => __('Discount Validation', 'wc_railticket'), 'value' => __('Not applicable', 'wc_railticket'));
         }
