@@ -511,9 +511,9 @@ class FareCalculator {
         $tparts = explode('/', $ttype);
 
         if ($discount) {
-            // If we're not using custom travellers, 
-            if ( (count($tparts) == 1 && $discount->ticket_has_discount($ttype)) ||
-                 (count($tparts) == 2 && $discount->ticket_has_discount($tparts[0]))
+             
+            if ( (count($tparts) == 1 && !$discount->use_custom_type() && $discount->ticket_has_discount($ttype)) ||
+                 (count($tparts) == 2 && $discount->use_custom_type() &&$discount->ticket_has_discount($tparts[0]))
                 ) {
                 $pfield = $discount->check_price_field($pfield);
             } 
