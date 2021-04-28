@@ -33,6 +33,7 @@ function setupTickets() {
         railTicketAddListener('nominimum', 'click', allocateTickets);
         railTicketAddListener('bypass', 'click', allocateTickets);
         railTicketAddListener('onlineprice', 'click', onlinePriceChanged);
+        railTicketAddListener('guarddiscount', 'change', guardDiscountChosen);
     } else {
         railTicketAddListener('termsinput', 'click', termsClicked);
     }
@@ -149,16 +150,21 @@ function validateOverride() {
     }
 }
 
+function guardDiscountChosen(evt) {
+    var dv = document.getElementById('discountcode');
+    dv.value = evt.target.value;
+    if (dv.value.length == 0) {
+        dv.disabled = false;
+        dv.classList.remove('railticket-dimmer');
+    } else {
+        dv.disabled = true;
+        dv.classList.add('railticket-dimmer');
+    }
+    validateDiscount(evt);
+}
+
 function validateDiscount(evt) {
     evt.preventDefault();
-    var dc = getFormValue('discountcode').trim();
-    if (dc.length == 0) {
-        var dv = document.getElementById('discountvalid');
-        dv.innerHTML = '<p><span>No code entered.<span></p>';
-        maxdiscountseats = 999;
-        customtravellers = false;
-        return;
-    }
 
     railTicketAjax('validate_discount', true, function(response) {
         var dv = document.getElementById('discountvalid');
@@ -173,6 +179,7 @@ function validateDiscount(evt) {
             dv.innerHTML = '<p><span>'+response.message+'<span></p>';
         }
         ticketdata = response['tickets'];
+
         maxdiscountseats = response['maxseats'];
         customtravellers = response['customtravellers'];
         renderTicketSelector();

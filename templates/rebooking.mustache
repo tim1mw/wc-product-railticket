@@ -1,0 +1,28 @@
+<h1>Rebooking {{date}}</h1>
+
+<table border='1' class='railticket_admintable'>
+<tr>
+    <th>Order</th>
+    <th>From</th>
+    <th>To</th>
+    <th>Dep Time</th>
+    <th>Seats</th>
+    <th>Wheelchair</th>
+    <th>Old Bays</th>
+    <th>New Bays</th>
+</tr>
+{{#bookings}}
+<tr>
+    <td style='text-align:center'><a target='_blank' href='{{actionurl}}?action=showorder&amp;orderid={{orderid}}&amp;page=railticket-top-level-handle'>{{orderid}}</a></td>
+    <td style='text-align:center'>{{fromstation}}</td>
+    <td style='text-align:center'>{{tostation}}</td>
+    <td style='text-align:center'>{{time}}</td>
+    <td style='text-align:center'>{{seats}}</td>
+    <td style='text-align:center'>{{priority}}</td>
+    <td style='text-align:center'>{{{oldbays}}}</td>
+    <td style='text-align:center'><span style='{{change}}'>{{{newbays}}}</span></td>
+</tr>
+{{/bookings}}
+</table>
+<br />
+{{> back_to_services }}

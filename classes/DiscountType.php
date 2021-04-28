@@ -55,6 +55,10 @@ class DiscountType {
         return $this->data->noteinstructions;
     }
 
+    public function get_note_type() {
+        return $this->data->notetype;
+    }
+
     public function get_pattern() {
         return $this->data->pattern;
     }

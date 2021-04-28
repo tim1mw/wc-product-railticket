@@ -75,7 +75,6 @@ function railticket_view_bookings() {
     <?php
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
-
     if (array_key_exists('action', $_REQUEST)) {
         switch($_REQUEST['action']) {
             case 'cancelcollected';
@@ -108,6 +107,10 @@ function railticket_view_bookings() {
                 break;
             case 'editorderbook';
                 railticket_show_edit_order();
+                break;
+            case 'rebookall':
+            case 'rebookservice':
+                railticket_rebook($_REQUEST['action']);
                 break;
             case 'filterbookings':
             default:
@@ -293,6 +296,12 @@ function wc_railticket_getmonthselect($chosenmonth = false) {
 
 function wc_railticket_getyearselect($currentyear = false) {
     global $wpdb;
+
+    // The guard only gets the current year
+    if (!current_user_can('admin_tickets')) {
+        return  $currentyear."<input type='hidden' value='".intval(date("Y"))."' name='year' />";
+    }
+
     if ($currentyear == false) {
         $currentyear = intval(date("Y"));
     }
@@ -677,17 +686,31 @@ function railticket_deletebookableday() {
 }
 
 function railticket_summary_selector() {
+
+    $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+    $today = new \DateTime();
+    $today->setTimezone($railticket_timezone);
+    $today->setTime(0,0,0);
+
     if (array_key_exists('dateofjourney', $_REQUEST)) {
-        $dateofjourney = $_REQUEST['dateofjourney'];
+        if (current_user_can('admin_tickets')) {
+            $dateofjourney = $_REQUEST['dateofjourney'];
+        } else {
+            $dateofjourney = $today->format('Y-m-d');
+        }
         $parts = explode('-', $dateofjourney);
         $chosenyear = $parts[0];
         $chosenmonth = $parts[1];
         $chosenday =  $parts[2];
     } else {
-        if (array_key_exists('year', $_REQUEST)) {
-            $chosenyear = $_REQUEST['year'];
+        if (current_user_can('admin_tickets')) {
+            if (array_key_exists('year', $_REQUEST)) {
+                $chosenyear = $_REQUEST['year'];
+            } else {
+                $chosenyear = intval(date_i18n("Y"));
+            }
         } else {
-            $chosenyear = intval(date_i18n("Y"));
+            $chosenyear = $today->format('Y');
         }
 
         if (array_key_exists('month', $_REQUEST)) {
@@ -701,13 +724,14 @@ function railticket_summary_selector() {
         } else {
             $chosenday = intval(date_i18n("j"));
         }
-        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+
         $date = new DateTime();
         $date->setTimezone($railticket_timezone);
         $date->setDate($chosenyear, $chosenmonth, $chosenday);
         $dateofjourney = $date->format('Y-m-d');
     }
     railticket_show_order_form();
+
    ?>
     <hr />
     <h1>Service Summaries</h1>
@@ -730,7 +754,7 @@ function railticket_summary_selector() {
     <hr />
     <?php
 
-    railticket_show_bookings_summary($dateofjourney);
+    railticket_show_bookings_summary($dateofjourney, $today);
 }
 
 function railticket_show_order_form() {
@@ -778,7 +802,8 @@ function railticket_get_seatsummary() {
 }
 
 
-function railticket_show_bookings_summary($dateofjourney) {
+function railticket_show_bookings_summary($dateofjourney, $today) {
+    global $rtmustache;
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
 
     // If the override code is empty, this day has a timetable, but hasn't been initialised.
@@ -786,8 +811,11 @@ function railticket_show_bookings_summary($dateofjourney) {
         echo "<h3>Booking data not initiailised for this day - please make this day bookable.</h3>";
         return;
     }
-
-    ?><h1>Summary for <?php echo $bookableday->get_date(true); ?></h1><?php
+    echo "<h1>Summary for ".$bookableday->get_date(true);
+    if ($dateofjourney != $today) {
+        echo " <span style='color:red'>***".__('Not today', 'wc_railticket')."***</span>";
+    }
+    echo "</h1>";
 
     echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$bookableday->get_override()."</span></h2>";
 
@@ -821,32 +849,50 @@ function railticket_show_bookings_summary($dateofjourney) {
     ?>
     <hr />
     <div class='railticket_editdate' style='max-width:550px;margin-left:0px;margin-right:auto;'>
-    <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+    <table style='width:100%'><tr>
+    <td><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewwaybill' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Way Bill' style='width:100%' />
-    </form></p>
-    <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='submit' name='submit' value='Way Bill' style='width:100%' />
+    </form></td>
+    <td><form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='viewordersummary' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Order Summary'  style='width:100%'/>
-    </form></p>
-    <p><form method='post' action='<?php echo railticket_get_page_url() ?>'>
-        <input type='hidden' name='action' value='viewseatsummary' />
-        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='View Seat/Bay Usage Summary' style='width:100%' />
-    </form></p>
-    <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+        <input type='submit' name='submit' value='Order Summary'  style='width:100%'/>
+    </form></td>
+    </tr>
+    <?php
+    if (current_user_can('admin_tickets')) {
+    ?>
+    <tr>
+    <td><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='waybill.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Way Bill as Spreadsheet file' style='width:100%' />
-    </form></p>
-    <p><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
+        <input type='submit' name='submit' value='Way Bill Spreadsheet' style='width:100%;font-size:large;' />
+    </form></td>
+    <td><form method='get' action='<?php echo admin_url('admin-post.php') ?>'>
         <input type='hidden' name='action' value='ordersummary.csv' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Get Order Summary Spreadsheet file' style='width:100%' />
-    </form></p>
-    </ul>
+        <input type='submit' name='submit' value='Order Summary Spreadsheet' style='width:100%;font-size:large;' />
+    </form></td>
+    </tr>
+    <?php }?>
+    <tr>
+    <td colspan='2'><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='action' value='viewseatsummary' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Seat/Bay Usage Summary' style='width:100%' />
+    </form></td>
+    </tr></table>
+    <?php
+    if (current_user_can('admin_tickets')) {
+        $template = $rtmustache->loadTemplate('rebooking-button');
+        $alldata = new \stdclass();
+        $alldata->dateofjourney = $dateofjourney;
+        $alldata->action = 'rebookall';
+        echo $template->render($alldata);
+    }
+    ?>
     </div>
     <?php
 }
@@ -913,6 +959,7 @@ function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $stat
 }
 
 function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, $direction, $deptime, $summaryonly = false) {
+    global $rtmustache;
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
     $destination = $bookableday->timetable->get_terminal($direction);
     // If this is being called directly from a button click this will be a string
@@ -1056,6 +1103,19 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         <input type='hidden' name='a_deptime' value='<?php echo $deptime->key ?>' />
         <input type='submit' name='submit' value='Add Manual Booking' style='width:100%' />
     </form>
+    <?php
+    if (current_user_can('admin_tickets')) {
+        $template = $rtmustache->loadTemplate('rebooking-button');
+        $alldata = new \stdclass();
+        $alldata->dateofjourney = $dateofjourney;
+        $alldata->action = 'rebookservice';
+        $alldata->from = $station->get_stnid();
+        $alldata->ttrevision = $station->get_revision();
+        $alldata->direction = $direction;
+        $alldata->dep = $deptime->key;
+        echo $template->render($alldata);
+    }
+    ?>
     </div>
     <?php
 }
@@ -1109,7 +1169,7 @@ function railticket_show_order_main($orderid) {
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
     if (!$bookingorder) {
-        echo "<p>Invalid order number or no tickets were purchased with this order.</p>";
+        echo "<p style='font-size:large;color:red;'>Invalid order number '".$orderid."' or no tickets were purchased with this order.</p>";
         railticket_summary_selector();
         return;
     }
@@ -1143,7 +1203,10 @@ function railticket_get_booking_order_data(\wc_railticket\BookingOrder $bookingo
     if ($discount) {
         $orderdata[] = array('item' => __('Discount Type Applied', 'wc_railticket'), 'value' => $discount->get_name(), 'style' => 'color:blue');
         if ($discount->show_notes()) {
-            $orderdata[] = array('item' => __('Discount Validation', 'wc_railticket'), 'value' => $bookingorder->get_discount_note());
+            $orderdata[] = array('item' => $discount->get_note_type(),
+                'value' => '<div style="text-align:center;">'.
+                    '<span style="font-weight:bold;color:blue">Attention! Check this with the customer:<br /> '.
+                    '<span style="font-weight:bold;color:red;font-size:x-large;">'.$bookingorder->get_discount_note().'</span></div>');
         } else {
             $orderdata[] = array('item' => __('Discount Validation', 'wc_railticket'), 'value' => __('Not applicable', 'wc_railticket'));
         }
@@ -1226,7 +1289,7 @@ function railticket_show_edit_order() {
     $orderid = sanitize_text_field($_REQUEST['orderid']);
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
     if (!$bookingorder) {
-        echo "<p>Invalid order number or no tickets were purchased with this order.</p>";
+        echo "<p style='font-size:large;color:red;'>Invalid order number or no tickets were purchased with this order.</p>";
         railticket_summary_selector();
         return;
     }
@@ -1397,8 +1460,11 @@ function railticket_editorder() {
         $ofrom = $bookings[$i]->get_from_station();
         $oto = $bookings[$i]->get_to_station();
 
+        // TODO Will bay allocation fail if one booking is moving onto the train the other booking is on before that second booking
+        // is moved off? I'm not excluding any bookings here.
+
         if (!$nfrom->matches($ofrom) || !$nto->matches($oto) || $bookings[$i]->get_dep_time() != $legs[$i]->dep) {
-            $ts = new \wc_railticket\TrainService($bookingorder->bookableday, $nfrom, $legs[$i]->dep, $nto, $bookings);
+            $ts = new \wc_railticket\TrainService($bookingorder->bookableday, $nfrom, $legs[$i]->dep, $nto);
             $capdata = $ts->get_capacity(false, $bookings[$i]->get_seats(), $bookings[$i]->get_priority());
             $bookings[$i]->set_dep($nfrom, $nto, $legs[$i]->dep, $capdata->bays);
         }
@@ -1892,6 +1958,8 @@ function railticket_discount_codes() {
                 $id = railticket_getpostfield('id');
                 \wc_railticket\Discount::delete_discount_code($id);
                 break;
+            case 'cleandiscountcode':
+                \wc_railticket\Discount::clean_discount_codes($id);
         }
     }
 
@@ -1942,4 +2010,122 @@ function railticket_discount_types() {
 
     $template = $rtmustache->loadTemplate('discounttypes');
     echo $template->render($alldata);
+}
+
+function railticket_rebook($action) {
+    $sure = railticket_gettfpostfield('sure');
+    if (!$sure) {
+        echo "<p>You were not sure you wanted to do this!</p>";
+        return;
+    }
+    $dateofjourney = railticket_getpostfield('dateofjourney');
+    $sortby = railticket_getpostfield('sortby');
+
+    $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
+    if ($sortby == 'date') {
+        $sort = "time, created ASC";
+        $clever = false;
+    } else {
+        $sort = "time, priority DESC, seats DESC";
+        $clever = false;
+    }
+
+    if ($action == 'rebookall') {
+        $bookings = $bookableday->get_all_bookings($sort, true);
+    } else {
+        $deptime = railticket_getpostfield('dep');
+        $from = railticket_getpostfield('from');
+        $revision = railticket_getpostfield('ttrevision');
+        $station = \wc_railticket\Station::get_station($from, $revision);
+        $direction = railticket_getpostfield('direction');
+        $bookings = $bookableday->get_bookings_from_station($station, $deptime, $direction, $sort);
+    }
+
+    railticket_rebook_bookings_bays($bookableday, $bookings, $clever);
+}
+
+function railticket_rebook_bookings_bays($bookableday, $bookings, $clever) {
+    global $rtmustache;
+
+    $isbookable = $bookableday->is_bookable();
+
+    // Close bookings while we do this since it's potentially dangerous if somebody is trying to book onto this service
+    if ($isbookable) {
+        $bookableday->set_bookable(false);
+    }
+
+    $alldata = new \stdclass();
+    $alldata->date = $bookableday->get_date(true);
+    $alldata->dateofjourney = $bookableday->get_date();
+    $alldata->bookings = array();
+
+    // Delete the existing bookings bays
+    for ($i=0; $i<count($bookings); $i++) {
+       $alldata->bookings[$i] = new \stdclass();
+       $alldata->bookings[$i]->oldbays = $bookings[$i]->get_bays(true);
+
+       $bookings[$i]->delete_bays();
+    }
+
+    if ($clever) {
+        // Clever version which tries to avoid ending up with the smallest groups in the largest bays if that's all we have left.
+        // However, if the train is over booked, this tends to leave a larger group without a bay and manages to run out of space!
+        $stop = 0;
+        for ($i=0; $i<count($bookings); $i++) {
+            $count = railticket_processrebookentry($bookableday, $alldata, $bookings, $i);
+            if ($count == 1) {
+                $stop = $i;
+                break;
+            }
+        }
+
+        for ($i=count($bookings)-1; $i>$stop; $i--) {
+            railticket_processrebookentry($bookableday, $alldata, $bookings, $i);
+        }
+    } else {
+        for ($i=0; $i<count($bookings); $i++) {
+            $count = railticket_processrebookentry($bookableday, $alldata, $bookings, $i);
+        }
+    }
+
+    // Reopen bookings
+    if ($isbookable) {
+        $bookableday->set_bookable(true);
+    }
+
+    $template = $rtmustache->loadTemplate('rebooking');
+    echo $template->render($alldata);
+}
+
+function railticket_processrebookentry($bookableday, &$alldata, &$bookings, $i) {
+    $from = $bookings[$i]->get_from_station();
+    $to = $bookings[$i]->get_to_station();
+    $ts = new \wc_railticket\TrainService($bookableday, $from, $bookings[$i]->get_dep_time(), $to);
+    $capdata = $ts->get_capacity(false, $bookings[$i]->get_seats(), $bookings[$i]->get_priority());
+    if (count($capdata->bays) == 0) {
+        // We probably ran out of space. Allocate whatever is left if we can.
+        $cap = $ts->get_inventory(false);
+        $bookings[$i]->update_bays($cap->bays);
+        $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
+    } else {
+        $bookings[$i]->update_bays($capdata->bays);
+        $alldata->bookings[$i]->newbays = $bookings[$i]->get_bays(true);
+        if ($alldata->bookings[$i]->newbays != $alldata->bookings[$i]->oldbays) {
+            $alldata->bookings[$i]->change = 'color:blue';
+        }
+    }
+
+    $alldata->bookings[$i]->orderid = $bookings[$i]->get_order_id();
+    $alldata->bookings[$i]->time = $bookings[$i]->get_dep_time(true);
+    $alldata->bookings[$i]->fromstation = $from->get_name();
+    $alldata->bookings[$i]->tostation = $to->get_name();
+    $alldata->bookings[$i]->seats = $bookings[$i]->get_seats();
+    $alldata->bookings[$i]->priority = $bookings[$i]->get_priority(true);
+
+    $count = 0;
+    foreach ($bookings[$i]->get_bays() as $bay) {
+        $count += $bay->num;
+    }
+
+    return $count;
 }

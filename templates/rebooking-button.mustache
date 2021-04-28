@@ -1,0 +1,16 @@
+<p><form method='post' action='{{actionurl}}'>
+    <input type='hidden' name='action' value='{{action}}' />
+    <input type='hidden' name='dateofjourney' value='{{dateofjourney}}' />
+    <input type='hidden' name='dep' value='{{dep}}' />
+    <input type='hidden' name='from' value='{{from}}' />
+    <input type='hidden' name='direction' value='{{direction}}' />
+    <input type='hidden' name='ttrevision' value='{{ttrevision}}' />
+    <table style='width:100%'><tr>
+        <td><input type='submit' name='submit' value='Rebook All Bays' style='width:100%' /></td>
+        <td><select style='font-size:large;' name='sortby'>
+            <option value='size'>Seats</option>
+            <option value='date'>Date/Time</option>
+        </select></td>
+        <td><input type='checkbox' name='sure' value='1' />Are you really sure you want to do this?</td>
+    </tr></table>
+</form></p>

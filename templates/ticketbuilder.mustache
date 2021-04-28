@@ -1,7 +1,7 @@
 {{{javascript}}}
 <div id="pleasewait" class="railticket_loading"></div>
 {{{datepick}}}
-<form action="post" name="railticketbooking">
+<form action="post" name="railticketbooking" autocomplete="off">
 
 <div id='stations' class='railticket_stageblock railticket_listselect'>
     <div class='railticket_container' id='fromstations_container'></div>
@@ -33,8 +33,17 @@
     If you have a discount code, please enter it first in the box below and click apply to validate it.</p>
     <div id='ticket_discountcode' class='railticket_container railticket_travellers'>
         <div class='railticket_travellers_numbers'><div class='quantity'>
+            <div style='{{hideguardd}}'>
+                <label for='guarddiscount'><span>Choose Discount </span></label><select id='guarddiscount' name='guarddiscount'>
+                <option value='' selected></option>
+            {{#guarddiscounts}}
+                <option value='{{code}}'>{{name}}</option>
+            {{/guarddiscounts}}
+            </select></div>
             <input type='text' name='discountcode' value='' size='12' id='discountcode' autocomplete="off" autocorrect="off" autocapitalize="none" />
-            <label for='discountcode'><span><input type='button' name='applydiscount' id='applydiscount_button' value='Apply Discount Code'/></span></label>
+            <label for='discountcode'><span>
+                <input type='button' name='applydiscount' id='applydiscount_button' value='Apply Discount Code'/>
+            </span></label>
             <div id='discountvalid'></div>
         </div></div>
     </div>

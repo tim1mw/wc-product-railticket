@@ -127,8 +127,10 @@ class Booking {
     }
 
     public function update_bays($bays) {
+        global $wpdb;
         $this->delete_bays();
         $this->insertBays($this->data->id, $bays);
+        $this->bays = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$this->data->id);
     }
 
     public function get_date($format = false, $nottoday = false) {
@@ -212,6 +214,7 @@ class Booking {
                 $nbays[] = $nbay;
                 $nbay->formatted = CoachManager::format_bay_name($nbay);
             }
+
             return $nbays;
         }
 
@@ -219,7 +222,22 @@ class Booking {
             return $this->bays;
         }
 
-        return CoachManager::format_booking_bays($this->bays);
+        $tseats = 0;
+        foreach ($this->bays as $bay) {
+            $tseats += $bay->baysize * $bay->num;
+        }
+
+        if ($tseats == 0) {
+            return '<span style="color:red">'.__('No Bays', 'wc_railticket').'</span>';
+        }
+
+        $str = CoachManager::format_booking_bays($this->bays);
+
+        if ($tseats < $this->data->seats) {
+            return '<span style="color:red">'.$str.', '.__('Insufficient Bays', 'wc_railticket').'</span>';
+        } else {
+            return $str;
+        }
     }
 
     public function get_seats() {

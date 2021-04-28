@@ -29,6 +29,11 @@
 </table><br />
 <input type='submit' value='Update' id='railticket-update-discount-codes' />
 </form>
+
+<p><form method='post' action='{{actionurl}}'>
+    <input type='hidden' name='action' value='cleandiscountcode' />
+    <input type='submit' value='Clean up disabled single use codes' id='railticket-clean-discount-codes' />
+</form></p>
 <hr />
 <h3>Add New Discount Code</h3>
 
@@ -55,10 +60,10 @@
         <td><input type='date' name='end' /></td>
     </tr><tr>
         <td>Single Use</td>
-        <td><input type='checkbox' name='single' /></td>
+        <td><input type='checkbox' name='single' value='1' /></td>
     </tr><tr>
         <td>Disabled</td>
-        <td><input type='checkbox' name='disabled' /></td>
+        <td><input type='checkbox' name='disabled' value='1' /></td>
     </tr><tr>
         <td>Notes</td>
         <td><textarea name='notes'></textarea></td>

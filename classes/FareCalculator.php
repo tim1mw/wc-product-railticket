@@ -271,21 +271,11 @@ class FareCalculator {
             $guard = "";
         }
 
-        if ($localprice) {
-            $pfield = 'localprice';
-        } else {
-            $pfield = 'price';
-        }
-
-        // Check that the discount code doesn't override the price choice here
-        // Also exclude any ticket types that should not be used with this discount
+        // Exclude any ticket types that should not be used with this discount
         $excludes = "";
-        if ($discount) {
-            $pfield = $discount->check_price_field($pfield);
-            if ($discount->has_excludes()) {
-                $excludes = " AND {$wpdb->prefix}wc_railticket_prices.tickettype NOT IN ".
-                " ('".implode(',', $discount->get_excludes())."')";
-            }
+        if ($discount && $discount->has_excludes()) {
+            $excludes = " AND {$wpdb->prefix}wc_railticket_prices.tickettype NOT IN ".
+                " ('".implode("','", $discount->get_excludes())."')";
         }
 
         if ($special) {
@@ -301,7 +291,8 @@ class FareCalculator {
 
         $sql = "SELECT {$wpdb->prefix}wc_railticket_prices.id, ".
             "{$wpdb->prefix}wc_railticket_prices.tickettype, ".
-            "{$wpdb->prefix}wc_railticket_prices.".$pfield." as price, ".
+            "{$wpdb->prefix}wc_railticket_prices.price as oriprice, ".
+            "{$wpdb->prefix}wc_railticket_prices.localprice as orilocalprice, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.name, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.description, ".
             "{$wpdb->prefix}wc_railticket_tickettypes.composition, ".
@@ -323,9 +314,17 @@ class FareCalculator {
         $tickets->travellers = array();
         $dtravellers = array();
 
+        if ($localprice) {
+            $pfield = 'localprice';
+        } else {
+            $pfield = 'price';
+        }
+
         foreach($ticketdata as $ticketd) {
             $ticketd->composition = json_decode($ticketd->composition);
             $ticketd->depends = json_decode($ticketd->depends);
+            $ppfield = 'ori'.$pfield;
+            $ticketd->price = $ticketd->$ppfield;
             $tickets->prices[$ticketd->tickettype] = $ticketd;
 
             foreach ($ticketd->composition as $code => $num) {
@@ -362,9 +361,12 @@ class FareCalculator {
                 continue;
             }
 
+            // See if the discount uses a different price field.
+            $ppfield = 'ori'.$discount->check_price_field($pfield);
+
             // If we aren't using a custom ticket type+traveller here, just adjust the price and continue
             if (!$discount->use_custom_type()) {
-                $ticketd->price = $discount->apply_price_rule($ticketd->tickettype, $ticketd->price);
+                $ticketd->price = $discount->apply_price_rule($ticketd->tickettype, $ticketd->$ppfield);
                 continue;
             }
 
@@ -372,7 +374,7 @@ class FareCalculator {
             // PHP only performs a shallow copy of the object with clone(), that's no good. So use json to clone!
             $customticket = json_decode(json_encode($ticketd));
             $customticket->tickettype = $customticket->tickettype.'/'.$discount->get_shortname();
-            $customticket->price = $discount->apply_price_rule($customticket->tickettype, $ticketd->price);
+            $customticket->price = $discount->apply_price_rule($customticket->tickettype, $ticketd->$ppfield);
             $customticket->description = $discount->get_name();
             $customticket->composition = new \stdclass();
             $comp = (array) $ticketd->composition;
@@ -505,9 +507,18 @@ class FareCalculator {
         } else {
             $jt = "";
         }
-
         // Strip out any discount code we may have from the ticket type
         $tparts = explode('/', $ttype);
+
+        if ($discount) {
+            // If we're not using custom travellers, 
+            if ( (count($tparts) == 1 && $discount->ticket_has_discount($ttype)) ||
+                 (count($tparts) == 2 && $discount->ticket_has_discount($tparts[0]))
+                ) {
+                $pfield = $discount->check_price_field($pfield);
+            } 
+
+        }
 
         $sql = "SELECT ".$pfield." FROM {$wpdb->prefix}wc_railticket_prices WHERE tickettype = '".$tparts[0]."' ".
             $jt." AND revision = ".$this->revision." AND ".
