@@ -517,5 +517,7 @@ function railticket_cart_check_cart_at_checkout($callable) {
 
 function railticket_order_cancel_refund($order_id) {
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($order_id);
-    $bookingorder->delete();
+    if ($bookingorder) {
+        $bookingorder->delete();
+    }
 }
