@@ -754,7 +754,7 @@ function railticket_summary_selector() {
     <hr />
     <?php
 
-    railticket_show_bookings_summary($dateofjourney, $today);
+    railticket_show_bookings_summary($dateofjourney, $today->format('Y-m-d'));
 }
 
 function railticket_show_order_form() {
