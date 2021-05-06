@@ -34,8 +34,8 @@
     <div id='ticket_discountcode' class='railticket_container railticket_travellers'>
         <div class='railticket_travellers_numbers'><div class='quantity'>
             <div style='{{hideguardd}}'>
-                <label for='guarddiscount'><span>Choose Discount </span></label><select id='guarddiscount' name='guarddiscount'>
-                <option value='' selected></option>
+                <label for='guarddiscount'><span>Choose Discount </span></label><select id='guarddiscount' name='guarddiscount' class='railticket-discountsel'>
+                <option value='' selected>------</option>
             {{#guarddiscounts}}
                 <option value='{{code}}'>{{name}}</option>
             {{/guarddiscounts}}

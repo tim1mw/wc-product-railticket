@@ -322,6 +322,7 @@ class Booking {
         $this->data->fromstation = $from->get_stnid();
         $this->data->tostation = $to->get_stnid();
         $this->data->time = $time;
+        $this->data->direction = $from->get_direction($to);
         $this->update_record();
 
         if (!$bays) {

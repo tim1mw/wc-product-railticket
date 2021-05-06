@@ -79,10 +79,10 @@ function railticket_view_bookings() {
         switch($_REQUEST['action']) {
             case 'cancelcollected';
                 railticket_mark_ticket(false);
-                railticket_show_order();
                 break;
             case 'collected':
                 railticket_mark_ticket(true);
+                break;
             case 'showorder':
                 railticket_show_order();
                 break;
@@ -1040,8 +1040,10 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             <th>Name</th>
             <th>To</th>
             <th>Seats</th>
-            <th>Wheelchair<br />Request</th>
+            <th>Wheel<br />chair</th>
             <th>Bays</th>
+            <th>Shop<br />Items</th>
+            <th>Discount</th>
             <th>Collected</th>
         </tr>
     <?php
@@ -1051,6 +1053,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             echo "<td>In Cart</td>";
         } else {
             $orderid = $booking->get_order_id();
+            $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
             echo "<td><form action='".railticket_get_page_url()."' method='post'>".
                 "<input type='hidden' name='action' value='showorder' />".
                 "<input type='hidden' name='orderid' value='".$orderid."' />".
@@ -1065,13 +1068,43 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         echo $booking->get_bays(true);
         echo "</td>";
 
-        if ($booking->is_collected()) {
-            echo "<td>Y</td>";   
+        if (count($bookingorder->other_items()) > 0) {
+            echo "<td>Yes</td>";   
         } else {
-            echo "<td>N</td>";
+            echo "<td>No</td>";
+        }
+
+        if ($bookingorder->get_discount_type()) {
+            echo "<td>Yes</td>";
+            if ($booking->is_collected()) {
+                echo "<td>Yes</td>";   
+            } else {
+                echo "<td>No</td>";
+            }
+        } else {
+            echo "<td>No</td>";
+            $bk = array();
+            if ($booking->is_collected()) {
+                $bk['actionstr'] = __('Yes', 'wc_railrticket');
+                $bk['action'] = 'cancelcollected';
+            } else {
+                $bk['actionstr'] = __('No', 'wc_railrticket');
+                $bk['action'] = 'collected';
+            }
+            $bk['returnto'] = 'departure';
+            $bk['orderid'] = $orderid;
+            $bk['bookingid'] = $booking->get_id();
+            $template = $rtmustache->loadTemplate('collectedbutton');
+            echo "<td>".$template->render($bk)."</td>";
         }
         
         echo "</tr>";
+    }
+
+    if ($trainservice->special) {
+        $raction = 'showspecial';
+    } else {
+        $raction = 'showdep';
     }
 
     ?>
@@ -1081,7 +1114,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     </div>
     <div class='railticket_editdate' style='max-width:550px;margin-left:0px;margin-right:auto;'>
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
-        <input type='hidden' name='action' value='<?php echo $_REQUEST['action']; ?>' />
+        <input type='hidden' name='action' value='<?php echo $raction; ?>' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='hidden' name='station' value='<?php echo $station->get_stnid(); ?>' />
         <input type='hidden' name='ttrevision' value='<?php echo $station->get_revision(); ?>' />
@@ -1122,7 +1155,25 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
 function railticket_mark_ticket($val) {
     $id = sanitize_text_field($_POST['bookingid']);
-    $booking = \wc_railticket\Booking::set_collected($id, $val);
+    \wc_railticket\Booking::set_collected($id, $val);
+    if ($_REQUEST['returnto'] == 'departure') {
+/*
+                $station = \wc_railticket\Station::get_station(
+                    sanitize_text_field($_REQUEST['station']), sanitize_text_field($_REQUEST['ttrevision']));
+                railticket_show_departure(sanitize_text_field($_REQUEST['dateofjourney']), $station,
+                   sanitize_text_field($_REQUEST['direction']), sanitize_text_field($_REQUEST['deptime']));
+*/
+        $orderid = sanitize_text_field($_POST['orderid']);
+        $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
+        foreach ($bookingorder->get_bookings() as $booking) {
+            if ($booking->get_id() == $id) {
+                railticket_show_departure($booking->get_date(), $booking->get_from_station(), $booking->get_direction(), $booking->get_dep_time());
+                break;
+            }
+        }
+    } else {
+        railticket_show_order();
+    }
 }
 
 function railticket_delete_manual_order() {
@@ -1265,6 +1316,7 @@ function railticket_get_booking_render_data($bookingorder) {
             $bk['actionstr'] = __('Mark Collected', 'wc_railrticket');
             $bk['action'] = 'collected';
         }
+        $bk['returnto'] = 'order';
         $bk['bookingid'] = $booking->get_id();
 
         $bk['station'] = $fromstn->get_stnid();
