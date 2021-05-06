@@ -1067,8 +1067,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<td>";
         echo $booking->get_bays(true);
         echo "</td>";
-
-        if (count($bookingorder->other_items()) > 0) {
+        $oitems = $bookingorder->other_items();
+        if ($oitems && count($oitems) > 0) {
             echo "<td>Yes</td>";   
         } else {
             echo "<td>No</td>";
