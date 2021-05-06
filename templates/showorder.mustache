@@ -22,12 +22,7 @@
             <tr><th style='text-align:right'>{{baystr}}</th><td class='railticket_meta'>{{{bays}}}</td></tr>
             <tr><th style='text-align:right'>{{collectedstr}}</th><td class='railticket_meta'>{{collected}}</td></tr>
         </table>
-        <p><form action='{{actionurl}}' method='post'>
-            <input type='hidden' name='action' value='{{action}}' />
-            <input type='hidden' name='orderid' value='{{orderid}}' />
-            <input type='hidden' name='bookingid' value='{{bookingid}}' />
-            <input type='submit' value='{{actionstr}}' />
-        </form></p>
+        <p>{{> collectedbutton}}</p>
     {{/ bookings }}
 
     <br /><br />
