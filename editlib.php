@@ -1051,6 +1051,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         echo "<tr>";
         if (strlen($booking->in_cart()) > 0) {
             echo "<td>In Cart</td>";
+            $bookingorder = false;
         } else {
             $orderid = $booking->get_order_id();
             $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
@@ -1067,35 +1068,40 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<td>";
         echo $booking->get_bays(true);
         echo "</td>";
-        $oitems = $bookingorder->other_items();
-        if ($oitems && count($oitems) > 0) {
-            echo "<td>Yes</td>";   
-        } else {
-            echo "<td>No</td>";
-        }
-
-        if ($bookingorder->get_discount_type()) {
-            echo "<td>Yes</td>";
-            if ($booking->is_collected()) {
+        if ($bookingorder) {
+            $oitems = $bookingorder->other_items();
+            if ($oitems && count($oitems) > 0) {
                 echo "<td>Yes</td>";   
             } else {
                 echo "<td>No</td>";
             }
-        } else {
-            echo "<td>No</td>";
-            $bk = array();
-            if ($booking->is_collected()) {
-                $bk['actionstr'] = __('Yes', 'wc_railrticket');
-                $bk['action'] = 'cancelcollected';
+        
+
+            if ($bookingorder->get_discount_type()) {
+                echo "<td>Yes</td>";
+                if ($booking->is_collected()) {
+                    echo "<td>Yes</td>";   
+                } else {
+                    echo "<td>No</td>";
+                }
             } else {
-                $bk['actionstr'] = __('No', 'wc_railrticket');
-                $bk['action'] = 'collected';
+                echo "<td>No</td>";
+                $bk = array();
+                if ($booking->is_collected()) {
+                    $bk['actionstr'] = __('Yes', 'wc_railrticket');
+                    $bk['action'] = 'cancelcollected';
+                } else {
+                    $bk['actionstr'] = __('No', 'wc_railrticket');
+                    $bk['action'] = 'collected';
+                }
+                $bk['returnto'] = 'departure';
+                $bk['orderid'] = $orderid;
+                $bk['bookingid'] = $booking->get_id();
+                $template = $rtmustache->loadTemplate('collectedbutton');
+                echo "<td>".$template->render($bk)."</td>";
             }
-            $bk['returnto'] = 'departure';
-            $bk['orderid'] = $orderid;
-            $bk['bookingid'] = $booking->get_id();
-            $template = $rtmustache->loadTemplate('collectedbutton');
-            echo "<td>".$template->render($bk)."</td>";
+        } else {
+            echo "<td>-</td><td>-</td><td>-</td>";
         }
         
         echo "</tr>";
