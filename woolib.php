@@ -258,32 +258,34 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     if (!$bookingorder) {
         $retmeta = array();
         $found = false;
+        $itemidindex = 0;
         foreach ($formatted_meta as $index => $item) {
             $fmparts = explode("-", $item->key);
             switch ($fmparts[0]) {
                 case 'cart_item_key':
                 case 'itemid':
-                    if ($found) {
-                        break;
-                    }
-                    $item->display_key = __("Order Problem", "wc_railticket");
-                    $item->display_value = __("Your booking data is missing, this is very unusual, your tickets may have expired in the basket while the payment process was being completed. Please contact the railway ASAP with your booking ID to have this corrected.", "wc_railticket");
-                    $retmeta[$index] = $item;
-                    $found = true;
+                    $itemidindex = $index;
                     break;
                 // If any of these fields are present and we don't have a ticket ID by now, this booking is broken....
                 // There has to be a better way to deal with this....
-                case 'supplement':
                 case 'ticketsallocated':
-                case 'ticketselections':
-                case 'ticketprices':
+                case 'supplement':
                     $item->display_key = $item->key;
                     $item->display_value = $item->value;
                     $retmeta[$index] = $item;
+                case 'ticketselections':
+                case 'ticketprices':
+                    $found = true;
                     break;
                 default:
                     $retmeta[$index] = $item;
             }
+        }
+
+        if ($found) {
+            $formatted_meta[$itemidindex]->display_key = __("Order Problem", "wc_railticket");
+            $formatted_meta[$itemidindex]->display_value = __("Your booking data is missing, this is very unusual, your tickets may have expired in the basket while the payment process was being completed. Please contact the railway ASAP with your booking ID to have this corrected.", "wc_railticket");
+            $retmeta[$index] = $formatted_meta[$itemidindex];
         }
 
         return $retmeta;
@@ -404,8 +406,9 @@ function railticket_product_add_new_order_line_item($item, $values, $key) {
 }
 
 function railticket_cart_complete($order_id) {
-    if ( ! $order_id )
+    if (!$order_id) {
         return;
+    }
 
     // Allow code execution only once 
     if( ! get_post_meta( $order_id, '_railticket_thankyou_action_done', true ) ) {
@@ -413,7 +416,7 @@ function railticket_cart_complete($order_id) {
         $order = wc_get_order( $order_id );
 
         // Loop through order items
-        foreach ( $order->get_items() as $item_id => $item ) {
+        foreach  ($order->get_items() as $item_id => $item) {
             // Get the product object
             $product = $item->get_product();
 
