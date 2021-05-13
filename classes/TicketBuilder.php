@@ -559,10 +559,10 @@ class TicketBuilder {
                 $legbaydata->str = CoachManager::bay_strings($legbays->bays);
             }
             $legbayinfo[$legnum] = $legbaydata;
-        } 
+        }  
 
         $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated, $this->ticketselections,
-            $this->fromstation, $this->tostation, $this->journeytype, $this->is_guard(), $this->nominimum, $this->discount, $this->special);
+            $this->fromstation, $this->tostation, $this->journeytype, $this->localprice, $this->nominimum, $this->discount, $this->special);
 
         $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);
 

@@ -1222,11 +1222,21 @@ function railticket_show_order() {
 }
 
 function railticket_show_order_main($orderid) {
-    global $rtmustache;
+    global $rtmustache, $wpdb;
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
     if (!$bookingorder) {
-        echo "<p style='font-size:large;color:red;'>Invalid order number '".$orderid."' or no tickets were purchased with this order.</p>";
+        // Do we have a broken order with partial data?
+        $item = $wpdb->get_var("SELECT COUNT(items.order_id) FROM wp_woocommerce_order_items items ".
+            "INNER JOIN wp_woocommerce_order_itemmeta meta ON ".
+            "items.order_item_id = meta.order_item_id AND meta.meta_key = '_product_id' AND ".
+            "meta.meta_value = ".get_option('wc_product_railticket_woocommerce_product')." WHERE items.order_id = ".$orderid);
+
+        if ($item == 0) {
+            echo "<p style='font-size:large;color:red;'>Invalid order number '".$orderid."' or no tickets were purchased with this order.</p>";
+        } else {
+            echo "<p style='font-size:large;color:red;'>Order '".$orderid."' is missing part of it's data. Please report this to the manangement.</p>";
+        }
         railticket_summary_selector();
         return;
     }
