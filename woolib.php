@@ -21,7 +21,8 @@ add_filter('woocommerce_get_item_data', 'railticket_cart_item_custom_meta_data',
 add_filter('woocommerce_order_item_get_formatted_meta_data', 'railticket_order_item_get_formatted_meta_data', 10, 1 );
 add_action('woocommerce_remove_cart_item', 'railticket_cart_updated', 10, 2 );
 add_action('woocommerce_checkout_create_order_line_item', 'railticket_cart_order_item_metadata', 10, 4 );
-add_action('woocommerce_before_thankyou', 'railticket_cart_complete', 10, 1);
+//add_action('woocommerce_before_thankyou', 'railticket_cart_complete', 10, 1);
+add_action('woocommerce_payment_complete', 'railticket_cart_complete', 10, 1);
 add_action('woocommerce_before_checkout_form', 'railticket_cart_check_cart');
 add_action('woocommerce_before_cart', 'railticket_cart_check_cart');
 add_action('woocommerce_new_order', 'railticket_cart_check_cart_at_checkout');
