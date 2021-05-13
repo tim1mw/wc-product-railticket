@@ -257,20 +257,12 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
 
     if (!$bookingorder) {
         $retmeta = array();
-
         $found = false;
         foreach ($formatted_meta as $index => $item) {
             $fmparts = explode("-", $item->key);
             switch ($fmparts[0]) {
                 case 'cart_item_key':
                 case 'itemid':
-                    break;
-                // If any of these fields are present and we don't have a ticket ID by now, this booking is broken....
-                // There has to be a better way to deal with this....
-                case 'supplement':
-                case 'ticketsallocated':
-                case 'ticketselections':
-                case 'ticketprices':
                     if ($found) {
                         break;
                     }
@@ -278,6 +270,16 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
                     $item->display_value = __("Your booking data is missing, this is very unusual, your tickets may have expired in the basket while the payment process was being completed. Please contact the railway ASAP with your booking ID to have this corrected.", "wc_railticket");
                     $retmeta[$index] = $item;
                     $found = true;
+                    break;
+                // If any of these fields are present and we don't have a ticket ID by now, this booking is broken....
+                // There has to be a better way to deal with this....
+                case 'supplement':
+                case 'ticketsallocated':
+                case 'ticketselections':
+                case 'ticketprices':
+                    $item->display_key = $item->key;
+                    $item->display_value = $item->value;
+                    $retmeta[$index] = $item;
                     break;
                 default:
                     $retmeta[$index] = $item;
