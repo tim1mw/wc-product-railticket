@@ -77,18 +77,20 @@ if ( ! wp_next_scheduled( 'railticket_add_every_two_minutes' ) ) {
     wp_schedule_event( time(), 'every_two_minutes', 'railticket_add_every_two_minutes' );
 }
 
-// Hook into that action that'll fire every three minutes
+// Hook into that action that'll fire every two minutes
 
 function railticket_every_two_minutes_event_func() {
     global $wpdb;
     $expiretime = time() - intval(get_option('wc_product_railticket_reservetime'))*60;
     $releasetime = $expiretime - intval(get_option('wc_product_railticket_releaseinventory'))*60;
 
-    $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem != '' AND expiring = 1 AND created < ".$releasetime;
-    $bookingids = $wpdb->get_results($sql);
-    foreach ($bookingids as $bookingid) {
-        $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $bookingid->id));
-        $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $bookingid->id));
+    $sql = "SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem != '' AND expiring = 1 AND created < ".$releasetime;
+    $bookings = $wpdb->get_results($sql);
+    foreach ($bookings as $booking) {
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_booking_bays", array('bookingid' => $booking->id));
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $booking->id));
+        unset($booking->id);
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings_expired", (array) $booking);
     }
 
     $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem != '' AND expiring = 0 AND created < ".$expiretime;
