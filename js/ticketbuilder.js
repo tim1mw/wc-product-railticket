@@ -599,6 +599,9 @@ function renderTicketSelector() {
             ticketdata.travellers[i].value = ticketSelections[ticketdata.travellers[i].code];
             nTicketSelections[code] = value;
         }
+        if (ticketdata.travellers[i].code.indexOf('/') > -1) {
+            ticketdata.travellers[i].extracss = 'railticket_travellers_discount';
+        }
     }
 
     ticketSelections = nTicketSelections;

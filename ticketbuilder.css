@@ -634,3 +634,8 @@ border-radius: 0;
 .railticket-discountsel {
     border-color: #880000;   
 }
+
+.railticket_travellers_discount {
+    font-style:italic !important;
+    font-weight:bold !important;
+}
