@@ -928,10 +928,14 @@ function showCapacity(response) {
     var bdtemplate = document.getElementById('bays_tmpl').innerHTML;
     capacitydiv.innerHTML = Mustache.render(bdtemplate, renderdata);
     capacitydiv.style.display = 'block';
-    capacitydiv.scrollIntoView(true);
+
+    var yOffset = 0;
     if (window.innerWidth >= 1010) {
-        window.scrollBy(0, -80); 
+        yOffset = 90; 
     }
+
+    const y = capacitydiv.getBoundingClientRect().top + window.pageYOffset - yOffset;
+    window.scrollTo({top: y, behavior: 'smooth'});
 
     if (allok || overridevalid || guard) {
         showTicketStages('addtocart', false);
@@ -1102,10 +1106,13 @@ function showTicketStages(stage, doscroll) {
     }
 
     if (scroll !=null && stage != laststage && doscroll) {
-        scroll.scrollIntoView(true);
+        var yOffset = 0;
         if (window.innerWidth >= 1010) {
-            window.scrollBy(0, -80); 
+            yOffset = 90; 
         }
+
+        const y = scroll.getBoundingClientRect().top + window.pageYOffset - yOffset;
+        window.scrollTo({top: y, behavior: 'smooth'});
     }
     laststage = stage;
 }
