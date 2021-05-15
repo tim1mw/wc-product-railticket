@@ -409,6 +409,14 @@
     font-weight:bold;
 }
 
+.railticketinfo {
+    padding:4px;
+    font-size:normal;
+    color:#f2f0a6; 
+    background-color:#880000;
+    font-weight:bold;
+}
+
 .railticket_processing {
     padding:4px;
     font-size:x-large;
