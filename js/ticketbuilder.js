@@ -183,6 +183,7 @@ function validateDiscount(evt) {
         maxdiscountseats = response['maxseats'];
         customtravellers = response['customtravellers'];
         renderTicketSelector();
+        allocateTickets();
         if (response.valid && response.shownotes && response.pattern.length > 0) {
             discountCheck(true);
             document.getElementById('dnotes').addEventListener('input', validateDiscountNote);
@@ -599,6 +600,9 @@ function renderTicketSelector() {
             ticketdata.travellers[i].value = ticketSelections[ticketdata.travellers[i].code];
             nTicketSelections[code] = value;
         }
+        if (ticketdata.travellers[i].code.indexOf('/') > -1) {
+            ticketdata.travellers[i].extracss = 'railticket_travellers_discount';
+        }
     }
 
     ticketSelections = nTicketSelections;
@@ -808,6 +812,12 @@ function allocateTickets() {
     td.total = formatter.format(td.total);
     td.supplement = formatter.format(td.supplement);
 
+    if (customtravellers && td.totalcustom == 0) {
+        td.nodiscounttkts = "<p class='railticketinfo'>Warning: You have applied a discount code to your selection, "+
+            "but have't chosen any options that take advantage of the discount."+
+            " Please add at least one discounted traveller to your choices if you wish to use your discount.</p>";
+    }
+
     var tkttemplate = document.getElementById('tickets_tmpl').innerHTML;
     summary.innerHTML = Mustache.render(tkttemplate, td);
 }
@@ -914,10 +924,14 @@ function showCapacity(response) {
     var bdtemplate = document.getElementById('bays_tmpl').innerHTML;
     capacitydiv.innerHTML = Mustache.render(bdtemplate, renderdata);
     capacitydiv.style.display = 'block';
-    capacitydiv.scrollIntoView(true);
+
+    var yOffset = 0;
     if (window.innerWidth >= 1010) {
-        window.scrollBy(0, -80); 
+        yOffset = 90; 
     }
+
+    const y = capacitydiv.getBoundingClientRect().top + window.pageYOffset - yOffset;
+    window.scrollTo({top: y, behavior: 'smooth'});
 
     if (allok || overridevalid || guard) {
         showTicketStages('addtocart', false);
@@ -1088,10 +1102,13 @@ function showTicketStages(stage, doscroll) {
     }
 
     if (scroll !=null && stage != laststage && doscroll) {
-        scroll.scrollIntoView(true);
+        var yOffset = 0;
         if (window.innerWidth >= 1010) {
-            window.scrollBy(0, -80); 
+            yOffset = 90; 
         }
+
+        const y = scroll.getBoundingClientRect().top + window.pageYOffset - yOffset;
+        window.scrollTo({top: y, behavior: 'smooth'});
     }
     laststage = stage;
 }
