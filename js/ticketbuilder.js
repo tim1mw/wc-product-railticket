@@ -812,14 +812,10 @@ function allocateTickets() {
     td.total = formatter.format(td.total);
     td.supplement = formatter.format(td.supplement);
 
-    var confbutton = document.getElementById('confirmchoices');
     if (customtravellers && td.totalcustom == 0) {
-        confbutton.style.display = 'none';
-        td.nodiscounttkts = "<p class='railticketinfo'>You have applied a discount code to your selection, "+
+        td.nodiscounttkts = "<p class='railticketinfo'>Warning: You have applied a discount code to your selection, "+
             "but have't chosen any options that take advantage of the discount."+
-            " Please add at least one discounted traveller to your choices or remove the discount code to continue.</p>";
-    } else {
-        confbutton.style.display = 'inline';
+            " Please add at least one discounted traveller to your choices if you wish to use your discount.</p>";
     }
 
     var tkttemplate = document.getElementById('tickets_tmpl').innerHTML;
