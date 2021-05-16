@@ -814,7 +814,7 @@ function allocateTickets() {
 
     if (customtravellers && td.totalcustom == 0) {
         td.nodiscounttkts = "<p class='railticketinfo'>Warning: You have applied a discount code to your selection, "+
-            "but have't chosen any options that take advantage of the discount."+
+            "but haven't chosen any options that take advantage of the discount."+
             " Please add at least one discounted traveller to your choices if you wish to use your discount.</p>";
     }
 
