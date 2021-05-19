@@ -903,7 +903,7 @@ function showCapacity(response) {
         
         if (getCBFormValue('disabledrequest')) {
             renderdata.disabledrequest = 'If there is more than one wheelchair user, or you need to communicate any other special requests '+
-                'for the disabled traveller, please add the details in additional information box on the checkout page.';
+                'for the disabled traveller, please contact us after completing your order.';
         } else {
             renderdata.hidedisabledrequest = 'display:none;';
         }
