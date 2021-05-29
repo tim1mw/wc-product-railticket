@@ -10,6 +10,7 @@ var fromstationdata, tostationdata, journeychoicedata, journeytypedata, alljourn
 var manual = false;
 var maxdiscountseats = 999;
 var customtravellers = false;
+var deplegscount = [];
 
 
 function setupTickets() {
@@ -460,12 +461,34 @@ function getDepTimes() {
         var deptemplate = document.getElementById('deplist_tmpl').innerHTML;
         var data = {};
         data.legs = [];
+        console.log(deplegs);
         for (i in deplegs) {
+            deplegscount[i] = deplegs[i].times.length;
             for (t in deplegs[i].times) {
                 if (deplegs[i].times[t].hasOwnProperty('seatsleftstr') && deplegs[i].times[t].seatsleftstr.length > 0) {
                     deplegs[i].times[t].sep = ', ';
                 }
+                deplegs[i].times[t].skip = false;
+                if (i > 0) {
+                    var prevarr = (deplegs[i-1].times[t].stopsat.hour * 60) + deplegs[i-1].times[t].stopsat.min;
+                    var thisdep = (deplegs[i].times[t].hour * 60) + deplegs[i].times[t].min;
+                    if (thisdep < prevarr) {
+                        console.log("spacer "+deplegs[i].times[t]+" "+prevarr+" "+t+" "+deplegs[i].times.length);
+                        for (st = deplegs[i].times.length; st > t; st--) {
+                            deplegs[i].times[st] = deplegs[i].times[st-1];
+                        }
+                        deplegs[i].times[t] = {}
+                        deplegs[i].times[t].notbookable = true;
+                        deplegs[i].times[t].disabled = "disabled";
+                        deplegs[i].times[t].index = 999;
+                        deplegs[i].times[t].formatted = '----';
+                        deplegs[i].times[t].seatsleftstr = '--';
+                        deplegs[i].times[t].arr = '--'; 
+                        deplegs[i].times[t].skip = true;
+                    }
+                }
             }
+
             data.legs.push(Mustache.render(deptemplate, deplegs[i]));
         }
 
@@ -519,12 +542,16 @@ function depTimeChanged(evt) {
         var deptime = 0;
         var offset = 0;
         if (leg > 0) {
-            offset = (deplegs[leg-1].times.length - deplegs[leg].times.length);
+            offset = (deplegscount[leg-1] - deplegscount[leg]);
             deptime = (legselections[leg-1].hour * 60) + legselections[leg-1].min;
         }
 
         for (var ti = 0; ti < deplegs[leg].times.length; ti++) {
             var time = deplegs[leg].times[ti];
+            if (time.skip) {
+                offset --;
+                continue;
+            }
             if (time.notbookable) {
                 continue;
             }
