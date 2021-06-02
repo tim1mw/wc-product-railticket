@@ -1439,7 +1439,6 @@ function railticket_save_order_note() {
     }
 
     $notes = railticket_getpostfield('notes');
-echo "notes:".$notes;
     $bookingorder->set_notes($notes);
 
     railticket_show_bookingorder($bookingorder);
