@@ -243,13 +243,19 @@ function doStations() {
         specialsData = response['specials'];
 
         var stc = document.getElementById('stations_container');
-        if (response['specialonly'] == 0) {
+        if (!response['specialonly']) {
             renderFromStations();
+        } else {
+            var div = document.getElementById('fromstations_container');
+            div.innerHTML = '';
         }
 
-        renderSpecials();
-
         overridecode = response['override'];
+        var specialauto = renderSpecials(response['specialonly']);
+        if (specialauto) {
+            a_station = false;
+            return;
+        }
 
         if (a_station) {
             var stn = document.getElementById('fromstation'+a_station);
@@ -262,15 +268,26 @@ function doStations() {
     });
 }
 
-function renderSpecials() {
+function renderSpecials(specialonly) {
     var div = document.getElementById('railticket_specials');
     if (specialsData == false) {
         div.innerHTML = '';
         return;
-    } 
+    }
+
+    var title = "Or choose one of these special services:";
+    var note = "";
+    if (specialonly) {
+         title = "Special services:";
+         note = "<p class='railticket_help'>(Normal services are not yet on sale for this date.)</p>";
+    }
 
     var spltemplate = document.getElementById('specials_tmpl').innerHTML;
-    var data = {specials: specialsData};
+    var data = {
+        title: title,
+        note: note,
+        specials: specialsData
+    };
 
     div.innerHTML = Mustache.render(spltemplate, data);
 
@@ -278,6 +295,18 @@ function renderSpecials() {
     for (var i = 0; i < spls.length; i++) {
         spls[i].addEventListener('click', specialClicked);
     }
+
+    if (a_deptime) {
+        var parts = a_deptime.split(':');
+        if (parts[0] == 's') {
+            var ele = document.getElementById('special'+parts[1]);
+            ele.checked = true;
+            specialClicked();
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function renderFromStations() {

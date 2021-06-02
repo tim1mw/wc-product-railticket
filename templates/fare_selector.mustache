@@ -51,7 +51,7 @@
     {{#fares}}
     <tr>
         <td style='text-align:center'>{{tostation}}</td>
-        <td style='text-align:center'>{{name}}</td>
+        <td style='text-align:center'>{{name}} ({{code}})</td>
         <td style='text-align:center'>{{special}}</td>
         <td style='text-align:center'>{{guardonly}}</td>
         <td style='text-align:center'>{{journeytype}}</td>
@@ -92,7 +92,7 @@
         <td>Ticket Type</td>
         <td><select name='n_tickettype'>
         {{#tickettypes}}
-            <option value='{{code}}'>{{name}}</option>
+            <option value='{{code}}'>{{name}} ({{code}})</option>
         {{/tickettypes}}
         </select></td>
     </tr><tr>
