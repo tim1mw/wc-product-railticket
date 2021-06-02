@@ -802,6 +802,13 @@ function railticket_get_seatsummary() {
     foreach ($stations as $station) {
         railticket_show_station_summary($dateofjourney, $station, $timetable, true);
     }
+    ?>
+    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+        <input type='hidden' name='action' value='filterbookings' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Back to Services' style='font-size:x-large'/>
+    </form>
+    <?php
 }
 
 
