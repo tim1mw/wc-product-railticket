@@ -243,11 +243,11 @@ function doStations() {
         specialsData = response['specials'];
 
         var stc = document.getElementById('stations_container');
-        if (response['specialonly'] == 0) {
+        if (!response['specialonly']) {
             renderFromStations();
         }
 
-        renderSpecials();
+        renderSpecials(response['specialonly']);
 
         overridecode = response['override'];
 
@@ -262,15 +262,26 @@ function doStations() {
     });
 }
 
-function renderSpecials() {
+function renderSpecials(specialonly) {
     var div = document.getElementById('railticket_specials');
     if (specialsData == false) {
         div.innerHTML = '';
         return;
     } 
 
+    var title = "Or choose one of these special services:";
+    var note = "";
+    if (specialonly) {
+         title = "Special services:";
+         note = "<p class='railticket_help'>(Normal services are not yet on sale for this date.)</p>";
+    }
+
     var spltemplate = document.getElementById('specials_tmpl').innerHTML;
-    var data = {specials: specialsData};
+    var data = {
+        title: title,
+        note: note,
+        specials: specialsData
+    };
 
     div.innerHTML = Mustache.render(spltemplate, data);
 
