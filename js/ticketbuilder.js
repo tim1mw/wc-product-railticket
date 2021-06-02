@@ -250,8 +250,12 @@ function doStations() {
             div.innerHTML = '';
         }
 
-        renderSpecials(response['specialonly']);
         overridecode = response['override'];
+        var specialauto = renderSpecials(response['specialonly']);
+        if (specialauto) {
+            a_station = false;
+            return;
+        }
 
         if (a_station) {
             var stn = document.getElementById('fromstation'+a_station);
@@ -269,7 +273,7 @@ function renderSpecials(specialonly) {
     if (specialsData == false) {
         div.innerHTML = '';
         return;
-    } 
+    }
 
     var title = "Or choose one of these special services:";
     var note = "";
@@ -291,6 +295,18 @@ function renderSpecials(specialonly) {
     for (var i = 0; i < spls.length; i++) {
         spls[i].addEventListener('click', specialClicked);
     }
+
+    if (a_deptime) {
+        var parts = a_deptime.split(':');
+        if (parts[0] == 's') {
+            var ele = document.getElementById('special'+parts[1]);
+            ele.checked = true;
+            specialClicked();
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function renderFromStations() {
