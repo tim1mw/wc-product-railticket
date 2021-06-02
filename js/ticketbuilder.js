@@ -245,10 +245,12 @@ function doStations() {
         var stc = document.getElementById('stations_container');
         if (!response['specialonly']) {
             renderFromStations();
+        } else {
+            var div = document.getElementById('fromstations_container');
+            div.innerHTML = '';
         }
 
         renderSpecials(response['specialonly']);
-
         overridecode = response['override'];
 
         if (a_station) {
