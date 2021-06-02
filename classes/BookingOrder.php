@@ -285,6 +285,16 @@ class BookingOrder {
         return $this->notes;
     }
 
+    public function set_notes($text) {
+        global $wpdb;
+        if ($this->manual) {
+            $wpdb->update("{$wpdb->prefix}wc_railticket_manualbook", array('notes' => $text), array('id' => $this->orderid));
+        } else {
+            $wpdb->update("{$wpdb->prefix}posts", array('post_excerpt' => $text), array('ID' => $this->orderid));
+        }
+        $this->notes = $text;
+    }
+
     public function get_created_by($format = false) {
         if ($format) {
             if (!$this->manual) {
