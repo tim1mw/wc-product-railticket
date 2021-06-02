@@ -46,9 +46,20 @@
 
     <div id='railticket_overridebays'></div>
 
+    <h3>Edit Order Notes</h3>
+    <form action="" method="post">
+        <input type="hidden" name="action" value="saveordernote">
+        <input type="hidden" name="orderid" value="{{orderid}}">
+        <textarea name='notes' cols='40' rows='5'>{{notes}}</textarea>
+        <input type="submit" value="Save Notes">
+    </form>
+
+    <hr />
+
     <form action="" method="post" id='railticket_backtoview'>
         <input type="hidden" name="action" value="showorder">
         <input type="hidden" name="orderid" value="{{orderid}}">
         <input type="submit" value="Back to {{orderid}} full order view">
     </form>
+
 </div>

@@ -105,6 +105,9 @@ function railticket_view_bookings() {
             case 'deletemanual';
                 railticket_delete_manual_order();
                 break;
+            case 'saveordernote':
+                railticket_save_order_note();
+                break;
             case 'editorderbook';
                 railticket_show_edit_order();
                 break;
@@ -799,6 +802,13 @@ function railticket_get_seatsummary() {
     foreach ($stations as $station) {
         railticket_show_station_summary($dateofjourney, $station, $timetable, true);
     }
+    ?>
+    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+        <input type='hidden' name='action' value='filterbookings' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Back to Services' style='font-size:x-large'/>
+    </form>
+    <?php
 }
 
 
@@ -1222,7 +1232,7 @@ function railticket_show_order() {
 }
 
 function railticket_show_order_main($orderid) {
-    global $rtmustache, $wpdb;
+    global $wpdb;
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
     if (!$bookingorder) {
@@ -1240,7 +1250,11 @@ function railticket_show_order_main($orderid) {
         railticket_summary_selector();
         return;
     }
+    railticket_show_bookingorder($bookingorder);
+}
 
+function railticket_show_bookingorder($bookingorder) {
+    global $rtmustache;
     $alldata = railticket_get_booking_order_data($bookingorder);
     $alldata['extrabuttons'] = '';
 
@@ -1415,11 +1429,26 @@ function railticket_show_edit_order() {
         'orderid' => $orderid,
         'ajaxurl' => admin_url( 'admin-ajax.php', 'relative' ),
         'defaultdata' => json_encode($bkdata),
-        'tripdata' => $tripdata
+        'tripdata' => $tripdata,
+        'notes' => $bookingorder->get_notes()
     );
     $template = $rtmustache->loadTemplate('editorder');
     echo $template->render($alldata);
     echo file_get_contents(dirname(__FILE__).'/templates/edit-templates.html');
+}
+
+function railticket_save_order_note() {
+    $orderid = railticket_getpostfield('orderid');
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
+    if (!$bookingorder) {
+        echo "Invalid order ID ".$orderid;
+        return;
+    }
+
+    $notes = railticket_getpostfield('notes');
+    $bookingorder->set_notes($notes);
+
+    railticket_show_bookingorder($bookingorder);
 }
 
 function railticket_get_moveorderdata() {
