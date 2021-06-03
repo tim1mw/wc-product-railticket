@@ -127,7 +127,10 @@ class TicketBuilder {
     public function render() {
 
         $ua = htmlentities($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, 'UTF-8');
-        if (preg_match('~MSIE|Internet Explorer~i', $ua) || (strpos($ua, 'Trident/7.0; rv:11.0') !== false)) {
+        if (preg_match('~MSIE|Internet Explorer~i', $ua) ||
+            strpos($ua, 'Trident/7.0; rv:11.0') !== false ||
+            strpos($ua, 'Trident/7.0; Touch; rv:11.0') !== false ||
+            strpos($ua, 'Trident/7.0; .NET4.0C; .NET4.0E;') !== false) {
             return "<p>Sorry, the ticket booking system isn't supported on Internet Explorer. If you are using Windows 10, then please switch to ".
                 "the Microsoft Edge browser which has replaced Internet Explorer to continue your purchase. Users of older Windows versions ".
                 "will need to use Chrome or Firefox.</p>";
