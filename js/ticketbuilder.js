@@ -830,6 +830,7 @@ function allocateTickets() {
     td.allocated = [];
     td.total = 0;
     td.totalcustom = 0;
+    var countcustom = 0;
     for (i in ticketsAllocated) {
         var tkt = ticketdata.prices[i];
         td.total += parseFloat(tkt.price) * ticketsAllocated[i];
@@ -837,6 +838,7 @@ function allocateTickets() {
         var parts = i.split('/');
         if (parts.length == 2) {
             td.totalcustom += parseFloat(tkt.price) * ticketsAllocated[i];
+            countcustom++;
         }
 
         var t = {};
@@ -868,7 +870,10 @@ function allocateTickets() {
     td.total = formatter.format(td.total);
     td.supplement = formatter.format(td.supplement);
 
-    if (customtravellers && td.totalcustom == 0) {
+    console.log(customtravellers)
+    console.log(td.totalcustom);
+    
+    if (customtravellers && countcustom == 0) {
         td.nodiscounttkts = "<p class='railticketinfo'>Warning: You have applied a discount code to your selection, "+
             "but haven't chosen any options that take advantage of the discount."+
             " Please add at least one discounted traveller to your choices if you wish to use your discount.</p>";
