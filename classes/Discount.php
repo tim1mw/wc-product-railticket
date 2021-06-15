@@ -9,7 +9,7 @@ class Discount extends DiscountType {
         $this->data = $data;
         $this->data->rules = json_decode($this->data->rules);
         $this->data->customtype = (bool) $this->data->customtype;
-        $this->data->triptype = (bool) $this->data->triptype;
+        $this->data->triptype = $this->data->triptype;
         $this->data->shownotes = (bool) $this->data->shownotes;
         $this->data->single = (bool) $this->data->single;
         $this->data->disabled = (bool) $this->data->disabled;
@@ -58,6 +58,7 @@ class Discount extends DiscountType {
                     
                 break;
             case 'any':
+                $this->valid = true;
                 break;
         }
     }

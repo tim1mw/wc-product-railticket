@@ -10,7 +10,7 @@ class DiscountType {
         $this->data = $data;
         $this->data->rules = json_decode($this->data->rules);
         $this->data->customtype = (bool) $this->data->customtype;
-        $this->data->triptype = (bool) $this->data->triptype;
+        $this->data->triptype = $this->data->triptype;
         $this->data->shownotes = (bool) $this->data->shownotes;
     }
 
