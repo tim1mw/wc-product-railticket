@@ -869,9 +869,6 @@ function allocateTickets() {
 
     td.total = formatter.format(td.total);
     td.supplement = formatter.format(td.supplement);
-
-    console.log(customtravellers)
-    console.log(td.totalcustom);
     
     if (customtravellers && countcustom == 0) {
         td.nodiscounttkts = "<p class='railticketinfo'>Warning: You have applied a discount code to your selection, "+
