@@ -278,7 +278,7 @@ function renderSpecials(specialonly) {
     var title = "Or choose one of these special services:";
     var note = "";
     if (specialonly) {
-         title = "Special services:";
+         title = "Special services, click/tap to select:";
          note = "<p class='railticket_help'>(Normal services are not yet on sale for this date.)</p>";
     }
 
