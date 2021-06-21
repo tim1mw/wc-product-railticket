@@ -649,6 +649,7 @@ function renderTicketSelector() {
 
     var travellers = "";
     var nTicketSelections = {};
+    var sep = false;
     for (i in ticketdata.travellers) {
         var value = '';
         var code = ticketdata.travellers[i].code;
@@ -658,6 +659,11 @@ function renderTicketSelector() {
         }
         if (ticketdata.travellers[i].code.indexOf('/') > -1) {
             ticketdata.travellers[i].extracss = 'railticket_travellers_discount';
+        }
+
+        if (ticketdata.travellers[i].tkoption == 1 && !sep) {
+            ticketdata.travellers[i].sep = "<hr/><h4>Additional Options</h4>";
+            sep = true;
         }
     }
 
@@ -798,7 +804,7 @@ function allocateTickets() {
         if (tkt !== false) {
             if (tkt == 2) {
                 allocationTotal --;
-                summary.innerHTML='<h4>This type of ticket cannot be bought alone.</h4>';
+                summary.innerHTML='<h4>This type of ticket or option cannot be chosen alone.</h4>';
                 return;
             }
             

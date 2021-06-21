@@ -1,6 +1,10 @@
 <h3>Manage Travellers</h3>
 
 <p style='font-weight:bold;'>Warning: Deleting travellers that are used in active ticket types is really bad idea. There will be a sanity check in this in due course....</p>
+
+<p>Ticket options are options that need to be shown alongside the travellers (in a sperate options list below)
+and work the same way in terms of set up, but are not actually "normal" travellers, eg an addon food option for a BBQ train.</p>
+
 <form method='post' action='{{actionurl}}'>
 <input type='hidden' name='action' value='updatetra' />
 <input type='hidden' name='ids' value='{{ids}}' />
@@ -11,6 +15,7 @@
         <th>Description</th>
         <th>Seats</th>
         <th>Guard Only</th>
+        <th>Ticket Option</th>
     </tr>
     {{#travellers}}
     <tr>
@@ -19,6 +24,7 @@
         <td><input type='text' name='description_{{id}}' size='20' value='{{description}}' /></td>
         <td><input type='number' name='seats_{{id}}' value='{{seats}}' size='2' max='99' min='0' /></td>
         <td style='text-align:center;'><input type='checkbox' name='guardonly_{{id}}' value='1' {{guardonly}} /></td>
+        <td style='text-align:center;'><input type='checkbox' name='tkoption_{{id}}' value='1' {{tkoption}} /></td>
         <td><a href='?action=deletetra&page=railticket-travellers&id={{id}}'>Delete</a></td>
     </tr>
     {{/travellers}}
@@ -46,6 +52,9 @@
     </tr><tr>
         <td>Guard Only</td>
         <td><input type='checkbox' name='guardonly' value='1' /></td>
+    </tr><tr>
+        <td>Ticket Option</td>
+        <td><input type='checkbox' name='tkoption' value='1' /></td>
     </tr>
 </table>
 <br />

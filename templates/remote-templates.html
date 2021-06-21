@@ -138,6 +138,7 @@
 <script id="travellers_tmpl" type="x-tmpl-mustache">
 {{#travellers}}
 <div class='railticket_travellers'>
+{{{sep}}}
     <div class='{{extracss}} railticket_travellers_numbers woocommerce'><div class='quantity'>
         <input type='number' id='q_{{code}}' name='q_{{code}}'
             class='input-text qty text' min='0' max='{{max}}' value='{{value}}'>
@@ -150,7 +151,7 @@
 
 <script id="tickets_tmpl" type="x-tmpl-mustache">
 <div class='railticket_travellers_table_container'>
-    <h4>My Tickets</h4>
+    <h4>My Choices</h4>
     {{{minstr}}}
     <table class='railticket_travellers_table'>
     {{#allocated}}
