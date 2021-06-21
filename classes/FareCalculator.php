@@ -139,7 +139,7 @@ class FareCalculator {
         return $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$code."'");
     }
 
-    public static function add_traveller($code, $name, $description, $seats, $guardonly) {
+    public static function add_traveller($code, $name, $description, $seats, $guardonly, $tkoption) {
         global $wpdb;
         $code = self::clean_code($code);
 
@@ -149,7 +149,8 @@ class FareCalculator {
         }
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_travellers",
-            array('code' => $code, 'name' => $name, 'description' => $description, 'seats' => $seats, 'guardonly' => $guardonly));
+            array('code' => $code, 'name' => $name, 'description' => $description,
+                'seats' => $seats, 'guardonly' => $guardonly, 'tkoption' => $tkoption));
 
         return true;
     }
@@ -160,10 +161,10 @@ class FareCalculator {
         return str_replace(' ', '_', $code);
     }
 
-    public static function update_traveller($id, $name, $description, $seats, $guardonly) {
+    public static function update_traveller($id, $name, $description, $seats, $guardonly, $tkoption) {
         global $wpdb;
         $wpdb->update("{$wpdb->prefix}wc_railticket_travellers",
-            array('name' => $name, 'description' => $description, 'seats' => $seats, 'guardonly' => $guardonly),
+            array('name' => $name, 'description' => $description, 'seats' => $seats, 'guardonly' => $guardonly, 'tkoption' => $tkoption),
             array('id' => $id));
     }
 
@@ -406,8 +407,19 @@ class FareCalculator {
             ksort($dtravellers);
             $tickets->travellers = array_merge($dtravellers, $tickets->travellers);
         }
-        // The code was put in the index to make life easy for discounts, but the JS doesn't expect this, so strip it out.
-        $tickets->travellers = array_values($tickets->travellers);
+
+        // Fix so that traveller options are sorted to the bottom of the list. There ought to be a better way to do this...
+        $travellers = array();
+        $tkopts = array();
+        foreach ($tickets->travellers as $tra) {
+            if ($tra->tkoption == 1) {
+                $tkopts[] = $tra;
+            } else {
+                $travellers[] = $tra;
+            }
+        }
+        $tickets->travellers = array_merge($travellers, $tkopts);
+
         return $tickets;
     }
 

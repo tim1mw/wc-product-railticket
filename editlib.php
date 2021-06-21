@@ -1763,7 +1763,8 @@ function railticket_travellers() {
                 $description = railticket_getpostfield('description');
                 $seats = railticket_getpostfield('seats');
                 $guardonly = railticket_gettfpostfield('guardonly');
-                $res = \wc_railticket\FareCalculator::add_traveller($code, $name, $description, $seats, $guardonly);
+                $tkoption = railticket_gettfpostfield('guardonly');
+                $res = \wc_railticket\FareCalculator::add_traveller($code, $name, $description, $seats, $guardonly, $tkoption);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -1785,6 +1786,12 @@ function railticket_travellers() {
         } else {
             $tra->guardonly = '';
         }
+        if ($tra->tkoption) {
+            $tra->tkoption = 'checked';
+        } else {
+            $tra->tkoption = '';
+        }
+
         $alldata->ids[] = $tra->id;
     }
     $alldata->ids = implode(',', $alldata->ids);
@@ -1801,7 +1808,8 @@ function railticket_update_travellers() {
         $description = railticket_getpostfield('description_'.$id);
         $seats = railticket_getpostfield('seats_'.$id);
         $guardonly = railticket_gettfpostfield('guardonly_'.$id);
-        \wc_railticket\FareCalculator::update_traveller($id, $name, $description, $seats, $guardonly);
+        $tkoption = railticket_gettfpostfield('tkoption_'.$id);
+        \wc_railticket\FareCalculator::update_traveller($id, $name, $description, $seats, $guardonly, $tkoption);
     }
 }
 
