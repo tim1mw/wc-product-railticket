@@ -1,7 +1,8 @@
 <h1>Manage Specials</h1>
 <br />
-<form method='post' action='{{{actionurl}}}'>
-    <input type='hidden' name='action' value='showyearspecials' />    
+<form method='get' action='{{{actionurl}}}'>
+    <input type='hidden' name='page' value='railticket-specials' />
+    <input type='hidden' name='action' value='managespecials' />
     <table><tr>
         <th>Year</th>
         <td>{{{years}}}</td>
@@ -26,7 +27,7 @@
         <td style='text-align:center;'>{{fromstation}}</td>
         <td style='text-align:center;'>{{tostation}}</td>
         <td style='text-align:center;'>{{onsale}}</td>
-        <td><a href=''>Edit</a>
+        <td><!-- <a href=''>Edit --></a>
     </tr>
     {{/specials}}
 </table>

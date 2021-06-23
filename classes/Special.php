@@ -14,10 +14,20 @@ class Special {
             "datefrom <= '".$this->data->date."' AND dateto >= '".$this->data->date."'");
     }
 
+    public static function get_specials_year($year, $dataonly = false) {
+        global $wpdb;
+        return self::get_specials_sql("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date >= '".$year."-01-01' AND date <= '".$year."-12-31'", $dataonly);
+    }
+
     public static function get_specials($date, $dataonly = false) {
         global $wpdb;
+        return self::get_specials_sql("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$date."'", $dataonly);
+    }
 
-        $specials = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$date."'");
+    private static function get_specials_sql($sql, $dataonly = false) {
+        global $wpdb;
+
+        $specials = $wpdb->get_results($sql);
 
         if (count($specials) == 0) {
              return false;   
@@ -69,6 +79,15 @@ class Special {
         return "s:".$this->data->id;
     }
 
+    public function get_date($format = false) {
+        if (!$format) {
+            return $this->data->date;
+        }
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $jdate = \DateTime::createFromFormat('Y-m-d', $this->data->date, $railticket_timezone);
+        return railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+    }
+
     public function get_name() {
         return $this->data->name;
     }
@@ -89,7 +108,14 @@ class Special {
         return Station::get_station($this->data->tostation, $this->ttrevision);
     }
 
-    public function on_sale() {
+    public function on_sale($format = false) {
+        if ($format) {
+            if ($this->data->onsale) {
+                return __('Yes');
+            } else {
+                return __('No');
+            }
+        }
         return $this->data->onsale;
     }
 
