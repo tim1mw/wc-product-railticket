@@ -39,6 +39,7 @@ function railticket_add_pages() {
         '', 30);
     add_submenu_page('railticket-top-level-handle', "Settings", "Settings", 'manage_options', 'railticket-options', 'railticket_options');
     add_submenu_page('railticket-top-level-handle', "Bookable Days", "Bookable Days", 'manage_options', 'railticket-bookable-days', 'railticket_bookable_days');
+    add_submenu_page('railticket-top-level-handle', "Specials", "Specials", 'manage_options', 'railticket-specials', 'railticket_manage_specials');
     add_submenu_page('railticket-top-level-handle', "Coach Types", "Coach Types", 'manage_options', 'railticket-coach-types', 'railticket_coach_types');
     add_submenu_page('railticket-top-level-handle', "Travellers", "Travellers", 'manage_options', 'railticket-travellers', 'railticket_travellers');
     add_submenu_page('railticket-top-level-handle', "Ticket Types", "Ticket Types", 'manage_options', 'railticket-tickets', 'railticket_tickets');
@@ -114,6 +115,9 @@ function railticket_view_bookings() {
             case 'rebookall':
             case 'rebookservice':
                 railticket_rebook($_REQUEST['action']);
+                break;
+            case 'managespecials':
+                railticket_manage_specials();
                 break;
             case 'filterbookings':
             default:
@@ -2233,4 +2237,37 @@ function railticket_processrebookentry($bookableday, &$alldata, &$bookings, $i) 
     }
 
     return $count;
+}
+
+function railticket_manage_specials() {
+    global $rtmustache;
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+
+    $currentyear = intval(date("Y"));
+
+    if (array_key_exists('year', $_REQUEST)) {
+        $chosenyear = sanitize_text_field($_REQUEST['year']);
+    } else {
+        $chosenyear = $currentyear;
+    }
+
+    $alldata = new \stdclass();
+    $alldata->years = wc_railticket_getyearselect($currentyear);
+    $alldata->actionurl = railticket_get_page_url();
+    $alldata->specials = array();
+    $specials = \wc_railticket\Special::get_specials_year($chosenyear);
+
+    foreach ($specials as $sp) {
+        $item = new \stdclass();
+        $item->date = $sp->get_date(true);
+        $item->name = $sp->get_name();
+        $item->fromstation = $sp->get_from_station()->get_name();
+        $item->tostation = $sp->get_to_station()->get_name();
+        $item->onsale = $sp->on_sale(true);
+        $alldata->specials[] = $item;
+    }
+
+    $template = $rtmustache->loadTemplate('manage_specials');
+    echo $template->render($alldata);
 }

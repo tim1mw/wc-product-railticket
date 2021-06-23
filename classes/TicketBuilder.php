@@ -31,6 +31,10 @@ class TicketBuilder {
         }
 
         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
+        if ($this->bookableday == false) {
+            throw new TicketException("Sorry, you are trying to book a service that is not current on sale.");
+        }
+
         $this->dateoftravel = $dateoftravel;
 
         /* There should only be one leg for a special, so check the first leg for the special indicator **/
