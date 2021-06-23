@@ -79,8 +79,14 @@ function railTicketAjax(datareq, spinner, callback) {
     request.open('POST', ajaxurl, true);
     request.onload = function () {
         if (request.status >= 200 && request.status < 400) {
-            callback(JSON.parse(request.responseText).data);
+            var data = JSON.parse(request.responseText).data;
             var spinnerdiv = document.getElementById('pleasewait');
+            if (data.fatalerror) {
+                alert(data.fatalerror);
+                window.document.location = window.document.location;
+            } else {
+                callback(data);
+            }
             spinnerdiv.style.display = 'none';
         }
     };
