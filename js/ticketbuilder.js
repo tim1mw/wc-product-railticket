@@ -305,6 +305,7 @@ function renderSpecials(specialonly) {
     if (a_deptime) {
         var parts = a_deptime.split(':');
         if (parts[0] == 's') {
+            a_deptime = false;
             var ele = document.getElementById('special'+parts[1]);
             ele.checked = true;
             specialClicked();
