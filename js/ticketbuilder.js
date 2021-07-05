@@ -245,7 +245,7 @@ function setBookingDate(bdate) {
     setChosenDate("Date of Travel", bdate);
     overridevalid = false;
     ticketdata = false;
-    deplegs = false,
+    deplegs = false;
     doStations();
 }
 
