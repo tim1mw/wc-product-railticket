@@ -20,8 +20,6 @@ function setupEditor() {
         specials_keys[specials[i].id] = i;
     }
 
-    console.log(data.specials);
-
     check_all_dep_times();
 
     for (i in coaches) {
@@ -228,17 +226,37 @@ function processCoachSet(num, set, reserve) {
         c.selectedcoaches.push(tc);
     }
 
-    var stats = getCoachSetStats(set);
-    c.seats = stats.seats;
-    c.bays = formatBays(stats.bays);
+    if (data.allocateby == 'bay') {
+        var stats = getCoachBayStats(set);
+        c.seats = stats.seats;
+        c.bays = formatBays(stats.bays);
+        for (i in reserve) {
+            var type = i.split('_');
+            var r = {};
+            r.desc = type[0]+"&nbsp;Seat&nbsp;"+baytypes[type[1]];
+            r.value = reserve[i];
+            r.key = i;
+            r.max = stats.bays[i];
+            c.reserve.push(r);
+        }
+    } else {
+        var stats = getCoachSeatStats(set);
+        c.seats = stats.seats;
+        c.maxseats = stats.maxseats;
+        c.priority = stats.priority;
 
-    for (i in reserve) {
-        var type = i.split('_');
         var r = {};
-        r.desc = type[0]+"&nbsp;Seat&nbsp;"+baytypes[type[1]];
-        r.value = reserve[i];
-        r.key = i;
-        r.max = stats.bays[i];
+        r.desc = "Normal Seats";
+        r.value = reserve['1_normal'];
+        r.key = '1_normal';
+        r.max = stats.seats;
+        c.reserve.push(r);
+
+        var r = {};
+        r.desc = "Wheelchair Spaces";
+        r.value = reserve['1_priority'];
+        r.key = '1_priority';
+        r.max = stats.priority;
         c.reserve.push(r);
     }
 
@@ -258,10 +276,30 @@ function formatBays(bays) {
     return data;
 }
 
-function getCoachSetStats(coachset) {
-    var data = {
+function getCoachSeatStats(coachset) {
+    var stats = {
         "seats": 0,
-        "bays": {}
+        "bays": {},
+        "maxseats": 0,
+        "priority": 0
+    };
+
+    for (i in coachset) {
+        var coachdata = coaches[i];
+        stats.seats += parseInt(coachdata.capacity)*coachset[i];
+        stats.maxseats += parseInt(coachdata.maxcapacity)*coachset[i];
+        stats.priority += parseInt(coachdata.priority)*coachset[i];
+    }
+
+    return stats;
+}
+
+function getCoachBayStats(coachset) {
+    var stats = {
+        "seats": 0,
+        "bays": {},
+        "maxseats": false,
+        "priority": false
     };
     for (i in coachset) {
         var coachdata = coaches[i];
@@ -274,16 +312,16 @@ function getCoachSetStats(coachset) {
                 baykey = bay.baysize+'_normal';
             }
 
-            if (data.bays.hasOwnProperty(baykey)) {
-                data.bays[baykey]+=bay.quantity*coachset[i];
+            if (stats.bays.hasOwnProperty(baykey)) {
+                stats.bays[baykey]+=bay.quantity*coachset[i];
             } else {
-                data.bays[baykey]=bay.quantity*coachset[i];
+                stats.bays[baykey]=bay.quantity*coachset[i];
             }
-            data.seats += (bay.quantity*bay.baysize)*coachset[i];
+            stats.seats += (bay.quantity*bay.baysize)*coachset[i];
         }
     }
 
-    return data;
+    return stats;
 }
 
 function processSelect(sdata, selected) {
@@ -445,8 +483,12 @@ function coachSetReserve(evt) {
 }
 
 function validateReserve(setid) {
+    if (data.allocateby == 'seat') {
+        return;
+    }
+
     var coachset = getCoachSet(setid);
-    var bays = getCoachSetStats(coachset).bays;
+    var bays = getCoachBayStats(coachset).bays;
     var reserve = getReserve(setid);
 
     // Check all the bays in the current reserve exist in the set and remove those that don't
@@ -500,6 +542,7 @@ function setSPOpt(evt) {
             break;
         case 'sp_allocateby':
             data.allocateby = evt.target.value;
+            convertAllocateType();
             break;
     }
     renderEditorCoachSets();
@@ -507,6 +550,28 @@ function setSPOpt(evt) {
     renderEditorData();
 }
 
+function convertAllocateType() {
+    if (data.allocateby == 'bay') {
+        if (data.daytype == 'simple') {
+            data.reserve = {};
+            validateReserve(0);
+        } else {
+            for (i in data.coachsets) {
+                var parts = i.split('_');
+                data.coachsets[i].reserve = {};
+                validateReserve(parts[1]);
+            }
+        }
+    } else {
+        if (data.daytype == 'simple') {
+           data.reserve = {"1_normal" : 0, "1_priority" : 0};
+        } else {
+            for (i in data.coachsets) {
+                data.coachsets[i].reserve = {"1_normal" : 0, "1_priority" : 0};
+            }
+        }
+    }
+}
 
 function convertDayType() {
     // Detect what we have rather than relying on the daytype so we don't loose too much when switching

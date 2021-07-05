@@ -91,12 +91,20 @@ class CoachManager {
 
     public static function format_bay($bay, $num) {
         $parts = explode('_', $bay);
-        switch ($parts[1]) {
-            case 'normal': $name = $parts[0].' '.__('Seat Bay', 'wc_railticket'); break;
-            case 'priority': $name = $parts[0].' '.__('Seat Wheelchair Bay', 'wc_railticket'); break;
-            default: $name = $i; break;
-        }
 
+        if ($parts[0] == 1) {
+            switch ($parts[1]) {
+                case 'normal': $name = __('Seats', 'wc_railticket'); break;
+                case 'priority': $name = __('Wheelchair Spaces', 'wc_railticket'); break;
+                default: $name = $bay; break;
+            }
+        } else {
+            switch ($parts[1]) {
+                case 'normal': $name = $parts[0].' '.__('Seat Bay', 'wc_railticket'); break;
+                case 'priority': $name = $parts[0].' '.__('Seat Wheelchair Bay', 'wc_railticket'); break;
+                default: $name = $bay; break;
+            }
+        }
         return $num."x ".$name;
     }
 
@@ -210,10 +218,10 @@ class CoachManager {
                 } else {
                     $r->reserve = false;
                 }
-                $r->bays = self::get_coachset_bays($parsed->coachset);
+                $r->bays = self::get_coachset_bays($parsed->coachset, $parsed->allocateby);
                 break;
             case 'pertrain':
-                $r->bays = self::process_set_allocations($parsed);
+                $r->bays = self::process_set_allocations($parsed, $parsed->allocateby);
                 $r->reserve = self::process_set_reserve($parsed);
                 break;
         }
@@ -230,11 +238,11 @@ class CoachManager {
         return $data;
     }
 
-    private static function process_set_allocations($parsed) {
+    private static function process_set_allocations($parsed, $allocateby) {
         $data = new \stdclass();
         $data->coachsets = array();
         foreach ($parsed->coachsets as $key => $set) {
-            $data->coachsets[$key] = self::get_coachset_bays($set->coachset, false);
+            $data->coachsets[$key] = self::get_coachset_bays($set->coachset, $allocateby);
         }
         $data->up = $parsed->up;
         $data->down = $parsed->down;
@@ -244,11 +252,21 @@ class CoachManager {
         return $data;
     }
 
-    private static function get_coachset_bays($coachset) {
+    private static function get_coachset_bays($coachset, $allocateby) {
         global $wpdb;
         $coachset = (array) $coachset;
         $data = array();
+
         foreach ($coachset as $coach => $count) {
+
+            if ($allocateby == 'seat') {
+                $coach = $wpdb->get_row("SELECT capacity,maxcapacity,priority FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$coach."'");
+                $data['1_normal'] += $coach->capacity * $count;
+                $data['1_priority'] += $coach->priority * $count;
+                $data['1_max'] += $coach->maxcapacity * $count;
+                continue;
+            }
+
             $comp = $wpdb->get_var("SELECT composition FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$coach."'");
             $bays = json_decode(stripslashes($comp));
             foreach ($bays as $bay) {
