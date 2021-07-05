@@ -98,8 +98,13 @@ function railTicketAjax(datareq, spinner, callback) {
     data.append('fromstation', getFormValue('fromstation'));
 
     if (specialSelected) {
-        var times = ["s:"+getFormValue('specials')];
-        data.append('times', JSON.stringify(times));
+        var spid = getFormValue('specials');
+        if (spid === false) {
+            data.append('times', JSON.stringify([]));
+        } else {
+            var times = ["s:"+spid];
+            data.append('times', JSON.stringify(times));
+        }
     } else if (deplegs) {
         var times = [];
         for (var l = 0; l < deplegs.length; l++) {
@@ -239,6 +244,8 @@ function discountCodeBox(evt) {
 function setBookingDate(bdate) {
     setChosenDate("Date of Travel", bdate);
     overridevalid = false;
+    ticketdata = false;
+    deplegs = false,
     doStations();
 }
 
