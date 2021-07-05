@@ -189,6 +189,7 @@ class TicketBuilder {
         $alldata->javascript = $this->get_javascript();
         $alldata->datepick = $this->get_datepick();
         $alldata->ticket_opts = array();
+        $alldata->termssummary = get_option('wc_product_railticket_termscomment');
 
         $disabled = new \stdclass();
         $disabled->name = 'disabledrequest';

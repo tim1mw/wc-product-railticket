@@ -22,6 +22,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_releaseinventory');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_sameservicereturn');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termspage');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termscomment');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
@@ -188,6 +189,10 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_termspage">Ticket Terms Page</label></th>
             <td><input type="text" size='60' id="wc_product_railticket_termspage" name="wc_product_railticket_termspage" value="<?php echo get_option('wc_product_railticket_termspage'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_termscomment">Ticket Terms Summary</label></th>
+            <td><textarea rows='4' cols='60' id="wc_product_railticket_termscomment" name="wc_product_railticket_termscomment"><?php echo get_option('wc_product_railticket_termscomment'); ?></textarea></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overrun period (minutes)</label></th>
