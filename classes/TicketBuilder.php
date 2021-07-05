@@ -399,8 +399,10 @@ class TicketBuilder {
     }
 
     public function get_ticket_data() {
-        return $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
+        $td = $this->bookableday->fares->get_tickets($this->fromstation, $this->tostation, $this->journeytype,
             $this->is_guard(), $this->localprice, $this->discount, $this->special);
+        $td->minprice = $this->bookableday->get_min_price();
+        return $td;
     }
 
     public function get_bookable_trains() {
@@ -570,7 +572,8 @@ class TicketBuilder {
         }  
 
         $pricedata = $this->bookableday->fares->ticket_allocation_price($this->ticketsallocated, $this->ticketselections,
-            $this->fromstation, $this->tostation, $this->journeytype, $this->localprice, $this->nominimum, $this->discount, $this->special);
+            $this->fromstation, $this->tostation, $this->journeytype, $this->localprice, $this->nominimum, $this->discount,
+            $this->special, $this->bookableday->get_min_price());
 
         $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);
 
@@ -644,18 +647,12 @@ class TicketBuilder {
         wp_enqueue_script('railticket_script_mustache');
         wp_enqueue_script('railticket_script_builder');
 
-        $minprice = 'false';
-        $opt = get_option('wc_product_railticket_min_price');
-        if (strlen($opt) > 0) {
-            $minprice = $opt;
-        }
         
         $str = file_get_contents(dirname(__FILE__).'/../templates/remote-templates.html').
             "\n<script type='text/javascript'>\n".
             "var ajaxurl = '".admin_url( 'admin-ajax.php', 'relative' )."';\n".
             "var today = '".$this->today->format('Y-m-d')."'\n".
             "var tomorrow = '".$this->tomorrow->format('Y-m-d')."'\n".
-            "var minprice = ".$minprice."\n".
             "var dateFormat = '".get_option('wc_railticket_date_format')."';\n";
 
         $str .= $this->preset_javascript('a_dateofjourney');

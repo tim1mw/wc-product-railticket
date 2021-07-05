@@ -424,7 +424,7 @@ class FareCalculator {
     }
 
     public function ticket_allocation_price($ticketsallocated, $ticketselections, Station $from, Station $to, $journeytype, $localprice,
-        $nominimum, $discount, $special) {
+        $nominimum, $discount, $special, $mprice) {
         if ($localprice) {
             $pfield = 'localprice';
         } else {
@@ -489,8 +489,7 @@ class FareCalculator {
             return $pdata;
         }
 
-        $mprice = get_option('wc_product_railticket_min_price');
-        if (strlen($mprice) > 0 && $pdata->price < $mprice) {
+        if ($mprice > 0 && $pdata->price < $mprice) {
             // Deal with the special case of a 100% discount on some custom tickets, where there are also paying travellers
             // that don't need seats (aka dogs). We don't charge the supplement just for a dog.
             if ($discount && $customseats > 0 && $normalseats == 0 && $discountpricetotal == 0) {
