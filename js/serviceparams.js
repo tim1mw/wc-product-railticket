@@ -230,6 +230,9 @@ function processCoachSet(num, set, reserve) {
         var stats = getCoachBayStats(set);
         c.seats = stats.seats;
         c.bays = formatBays(stats.bays);
+        c.style = 'display:none;';
+        c.maxseats = 'n/a';
+        c.priority = 'n/a';
         for (i in reserve) {
             var type = i.split('_');
             var r = {};
