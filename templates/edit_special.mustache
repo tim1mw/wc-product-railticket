@@ -1,1 +1,48 @@
- 
+<h1>{{title}}</h1>
+
+<form method='post' action='{{{actionurl}}}'>
+    <input type='hidden' name='page' value='railticket-specials' />
+    <input type='hidden' name='action' value='{{action}}' />
+    <input type='hidden' name='id' value='{{id}}' />
+
+    <table>
+        <tr><th style='text-align:right'>Date</th><td><input type='date' name='date' value='{{date}}' required /></td></tr>
+        <tr><th style='text-align:right'>Name</th><td><input type='name' name='name' value='{{name}}' required /></td></tr>
+        <tr><th style='text-align:right'>Name</th><td><textarea cols='60' rows='4' name='description' />{{description}}</textarea></td></tr>
+        <tr>
+            <th style='text-align:right'>Journey From</th>
+            <td><select name='fromstation'>
+            {{# fromstation}}
+                <option value='{{stnid}}' {{selected}}>{{name}}</option>
+            {{/ fromstation}}
+            </select></td>
+        </tr><tr>
+            <th style='text-align:right'>Journey To</th>
+            <td><select name='tostation'>
+            {{# tostation}}
+                <option value='{{stnid}}' {{selected}}>{{name}}</option>
+            {{/ tostation}}
+            </select></td>
+        </tr>
+        <tr>
+            <th style='text-align:right'>Valid Ticket Types</th>
+            <td>
+                <select name='tickettypes[]' multiple size='10' required >
+                {{# tickettypes}}
+                    <option value='{{code}}' {{selected}}>{{name}} ({{code}})</option>
+                {{/ tickettypes}}
+                </select>
+            </td>
+        </tr>
+        <tr><th style='text-align:right'>On Sale</th><td><input type='checkbox' name='onsale' value='1' {{onsale}} /></td></tr>
+        <tr><th style='text-align:right'>Timetable Font Colour</th><td>
+            None: <input type='checkbox' name='colourdefault' value='1' {{colourdefault}}/> or choose:
+            <input type='color' name='colour' value='#{{colour}}' />
+        </td></tr>
+        <tr><th style='text-align:right'>Timetable Background Colour</th><td>
+            None: <input type='checkbox' name='backgrounddefault' value='1' {{backgrounddefault}} /> or choose:
+            <input type='color' name='background' value='#{{background}}' />
+        </td></tr>
+        <tr><td></td><td><input type='submit' value='{{button}}' /></td></tr>
+    </table>
+</form>

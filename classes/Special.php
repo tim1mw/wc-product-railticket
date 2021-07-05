@@ -45,6 +45,21 @@ class Special {
         return $sp;
     }
 
+    public static function add($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes) {
+        global $wpdb;
+        $data = new \stdclass();
+        $data->name = $name;
+        $data->date = $date;
+        $data->onsale = $onsale;
+        $data->description = $description;
+        $data->colour = $colour;
+        $data->background = $background;
+        $data->fromstation = $fromstationid;
+        $data->tostation = $tostationid;
+        $data->tickettypes = json_encode($tickettypes);
+        $wpdb->insert($wpdb->prefix.'wc_railticket_specials', get_object_vars($data));
+    }
+
     public function get_onsale_data() {
         global $wpdb;
 
@@ -129,5 +144,26 @@ class Special {
 
     public function get_ticket_types() {
         return json_decode($this->data->tickettypes);
+    }
+
+    public function update($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes) {
+        $this->data->name = $name;
+        $this->data->date = $date;
+        $this->data->onsale = $onsale;
+        $this->data->description = $description;
+        $this->data->colour = $colour;
+        $this->data->background = $background;
+        $this->data->fromstation = $fromstationid;
+        $this->data->tostation = $tostationid;
+        $this->data->tickettypes = json_encode($tickettypes);
+        $this->update_record();
+    }
+
+    private function update_record() {
+        global $wpdb;
+
+        $wpdb->update($wpdb->prefix.'wc_railticket_specials',
+            get_object_vars($this->data),
+            array('id' => $this->data->id));
     }
 }
