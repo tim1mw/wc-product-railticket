@@ -31,34 +31,38 @@ function railticket_selector() {
 }
 
 function railticket_ajax_request() {
-    $ticketbuilder = railticket_getticketbuilder();
-    $function = railticket_getpostfield('function');
-    $result = array();
-    switch ($function) {
-        case 'bookable_stations':
-            $result = $ticketbuilder->get_bookable_stations();
-            break;
-        case 'journey_opts':
-            $result = $ticketbuilder->get_journey_options();
-            break;
-        case 'bookable_trains':
-            $result = $ticketbuilder->get_bookable_trains();
-            break;
-        case 'ticket_data':
-            $result = $ticketbuilder->get_ticket_data();
-            break;
-        case 'validate_discount':
-            $result = $ticketbuilder->get_validate_discount();
-            break;
-        case 'capacity':
-            $result = $ticketbuilder->get_capacity();
-            break;
-        case 'purchase':
-            $result = $ticketbuilder->do_purchase();
-            break;
+    try {
+        $ticketbuilder = railticket_getticketbuilder();
+        $function = railticket_getpostfield('function');
+        $result = array();
+        switch ($function) {
+            case 'bookable_stations':
+                $result = $ticketbuilder->get_bookable_stations();
+                break;
+            case 'journey_opts':
+                $result = $ticketbuilder->get_journey_options();
+                break;
+            case 'bookable_trains':
+                $result = $ticketbuilder->get_bookable_trains();
+                break;
+            case 'ticket_data':
+                $result = $ticketbuilder->get_ticket_data();
+                break;
+            case 'validate_discount':
+                $result = $ticketbuilder->get_validate_discount();
+                break;
+            case 'capacity':
+                $result = $ticketbuilder->get_capacity();
+                break;
+            case 'purchase':
+                $result = $ticketbuilder->do_purchase();
+                break;
+        }
+        wp_send_json_success($result);
+    } catch (\wc_railticket\TicketException $e) {
+        $result = array('fatalerror' => $e->getMessage());
+        wp_send_json_success($result);
     }
-
-    wp_send_json_success($result);
 }
 
 // Add a new interval of 120 seconds

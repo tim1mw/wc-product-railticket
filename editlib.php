@@ -22,6 +22,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_releaseinventory');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_sameservicereturn');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termspage');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_termscomment');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinggrace');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_defaultcoaches');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
@@ -188,6 +189,10 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_termspage">Ticket Terms Page</label></th>
             <td><input type="text" size='60' id="wc_product_railticket_termspage" name="wc_product_railticket_termspage" value="<?php echo get_option('wc_product_railticket_termspage'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_termscomment">Ticket Terms Summary</label></th>
+            <td><textarea rows='4' cols='60' id="wc_product_railticket_termscomment" name="wc_product_railticket_termscomment"><?php echo get_option('wc_product_railticket_termscomment'); ?></textarea></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_bookinggrace">Booking overrun period (minutes)</label></th>
@@ -2240,10 +2245,25 @@ function railticket_processrebookentry($bookableday, &$alldata, &$bookings, $i) 
 }
 
 function railticket_manage_specials() {
-    global $rtmustache;
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
 
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'editspecial':
+                railticket_show_edit_special();
+                return;
+            case 'addspecial':
+            case 'updatespecial':
+                railticket_update_special();
+                break;
+        }
+    }
+    railticket_show_special_summary();
+}
+
+function railticket_show_special_summary() {
+    global $rtmustache;
     $currentyear = intval(date("Y"));
 
     if (array_key_exists('year', $_REQUEST)) {
@@ -2260,6 +2280,7 @@ function railticket_manage_specials() {
 
     foreach ($specials as $sp) {
         $item = new \stdclass();
+        $item->id = $sp->get_id();
         $item->date = $sp->get_date(true);
         $item->name = $sp->get_name();
         $item->fromstation = $sp->get_from_station()->get_name();
@@ -2269,5 +2290,126 @@ function railticket_manage_specials() {
     }
 
     $template = $rtmustache->loadTemplate('manage_specials');
+
+    // new form
+    $alldata->action = 'addspecial';
+    $alldata->button = 'Add';
+    $alldata->title = 'Add Special';
+    $alldata->id = '-1';
+    $today = new \DateTime();
+    $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+    $today->setTimezone($railticket_timezone);
+    $today->setTime(0,0,0);
+    $timetable = \wc_railticket\Timetable::get_timetable_by_date($today->format('Y-m-d'));
+    $alldata->fromstation = $timetable->get_stations(true);
+    $alldata->tostation = $timetable->get_stations(true);
+    end($alldata->tostation)->selected = "selected";
+    $alldata->colourdefault = 'checked';
+    $alldata->backgrounddefault = 'checked';
+    $alldata->tickettypes = \wc_railticket\FareCalculator::get_all_ticket_types();
+
     echo $template->render($alldata);
+}
+
+function railticket_show_edit_special() {
+    global $rtmustache;
+
+    $id = sanitize_text_field($_REQUEST['id']);
+    $sp = \wc_railticket\Special::get_special($id);
+    $timetable = \wc_railticket\Timetable::get_timetable_by_date($sp->get_date());
+
+    $item = new \stdclass();
+    $item->id = $sp->get_id();
+    $item->date = $sp->get_date();
+    $item->name = $sp->get_name();
+    $item->description = $sp->get_description();
+    $item->colour = $sp->get_colour();
+    $item->background = $sp->get_background();
+    if ($item->colour == '') {
+        $item->colourdefault = 'checked';
+    }
+    if ($item->background == '') {
+        $item->backgrounddefault = 'checked';
+    }
+
+    $item->fromstation = $timetable->get_stations(true);
+    foreach ($item->fromstation as $fs) {
+        if ($fs->stnid == $sp->get_from_station()->get_stnid()) {
+            $fs->selected = 'selected';
+        }
+    }
+    $item->tostation = $timetable->get_stations(true);
+    foreach ($item->tostation as $fs) {
+        if ($fs->stnid == $sp->get_to_station()->get_stnid()) {
+            $fs->selected = 'selected';
+        }
+    }
+
+    $alltickettypes = \wc_railticket\FareCalculator::get_all_ticket_types(true);
+    $item->tickettypes = array();
+    $tickettypes = $sp->get_ticket_types();
+    foreach ($alltickettypes as $tt) {
+        $hastt = in_array($tt->code, $tickettypes);
+        if (!$hastt && $tt->hidden) {
+            continue;
+        }
+        if ($hastt) {
+            $tt->selected = 'selected';
+        }
+        $item->tickettypes[] = $tt;
+    }
+
+    if ($sp->on_sale()) {
+        $item->onsale = 'checked';
+    }
+
+    $item->action = 'updatespecial';
+    $item->button = 'Update';
+    $item->title = 'Update Special';
+
+    $template = $rtmustache->loadTemplate('edit_special');
+    echo $template->render($item);
+}
+
+function railticket_update_special() {
+
+    if (railticket_gettfpostfield('colourdefault') == 0) {
+        $colour = railticket_getpostfield('colour');
+    } else {
+        $colour = '';
+    }
+
+    if (railticket_gettfpostfield('backgrounddefault') == 0) {
+        $background = railticket_getpostfield('background');
+    } else {
+        $background = '';
+    }
+
+    $id = sanitize_text_field($_REQUEST['id']);
+    if ($id == -1) {
+        \wc_railticket\Special::add(
+            railticket_getpostfield('name'),
+            railticket_getpostfield('date'),
+            railticket_getpostfield('description'),
+            railticket_gettfpostfield('onsale'),
+            substr($colour, 1),
+            substr($background, 1),
+            railticket_getpostfield('fromstation'),
+            railticket_getpostfield('tostation'),
+            $_REQUEST['tickettypes']
+        );
+    } else {
+        $sp = \wc_railticket\Special::get_special($id);
+        $sp->update(
+            railticket_getpostfield('name'),
+            railticket_getpostfield('date'),
+            railticket_getpostfield('description'),
+            railticket_gettfpostfield('onsale'),
+            substr($colour, 1),
+            substr($background, 1),
+            railticket_getpostfield('fromstation'),
+            railticket_getpostfield('tostation'),
+            $_REQUEST['tickettypes']
+        );
+    }
 }
