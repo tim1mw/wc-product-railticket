@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class CoachManager {
     private $composition, $reserve, $bays;
 
-    public static function add_coach($code, $name, $capacity, $maxcapacity, $image) {
+    public static function add_coach($code, $name, $capacity, $maxcapacity, $priority, $image) {
         global $wpdb;
         $code = FareCalculator::clean_code($code);
 
@@ -20,7 +20,7 @@ class CoachManager {
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_coachtypes", 
             array('code' => $code, 'name' => $name, 'capacity' => $capacity, 'maxcapacity' => $maxcapacity,
-                'image' => $image, 'composition' => '[]'));
+                'priority' => $priority, 'image' => $image, 'composition' => '[]'));
         return true;
     }
 
@@ -29,12 +29,12 @@ class CoachManager {
         $wpdb->delete("{$wpdb->prefix}wc_railticket_coachtypes", array('id' => $id));
     }
 
-    public static function update_coach($id, $name, $capacity, $maxcapacity, $image, $hidden, $composition) {
+    public static function update_coach($id, $name, $capacity, $maxcapacity, $priority, $image, $hidden, $composition) {
         global $wpdb;
 
         $wpdb->update("{$wpdb->prefix}wc_railticket_coachtypes", 
             array('name' => $name, 'capacity' => $capacity, 'maxcapacity' => $maxcapacity, 'image' => $image,
-                'hidden' => $hidden, 'composition' => $composition), array('id' => $id));
+                'priority' => $priority, 'hidden' => $hidden, 'composition' => $composition), array('id' => $id));
         return true;
     }
 

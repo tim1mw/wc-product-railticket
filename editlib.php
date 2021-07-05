@@ -1997,8 +1997,9 @@ function railticket_coach_types() {
                 $name = railticket_getpostfield('name');
                 $capacity = railticket_getpostfield('capacity');
                 $maxcapacity = railticket_getpostfield('maxcapacity');
+                $priority = railticket_getpostfield('priority');
                 $image = railticket_getpostfield('image');
-                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $maxcapacity, $image);
+                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $priority, $maxcapacity, $image);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -2039,11 +2040,12 @@ function railticket_update_coaches() {
         $name = railticket_getpostfield('name_'.$id);
         $capacity = railticket_getpostfield('capacity_'.$id);
         $maxcapacity = railticket_getpostfield('maxcapacity_'.$id);
+        $priority = railticket_getpostfield('priority_'.$id);
         $image = railticket_getpostfield('image_'.$id);
         $hidden = railticket_gettfpostfield('hidden_'.$id);
         $composition = stripslashes(railticket_getpostfield('composition_'.$id));
 
-        \wc_railticket\CoachManager::update_coach($id, $name, $capacity, $maxcapacity, $image, $hidden, $composition);
+        \wc_railticket\CoachManager::update_coach($id, $name, $capacity, $maxcapacity, $priority, $image, $hidden, $composition);
     }
 }
 
