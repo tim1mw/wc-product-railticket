@@ -798,9 +798,9 @@ function allocateTickets() {
     }
 
     var minstr = "";
-    if (minprice !== false) {
-        minstr = "<p>All purchases are currently subject to a minimum booking price of £"+minprice+". If your booking is below £"+
-           minprice+" a supplement will be added to make up the difference.</p>";
+    if (ticketdata.minprice > 0) {
+        minstr = "<p>All purchases are currently subject to a minimum booking price of £"+ticketdata.minprice+". If your booking is below £"+
+           ticketdata.minprice+" a supplement will be added to make up the difference.</p>";
     }
     var confirm = document.getElementById('confirmchoices');
     var summary = document.getElementById('ticket_summary');
@@ -872,14 +872,14 @@ function allocateTickets() {
     }
 
     td.supplement = 0;
-    if (minprice !== false) {
-        if (td.total < minprice && td.total != 0) {
+    if (ticketdata.minprice > 0) {
+        if (td.total < ticketdata.minprice && td.total != 0) {
             var nm = getCBFormValue('nominimum');
             if ( (guard && nm == true) || (customSeats>0 && normalSeats==0 && td.totalcustom == 0)) {
                 td.supplement = 0;
             } else {
-                td.supplement = minprice - td.total;
-                td.total = minprice;
+                td.supplement = ticketdata.minprice - td.total;
+                td.total = ticketdata.minprice;
             }
         }
         td.minstr = minstr;

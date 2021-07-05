@@ -175,6 +175,7 @@ class BookableDay {
         $data->ttrevision = $timetable->get_revision();
         $data->timetableid = $timetable->get_timetableid();
         $data->pricerevision = $fares->get_revision();
+        $data->minprice = get_option('wc_product_railticket_min_price');
         $data->id = -1;
 
         return new BookableDay($data, $timetable, $fares);
@@ -290,6 +291,10 @@ class BookableDay {
 
     public function sold_out() {
         return (bool) $this->data->soldout;
+    }
+
+    public function get_min_price() {
+        return $this->data->minprice;
     }
 
     public function special_only() {

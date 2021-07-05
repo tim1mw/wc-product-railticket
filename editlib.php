@@ -171,11 +171,11 @@ function railticket_options() {
             <td><textarea rows='10' cols='60' id="wc_product_railticket_top_comment" name="wc_product_railticket_top_comment"><?php echo get_option('wc_product_railticket_top_comment'); ?></textarea></td>
         </tr>
         <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_min_price">Max number of months ahead to show</label></th>
+            <th scope="row"><label for="wc_product_railticket_calmonths">Max number of months ahead to show</label></th>
             <td><input size='2' type="number" min='1' max='12' id="wc_product_railticket_" name="wc_product_railticket_calmonths" value="<?php echo get_option('wc_product_railticket_calmonths'); ?>" /></td>
         </tr>
         <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_min_price">Minimum Ticket Order Price</label></th>
+            <th scope="row"><label for="wc_product_railticket_min_price">Default Minimum Ticket Order Price</label></th>
             <td><input size='6'  type="text" id="wc_product_railticket_min_price" name="wc_product_railticket_min_price" value="<?php echo get_option('wc_product_railticket_min_price'); ?>" /></td>
         </tr>
         <tr valign="top">
@@ -503,6 +503,7 @@ function railticket_showcalendaredit($year, $month) {
         $data->specialonly = railticket_get_yn($bookableday->special_only());
         $data->ttrev = $bookableday->timetable->get_revision_name();
         $data->pricerev = $bookableday->fares->get_name();
+        $data->minprice = $bookableday->get_min_price();
 
         $render->days[] = $data;
     }
@@ -650,6 +651,7 @@ function railticket_editbookableday() {
     $ndata->sellreserve = railticket_get_cbval('sellreserve');
     $ndata->soldout = railticket_get_cbval('soldout');
     $ndata->sameservicereturn = railticket_get_cbval('sameservicereturn');
+    $ndata->minprice = sanitize_text_field($_REQUEST['minprice']);
 
     // Make sure the json is crunched here for efficieny.
     $composition = json_decode(stripslashes($_REQUEST['composition']));
