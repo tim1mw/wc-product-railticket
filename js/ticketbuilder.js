@@ -914,31 +914,14 @@ function checkCapacity() {
 function showCapacity(response) {
 
     var allok = true, anyerror = false, anydisablewarn = false;
-
     var renderdata = {};
     renderdata.legs = [];
-
     // TODO Account for seat only allocation here
     for (i in response.capacity) {
         var legdata = {};
         legdata.bays = [];
-        switch (journeytype) {
-            case 'single': legdata.name = ''; break;
-            case 'return':
-                if (i == 0) {
-                    legdata.name = 'Outbound';
-                } else {
-                    legdata.name = 'Return';
-                }
-                break;
-            case 'round':
-                switch (i) {
-                    case 0: legdata.name = '1st Trip'; break;
-                    case 1: legdata.name = '2nd Trip'; break;
-                    case 2: legdata.name = '3rd Trip'; break;
-                }
-                break;
-        }
+        legdata.num = 'Trip '+(parseInt(i)+1);
+        legdata.name = response.capacity[i].name;
 
         var legcap = response.capacity[i];
 
@@ -1004,7 +987,7 @@ function showCapacity(response) {
     } else {
         renderdata.hidewarning = 'display:none;';
     }
-
+console.log(renderdata);
     var capacitydiv = document.getElementById('ticket_capacity');
     var bdtemplate = document.getElementById('bays_tmpl').innerHTML;
     capacitydiv.innerHTML = Mustache.render(bdtemplate, renderdata);

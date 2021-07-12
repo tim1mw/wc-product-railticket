@@ -11,7 +11,7 @@ class TrainService {
     public function __construct(BookableDay $bookableday, Station $fromstation, $deptime, Station $tostation) {
         $this->bookableday = $bookableday;
         $this->fromstation = $fromstation;
-        $this->tostation = $fromstation;
+        $this->tostation = $tostation;
         $this->deptime = $deptime;
         $this->direction = $fromstation->get_direction($tostation);
 
@@ -64,6 +64,7 @@ class TrainService {
         }
 
         $allocatedbays->ok = true;
+        $allocatedbays->name = $this->fromstation->get_name().' - '.$this->tostation->get_name();
         return $allocatedbays;
     }
 
