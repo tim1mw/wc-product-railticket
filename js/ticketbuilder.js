@@ -410,7 +410,6 @@ function fromStationChanged(evt) {
     }
 
     railTicketAjax('journey_opts', true, function(response) {
-
         alljourneys = response['popular'].concat(response['other']);
 
         var stntemplate = document.getElementById('journeychoice_tmpl').innerHTML;
@@ -962,12 +961,22 @@ function showCapacity(response) {
             }
         } else {
             for (bi in legcap.bays) {
-                var baydata = {};
+                var baydata = legcap.bays[bi]
                 var desc = bi.split('_');
-                baydata = legcap.bays[bi]+'x '+desc[0];
-                switch(desc[1]) {
-                    case 'normal': baydata += ' seat bay'; break;
-                    case 'priority': baydata += ' seat bay (with wheelchair space)'; break;
+                if (desc[0] == 1) {
+                    switch(desc[1]) {
+                        case 'normal': baydata += ' seat'; break;
+                        case 'priority': baydata += ' wheelchair space'; break;
+                    }
+                    if (legcap.bays[bi] > 1) {
+                        baydata +='s';
+                    }
+                } else {
+                    baydata += 'x '+desc[0];
+                    switch(desc[1]) {
+                        case 'normal': baydata += ' seat bay'; break;
+                        case 'priority': baydata += ' seat bay (with wheelchair space)'; break;
+                    }
                 }
                 legdata.bays.push(baydata);
             }
@@ -977,7 +986,7 @@ function showCapacity(response) {
 
     if (allok) {
         // TODO Account for seat only allocation here       
-        renderdata.message = 'The following seating bay(s) are available for your journey:';
+        renderdata.message = 'Confirmed seating space available for your journey:';
         
         if (getCBFormValue('disabledrequest')) {
             renderdata.disabledrequest = 'If there is more than one wheelchair user, or you need to communicate any other special requests '+

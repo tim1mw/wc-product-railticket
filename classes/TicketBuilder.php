@@ -318,14 +318,15 @@ class TicketBuilder {
         }
 
         foreach ($allstations as $stn) {
-            if ($stn->is_closed() || $stn->get_stnid() == $this->fromstation->get_stnid() ||
+            if ($stn->is_closed() ||
+                $stn->get_stnid() == $this->fromstation->get_stnid() ||
                ($otherterm && $otherterm->get_stnid() == $stn->get_stnid()) ) {
                  // this is the station we are at, or it is closed, we can't go there
                 continue;
             }
 
-            $this->get_returntrip_opt($allother, $this->fromstation, $stn);
-            $this->get_singletrip_opt($allother, $this->fromstation, $stn);
+            $this->add_returntrip_opt($allother, $this->fromstation, $stn);
+            $this->add_singletrip_opt($allother, $this->fromstation, $stn);
         }
 
         return ['popular' => $allpopular, 'other' => $allother];
