@@ -383,20 +383,20 @@ class TicketBuilder {
             return false;
         }
 
-        $rnd = new \stdclass();
-        $rnd->journeytype = 'round';
-        $rnd->journeydesc = __('Full Line Round Trip', 'wc_railticket');
-        $rnd->extradesc = $from->get_name()." - ".
+        $trp = new \stdclass();
+        $trp->journeytype = 'round';
+        $trp->journeydesc = __('Full Line Round Trip', 'wc_railticket');
+        $trp->extradesc = $from->get_name()." - ".
             $term1->get_name()." - ".
             $term2->get_name()." - ".
             $from->get_name();
-        $rnd->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();;
+        $trp->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();;
         // TODO Do a check here to see if this can be purchased
         $trp->disabled = '';
 
         $data[] = $trp;
 
-        return $rnd;
+        return true;
     }
 
     public function get_ticket_data() {
