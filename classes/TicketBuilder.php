@@ -455,7 +455,7 @@ class TicketBuilder {
             $data->legs[2] = new \stdclass();
             $data->legs[2]->times = $this->bookableday->get_bookable_trains($this->rndtostation, $this->fromstation, $this->overridevalid,
                 reset($data->legs[1]->times)->stopsat, $this->get_first_enabled_stopsat($data->legs[1]->times));
-            $data->legs[2]->leg = 1;
+            $data->legs[2]->leg = 2;
             $data->legs[0]->header = __('1st Train', 'wc_railticket');
             $data->legs[1]->header = __('2nd Train', 'wc_railticket');
             $data->legs[2]->header = __('3rd Train', 'wc_railticket');

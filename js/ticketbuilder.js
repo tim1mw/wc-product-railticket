@@ -493,7 +493,6 @@ function getDepTimes() {
         var div = document.getElementById('deptimes_data');
         deplegs = response['legs'];
         ticketdata = response['tickets'];
-
         if (deplegs.length == 0) {
             div.innerHTML = '<p>No bookable services found. Sorry!</p>';
             showTicketStages('deptimes', true);
@@ -984,8 +983,7 @@ function showCapacity(response) {
         renderdata.legs.push(legdata);
     }
 
-    if (allok) {
-        // TODO Account for seat only allocation here       
+    if (allok) {     
         renderdata.message = 'Confirmed seating space available for your journey:';
         
         if (getCBFormValue('disabledrequest')) {

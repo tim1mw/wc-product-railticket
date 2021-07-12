@@ -265,6 +265,12 @@ class FareCalculator {
         global $wpdb;
         $tickets = new \stdClass();
 
+        // The to station and from station should always be the same for round trip pricing, but for the purposes
+        // of the journey the tostation will be the first terminal visited. So correct that here.
+        if ($journeytype == 'round') {
+            $tostation = $fromstation;
+        }
+
         if (!$isguard) {
             $guardtra = " WHERE {$wpdb->prefix}wc_railticket_travellers.guardonly = 0 ";
             $guard = " AND {$wpdb->prefix}wc_railticket_tickettypes.guardonly = 0 ";
