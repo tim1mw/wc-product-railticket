@@ -59,7 +59,7 @@ class TicketBuilder {
                 $this->journeytype = $jparts[0];
                 $this->tostation =  $this->bookableday->timetable->get_station($jparts[1]);
                 if ($this->journeytype == 'round') {
-                    $this->rndtostation = $this->bookableday->timetable->get_station($this->bookableday->timetable->get_revision());
+                    $this->rndtostation = $this->bookableday->timetable->get_station($jparts[2]);
                 } else {
                     $this->rndtostation = false;
                 }
@@ -485,10 +485,10 @@ class TicketBuilder {
         switch ($this->journeytype) {
             case 'round':
                 $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
-                $capdata->capacity[] = $ts->get_capacity(false, $seatsreq, $this->disabledrequest);
-                $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->rndstation);
+                $capdata->capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->rndtostation);
                 $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
-                $ts2 = new TrainService($this->bookableday, $this->rndstation, $this->times[2], $this->tostation);
+                $ts2 = new TrainService($this->bookableday, $this->rndtostation, $this->times[2], $this->tostation);
                 $capdata->capacity[] = $ts2->get_capacity(false, $seatsreq, $this->disabledrequest);
                 break;
             case 'return':
@@ -621,9 +621,9 @@ class TicketBuilder {
             case 'round':
                 Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[0], $this->fromstation, $this->tostation, $totalseats,
                     $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest);
-                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[1], $this->tostation, $this->rndstation, $totalseats,
+                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[1], $this->tostation, $this->rndtostation, $totalseats,
                     $allocatedbays->capacity[1]->bays, $mid, $this->disabledrequest);
-                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[2], $this->rndstation, $this->fromstation, $totalseats,
+                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[2], $this->rndtostation, $this->fromstation, $totalseats,
                     $allocatedbays->capacity[2]->bays, $mid, $this->disabledrequest);
                 break;
             case 'single':
