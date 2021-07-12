@@ -481,7 +481,7 @@ class BookableDay {
                     $t->notbookable = true;
                 }
             } else {
-                $t->seatsleftstr = $capused->totalseats.' '.__('empty seats', 'wc_railticket');
+                $t->seatsleftstr = $capused->totalseats.'&nbsp;'.__('empty seats', 'wc_railticket');
             }
 
             $data[] = $t;
@@ -574,7 +574,7 @@ class BookableDay {
                         $time->notbookable = true;
                     }
                 } else {
-                    $time->seatsleftstr = $capused->totalseats.' '.__('empty seats', 'wc_railticket');
+                    $time->seatsleftstr = $capused->totalseats.'&nbsp;'.__('empty seats', 'wc_railticket');
                 }
             }
 
