@@ -89,7 +89,7 @@ class CoachManager {
         return implode(', ', $c);
     }
 
-    public static function format_bay($bay, $num) {
+    public static function format_bay($bay, $num = false) {
         $parts = explode('_', $bay);
 
         if ($parts[0] == 1) {
@@ -105,7 +105,12 @@ class CoachManager {
                 default: $name = $bay; break;
             }
         }
-        return $num."x ".$name;
+
+        if ($num !== false ) {
+            return $num."x ".$name;
+        } else {
+            return $name;
+        }
     }
 
     public static function format_booking_bays($bays) {
@@ -263,7 +268,7 @@ class CoachManager {
                 $coach = $wpdb->get_row("SELECT capacity,maxcapacity,priority FROM {$wpdb->prefix}wc_railticket_coachtypes WHERE code = '".$coach."'");
                 $data['1_normal'] += $coach->capacity * $count;
                 $data['1_priority'] += $coach->priority * $count;
-                $data['1_max'] += $coach->maxcapacity * $count;
+                $data['1_normal/max'] += $coach->maxcapacity * $count;
                 continue;
             }
 

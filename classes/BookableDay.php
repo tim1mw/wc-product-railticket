@@ -444,7 +444,13 @@ class BookableDay {
         return $this->data;
     }
 
-    public function get_allocation_type() {
+    public function get_allocation_type($format = false) {
+        if ($format) {
+            if ($this->data->allocateby == 'seat') {
+                return __('Seat', 'wc_railticket');
+            }
+            return __('Bay', 'wc_railticket');
+        }
         return $this->data->allocateby;
     }
 

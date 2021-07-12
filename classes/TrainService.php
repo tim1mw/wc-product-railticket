@@ -250,7 +250,6 @@ class TrainService {
         }
 
         $bookings = $wpdb->get_results($sql);
-
         foreach ($bookings as $booking) {
             if ($booking->priority) {
                 $i = $booking->baysize.'_priority';
@@ -259,6 +258,9 @@ class TrainService {
             }
             if (array_key_exists($i, $basebays)) {
                 $basebays[$i] = $basebays[$i] - $booking->num;
+            }
+            if (array_key_exists($i.'/max', $basebays)) {
+                $basebays[$i.'/max'] = $basebays[$i.'/max'] - $booking->num;
             }
         }
 
@@ -280,18 +282,32 @@ class TrainService {
                 if (array_key_exists($i, $basebays)) {
                     $basebays[$i] = $basebays[$i] - $num;
                 }
+                if (array_key_exists($i.'/max', $basebays)) {
+                    $basebays[$i.'/max'] = $basebays[$i.'/max'] - $num;
+                }
             }
         }
 
         $totalseats = 0;
+        $totalseatsmax = 0;
         foreach ($basebays as $bay => $numleft) {
+            // Ignore "max" parameters here. Special case should not be counted
             $bayd = CoachManager::get_bay_details($bay);
+            if (strpos($bay, '/max') !== false) {
+                continue;
+            }
             $totalseats += $bayd[0]*$numleft;
+            if (array_key_exists($bay.'/max', $basebays)) {
+               $totalseatsmax += $bayd[0]*$basebays[$bay.'/max'];
+            } else {
+               $totalseatsmax += $bayd[0]*$numleft;
+            }
         }
 
         $bays = new \stdclass();
         $bays->bays = $basebays;
         $bays->totalseats = $totalseats;
+        $bays->totalseatsmax = $totalseatsmax;
         return $bays;
     }
 

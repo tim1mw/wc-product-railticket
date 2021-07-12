@@ -1032,16 +1032,37 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<tr><th>Total Orders</th><th>".count($bookings)."</th></tr>".
             "<tr><th>Wheelchair requests</th><th>".$trainservice->count_priority_requested()."</th></tr>".
             "<tr><th>Seats Used</th><th>".$seats."</th></tr>".
-            "<tr><th>Seats Available</th><th>".$capused->totalseats."</th></tr>".
+            "<tr><th>Seats Available</th><th>".$capused->totalseats;
+
+        if ($capused->totalseats != $capused->totalseatsmax) {
+            echo " (".$capused->totalseatsmax.")";
+        }
+
+        echo "</th></tr>".
             "</table></div><br />";
     }
-    echo "<h2>Bay Usage (one way to destination)</h2><div class='railticket_trainbookings'>".
-        "<table border='1' class='railticket_admintable'><th>Bay</th><th>Total</th><th>Used</th><th>Collected</th><th>Available</th></tr>";
+    $atype = $bookableday->get_allocation_type(true);
+    echo "<h2>".$atype." Usage (one way to ".$destination->get_name().")</h2>".
+        "<div class='railticket_trainbookings'>".
+        "<table border='1' class='railticket_admintable'><th>".$atype."</th><th>Total</th><th>Used</th><th>Collected</th><th>Available</th></tr>";
     foreach ($basebays as $bay => $space) {
-        $bayd = str_replace('_', ' seat ', $bay);
-        $bayd = str_replace('priority', 'disabled', $bayd);
-        echo "<td>".$bayd."</td><td>".$space."</td><td>".
-            ($space-$capused->bays[$bay])."</td><td>".($space-$capcollected->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
+        // Ignore "max" parameters here. Special case...
+        if (strpos($bay, '/max') !== false) {
+            continue;
+        }
+        $bayd = \wc_railticket\CoachManager::format_bay($bay);
+        // Do we have a max parameter?
+        if (array_key_exists($bay.'/max', $basebays)) {
+            $maxspace = $basebays[$bay.'/max'];
+            
+            echo "<td>".$bayd."</td><td>".$space." <span style='font-size:large !important'>(".$maxspace.")</span> </td><td>".
+                ($space-$capused->bays[$bay])."</td><td>".($space-$capcollected->bays[$bay])."</td>".
+                "<td>".$capused->bays[$bay]." <span style='font-size:large !important'>(".
+                $capused->bays[$bay.'/max'].")</span></td></tr>";
+        } else {
+            echo "<td>".$bayd."</td><td>".$space."</td><td>".
+                ($space-$capused->bays[$bay])."</td><td>".($space-$capcollected->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
+        }
     }
     echo "</table></div>";
 
