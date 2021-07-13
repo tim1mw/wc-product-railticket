@@ -14,6 +14,11 @@ class TrainService {
         $this->tostation = $tostation;
         $this->deptime = $deptime;
         $this->direction = $fromstation->get_direction($tostation);
+        if ($this->direction == 'up') {
+            $this->revdirection = 'down';
+        } else {
+            $this->revdirection = 'up';
+        }
 
         // Is this is a special
         if (strpos($deptime, "s:") === 0) {
@@ -201,14 +206,6 @@ class TrainService {
     }
 
     public function get_inventory($baseonly = false, $noreserve = false, $onlycollected = false, $excludes = false) {
-        global $wpdb;
-
-        // Taking this out because we sometimes need to check capacity on sold out or unbookable days.
-        //if ($this->bookableday->sold_out() || !$this->bookableday->is_bookable()) {
-        //    return array();
-        //}
-
-        // TODO: Need to get origin station dep time here when intermediate stops are enabled!
         switch ($this->bookableday->get_daytype()) {
             case 'simple':
                 $basebays = (array) $this->bookableday->get_bays();
@@ -223,46 +220,6 @@ class TrainService {
 
         if ($baseonly) {
             return $basebays;
-        }
-
-        // Get the bookings we need to subtract from this formation.
-        // TODO This doesn't account for bookings from preceeding stations (it needs to).
-        // Also TODO account for intermediate bookings, especially where somebody alights at an intermediate stop and the bay is
-        // then taken by another booking. These must not be added together, but overlapping intermediate bookings should be!
-        $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
-            "{$wpdb->prefix}wc_railticket_bookings ".
-            " LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
-            " {$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
-            " WHERE ".
-            "{$wpdb->prefix}wc_railticket_bookings.fromstation = '".$this->fromstation->get_stnid()."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookings.date = '".$this->bookableday->get_date()."' AND ".
-            "{$wpdb->prefix}wc_railticket_bookings.time = '".$this->deptime."' ";
-
-        if ($onlycollected) {
-            $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ";
-        }
-
-        if ($excludes) {
-            $ids = array();
-            foreach ($excludes as $exclude) {
-                $ids[] = $exclude->get_id();
-            }
-            $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.id NOT IN (".implode(',', $ids).")";
-        }
-
-        $bookings = $wpdb->get_results($sql);
-        foreach ($bookings as $booking) {
-            if ($booking->priority) {
-                $i = $booking->baysize.'_priority';
-            } else {
-                $i = $booking->baysize.'_normal';
-            }
-            if (array_key_exists($i, $basebays)) {
-                $basebays[$i] = $basebays[$i] - $booking->num;
-            }
-            if (array_key_exists($i.'/max', $basebays)) {
-                $basebays[$i.'/max'] = $basebays[$i.'/max'] - $booking->num;
-            }
         }
 
         // Take out the booking reserve
@@ -289,27 +246,111 @@ class TrainService {
             }
         }
 
+        $bookings = $this->get_bookings_on_train($onlycollected, $excludes);
+        $inventory = $this->offset_bookings($bookings, $basebays);
+        
+        // Calculate totals
         $totalseats = 0;
         $totalseatsmax = 0;
-        foreach ($basebays as $bay => $numleft) {
+        foreach ($inventory as $bay => $numleft) {
             // Ignore "max" parameters here. Special case should not be counted
             $bayd = CoachManager::get_bay_details($bay);
             if (strpos($bay, '/max') !== false) {
                 continue;
             }
             $totalseats += $bayd[0]*$numleft;
-            if (array_key_exists($bay.'/max', $basebays)) {
-               $totalseatsmax += $bayd[0]*$basebays[$bay.'/max'];
+            if (array_key_exists($bay.'/max', $inventory)) {
+               $totalseatsmax += $bayd[0]*$inventory[$bay.'/max'];
             } else {
                $totalseatsmax += $bayd[0]*$numleft;
             }
         }
 
         $bays = new \stdclass();
-        $bays->bays = $basebays;
+        $bays->bays = $inventory;
         $bays->totalseats = $totalseats;
         $bays->totalseatsmax = $totalseatsmax;
         return $bays;
+    }
+
+    /*
+    * This method returns all the bookings for people who are on the train between the specified stations
+    * so will include both those getting on at this station and through passengers
+    * from preceeding stations.
+    */
+
+    public function get_bookings_on_train($onlycollected, $excludes) {
+        global $wpdb;
+
+        if ($this->direction == 'up') {
+            $fseq = '>';
+            $tseq = '<';
+        } else {
+            $fseq = '<';
+            $tseq = '>';
+        }
+
+        $afterstns = array();
+        $nextstn = $this->tostation->get_next_station($this->direction);
+        while ($nextstn !== false) {
+            $afterstns[] = $nextstn->get_stnid();
+            $nextstn = $nextstn->get_next_station($this->direction);
+        }
+        if (count($afterstns) > 0) {
+            $aftersql = "AND {$wpdb->prefix}wc_railticket_bookings.tostation NOT IN (".implode(',', $afterstns).") ";
+        } else {
+            $aftersql = "";
+        }
+
+        $service = $this->bookableday->timetable->get_service_by_station($this->fromstation, $this->deptime, $this->direction,
+            $this->tostation->get_sequence());
+        $queries = array();
+        foreach ($service as $dep) {
+            $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
+                "{$wpdb->prefix}wc_railticket_bookings ".
+                " LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
+                " {$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
+                " WHERE ".
+                "{$wpdb->prefix}wc_railticket_bookings.fromstation = ".$dep->stnid." AND ".
+                "{$wpdb->prefix}wc_railticket_bookings.date = '".$this->bookableday->get_date()."' AND ".
+                "{$wpdb->prefix}wc_railticket_bookings.time = '".$dep->time."' ";
+
+            if ($onlycollected) {
+                $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ".$aftersql;
+            }
+
+            if ($excludes) {
+                $ids = array();
+                foreach ($excludes as $exclude) {
+                    $ids[] = $exclude->get_id();
+                }
+                $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.id NOT IN (".implode(',', $ids).")";
+            }
+            $queries[] = $sql;
+        }
+
+//echo implode(' UNION ', $queries)."<br /><br />";
+
+        return $wpdb->get_results(implode(' UNION ', $queries));
+    }
+
+
+    private function offset_bookings($bookings, $basebays) {
+        foreach ($bookings as $booking) {
+            if ($booking->priority) {
+                $i = $booking->baysize.'_priority';
+            } else {
+                $i = $booking->baysize.'_normal';
+            }
+            if (array_key_exists($i, $basebays)) {
+                $basebays[$i] = $basebays[$i] - $booking->num;
+            }
+            if (array_key_exists($i.'/max', $basebays)) {
+                $basebays[$i.'/max'] = $basebays[$i.'/max'] - $booking->num;
+            }
+        }
+
+        return $basebays;
     }
 
     public function get_reserve($format = false) {

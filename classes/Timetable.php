@@ -152,6 +152,64 @@ class Timetable {
         return railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
     }
 
+    /**
+    * Given a departure time for a specific station, this will return all the service departure times for other stations
+    **/
+
+    public function get_service_by_station(Station $station, $dep, $direction, $stopat) {
+        global $wpdb;
+        $dtimes = $wpdb->get_var("SELECT ".$direction."_deps FROM {$wpdb->prefix}wc_railticket_stntimes WHERE revision = ".
+            $this->data->revision." AND timetableid = ".$this->data->timetableid." AND station = ".$station->get_stnid());
+
+        if (!$dtimes) {
+            return false;
+        }
+
+        $dep = explode('.', $dep);
+
+        $dtimes = json_decode($dtimes);
+        $found = false;
+        for ($loop=0; $loop<count($dtimes); $loop++) {
+            if ($dtimes[$loop]->hour == $dep[0] && $dtimes[$loop]->min == $dep[1]) {
+                $found = $loop;
+                break;
+            }
+        }
+
+        if ($found === false) {
+            return false;
+        }
+
+        if ($direction == 'up') {
+            $order = 'DESC';
+            $seq = '>';
+        } else {
+            $order = 'ASC';
+            $seq = '<';
+        }
+        $alltimes = $wpdb->get_results("SELECT sts.sequence, sts.stnid, times.".$direction."_deps deps ".
+            " FROM {$wpdb->prefix}wc_railticket_stntimes times ".
+            " INNER JOIN {$wpdb->prefix}wc_railticket_stations sts ON times.station = sts.stnid AND times.revision = sts.revision ".
+            " WHERE times.revision = ".
+            $this->data->revision." AND times.timetableid = ".$this->data->timetableid." AND sts.sequence ".$seq."= ".$stopat." ".
+            "ORDER BY sts.sequence ".$order);
+        $service = array();
+        foreach ($alltimes as $at) {
+            $deps = json_decode($at->deps);
+            if (count($deps) == 0) {
+                continue;
+            }
+
+            $d = new \stdclass();
+            $d->time = $deps[$found]->hour.'.'.$deps[$found]->min;
+            $d->stnid = $at->stnid;
+            $service[$at->sequence] = $d;
+
+            //$service[$at->sequence] = $deps[$found]->hour.'.'.$deps[$found]->min;
+        }
+        return $service;
+    }
+
     public function get_times(Station $station, $direction, $type, $format, Station $stopsat = null) {
         global $wpdb;
 
