@@ -811,7 +811,8 @@ function railticket_get_seatsummary() {
     $stations = $timetable->get_stations();
 
     foreach ($stations as $station) {
-        railticket_show_station_summary($dateofjourney, $station, $timetable, true);
+        railticket_show_station_summary($dateofjourney, $station, $timetable, 'down', true);
+        railticket_show_station_summary($dateofjourney, $station, $timetable, 'up', true);
     }
     ?>
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
@@ -841,9 +842,13 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
     echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$bookableday->get_override()."</span></h2>";
 
     $stations = $bookableday->timetable->get_stations();
-
     foreach ($stations as $station) {
-        railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable);
+        railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable, 'down');
+    }
+    echo "<hr />";
+    $stations = array_reverse($stations);
+    foreach ($stations as $station) {
+        railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable, 'up');
     }
 
     $specials = \wc_railticket\Special::get_specials($dateofjourney);
@@ -918,7 +923,8 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
     <?php
 }
 
-function railticket_show_station_summary($dateofjourney, \wc_railticket\Station $station, \wc_railticket\Timetable $timetable, $showseats = false) {
+function railticket_show_station_summary($dateofjourney, \wc_railticket\Station $station, \wc_railticket\Timetable $timetable,
+    $direction, $showseats = false) {
     if ($showseats) {
         $h = "<br /><h1>";
         $hs = "</h1>";
@@ -927,17 +933,12 @@ function railticket_show_station_summary($dateofjourney, \wc_railticket\Station 
         $hs = "</h3>";
     }
 
-    $down_deps = $timetable->get_down_deps($station, true);
-    if (count($down_deps) > 0) {
-        echo "\n".$h."Down Departures from ".$station->get_name().$hs."\n<span class='railticket_inlinedeplist'>";
-        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $down_deps, "down", $showseats);
-        echo "</span>";
-    }
+    $method = 'get_'.$direction.'_deps';
 
-    $up_deps = $timetable->get_up_deps($station, true);
-    if (count($up_deps) > 0) {
-        echo "\n".$h."Up Departures from ".$station->get_name().$hs."\n<span class='railticket_inlinedeplist'>";
-        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $up_deps, "up", $showseats);
+    $deps = $timetable->$method($station, true);
+    if (count($deps) > 0) {
+        echo "\n".$h.$station->get_name()." - ".ucfirst($direction)." Departures ".$hs."\n<span class='railticket_inlinedeplist'>";
+        railticket_show_dep_buttons($dateofjourney, $station, $timetable, $deps, $direction, $showseats);
         echo "</span>";
     }
 }
