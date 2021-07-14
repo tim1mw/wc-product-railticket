@@ -290,7 +290,8 @@ class TrainService {
             $tseq = '>';
         }
 
-        $afterstns = array();
+        /* this is messing up the stage calculations.... 
+        $afterstns = array($this->fromstation->get_stnid());
         $nextstn = $this->tostation->get_next_station($this->direction);
         while ($nextstn !== false) {
             $afterstns[] = $nextstn->get_stnid();
@@ -301,22 +302,25 @@ class TrainService {
         } else {
             $aftersql = "";
         }
+        */
 
         $service = $this->bookableday->timetable->get_service_by_station($this->fromstation, $this->deptime, $this->direction,
             $this->tostation->get_sequence());
         $queries = array();
         foreach ($service as $dep) {
-            $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.* FROM ".
-                "{$wpdb->prefix}wc_railticket_bookings ".
-                " LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
-                " {$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
+            $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.*, ".
+                "{$wpdb->prefix}wc_railticket_bookings.fromstation, ".
+                "{$wpdb->prefix}wc_railticket_bookings.tostation ".
+                "FROM {$wpdb->prefix}wc_railticket_bookings ".
+                "LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
+                "{$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
                 " WHERE ".
                 "{$wpdb->prefix}wc_railticket_bookings.fromstation = ".$dep->stnid." AND ".
                 "{$wpdb->prefix}wc_railticket_bookings.date = '".$this->bookableday->get_date()."' AND ".
-                "{$wpdb->prefix}wc_railticket_bookings.time = '".$dep->time."' ";
+                "{$wpdb->prefix}wc_railticket_bookings.time = '".$dep->time."' "; //.$aftersql;
 
             if ($onlycollected) {
-                $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ".$aftersql;
+                $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ";
             }
 
             if ($excludes) {
@@ -329,28 +333,95 @@ class TrainService {
             $queries[] = $sql;
         }
 
-//echo implode(' UNION ', $queries)."<br /><br />";
-
         return $wpdb->get_results(implode(' UNION ', $queries));
     }
 
 
     private function offset_bookings($bookings, $basebays) {
+
+        $stations = Station::get_stations($this->bookableday->timetable->get_revision());
+        $topseq = end($stations)->get_sequence();
+
+        if ($this->direction == 'up') {
+            $last = reset($stations);
+            $first = end($stations);
+        } else {
+            $first = reset($stations);
+            $last = end($stations);
+        }
+
+        $totals = array();
+        if ($this->direction == 'up') {
+            $fld1 = 'tsequence';
+            $fld2 = 'fsequence';
+        } else {
+            $fld1 = 'fsequence';
+            $fld2 = 'tsequence';
+        }
+
         foreach ($bookings as $booking) {
             if ($booking->priority) {
                 $i = $booking->baysize.'_priority';
             } else {
                 $i = $booking->baysize.'_normal';
             }
-            if (array_key_exists($i, $basebays)) {
-                $basebays[$i] = $basebays[$i] - $booking->num;
+
+            if (!array_key_exists($i, $totals)) {
+                $totals[$i] = array();
+                for($l=0 ; $l<$topseq; $l++) {
+                    $totals[$i][$l] = 0;
+                }
             }
-            if (array_key_exists($i.'/max', $basebays)) {
-                $basebays[$i.'/max'] = $basebays[$i.'/max'] - $booking->num;
+            $booking->fsequence = $stations[$booking->fromstation]->get_sequence();
+            $booking->tsequence = $stations[$booking->tostation]->get_sequence();
+
+            for ($l = $booking->$fld1; $l < $booking->$fld2; $l++) {
+                $totals[$i][$l] += $booking->num;
+            }
+
+        }
+
+        foreach ($totals as $baytype => $ttl) {
+            $highest = 0;
+            if ($this->direction == 'up') {
+                for ($loop = $this->fromstation->get_sequence(); $loop >= 0; $loop--) {
+                    if ($ttl[$loop] > $highest) {
+                        $highest = $ttl[$loop];
+                    }
+                }
+            } else {
+                for ($loop = $this->fromstation->get_sequence(); $loop < count($ttl); $loop++) {
+                    if ($ttl[$loop] > $highest) {
+                        $highest = $ttl[$loop];
+                    }
+                }
+            }
+
+            if (array_key_exists($baytype, $basebays)) {
+                $basebays[$baytype] = $basebays[$baytype] - $highest;
+            }
+            if (array_key_exists($baytype.'/max', $basebays)) {
+                $basebays[$baytype.'/max'] = $basebays[$baytype.'/max'] - $highest;
             }
         }
 
         return $basebays;
+    }
+
+    public function find_non_overlap_booking($booking, $bookings) {
+        for ($loop = 0; $loop < count($bookings); $loop++) {
+             $testb = $bookings[$loop];
+             if ($testb->id == $booking->id) {
+                 continue;
+             }
+             if ($testb->tsequence <= $booking->fsequence) {
+                 return $loop;
+             }
+             if ($testb->fsequence >= $booking->tsequence) {
+                 return $loop;
+             }
+        }
+        return false;
     }
 
     public function get_reserve($format = false) {
