@@ -980,13 +980,13 @@ function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $stat
     echo $template->render($alldata);
 }
 
+
 function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, $direction, $deptime, $summaryonly = false) {
     global $rtmustache;
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
     $destination = $bookableday->timetable->get_terminal($direction);
     // If this is being called directly from a button click this will be a string
     if (is_string($deptime)) {
-        $bookings = $bookableday->get_bookings_from_station($station, $deptime, $direction);
         $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime, $destination);
         if ($trainservice->special == false) {
             $dt = new \stdclass();
@@ -997,7 +997,6 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             $deptime = $dt;
         } 
     } else {
-        $bookings = $bookableday->get_bookings_from_station($station, $deptime->key, $direction);
         $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime->key, $destination);
     }
 
@@ -1008,6 +1007,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         $dt->formatted = $trainservice->special->get_name();
         $deptime = $dt;
     }
+
+    $bookings = $trainservice->get_bookings();
 
     $seats = 0;
     foreach ($bookings as $booking) {
@@ -1073,82 +1074,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         echo "<hr />";
         return;
     }
-    ?>
-    <br />
-    <h2>Booking summary</h2>
-    <div class='railticket_trainbookings'>
-    <table border='1' class='railticket_admintable' >
-        <tr>
-            <th>Order</th>
-            <th>Name</th>
-            <th>To</th>
-            <th>Seats</th>
-            <th>Wheel<br />chair</th>
-            <th>Bays</th>
-            <th>Shop<br />Items</th>
-            <th>Discount</th>
-            <th>Collected</th>
-        </tr>
-    <?php
-    foreach ($bookings as $booking) {
-        echo "<tr>";
-        if (strlen($booking->in_cart()) > 0) {
-            echo "<td>In Cart</td>";
-            $bookingorder = false;
-        } else {
-            $orderid = $booking->get_order_id();
-            $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
-            echo "<td><form action='".railticket_get_page_url()."' method='post'>".
-                "<input type='hidden' name='action' value='showorder' />".
-                "<input type='hidden' name='orderid' value='".$orderid."' />".
-                "<input type='submit' value='".$orderid."' style='width:100%;margin-top:4px;margin-bottom:4px;' />".
-                "</form></td>";
-        }
-        echo "<td>".$booking->get_order_name()."</td>".
-            "<td>".$booking->get_to_station()->get_name()."</td>".
-            "<td>".$booking->get_seats()."</td>".
-            "<td>".$booking->get_priority(true)."</td>".
-            "<td>";
-        echo $booking->get_bays(true);
-        echo "</td>";
-        if ($bookingorder) {
-            $oitems = $bookingorder->other_items();
-            if ($oitems && count($oitems) > 0) {
-                echo "<td>Yes</td>";   
-            } else {
-                echo "<td>No</td>";
-            }
-        
 
-            if ($bookingorder->get_discount_type()) {
-                echo "<td>Yes</td>";
-                if ($booking->is_collected()) {
-                    echo "<td>Yes</td>";   
-                } else {
-                    echo "<td>No</td>";
-                }
-            } else {
-                echo "<td>No</td>";
-                $bk = array();
-                if ($booking->is_collected()) {
-                    $bk['actionstr'] = __('Yes', 'wc_railrticket');
-                    $bk['action'] = 'cancelcollected';
-                } else {
-                    $bk['actionstr'] = __('No', 'wc_railrticket');
-                    $bk['action'] = 'collected';
-                }
-                $bk['returnto'] = 'departure';
-                $bk['orderid'] = $orderid;
-                $bk['bookingid'] = $booking->get_id();
-                $template = $rtmustache->loadTemplate('collectedbutton');
-                echo "<td>".$template->render($bk)."</td>";
-            }
-        } else {
-            echo "<td>-</td><td>-</td><td>-</td>";
-        }
-        
-        echo "</tr>";
-    }
+    railticket_show_bookings_table($bookings, $station);
 
     if ($trainservice->special) {
         $raction = 'showspecial';
@@ -1200,6 +1127,69 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     ?>
     </div>
     <?php
+}
+
+function railticket_show_bookings_table($bookings, \wc_railticket\Station $station) {
+    global $rtmustache;
+    $stndepdata = new \stdclass();
+    $stndepdata->bookings = array();
+    $stndepdata->station = $station->get_name();
+    foreach ($bookings as $booking) {
+        $dbk = new \stdclass();
+        if (strlen($booking->in_cart()) > 0) {
+            $dbk->incart = "In Cart";
+            $dbk->orderid = false;
+            $bookingorder = false;
+        } else {
+            $dbk->incart = false;
+            $dbk->orderid = $booking->get_order_id();
+            $bookingorder = \wc_railticket\BookingOrder::get_booking_order($dbk->orderid);
+        }
+        $dbk->ordername = $booking->get_order_name();
+        $dbk->to = $booking->get_to_station()->get_name();
+        $dbk->seats = $booking->get_seats();
+        $dbk->priority = $booking->get_priority(true);
+        $dbk->bays = $booking->get_bays(true);
+
+        if ($bookingorder) {
+            $oitems = $bookingorder->other_items();
+            if ($oitems && count($oitems) > 0) {
+                $dbk->otheritems = __('Yes', 'wc_railticket');
+            } else {
+                $dbk->otheritems = __('No', 'wc_railticket');
+            }
+
+            if ($bookingorder->get_discount_type()) {
+                $dbk->hasdiscount = __('Yes', 'wc_railticket');
+                if ($booking->is_collected()) {
+                    $dbk->iscollectedstr = __('Yes', 'wc_railticket');
+                } else {
+                    $dbk->iscollectedstr = __('No', 'wc_railticket');
+                }
+            } else {
+                $dbk->hasdiscount = __('No', 'wc_railticket');
+                $bkc = new \stdclass();
+                if ($booking->is_collected()) {
+                    $bkc->actionstr = __('Yes', 'wc_railticket');
+                    $bkc->action = 'cancelcollected';
+                } else {
+                    $bkc->actionstr = __('No', 'wc_railticket');
+                    $bkc->action = 'collected';
+                }
+                $bkc->returnto = 'departure';
+                $bkc->bookingid = $booking->get_id();
+                $dbk->iscollected = array($bkc);
+            }
+        } else {
+            $dbk->otheritems = '-';
+            $dbk->hasdiscount = '-';
+            $dbk->iscollectedstr = '-';
+        }
+        $stndepdata->bookings[] = $dbk;
+    }
+
+    $dtemplate = $rtmustache->loadTemplate('depbookings');
+    echo $dtemplate->render($stndepdata);
 }
 
 function railticket_mark_ticket($val) {

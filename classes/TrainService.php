@@ -28,6 +28,10 @@ class TrainService {
         }
     }
 
+    public function get_bookings() {
+        return $this->bookableday->get_bookings_from_station($this->fromstation, $this->deptime, $this->direction);
+    }
+
     public function get_capacity($caponly = false, $seatsreq = false, $disabledrequest = false) {
 
         $allocatedbays = new \stdclass();
