@@ -1095,8 +1095,10 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         return;
     }
 
+    $collectedbtn = true;
     foreach ($bookings as $stnid => $bks) {
-        railticket_show_bookings_table($bks, $allstns[$stnid]);
+        railticket_show_bookings_table($bks, $allstns[$stnid], $collectedbtn);
+        $collectedbtn = false;
     }
 
     if ($trainservice->special) {
@@ -1150,7 +1152,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     <?php
 }
 
-function railticket_show_bookings_table($bookings, \wc_railticket\Station $station) {
+function railticket_show_bookings_table($bookings, \wc_railticket\Station $station, $collectedbtn) {
     global $rtmustache;
 
     if (count($bookings) == 0) {
@@ -1195,17 +1197,25 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
                 }
             } else {
                 $dbk->hasdiscount = __('No', 'wc_railticket');
-                $bkc = new \stdclass();
-                if ($booking->is_collected()) {
-                    $bkc->actionstr = __('Yes', 'wc_railticket');
-                    $bkc->action = 'cancelcollected';
+                if ($collectedbtn) {
+                    $bkc = new \stdclass();
+                    if ($booking->is_collected()) {
+                        $bkc->actionstr = __('Yes', 'wc_railticket');
+                        $bkc->action = 'cancelcollected';
+                    } else {
+                        $bkc->actionstr = __('No', 'wc_railticket');
+                        $bkc->action = 'collected';
+                    }
+                    $bkc->returnto = 'departure';
+                    $bkc->bookingid = $booking->get_id();
+                    $dbk->iscollected = array($bkc);
                 } else {
-                    $bkc->actionstr = __('No', 'wc_railticket');
-                    $bkc->action = 'collected';
+                    if ($booking->is_collected()) {
+                        $dbk->iscollectedstr = __('Yes', 'wc_railticket');
+                    } else {
+                        $dbk->iscollectedstr = __('No', 'wc_railticket');
+                    }
                 }
-                $bkc->returnto = 'departure';
-                $bkc->bookingid = $booking->get_id();
-                $dbk->iscollected = array($bkc);
             }
         } else {
             $dbk->otheritems = '-';
