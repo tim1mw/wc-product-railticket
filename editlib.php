@@ -1067,14 +1067,14 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         echo "<div class='railticket_editdate'><h2>Service summary</h2><table class='railticket_admintable' border='1'>".
             "<tr><th>Timetable</th><th>".$bookableday->timetable->get_name()."</th></tr>".
             "<tr><th>Station</th><th>".$station->get_name()."</th></tr>".
-            "<tr><th>Final Destination</th><th>".$finaldestination->get_name()."</th></tr>".
+            "<tr><th>Final destination</th><th>".$finaldestination->get_name()."</th></tr>".
             "<tr><th>Date</td><th>".$dateofjourney."</th></tr>".
             "<tr><th>Time</td><th>".$deptime->formatted."</th></tr>".
             "<tr><th>Direction</th><th>".$direction."</th></tr>".
-            "<tr><th>Total Orders</th><th>".count($bookings[$station->get_stnid()])."</th></tr>".
+            "<tr><th>Total orders here</th><th>".count($bookings[$station->get_stnid()])."</th></tr>".
             "<tr><th>Wheelchair requests</th><th>".$trainservice->count_priority_requested()."</th></tr>".
             "<tr><th>Passengers boarding here</th><th>".$seats."</th></tr>".
-            "<tr><th>Seats Available</th><th>".$capused->totalseats;
+            "<tr><th>Seats available</th><th>".$capused->totalseats;
 
         if ($capused->totalseats != $capused->totalseatsmax) {
             echo " (".$capused->totalseatsmax.")";
@@ -1097,6 +1097,9 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     $budata->revision = $station->get_revision();
     $budata->direction = $direction;
     $budata->deptime = $deptime->key;
+    if ($finaldestination->get_stnid() != $destination->get_stnid()) {
+        $budata->destwarn = true;
+    }
 
     $budata->from = $station->get_name();
     $budata->baydests = $baydests;
