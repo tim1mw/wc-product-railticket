@@ -1008,10 +1008,18 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         $deptime = $dt;
     }
 
-    $bookings = $trainservice->get_bookings();
+    $bookings = array($station->get_stnid() => $trainservice->get_bookings());
+
+    $allstns = array($station->get_stnid() => $station);
+    $nextts = $trainservice->get_next_trainservice();
+    while($nextts !== false) {
+        $bookings[$nextts->get_from_station()->get_stnid()] = $nextts->get_bookings(); 
+        $allstns[$nextts->get_from_station()->get_stnid()] = $nextts->get_from_station();
+        $nextts = $nextts->get_next_trainservice();
+    }
 
     $seats = 0;
-    foreach ($bookings as $booking) {
+    foreach ($bookings[$station->get_stnid()] as $booking) {
         $seats += $booking->get_seats();
     }
 
@@ -1033,7 +1041,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<tr><th>Direction</th><th>".$direction."</th></tr>".
             "<tr><th>Total Orders</th><th>".count($bookings)."</th></tr>".
             "<tr><th>Wheelchair requests</th><th>".$trainservice->count_priority_requested()."</th></tr>".
-            "<tr><th>Seats Used</th><th>".$seats."</th></tr>".
+            "<tr><th>Passengers boarding here</th><th>".$seats."</th></tr>".
             "<tr><th>Seats Available</th><th>".$capused->totalseats;
 
         if ($capused->totalseats != $capused->totalseatsmax) {
@@ -1075,7 +1083,9 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         return;
     }
 
-    railticket_show_bookings_table($bookings, $station);
+    foreach ($bookings as $stnid => $bks) {
+        railticket_show_bookings_table($bks, $allstns[$stnid]);
+    }
 
     if ($trainservice->special) {
         $raction = 'showspecial';
@@ -1087,7 +1097,6 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     </table>
 
     <br />
-    </div>
     <div class='railticket_editdate' style='max-width:550px;margin-left:0px;margin-right:auto;'>
     <form action='<?php echo railticket_get_page_url() ?>' method='post'>
         <input type='hidden' name='action' value='<?php echo $raction; ?>' />
@@ -1131,6 +1140,12 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
 function railticket_show_bookings_table($bookings, \wc_railticket\Station $station) {
     global $rtmustache;
+
+    if (count($bookings) == 0) {
+        echo "<br /><h1>Bookings from ".$station->get_name().": None</h1>";
+        return;
+    }
+
     $stndepdata = new \stdclass();
     $stndepdata->bookings = array();
     $stndepdata->station = $station->get_name();

@@ -26,6 +26,34 @@ class TrainService {
         } else {
             $this->special = false;
         }
+
+        $this->service = $this->bookableday->timetable->get_service_by_station($this->fromstation, $this->deptime, $this->direction,
+            $this->tostation->get_sequence());
+    }
+
+    public function get_next_trainservice() {
+        if ($this->direction == 'up') {
+            $nextseq = $this->fromstation->get_sequence()-1;
+        } else {
+            $nextseq = $this->fromstation->get_sequence()+1;
+        }
+        if (array_key_exists($nextseq, $this->service)) {
+            $nfrom = Station::get_station($this->service[$nextseq]->stnid, $this->bookableday->timetable->get_revision());
+            if ($nfrom->get_stnid() == $this->tostation->get_stnid()) {
+                return false;
+            }
+
+            return new TrainService($this->bookableday, $nfrom, $this->service[$nextseq]->time, $this->tostation);
+        }
+        return false;
+    }
+
+    public function get_from_station() {
+        return $this->fromstation;
+    }
+
+    public function get_to_station() {
+        return $this->tostation;
     }
 
     public function get_bookings() {
@@ -308,10 +336,9 @@ class TrainService {
         }
         */
 
-        $service = $this->bookableday->timetable->get_service_by_station($this->fromstation, $this->deptime, $this->direction,
-            $this->tostation->get_sequence());
+
         $queries = array();
-        foreach ($service as $dep) {
+        foreach ($this->service as $dep) {
             $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.*, ".
                 "{$wpdb->prefix}wc_railticket_bookings.fromstation, ".
                 "{$wpdb->prefix}wc_railticket_bookings.tostation ".
