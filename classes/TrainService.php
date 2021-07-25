@@ -23,19 +23,28 @@ class TrainService {
         // Is this is a special
         if (strpos($deptime, "s:") === 0) {
             $this->special = Special::get_special($deptime);
+
+            // Create a service entry
+            $srv = new \stdclass();
+            $srv->time = $deptime;
+            $srv->stnid = $fromstation->get_stnid();
+            $this->service = array($srv);
         } else {
             $this->special = false;
-        }
-
-        if ($service == false) {
-            $this->service = $this->bookableday->timetable->get_service_by_station($this->fromstation, $this->deptime, $this->direction,
-                $this->tostation->get_sequence());
-        } else {
-            $this->service = $service;
+            if ($service == false) {
+                $this->service = $this->bookableday->timetable->get_service_by_station($this->fromstation, $this->deptime, $this->direction,
+                    $this->tostation->get_sequence());
+            } else {
+                $this->service = $service;
+            }
         }
     }
 
     public function get_next_trainservice() {
+        if ($this->special) {
+            return false;
+        }
+
         if ($this->direction == 'up') {
             $nextseq = $this->fromstation->get_sequence()-1;
         } else {
@@ -351,21 +360,6 @@ class TrainService {
             $fseq = '<';
             $tseq = '>';
         }
-
-        /* this is messing up the stage calculations.... 
-        $afterstns = array($this->fromstation->get_stnid());
-        $nextstn = $this->tostation->get_next_station($this->direction);
-        while ($nextstn !== false) {
-            $afterstns[] = $nextstn->get_stnid();
-            $nextstn = $nextstn->get_next_station($this->direction);
-        }
-        if (count($afterstns) > 0) {
-            $aftersql = "AND {$wpdb->prefix}wc_railticket_bookings.tostation NOT IN (".implode(',', $afterstns).") ";
-        } else {
-            $aftersql = "";
-        }
-        */
-
 
         $queries = array();
         foreach ($this->service as $dep) {

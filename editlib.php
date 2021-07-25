@@ -1071,7 +1071,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<tr><th>Date</td><th>".$dateofjourney."</th></tr>".
             "<tr><th>Time</td><th>".$deptime->formatted."</th></tr>".
             "<tr><th>Direction</th><th>".$direction."</th></tr>".
-            "<tr><th>Total Orders</th><th>".count($bookings)."</th></tr>".
+            "<tr><th>Total Orders</th><th>".count($bookings[$station->get_stnid()])."</th></tr>".
             "<tr><th>Wheelchair requests</th><th>".$trainservice->count_priority_requested()."</th></tr>".
             "<tr><th>Passengers boarding here</th><th>".$seats."</th></tr>".
             "<tr><th>Seats Available</th><th>".$capused->totalseats;
