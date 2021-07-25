@@ -90,10 +90,15 @@ function railticket_view_bookings() {
                 break;
             case 'showdep':
             case 'showspecial':
-                $station = \wc_railticket\Station::get_station(
-                    sanitize_text_field($_REQUEST['station']), sanitize_text_field($_REQUEST['ttrevision']));
+                $rev = sanitize_text_field($_REQUEST['ttrevision']);
+                $station = \wc_railticket\Station::get_station(sanitize_text_field($_REQUEST['station']), $rev);
+                if (array_key_exists('destination', $_REQUEST)) {
+                    $destination = \wc_railticket\Station::get_station(sanitize_text_field($_REQUEST['destination']), $rev);
+                } else {
+                    $destination = false;
+                }
                 railticket_show_departure(sanitize_text_field($_REQUEST['dateofjourney']), $station,
-                   sanitize_text_field($_REQUEST['direction']), sanitize_text_field($_REQUEST['deptime']));
+                   sanitize_text_field($_REQUEST['direction']), sanitize_text_field($_REQUEST['deptime']), $destination);
                 break;
             case 'viewwaybill':
                 railticket_get_waybill(false);
@@ -948,7 +953,7 @@ function railticket_show_dep_buttons($dateofjourney, \wc_railticket\Station $sta
 
     if ($showseats) {
         foreach ($alltimes as $t) {
-            railticket_show_departure($dateofjourney, $station, $direction, $t, true);
+            railticket_show_departure($dateofjourney, $station, $direction, $t, false, true);
         }
     } else {
         echo "<div class='railticket_inlinedeplist'><ul>";
@@ -981,13 +986,17 @@ function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $stat
 }
 
 
-function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, $direction, $deptime, $summaryonly = false) {
+function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, $direction, $deptime, $destination = false, $summaryonly = false) {
     global $rtmustache;
+
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
-    $destination = $bookableday->timetable->get_terminal($direction);
+    $finaldestination = $bookableday->timetable->get_terminal($direction);
+    if ($destination === false) {
+        $destination = $finaldestination;
+    }
     // If this is being called directly from a button click this will be a string
     if (is_string($deptime)) {
-        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime, $destination);
+        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime, $finaldestination);
         if ($trainservice->special == false) {
             $dt = new \stdclass();
             $dt->key = $deptime;
@@ -997,7 +1006,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             $deptime = $dt;
         } 
     } else {
-        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime->key, $destination);
+        $trainservice = new \wc_railticket\TrainService($bookableday, $station, $deptime->key, $finaldestination);
     }
 
     // Formatting for specials
@@ -1012,20 +1021,43 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
     $allstns = array($station->get_stnid() => $station);
     $nextts = $trainservice->get_next_trainservice();
+    $baydests = array();
+    $nextstn = false;
     while($nextts !== false) {
-        $bookings[$nextts->get_from_station()->get_stnid()] = $nextts->get_bookings(); 
-        $allstns[$nextts->get_from_station()->get_stnid()] = $nextts->get_from_station();
+        $nextstn = $nextts->get_from_station();
+        $bookings[$nextstn->get_stnid()] = $nextts->get_bookings(); 
+        $allstns[$nextstn->get_stnid()] = $nextstn;
+
+        $bd = new \stdclass();
+        $bd->name = $nextstn->get_name();
+        $bd->stnid = $nextstn->get_stnid();
+        if ($bd->stnid == $destination->get_stnid()) {
+            $bd->selected = 'selected';
+        }
+        $baydests[] = $bd;
         $nextts = $nextts->get_next_trainservice();
     }
+
+    // Add the final destination in
+    $bd = new \stdclass();
+    $bd->name = $finaldestination->get_name();
+    $bd->stnid = $finaldestination->get_stnid();
+    if ($bd->stnid == $destination->get_stnid()) {
+        $bd->selected = 'selected';
+    }
+    $baydests[] = $bd;
 
     $seats = 0;
     foreach ($bookings[$station->get_stnid()] as $booking) {
         $seats += $booking->get_seats();
     }
 
+    // Fudge so we don't have to create another train service object....
+    $trainservice->set_to_station($destination);
     $basebays = $trainservice->get_inventory(true, true);
     $capused = $trainservice->get_inventory(false, false);
     $capcollected = $trainservice->get_inventory(false, true, true);
+    $trainservice->set_to_station($finaldestination);
 
    if ($summaryonly) {
         echo "<table><tr><td>";
@@ -1035,7 +1067,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         echo "<div class='railticket_editdate'><h2>Service summary</h2><table class='railticket_admintable' border='1'>".
             "<tr><th>Timetable</th><th>".$bookableday->timetable->get_name()."</th></tr>".
             "<tr><th>Station</th><th>".$station->get_name()."</th></tr>".
-            "<tr><th>Destination</th><th>".$destination->get_name()."</th></tr>".
+            "<tr><th>Final Destination</th><th>".$finaldestination->get_name()."</th></tr>".
             "<tr><th>Date</td><th>".$dateofjourney."</th></tr>".
             "<tr><th>Time</td><th>".$deptime->formatted."</th></tr>".
             "<tr><th>Direction</th><th>".$direction."</th></tr>".
@@ -1052,9 +1084,22 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "</table></div><br />";
     }
 
+    if ($trainservice->special) {
+        $raction = 'showspecial';
+    } else {
+        $raction = 'showdep';
+    }
+
     $budata = new \stdclass();
+    $budata->raction = $raction;
+    $budata->dateofjourney = $dateofjourney;
+    $budata->station = $station->get_stnid();
+    $budata->revision = $station->get_revision();
+    $budata->direction = $direction;
+    $budata->deptime = $deptime->key;
+
     $budata->from = $station->get_name();
-    $budata->to = $destination->get_name();
+    $budata->baydests = $baydests;
     $budata->atype = $bookableday->get_allocation_type(true);
     $budata->bays = array();
     foreach ($basebays as $bay => $space) {
@@ -1099,12 +1144,6 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     foreach ($bookings as $stnid => $bks) {
         railticket_show_bookings_table($bks, $allstns[$stnid], $collectedbtn);
         $collectedbtn = false;
-    }
-
-    if ($trainservice->special) {
-        $raction = 'showspecial';
-    } else {
-        $raction = 'showdep';
     }
 
     ?>
@@ -1233,12 +1272,6 @@ function railticket_mark_ticket($val) {
     $id = sanitize_text_field($_POST['bookingid']);
     \wc_railticket\Booking::set_collected($id, $val);
     if ($_REQUEST['returnto'] == 'departure') {
-/*
-                $station = \wc_railticket\Station::get_station(
-                    sanitize_text_field($_REQUEST['station']), sanitize_text_field($_REQUEST['ttrevision']));
-                railticket_show_departure(sanitize_text_field($_REQUEST['dateofjourney']), $station,
-                   sanitize_text_field($_REQUEST['direction']), sanitize_text_field($_REQUEST['deptime']));
-*/
         $orderid = sanitize_text_field($_POST['orderid']);
         $bookingorder = \wc_railticket\BookingOrder::get_booking_order($orderid);
         foreach ($bookingorder->get_bookings() as $booking) {

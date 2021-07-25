@@ -8,7 +8,7 @@ class TrainService {
     private $bookableday, $deptime, $fromstation, $direction;
     public $special;
 
-    public function __construct(BookableDay $bookableday, Station $fromstation, $deptime, Station $tostation) {
+    public function __construct(BookableDay $bookableday, Station $fromstation, $deptime, Station $tostation, $service = false) {
         $this->bookableday = $bookableday;
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
@@ -27,8 +27,12 @@ class TrainService {
             $this->special = false;
         }
 
-        $this->service = $this->bookableday->timetable->get_service_by_station($this->fromstation, $this->deptime, $this->direction,
-            $this->tostation->get_sequence());
+        if ($service == false) {
+            $this->service = $this->bookableday->timetable->get_service_by_station($this->fromstation, $this->deptime, $this->direction,
+                $this->tostation->get_sequence());
+        } else {
+            $this->service = $service;
+        }
     }
 
     public function get_next_trainservice() {
@@ -43,7 +47,7 @@ class TrainService {
                 return false;
             }
 
-            return new TrainService($this->bookableday, $nfrom, $this->service[$nextseq]->time, $this->tostation);
+            return new TrainService($this->bookableday, $nfrom, $this->service[$nextseq]->time, $this->tostation, $this->service);
         }
         return false;
     }
@@ -54,6 +58,10 @@ class TrainService {
 
     public function get_to_station() {
         return $this->tostation;
+    }
+
+    public function set_to_station(\wc_railticket\Station $to) {
+        $this->tostation = $to;
     }
 
     public function get_bookings() {
@@ -442,13 +450,13 @@ class TrainService {
             $highest = 0;
             if ($this->direction == 'up') {
                 // In the up direction, the journey stage is sequence -1
-                for ($loop = $this->fromstation->get_sequence()-1; $loop >= 0; $loop--) {
+                for ($loop = $this->fromstation->get_sequence()-1; $loop >= $this->tostation->get_sequence() ; $loop--) {
                     if ($ttl[$loop] > $highest) {
                         $highest = $ttl[$loop];
                     }
                 }
             } else {
-                for ($loop = $this->fromstation->get_sequence(); $loop < count($ttl); $loop++) {
+                for ($loop = $this->fromstation->get_sequence(); $loop < $this->tostation->get_sequence(); $loop++) {
                     if ($ttl[$loop] > $highest) {
                         $highest = $ttl[$loop];
                     }

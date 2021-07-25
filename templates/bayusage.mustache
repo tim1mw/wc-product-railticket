@@ -1,4 +1,16 @@
-<h2>{{atype}} Usage from {{from}} to {{to}}</h2>
+<form action='{{actionurl}}' method='post' id='baydestform'>
+<table><tr><td><h1>{{atype}} Usage from {{from}} to</h1></td><td><select style='font-size:large;font-weight:bold' name='destination' autocomplete='off' id='baydest'>
+{{#baydests}}
+    <option value='{{stnid}}' {{selected}}>{{name}}</option>
+{{/baydests}}
+    <input type='hidden' name='action' value='{{raction}}' />
+    <input type='hidden' name='dateofjourney' value='{{dateofjourney}}' />
+    <input type='hidden' name='station' value='{{station}}' />
+    <input type='hidden' name='ttrevision' value='{{revision}}' />
+    <input type='hidden' name='direction' value='{{direction}}' />
+    <input type='hidden' name='deptime' value='{{deptime}}' />
+</select></td></tr></table>
+</form>
 <div class='railticket_trainbookings'>
 <table border='1' class='railticket_admintable'>
     <tr>
@@ -21,3 +33,12 @@
     {{/bays}}
 </table>
 </div>
+<script type='text/javascript'>
+    window.addEventListener('DOMContentLoaded', function (evt) {
+        var e = document.getElementById('baydest');
+        e.addEventListener('change', function (evt) {
+            var f = document.getElementById('baydestform');
+            f.submit();
+        });
+    });
+</script>
