@@ -1,0 +1,23 @@
+<h2>{{atype}} Usage from {{from}} to {{to}}</h2>
+<div class='railticket_trainbookings'>
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <th>{{atype}}</th>
+        <th>Total</th>
+        <th>Used<br />Here</th>
+        <th>Leave<br />Empty</th>
+        <th>Collected<br />(inc Empty)</th>
+        <th>Available<br />Here</th>
+    </tr>
+    {{#bays}}
+    <tr>
+        <td>{{bayd}}</td>
+        <td>{{total}} {{#maxtotal}}<span style='font-size:large !important'>({{maxtotal}})</span>{{/maxtotal}}</td>
+        <td>{{used}}</td>
+        <td>{{leaveempty}}</td>
+        <td>{{collected}}</td>
+        <td>{{available}} {{#avmax}}<span style='font-size:large !important'>({{avmax}})</span>{{/avmax}}</td>
+    </tr>
+    {{/bays}}
+</table>
+</div>

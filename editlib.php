@@ -1051,30 +1051,42 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         echo "</th></tr>".
             "</table></div><br />";
     }
-    $atype = $bookableday->get_allocation_type(true);
-    echo "<h2>".$atype." Usage (one way to ".$destination->get_name().")</h2>".
-        "<div class='railticket_trainbookings'>".
-        "<table border='1' class='railticket_admintable'><th>".$atype."</th><th>Total</th><th>Used</th><th>Collected</th><th>Available</th></tr>";
+
+    $budata = new \stdclass();
+    $budata->from = $station->get_name();
+    $budata->to = $destination->get_name();
+    $budata->atype = $bookableday->get_allocation_type(true);
+    $budata->bays = array();
     foreach ($basebays as $bay => $space) {
         // Ignore "max" parameters here. Special case...
         if (strpos($bay, '/max') !== false) {
             continue;
         }
-        $bayd = \wc_railticket\CoachManager::format_bay($bay);
+        $budatai = new \stdclass();
+        $budatai->bayd = \wc_railticket\CoachManager::format_bay($bay);
         // Do we have a max parameter?
         if (array_key_exists($bay.'/max', $basebays)) {
-            $maxspace = $basebays[$bay.'/max'];
-            
-            echo "<td>".$bayd."</td><td>".$space." <span style='font-size:large !important'>(".$maxspace.")</span> </td><td>".
-                ($space-$capused->bays[$bay])."</td><td>".($space-$capcollected->bays[$bay])."</td>".
-                "<td>".$capused->bays[$bay]." <span style='font-size:large !important'>(".
-                $capused->bays[$bay.'/max'].")</span></td></tr>";
+            $budatai->total = $space;
+            $budatai->maxtotal = $basebays[$bay.'/max'];
+            $budatai->used = ($space-$capused->bays[$bay])-$capused->leaveempty[$bay];
+            $budatai->collected = $space-$capcollected->bays[$bay];
+            $budatai->available = $capused->bays[$bay];
+            $budatai->avmax = $capused->bays[$bay.'/max'];
+            $budatai->leaveempty = $capused->leaveempty[$bay];
         } else {
-            echo "<td>".$bayd."</td><td>".$space."</td><td>".
-                ($space-$capused->bays[$bay])."</td><td>".($space-$capcollected->bays[$bay])."</td><td>".$capused->bays[$bay]."</td></tr>";
+            $budatai->total = $space;
+            $budatai->maxtotal = false;
+            $budatai->used = ($space-$capused->bays[$bay])-$capused->leaveempty[$bay];
+            $budatai->collected = $space-$capcollected->bays[$bay];
+            $budatai->available = $capused->bays[$bay];
+            $budatai->avmax = false;
+            $budatai->leaveempty = $capused->leaveempty[$bay];
         }
+        $budata->bays[] = $budatai;
     }
-    echo "</table></div>";
+
+    $butemplate = $rtmustache->loadTemplate('bayusage');
+    echo $butemplate->render($budata);
 
     echo "<p>Coaches: ".$trainservice->get_coachset(true)."<br />".
         "Reserve: ".$trainservice->get_reserve(true)."</p>";

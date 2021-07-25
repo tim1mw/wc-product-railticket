@@ -279,11 +279,26 @@ class TrainService {
         }
 
         $bookings = $this->get_bookings_on_train($onlycollected, $excludes);
-        $inventory = $this->offset_bookings($bookings, $basebays);
-        
+        $totals = $this->get_totals($bookings);
+        $inventory = $this->offset_bookings($totals, $basebays);
+
+        if ($onlycollected) {
+            $bays = new \stdclass();
+            $bays->bays = $inventory;
+            return $bays;
+        }
+
+        // Set an offset to account for journey stage being offset by 1 compared to station sequence in the up direction
+        if ($this->direction == 'up') {
+            $offset = 1;
+        } else {
+            $offset = 0;
+        }
+
         // Calculate totals
         $totalseats = 0;
         $totalseatsmax = 0;
+        $leaveempty = array();
         foreach ($inventory as $bay => $numleft) {
             // Ignore "max" parameters here. Special case should not be counted
             $bayd = CoachManager::get_bay_details($bay);
@@ -296,12 +311,19 @@ class TrainService {
             } else {
                $totalseatsmax += $bayd[0]*$numleft;
             }
+
+            if (array_key_exists($bay, $totals)) {
+                $leaveempty[$bay] = ($basebays[$bay] - $inventory[$bay]) - $totals[$bay][$this->fromstation->get_sequence()-$offset];
+            } else {
+                $leaveempty[$bay] = 0;
+            }
         }
 
         $bays = new \stdclass();
         $bays->bays = $inventory;
         $bays->totalseats = $totalseats;
         $bays->totalseatsmax = $totalseatsmax;
+        $bays->leaveempty = $leaveempty;
         return $bays;
     }
 
@@ -367,9 +389,7 @@ class TrainService {
         return $wpdb->get_results(implode(' UNION ', $queries));
     }
 
-
-    private function offset_bookings($bookings, $basebays) {
-
+    private function get_totals($bookings) {
         $stations = Station::get_stations($this->bookableday->timetable->get_revision());
         $topseq = end($stations)->get_sequence();
 
@@ -406,16 +426,23 @@ class TrainService {
             $booking->fsequence = $stations[$booking->fromstation]->get_sequence();
             $booking->tsequence = $stations[$booking->tostation]->get_sequence();
 
+            // Note this while this number is taken from the sequence it actually is the "stage of the journey.
+            // So stage 0 is for stations 0-1, Stage 1 1-2 and so on. This means that for a down train the
+            // stage number = station sequence number. For an up tains, it's stage number = station seq -1.
             for ($l = $booking->$fld1; $l < $booking->$fld2; $l++) {
                 $totals[$i][$l] += $booking->num;
             }
 
         }
+        return $totals;
+    }
 
+    private function offset_bookings($totals, $basebays) {
         foreach ($totals as $baytype => $ttl) {
             $highest = 0;
             if ($this->direction == 'up') {
-                for ($loop = $this->fromstation->get_sequence(); $loop >= 0; $loop--) {
+                // In the up direction, the journey stage is sequence -1
+                for ($loop = $this->fromstation->get_sequence()-1; $loop >= 0; $loop--) {
                     if ($ttl[$loop] > $highest) {
                         $highest = $ttl[$loop];
                     }
