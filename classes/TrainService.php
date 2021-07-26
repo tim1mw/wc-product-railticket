@@ -297,7 +297,7 @@ class TrainService {
 
         $bookings = $this->get_bookings_on_train($onlycollected, $excludes);
         $totals = $this->get_totals($bookings);
-        $inventory = $this->offset_bookings($totals, $basebays);
+        $inventory = $this->offset_bookings($totals, $basebays, $onlycollected);
 
         if ($onlycollected) {
             $bays = new \stdclass();
@@ -353,13 +353,13 @@ class TrainService {
     public function get_bookings_on_train($onlycollected, $excludes) {
         global $wpdb;
 
-        if ($onlycollected) {
-            return $wpdb->get_results($this->get_bookings_sql($this->deptime, $this->fromstation->get_stnid(), $onlycollected, $excludes));
-        }
-
         $queries = array();
         foreach ($this->service as $dep) {
             $queries[] = $this->get_bookings_sql($dep->time, $dep->stnid, $onlycollected, $excludes);
+            if ($onlycollected && $dep->time == $this->deptime) {
+                // If we are only interested in colleted tickets, stop when we get to the departure that matches.
+                break;
+            }
         }
 
         return $wpdb->get_results(implode(' UNION ', $queries));
@@ -440,23 +440,9 @@ class TrainService {
         return $totals;
     }
 
-    private function offset_bookings($totals, $basebays) {
+    private function offset_bookings($totals, $basebays, $onlycollected) {
         foreach ($totals as $baytype => $ttl) {
-            $highest = 0;
-            if ($this->direction == 'up') {
-                // In the up direction, the journey stage is sequence -1
-                for ($loop = $this->fromstation->get_sequence()-1; $loop >= $this->tostation->get_sequence() ; $loop--) {
-                    if ($ttl[$loop] > $highest) {
-                        $highest = $ttl[$loop];
-                    }
-                }
-            } else {
-                for ($loop = $this->fromstation->get_sequence(); $loop < $this->tostation->get_sequence(); $loop++) {
-                    if ($ttl[$loop] > $highest) {
-                        $highest = $ttl[$loop];
-                    }
-                }
-            }
+            $highest = $this->get_highest($ttl, $onlycollected);
 
             if (array_key_exists($baytype, $basebays)) {
                 $basebays[$baytype] = $basebays[$baytype] - $highest;
@@ -467,6 +453,33 @@ class TrainService {
         }
 
         return $basebays;
+    }
+
+    private function get_highest($ttl, $onlycollected) {
+        $highest = 0;
+
+        if ($this->direction == 'up') {
+            // If we are getting a collected total, we only care about the figure for the station we are at, not the highest.
+            if ($onlycollected) {
+                return $ttl[$this->fromstation->get_sequence()-1];
+            }
+            // In the up direction, the journey stage is sequence -1
+            for ($loop = $this->fromstation->get_sequence()-1; $loop >= $this->tostation->get_sequence() ; $loop--) {
+                if ($ttl[$loop] > $highest) {
+                    $highest = $ttl[$loop];
+                }
+            }
+        } else {
+            if ($onlycollected) {
+                return $ttl[$this->fromstation->get_sequence()];
+            }
+            for ($loop = $this->fromstation->get_sequence(); $loop < $this->tostation->get_sequence(); $loop++) {
+                if ($ttl[$loop] > $highest) {
+                    $highest = $ttl[$loop];
+                }
+            }
+        }
+        return $highest;
     }
 
     public function find_non_overlap_booking($booking, $bookings) {
