@@ -1117,7 +1117,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             $budatai->total = $space;
             $budatai->maxtotal = $basebays[$bay.'/max'];
             $budatai->used = ($space-$capused->bays[$bay])-$capused->leaveempty[$bay];
-            $budatai->collected = ($space-$capcollected->bays[$bay]-$capused->leaveempty[$bay]);
+            $budatai->collected = $space-$capcollected->bays[$bay];
             $budatai->available = $capused->bays[$bay];
             $budatai->avmax = $capused->bays[$bay.'/max'];
             $budatai->leaveempty = $capused->leaveempty[$bay];
@@ -1125,7 +1125,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             $budatai->total = $space;
             $budatai->maxtotal = false;
             $budatai->used = ($space-$capused->bays[$bay])-$capused->leaveempty[$bay];
-            $budatai->collected = ($space-$capcollected->bays[$bay]-$capused->leaveempty[$bay]);
+            $budatai->collected = $space-$capcollected->bays[$bay];
             $budatai->available = $capused->bays[$bay];
             $budatai->avmax = false;
             $budatai->leaveempty = $capused->leaveempty[$bay];

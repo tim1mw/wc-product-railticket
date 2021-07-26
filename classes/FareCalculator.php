@@ -439,7 +439,7 @@ class FareCalculator {
 
         if ($journeytype == 'round') {
             // Round trips are priced as from > to the same station where available.
-            $from = $to;
+            $to = $from;
         }
 
         // If we have a discount, count up the seats used by discounted and non discounted travellers
@@ -542,6 +542,7 @@ class FareCalculator {
             $jt." AND revision = ".$this->revision." AND ".
             "((stationone = ".$from->get_stnid()." AND stationtwo = ".$to->get_stnid().") OR ".
             "(stationone = ".$to->get_stnid()." AND stationtwo = ".$from->get_stnid()."))";
+
         $price = $wpdb->get_var($sql);
 
         if ($discount) {

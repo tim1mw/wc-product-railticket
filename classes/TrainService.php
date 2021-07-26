@@ -353,42 +353,43 @@ class TrainService {
     public function get_bookings_on_train($onlycollected, $excludes) {
         global $wpdb;
 
-        if ($this->direction == 'up') {
-            $fseq = '>';
-            $tseq = '<';
-        } else {
-            $fseq = '<';
-            $tseq = '>';
+        if ($onlycollected) {
+            return $wpdb->get_results($this->get_bookings_sql($this->deptime, $this->fromstation->get_stnid(), $onlycollected, $excludes));
         }
 
         $queries = array();
         foreach ($this->service as $dep) {
-            $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.*, ".
-                "{$wpdb->prefix}wc_railticket_bookings.fromstation, ".
-                "{$wpdb->prefix}wc_railticket_bookings.tostation ".
-                "FROM {$wpdb->prefix}wc_railticket_bookings ".
-                "LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
-                "{$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
-                " WHERE ".
-                "{$wpdb->prefix}wc_railticket_bookings.fromstation = ".$dep->stnid." AND ".
-                "{$wpdb->prefix}wc_railticket_bookings.date = '".$this->bookableday->get_date()."' AND ".
-                "{$wpdb->prefix}wc_railticket_bookings.time = '".$dep->time."' "; //.$aftersql;
-
-            if ($onlycollected) {
-                $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ";
-            }
-
-            if ($excludes) {
-                $ids = array();
-                foreach ($excludes as $exclude) {
-                    $ids[] = $exclude->get_id();
-                }
-                $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.id NOT IN (".implode(',', $ids).")";
-            }
-            $queries[] = $sql;
+            $queries[] = $this->get_bookings_sql($dep->time, $dep->stnid, $onlycollected, $excludes);
         }
 
         return $wpdb->get_results(implode(' UNION ', $queries));
+    }
+
+    private function get_bookings_sql($deptime, $depstnid, $onlycollected, $excludes) {
+        global $wpdb;
+        $sql = "SELECT {$wpdb->prefix}wc_railticket_booking_bays.*, ".
+            "{$wpdb->prefix}wc_railticket_bookings.fromstation, ".
+            "{$wpdb->prefix}wc_railticket_bookings.tostation ".
+            "FROM {$wpdb->prefix}wc_railticket_bookings ".
+            "LEFT JOIN {$wpdb->prefix}wc_railticket_booking_bays ON ".
+            "{$wpdb->prefix}wc_railticket_bookings.id = {$wpdb->prefix}wc_railticket_booking_bays.bookingid ".
+            " WHERE ".
+            "{$wpdb->prefix}wc_railticket_bookings.fromstation = ".$depstnid." AND ".
+            "{$wpdb->prefix}wc_railticket_bookings.date = '".$this->bookableday->get_date()."' AND ".
+            "{$wpdb->prefix}wc_railticket_bookings.time = '".$deptime."' ";
+
+        if ($onlycollected) {
+            $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.collected = '1' ";
+        }
+
+        if ($excludes) {
+            $ids = array();
+            foreach ($excludes as $exclude) {
+                $ids[] = $exclude->get_id();
+            }
+            $sql .= " AND {$wpdb->prefix}wc_railticket_bookings.id NOT IN (".implode(',', $ids).")";
+        }
+        return $sql;
     }
 
     private function get_totals($bookings) {
