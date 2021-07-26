@@ -12,6 +12,17 @@ add_action ('admin_post_waybill.csv', 'railticket_get_waybillcsv');
 add_action( 'init', 'railticket_roles', 11 );
 add_action ('admin_post_ordersummary.csv', 'railticket_get_ordersummary_csv');
 add_action( 'wp_ajax_railticket_adminajax', 'railticket_ajax_adminrequest');
+add_action('railticket_process_stats_cron', 'railticket_process_stats');
+add_action('admin_post_railticketstats.csv', 'railticket_get_stats');
+
+// Schedule an action if it's not already scheduled
+if ( ! wp_next_scheduled( 'railticket_process_stats_cron' ) ) {
+    $dtz = new \DateTimeZone(get_option('timezone_string'));
+    $dt = new \DateTime('now', $dtz);
+    $dt->setTime(2,0,0);
+    wp_schedule_event($dt->getTimestamp(), 'daily', 'railticket_process_stats_cron' );
+}
+
 
 function railticket_register_settings() {
    add_option('wc_product_railticket_woocommerce_product', '');
@@ -48,6 +59,7 @@ function railticket_add_pages() {
     add_submenu_page('railticket-top-level-handle', "Discount Codes", "Discount Codes", 'manage_options', 'railticket-discount-codes', 'railticket_discount_codes');
     add_submenu_page('railticket-top-level-handle', "Discount Types", "Discount Types", 'manage_options', 'railticket-discount-types', 'railticket_discount_types');
     add_submenu_page('railticket-top-level-handle', "Import Timetable", "Import Timetable", 'manage_options', 'railticket-import-timetable', 'railticket_import_timetable');
+    add_submenu_page('railticket-top-level-handle', "Statistics", "Statistics", 'manage_options', 'railticket-stats', 'railticket_stats');
 }
 
 function railticket_roles() {
@@ -2500,5 +2512,69 @@ function railticket_update_special() {
             railticket_getpostfield('tostation'),
             $_REQUEST['tickettypes']
         );
+    }
+}
+
+function railticket_stats() {
+    global $rtmustache;
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch($_REQUEST['action']) {
+            case 'statsprocess':
+                echo "<h5>Updating Stats</h5>";
+                railticket_process_stats(true, railticket_getpostfield('maxdays'));
+                break;
+            //case 'statsdownload':
+            //    railticket_get_stats(railticket_getpostfield('start'), railticket_getpostfield('end'));
+            //    break;
+        }
+    }
+
+    $alldata = new \stdclass();
+    $alldata->adminurl = admin_url('admin-post.php');
+    $template = $rtmustache->loadTemplate('stats');
+    echo $template->render($alldata);
+}
+
+function railticket_get_stats() {
+    global $wpdb;
+
+    $start = railticket_getpostfield('start');
+    $end = railticket_getpostfield('end');
+
+    header('Content-Type: application/csv');
+    header('Content-Disposition: attachment; filename="stats_'.$start.'_'.$end.'.csv";');
+    header('Pragma: no-cache');
+    $f = fopen('php://output', 'w');
+    $lines = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stats WHERE ".
+        "date >= '".$start."' AND date <= '".$end."' ORDER BY DATE ASC");
+
+    fputcsv($f, array('Date', 'Total Passengers', 'Total Orders', 'Online Orders',
+        'Manual Orders', 'Revenue', 'Peak Loading', 'Pass. at 18:00', 'Pass. at 9:00'));
+    foreach ($lines as $line) {
+        unset($line->id);
+        fputcsv($f, (array) $line);
+    }
+
+    fclose($f);
+    exit;
+}
+
+function railticket_process_stats($info = false, $limit = 5) {
+    global $wpdb;
+    $nowdt = new \DateTime();
+    $nowdt->setTimezone(new \DateTimeZone(get_option('timezone_string')));
+
+    $toprocess = $wpdb->get_results("SELECT bk.id, bk.date FROM {$wpdb->prefix}wc_railticket_bookable bk ". 
+        "LEFT join {$wpdb->prefix}wc_railticket_stats stats ON bk.date = stats.date ". 
+        "WHERE stats.id IS NULL AND bk.date < '".$nowdt->format('Y-m-d')."' ORDER BY date DESC LIMIT ".$limit);
+
+    foreach ($toprocess as $tp) {
+        if ($info) {
+            echo $tp->date."<br />";
+        }
+        $bk = \wc_railticket\BookableDay::get_bookable_day($tp->date);
+        $stats = new \wc_railticket\StatsProcessor($bk);
+        $stats->updateStats();
     }
 }

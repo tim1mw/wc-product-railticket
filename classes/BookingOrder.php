@@ -472,4 +472,8 @@ class BookingOrder {
         return true;
     }
 
+    public function get_created() {
+        return $this->bookings[0]->get_created();
+    }
+
 }
