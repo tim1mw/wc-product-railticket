@@ -129,7 +129,7 @@
     <input type='radio' name='dep_{{leg}}' id='dep_{{leg}}_{{index}}'
         value='{{index}}' {{checked}} {{disabled}} class='railticket_dep_{{leg}}' />
         <label  class='{{classes}}' for='dep_{{leg}}_{{index}}'>{{formatted}}
-    <div class='railticket_arrtime'>{{arr}}{{sep}}{{seatsleftstr}}</div></label>
+    <div class='railticket_arrtime'>{{arr}}{{sep}}{{{seatsleftstr}}}</div></label>
 </li>
 {{/times}}
 </ul>
@@ -180,8 +180,9 @@
 <table class='railticket_travellers_table'>
 {{#legs}}
     <tr>
-        <td>{{name}}</td>
-        <td>
+        <td style='text-align:right;vertical-align:top;'>{{num}}:</td>
+        <td style='vertical-align:top;'>{{name}}</td>
+        <td style='text-align:left;vertical-align:top;'>
         {{#bays}}{{.}}<br />{{/bays}}
         </td>
     </tr>

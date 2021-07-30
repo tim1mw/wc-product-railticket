@@ -9,7 +9,7 @@
         </select></td>
     </tr><tr>
         <td>Allocate By</td>
-        <td><select name='sp_allocateby' class='railticket_sp_opt' id='alocatebysel'>
+        <td><select name='sp_allocateby' class='railticket_sp_opt' id='allocatebysel'>
             {{#allocateby}}<option value='{{value}}' {{selected}}>{{name}}</option>{{/allocateby}}
         </select></td>
     </tr>
@@ -62,6 +62,9 @@
                 </ol></td>
             </tr><tr>
                <td>Seats</td><td>{{seats}}</td>
+               <td style='{{style}}'>Max Seats</td><td style='{{style}}'>{{maxseats}}</td>
+            </tr><tr>
+               <td style='{{style}}'>Wheelchair Spaces</td><td style='{{style}}'>{{priority}}</td>
             <tr>
             </table>
         </td>

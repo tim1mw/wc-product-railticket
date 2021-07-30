@@ -161,6 +161,14 @@
     text-align:center;
 }
 
+.railticket_listselect_left li {
+   list-style:none;   
+}
+
+.railticket_listselect_right li {
+   list-style:none;   
+}
+
 .railticket_fromstation {}
 
 .railticket_otherstation {

@@ -59,7 +59,7 @@ class TicketBuilder {
                 $this->journeytype = $jparts[0];
                 $this->tostation =  $this->bookableday->timetable->get_station($jparts[1]);
                 if ($this->journeytype == 'round') {
-                    $this->rndtostation = $this->bookableday->timetable->get_station($this->bookableday->timetable->get_revision());
+                    $this->rndtostation = $this->bookableday->timetable->get_station($jparts[2]);
                 } else {
                     $this->rndtostation = false;
                 }
@@ -318,14 +318,15 @@ class TicketBuilder {
         }
 
         foreach ($allstations as $stn) {
-            if ($stn->is_closed() || $stn->get_stnid() == $this->fromstation->get_stnid() ||
+            if ($stn->is_closed() ||
+                $stn->get_stnid() == $this->fromstation->get_stnid() ||
                ($otherterm && $otherterm->get_stnid() == $stn->get_stnid()) ) {
                  // this is the station we are at, or it is closed, we can't go there
                 continue;
             }
 
-            $this->get_returntrip_opt($allother, $this->fromstation, $stn);
-            $this->get_singletrip_opt($allother, $this->fromstation, $stn);
+            $this->add_returntrip_opt($allother, $this->fromstation, $stn);
+            $this->add_singletrip_opt($allother, $this->fromstation, $stn);
         }
 
         return ['popular' => $allpopular, 'other' => $allother];
@@ -382,20 +383,20 @@ class TicketBuilder {
             return false;
         }
 
-        $rnd = new \stdclass();
-        $rnd->journeytype = 'round';
-        $rnd->journeydesc = __('Full Line Round Trip', 'wc_railticket');
-        $rnd->extradesc = $from->get_name()." - ".
+        $trp = new \stdclass();
+        $trp->journeytype = 'round';
+        $trp->journeydesc = __('Full Line Round Trip', 'wc_railticket');
+        $trp->extradesc = $from->get_name()." - ".
             $term1->get_name()." - ".
             $term2->get_name()." - ".
             $from->get_name();
-        $rnd->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();;
+        $trp->code = 'round_'.$term1->get_stnid()."_".$term2->get_stnid();;
         // TODO Do a check here to see if this can be purchased
         $trp->disabled = '';
 
         $data[] = $trp;
 
-        return $rnd;
+        return true;
     }
 
     public function get_ticket_data() {
@@ -454,7 +455,7 @@ class TicketBuilder {
             $data->legs[2] = new \stdclass();
             $data->legs[2]->times = $this->bookableday->get_bookable_trains($this->rndtostation, $this->fromstation, $this->overridevalid,
                 reset($data->legs[1]->times)->stopsat, $this->get_first_enabled_stopsat($data->legs[1]->times));
-            $data->legs[2]->leg = 1;
+            $data->legs[2]->leg = 2;
             $data->legs[0]->header = __('1st Train', 'wc_railticket');
             $data->legs[1]->header = __('2nd Train', 'wc_railticket');
             $data->legs[2]->header = __('3rd Train', 'wc_railticket');
@@ -484,10 +485,10 @@ class TicketBuilder {
         switch ($this->journeytype) {
             case 'round':
                 $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
-                $capdata->capacity[] = $ts->get_capacity(false, $seatsreq, $this->disabledrequest);
-                $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->rndstation);
+                $capdata->capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->rndtostation);
                 $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
-                $ts2 = new TrainService($this->bookableday, $this->rndstation, $this->times[2], $this->tostation);
+                $ts2 = new TrainService($this->bookableday, $this->rndtostation, $this->times[2], $this->tostation);
                 $capdata->capacity[] = $ts2->get_capacity(false, $seatsreq, $this->disabledrequest);
                 break;
             case 'return':
@@ -620,9 +621,9 @@ class TicketBuilder {
             case 'round':
                 Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[0], $this->fromstation, $this->tostation, $totalseats,
                     $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest);
-                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[1], $this->tostation, $this->rndstation, $totalseats,
+                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[1], $this->tostation, $this->rndtostation, $totalseats,
                     $allocatedbays->capacity[1]->bays, $mid, $this->disabledrequest);
-                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[2], $this->rndstation, $this->fromstation, $totalseats,
+                Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[2], $this->rndtostation, $this->fromstation, $totalseats,
                     $allocatedbays->capacity[2]->bays, $mid, $this->disabledrequest);
                 break;
             case 'single':

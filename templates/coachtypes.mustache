@@ -27,6 +27,7 @@ or the other, then the settings do not need to be entered.</p>
         <th>Hidden</th>
         <th>Seats<br />on Sale</th>
         <th>Maximum<br />Capacity</th>
+        <th>Wheelchair<br />Spaces</th>
         <th>Bay Composition</th>
         <th>Image</th>
  
@@ -39,6 +40,7 @@ or the other, then the settings do not need to be entered.</p>
         <td style='text-align:center;'><input type='checkbox' name='hidden_{{id}}' value='1' {{hidden}} /></td>
         <td><input type='number' name='capacity_{{id}}' value='{{capacity}}' size='3' max='999' min='0' /></td>
         <td><input type='number' name='maxcapacity_{{id}}' value='{{maxcapacity}}' size='3' max='999' min='0' /></td>
+        <td><input type='number' name='priority_{{id}}' value='{{priority}}' size='2' max='99' min='0' /></td>
         <td>
             <div id='railticket-composition_{{id}}'></div>
             <textarea name='composition_{{id}}' id='composition_{{id}}' class='railticket-coachcomp' style='display:none'>{{{composition}}}</textarea>
@@ -67,10 +69,13 @@ or the other, then the settings do not need to be entered.</p>
         <td><input type='text' name='name' value='' size='25' required /></td>
     </tr><tr>
         <td>Seats on Sale</td>
-        <td><input type='number' name='capacity' value='0' size='2' max='99' min='0' /></td>
+        <td><input type='number' name='capacity' value='0' size='3' max='999' min='0' /></td>
     </tr><tr>
         <td>Maximum Capacity</td>
-        <td><input type='number' name='maxcapacity' value='0' size='2' max='99' min='0' /></td>
+        <td><input type='number' name='maxcapacity' value='0' size='3' max='999' min='0' /></td>
+    </tr><tr>
+        <td>Wheelchair spaces</td>
+        <td><input type='number' name='priority' value='0' size='2' max='99' min='0' /></td>
     </tr><tr>
         <td>Image</td>
         <td><input type='text' name='image' value='' size='30' /></td>

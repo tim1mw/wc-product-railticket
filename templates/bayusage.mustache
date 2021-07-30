@@ -1,0 +1,45 @@
+<form action='{{actionurl}}' method='post' id='baydestform'>
+<table><tr><td><h1>{{atype}} Usage from {{from}} to</h1></td><td><select style='font-size:large;font-weight:bold' name='destination' autocomplete='off' id='baydest'>
+{{#baydests}}
+    <option value='{{stnid}}' {{selected}}>{{name}}</option>
+{{/baydests}}
+    <input type='hidden' name='action' value='{{raction}}' />
+    <input type='hidden' name='dateofjourney' value='{{dateofjourney}}' />
+    <input type='hidden' name='station' value='{{station}}' />
+    <input type='hidden' name='ttrevision' value='{{revision}}' />
+    <input type='hidden' name='direction' value='{{direction}}' />
+    <input type='hidden' name='deptime' value='{{deptime}}' />
+</select></td></tr></table>
+</form>
+{{#destwarn}}<p style='color:blue;font-weight:bold;'>Warning, showing capacity to intermediate stop. Be sure this is what you want.</p>{{/destwarn}}
+<div class='railticket_trainbookings'>
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <th>{{atype}}</th>
+        <th>Total</th>
+        <th>Used<br />Here</th>
+        <th>Leave<br />Empty</th>
+        <th>Collected<br />Here</th>
+        <th>Available<br />Here</th>
+    </tr>
+    {{#bays}}
+    <tr>
+        <td>{{bayd}}</td>
+        <td>{{total}} {{#maxtotal}}<span style='font-size:large !important'>({{maxtotal}})</span>{{/maxtotal}}</td>
+        <td>{{used}}</td>
+        <td>{{leaveempty}}</td>
+        <td>{{collected}}</td>
+        <td>{{available}} {{#avmax}}<span style='font-size:large !important'>({{avmax}})</span>{{/avmax}}</td>
+    </tr>
+    {{/bays}}
+</table>
+</div>
+<script type='text/javascript'>
+    window.addEventListener('DOMContentLoaded', function (evt) {
+        var e = document.getElementById('baydest');
+        e.addEventListener('change', function (evt) {
+            var f = document.getElementById('baydestform');
+            f.submit();
+        });
+    });
+</script>

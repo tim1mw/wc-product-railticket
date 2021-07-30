@@ -410,7 +410,6 @@ function fromStationChanged(evt) {
     }
 
     railTicketAjax('journey_opts', true, function(response) {
-
         alljourneys = response['popular'].concat(response['other']);
 
         var stntemplate = document.getElementById('journeychoice_tmpl').innerHTML;
@@ -494,7 +493,6 @@ function getDepTimes() {
         var div = document.getElementById('deptimes_data');
         deplegs = response['legs'];
         ticketdata = response['tickets'];
-
         if (deplegs.length == 0) {
             div.innerHTML = '<p>No bookable services found. Sorry!</p>';
             showTicketStages('deptimes', true);
@@ -916,31 +914,14 @@ function checkCapacity() {
 function showCapacity(response) {
 
     var allok = true, anyerror = false, anydisablewarn = false;
-
     var renderdata = {};
     renderdata.legs = [];
-
     // TODO Account for seat only allocation here
     for (i in response.capacity) {
         var legdata = {};
         legdata.bays = [];
-        switch (journeytype) {
-            case 'single': legdata.name = ''; break;
-            case 'return':
-                if (i == 0) {
-                    legdata.name = 'Outbound';
-                } else {
-                    legdata.name = 'Return';
-                }
-                break;
-            case 'round':
-                switch (i) {
-                    case 0: legdata.name = '1st Trip'; break;
-                    case 1: legdata.name = '2nd Trip'; break;
-                    case 2: legdata.name = '3rd Trip'; break;
-                }
-                break;
-        }
+        legdata.num = 'Trip '+(parseInt(i)+1);
+        legdata.name = response.capacity[i].name;
 
         var legcap = response.capacity[i];
 
@@ -962,12 +943,22 @@ function showCapacity(response) {
             }
         } else {
             for (bi in legcap.bays) {
-                var baydata = {};
+                var baydata = legcap.bays[bi]
                 var desc = bi.split('_');
-                baydata = legcap.bays[bi]+'x '+desc[0];
-                switch(desc[1]) {
-                    case 'normal': baydata += ' seat bay'; break;
-                    case 'priority': baydata += ' seat bay (with wheelchair space)'; break;
+                if (desc[0] == 1) {
+                    switch(desc[1]) {
+                        case 'normal': baydata += ' seat'; break;
+                        case 'priority': baydata += ' wheelchair space'; break;
+                    }
+                    if (legcap.bays[bi] > 1) {
+                        baydata +='s';
+                    }
+                } else {
+                    baydata += 'x '+desc[0];
+                    switch(desc[1]) {
+                        case 'normal': baydata += ' seat bay'; break;
+                        case 'priority': baydata += ' seat bay (with wheelchair space)'; break;
+                    }
                 }
                 legdata.bays.push(baydata);
             }
@@ -975,9 +966,8 @@ function showCapacity(response) {
         renderdata.legs.push(legdata);
     }
 
-    if (allok) {
-        // TODO Account for seat only allocation here       
-        renderdata.message = 'The following seating bay(s) are available for your journey:';
+    if (allok) {     
+        renderdata.message = 'Confirmed seating space available for your journey:';
         
         if (getCBFormValue('disabledrequest')) {
             renderdata.disabledrequest = 'If there is more than one wheelchair user, or you need to communicate any other special requests '+
@@ -997,7 +987,7 @@ function showCapacity(response) {
     } else {
         renderdata.hidewarning = 'display:none;';
     }
-
+console.log(renderdata);
     var capacitydiv = document.getElementById('ticket_capacity');
     var bdtemplate = document.getElementById('bays_tmpl').innerHTML;
     capacitydiv.innerHTML = Mustache.render(bdtemplate, renderdata);

@@ -444,7 +444,13 @@ class BookableDay {
         return $this->data;
     }
 
-    public function get_allocation_type() {
+    public function get_allocation_type($format = false) {
+        if ($format) {
+            if ($this->data->allocateby == 'seat') {
+                return __('Seat', 'wc_railticket');
+            }
+            return __('Bay', 'wc_railticket');
+        }
         return $this->data->allocateby;
     }
 
@@ -475,7 +481,7 @@ class BookableDay {
                     $t->notbookable = true;
                 }
             } else {
-                $t->seatsleftstr = $capused->totalseats.' '.__('empty seats', 'wc_railticket');
+                $t->seatsleftstr = $capused->totalseats.'&nbsp;'.__('empty seats', 'wc_railticket');
             }
 
             $data[] = $t;
@@ -568,7 +574,7 @@ class BookableDay {
                         $time->notbookable = true;
                     }
                 } else {
-                    $time->seatsleftstr = $capused->totalseats.' '.__('empty seats', 'wc_railticket');
+                    $time->seatsleftstr = $capused->totalseats.'&nbsp;'.__('empty seats', 'wc_railticket');
                 }
             }
 

@@ -51,6 +51,28 @@ class Station {
         return $this->data->sequence;
     }
 
+
+    public function get_next_station($direction) {
+        global $wpdb;
+        if ($direction == 'up') {
+            $seq = $this->data->sequence-1;
+            if ($seq < 0) {
+                return false;
+            }
+        } else {
+            $seq = $this->data->sequence+1;
+        }
+
+        $stn = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_stations WHERE revision = ".
+            $this->data->revision." AND sequence = ".$seq." ORDER BY sequence ASC", OBJECT);
+
+        if (!$stn) {
+            return false;
+        }
+
+        return new Station($stn);
+    }
+
     public function is_principal() {
         return $this->data->principal;
     }

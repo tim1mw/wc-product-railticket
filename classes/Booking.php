@@ -340,4 +340,11 @@ class Booking {
             get_object_vars($this->data),
             array('id' => $this->data->id));
     }
+
+    public function get_created() {
+        $dt = new \DateTime();
+        $dt->setTimezone(new \DateTimeZone(get_option('timezone_string')));
+        $dt->setTimestamp($this->data->created);
+        return $dt;
+    }
 }
