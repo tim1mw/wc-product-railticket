@@ -80,11 +80,11 @@ class Timetable {
         return self::get_timetable($ttid, $revision, $date);
     }
 
-    public static function get_first_timetable($start, $end) {
+    public static function get_last_timetable($start, $end) {
         global $wpdb;
 
         $revision = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE ".
-            "datefrom <= '".$start."' AND dateto >= '".$end."' LIMIT 1");
+            "datefrom >= '".$start."' AND dateto <= '".$end."' ORDER BY datefrom DESC LIMIT 1");
         $tt = $wpdb->get_row("SELECT timetableid, date FROM {$wpdb->prefix}wc_railticket_dates WHERE date >= '".$start."' AND date <= '".$end."'");
 
         if (!$revision || !$tt) {
