@@ -438,6 +438,7 @@ class TicketBuilder {
         $data->legs[0] = new \stdclass();
         $data->legs[0]->times = $this->bookableday->get_bookable_trains($this->fromstation, $this->tostation, $this->overridevalid);
         $data->legs[0]->header ='';
+        $data->legs[0]->subheader = __('Departing from', 'wc_railticket').' '.$this->fromstation->get_name();
         $data->legs[0]->leg = 0;
         if ($this->journeytype == 'return') {
             $data->legs[1] = new \stdclass();
@@ -447,6 +448,7 @@ class TicketBuilder {
             $data->legs[1]->leg = 1;
             $data->legs[0]->header = __('Outbound', 'wc_railticket');
             $data->legs[1]->header = __('Return', 'wc_railticket');
+            $data->legs[1]->subheader = __('Departing from', 'wc_railticket').' '.$this->tostation->get_name();
         } elseif ($this->journeytype == 'round') {
             $data->legs[1] = new \stdclass();
             $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->rndtostation, $this->overridevalid,
@@ -459,6 +461,9 @@ class TicketBuilder {
             $data->legs[0]->header = __('1st Train', 'wc_railticket');
             $data->legs[1]->header = __('2nd Train', 'wc_railticket');
             $data->legs[2]->header = __('3rd Train', 'wc_railticket');
+            $data->legs[0]->subheader = __('Departing from', 'wc_railticket').' '.$this->fromstation->get_name();
+            $data->legs[1]->subheader = __('Departing from', 'wc_railticket').' '.$this->tostation->get_name();
+            $data->legs[2]->subheader = __('Departing from', 'wc_railticket').' '.$this->rndtostation->get_name();
         }
 
         return $data;
