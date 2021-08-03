@@ -191,8 +191,8 @@ class FareCalculator {
         return $this->get_date('datefrom', $format);
     }
 
-    public function get_first_timetable() {
-        return Timetable::get_first_timetable($this->data->datefrom, $this->data->dateto);
+    public function get_last_timetable() {
+        return Timetable::get_last_timetable($this->data->datefrom, $this->data->dateto);
     }
 
     public function get_name() {

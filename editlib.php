@@ -1741,7 +1741,7 @@ function railticket_fares() {
     $showdisabled = railticket_gettfpostfield('showdisabled');
 
     $farecalc = \wc_railticket\FareCalculator::get_fares($pricerevisionid); 
-    $timetable = $farecalc->get_first_timetable();
+    $timetable = $farecalc->get_last_timetable();
     $alldata = new \stdclass();
     $alldata->stations = $timetable->get_stations(true);
     if ($stnchoice == false) {
