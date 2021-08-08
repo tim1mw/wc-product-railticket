@@ -768,7 +768,7 @@ function railticket_summary_selector() {
     <h1>Service Summaries</h1>
     <div class='railticket_editdate'>
     <form method='post' action='<?php echo railticket_get_page_url(); ?>'>
-        <input type='hidden' name='action' value='filterbookings' />    
+        <input type='hidden' name='action' value='filterbookings' />
         <table><tr>
             <td>Day</td>
             <td>Month</td>
@@ -858,13 +858,39 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
 
     echo "<h2 style='font-size:x-large;line-height:120%;'>Booking override code:<span style='color:red'>".$bookableday->get_override()."</span></h2>";
 
+    $showall = false;
+    $allstns = 1;
+    $allstnsmes = "Show All Stations";
+    if (array_key_exists('allstns', $_REQUEST) && $_REQUEST['allstns'] == 1) {
+        $allstns = 0;
+        $allstnsmes = "Show Principal Stations Only";
+        $showall = true;
+    }
+
+    ?>
+    <div class='railticket_editdate'>
+    <form method='post' action='<?php echo railticket_get_page_url(); ?>'>
+        <input type='hidden' name='action' value='filterbookings' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney;?>' />
+        <input type='hidden' name='allstns' value='<?php echo $allstns;?>' />
+        <input type='submit' value='<?php echo $allstnsmes;?>' style='max-width:550px;' />
+    </form>
+    </div>
+    <?php
+
     $stations = $bookableday->timetable->get_stations();
     foreach ($stations as $station) {
+        if ($showall == false && !$station->is_principal()) {
+            continue;
+        }
         railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable, 'down');
     }
     echo "<hr />";
     $stations = array_reverse($stations);
     foreach ($stations as $station) {
+        if ($showall == false && !$station->is_principal()) {
+            continue;
+        }
         railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable, 'up');
     }
 
