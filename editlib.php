@@ -823,11 +823,33 @@ function railticket_getdayselect($chosenday) {
 function railticket_get_seatsummary() {
     $dateofjourney = sanitize_text_field($_REQUEST['dateofjourney']);
     $timetable = \wc_railticket\Timetable::get_timetable_by_date($dateofjourney);
-    ?><h1>Seat/Bay usage summary for <?php echo $timetable->get_date(true); ?></h1><?php
+    $showall = false;
+    $allstns = 1;
+    $allstnsmes = "Show All Stations";
+    if (array_key_exists('allstns', $_REQUEST) && $_REQUEST['allstns'] == 1) {
+        $allstns = 0;
+        $allstnsmes = "Show Principal Stations Only";
+        $showall = true;
+    }
+
+
+    ?><h1>Seat/Bay usage summary for <?php echo $timetable->get_date(true); ?></h1>
+    <div class='railticket_editdate'>
+    <form method='post' action='<?php echo railticket_get_page_url(); ?>'>
+        <input type='hidden' name='action' value='viewseatsummary' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney;?>' />
+        <input type='hidden' name='allstns' value='<?php echo $allstns;?>' />
+        <input type='submit' value='<?php echo $allstnsmes;?>' style='max-width:550px;' />
+    </form>
+    </div>
+    <?php
 
     $stations = $timetable->get_stations();
 
     foreach ($stations as $station) {
+        if ($showall == false && !$station->is_principal()) {
+            continue;
+        }
         railticket_show_station_summary($dateofjourney, $station, $timetable, 'down', true);
         railticket_show_station_summary($dateofjourney, $station, $timetable, 'up', true);
     }
@@ -860,9 +882,11 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
 
     $showall = false;
     $allstns = 1;
+    $allstnsalt = 0;
     $allstnsmes = "Show All Stations";
     if (array_key_exists('allstns', $_REQUEST) && $_REQUEST['allstns'] == 1) {
         $allstns = 0;
+        $allstnsalt = 1;
         $allstnsmes = "Show Principal Stations Only";
         $showall = true;
     }
@@ -948,6 +972,7 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
     <?php }?>
     <tr>
     <td colspan='2'><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='allstns' value='<?php echo $allstnsalt;?>' />
         <input type='hidden' name='action' value='viewseatsummary' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Seat/Bay Usage Summary' style='width:100%' />
