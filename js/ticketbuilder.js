@@ -529,7 +529,14 @@ function getDepTimes() {
                     }
                 }
             }
+        }
 
+        // Deal with outbound legs that have no return.
+        var lastcount = deplegs[deplegs.length-1].times.length;
+        for (i in deplegs) {
+            if (deplegs[i].times.length > lastcount) {
+                deplegs[i].times = deplegs[i].times.slice(0, lastcount);
+            }
             data.legs.push(Mustache.render(deptemplate, deplegs[i]));
         }
 
