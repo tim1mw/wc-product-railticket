@@ -540,6 +540,12 @@ function getDepTimes() {
             data.legs.push(Mustache.render(deptemplate, deplegs[i]));
         }
 
+        switch (deplegs.length) {
+            case 1: data.twidth = '100%'; break;
+            case 2: data.twidth = '50%'; break;
+            case 3: data.twidth = '33%'; break;
+        }
+
         var depctemplate = document.getElementById('depchoice_tmpl').innerHTML;
         div.innerHTML = Mustache.render(depctemplate, data);
 

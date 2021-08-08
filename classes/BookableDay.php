@@ -472,7 +472,7 @@ class BookableDay {
             $capused = $trainservice->get_inventory(false, false);
             $t->seatsleft = $capused->totalseats;
             if ($capused->totalseats == 0) {
-                $t->seatsleftstr = __('FULL - please try another train', 'wc_railticket');
+                $t->seatsleftstr = __('FULL - Sorry!', 'wc_railticket');
                 $t->classes .= " railticket_full";
                 if ($nodisable) {
                     $t->classes .= ' railticket_late';
@@ -565,7 +565,7 @@ class BookableDay {
                 $capused = $trainservice->get_inventory(false, false);
                 $time->seatsleft = $capused->totalseats;
                 if ($capused->totalseats == 0) {
-                    $time->seatsleftstr = __('FULL - please try another train', 'wc_railticket');
+                    $time->seatsleftstr = __('FULL - Sorry!', 'wc_railticket');
                     $time->classes .= " railticket_full";
                     if ($nodisable) {
                         $time->classes .= ' railticket_late';
