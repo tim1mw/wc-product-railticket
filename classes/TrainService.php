@@ -544,7 +544,7 @@ class TrainService {
             return $comp->specials->$sid;
         } else {
             $direction = $this->direction;
-            $deptime = $this->deptime;
+            $deptime = reset($this->service)->time;
             return $comp->$direction->$deptime;
         }
     }
