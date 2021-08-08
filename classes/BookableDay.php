@@ -525,7 +525,7 @@ class BookableDay {
             $time->disabled = '';
             $time->notbookable = false;
 
-            // Filter out trains which are after the specified time
+            // Filter out trains which are before the specified time
             if ($after) {
                 if ($dt < $after) {
                     continue;
