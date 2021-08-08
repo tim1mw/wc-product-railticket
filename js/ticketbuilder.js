@@ -502,7 +502,7 @@ function getDepTimes() {
         var deptemplate = document.getElementById('deplist_tmpl').innerHTML;
         var data = {};
         data.legs = [];
-        console.log(deplegs);
+
         for (i in deplegs) {
             deplegscount[i] = deplegs[i].times.length;
             for (t in deplegs[i].times) {
@@ -511,10 +511,21 @@ function getDepTimes() {
                 }
                 deplegs[i].times[t].skip = false;
                 if (i > 0) {
-                    var prevarr = (deplegs[i-1].times[t].stopsat.hour * 60) + deplegs[i-1].times[t].stopsat.min;
-                    var thisdep = (deplegs[i].times[t].hour * 60) + deplegs[i].times[t].min;
-                    if (thisdep < prevarr) {
-                        console.log("spacer "+deplegs[i].times[t]+" "+prevarr+" "+t+" "+deplegs[i].times.length);
+                    var thisdep = (deplegs[i].times[t].hour * 60) + parseInt(deplegs[i].times[t].min);
+                    for (loopt = t; loopt<deplegs[i-1].times.length; loopt++) {
+                        if (deplegs[i-1].times[loopt].skip) {
+                            continue;
+                        }
+
+                        var prevarr = (deplegs[i-1].times[loopt].stopsat.hour * 60) + parseInt(deplegs[i-1].times[loopt].stopsat.min);
+
+                        if (thisdep < prevarr) {
+                            break;
+                        }
+                        if (loopt == t) {
+                            continue;
+                        }
+
                         for (st = deplegs[i].times.length; st > t; st--) {
                             deplegs[i].times[st] = deplegs[i].times[st-1];
                         }
@@ -535,7 +546,7 @@ function getDepTimes() {
         var lastcount = deplegs[deplegs.length-1].times.length;
         for (i in deplegs) {
             if (deplegs[i].times.length > lastcount) {
-                deplegs[i].times = deplegs[i].times.slice(0, lastcount);
+                //deplegs[i].times = deplegs[i].times.slice(0, lastcount);
             }
             data.legs.push(Mustache.render(deptemplate, deplegs[i]));
         }
@@ -1000,7 +1011,7 @@ function showCapacity(response) {
     } else {
         renderdata.hidewarning = 'display:none;';
     }
-console.log(renderdata);
+
     var capacitydiv = document.getElementById('ticket_capacity');
     var bdtemplate = document.getElementById('bays_tmpl').innerHTML;
     capacitydiv.innerHTML = Mustache.render(bdtemplate, renderdata);
