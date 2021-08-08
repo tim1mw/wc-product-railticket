@@ -502,7 +502,7 @@ function getDepTimes() {
         var deptemplate = document.getElementById('deplist_tmpl').innerHTML;
         var data = {};
         data.legs = [];
-        console.log(deplegs);
+console.log(deplegs);
         for (i in deplegs) {
             deplegscount[i] = deplegs[i].times.length;
             for (t in deplegs[i].times) {
@@ -511,10 +511,21 @@ function getDepTimes() {
                 }
                 deplegs[i].times[t].skip = false;
                 if (i > 0) {
-                    var prevarr = (deplegs[i-1].times[t].stopsat.hour * 60) + deplegs[i-1].times[t].stopsat.min;
-                    var thisdep = (deplegs[i].times[t].hour * 60) + deplegs[i].times[t].min;
-                    if (thisdep < prevarr) {
-                        console.log("spacer "+deplegs[i].times[t]+" "+prevarr+" "+t+" "+deplegs[i].times.length);
+                    var thisdep = (deplegs[i].times[t].hour * 60) + parseInt(deplegs[i].times[t].min);
+                    for (loopt = t; loopt<deplegs[i-1].times.length; loopt++) {
+                        if (deplegs[i-1].times[loopt].skip) {
+                            continue;
+                        }
+
+                        var prevarr = (deplegs[i-1].times[loopt].stopsat.hour * 60) + parseInt(deplegs[i-1].times[loopt].stopsat.min);
+
+                        if (thisdep < prevarr) {
+                            break;
+                        }
+                        if (loopt == t) {
+                            continue;
+                        }
+
                         for (st = deplegs[i].times.length; st > t; st--) {
                             deplegs[i].times[st] = deplegs[i].times[st-1];
                         }
@@ -523,27 +534,38 @@ function getDepTimes() {
                         deplegs[i].times[t].disabled = "disabled";
                         deplegs[i].times[t].index = 999;
                         deplegs[i].times[t].formatted = '----';
-                        deplegs[i].times[t].seatsleftstr = '--';
-                        deplegs[i].times[t].arr = '--'; 
+                        deplegs[i].times[t].seatsleftstr = '';
+                        deplegs[i].times[t].arr = ''; 
                         deplegs[i].times[t].skip = true;
                     }
                 }
             }
         }
 
+        var mheight = 0;
+        switch (deplegs.length) {
+            case 1:
+                data.twidth = '100%';
+                mheight = '80';
+                break;
+            case 2:
+                data.twidth = '50%';
+                mheight = '80';
+                break;
+            case 3:
+                data.twidth = '33%';
+                mheight = '104';
+                break;
+        }
+
         // Deal with outbound legs that have no return.
         var lastcount = deplegs[deplegs.length-1].times.length;
         for (i in deplegs) {
+            deplegs[i].minheight = mheight;
             if (deplegs[i].times.length > lastcount) {
                 deplegs[i].times = deplegs[i].times.slice(0, lastcount);
             }
             data.legs.push(Mustache.render(deptemplate, deplegs[i]));
-        }
-
-        switch (deplegs.length) {
-            case 1: data.twidth = '100%'; break;
-            case 2: data.twidth = '50%'; break;
-            case 3: data.twidth = '33%'; break;
         }
 
         var depctemplate = document.getElementById('depchoice_tmpl').innerHTML;
@@ -1000,7 +1022,7 @@ function showCapacity(response) {
     } else {
         renderdata.hidewarning = 'display:none;';
     }
-console.log(renderdata);
+
     var capacitydiv = document.getElementById('ticket_capacity');
     var bdtemplate = document.getElementById('bays_tmpl').innerHTML;
     capacitydiv.innerHTML = Mustache.render(bdtemplate, renderdata);
