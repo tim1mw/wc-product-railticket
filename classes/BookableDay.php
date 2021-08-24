@@ -494,7 +494,8 @@ class BookableDay {
         $times = $this->timetable->get_times($from, $direction, "deps", true, $to);
 
         if ($after) {
-            $after = ($after->hour*60) + $after->min;
+            // TODO The +1 needs to be a config param for minimum connection time
+            $after = ($after->hour*60) + $after->min + 1;
         }
         if ($disableafter) {
             $disableafter = ($disableafter->hour*60) + $disableafter->min;

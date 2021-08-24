@@ -505,7 +505,7 @@ function getDepTimes() {
 
         for (i in deplegs) {
             deplegscount[i] = deplegs[i].times.length;
-            for (t in deplegs[i].times) {
+            for (var t=0; t < deplegs[i].times.length; t++) {
                 if (deplegs[i].times[t].hasOwnProperty('seatsleftstr') && deplegs[i].times[t].seatsleftstr.length > 0) {
                     deplegs[i].times[t].sep = ', ';
                 }
@@ -517,7 +517,7 @@ function getDepTimes() {
                             continue;
                         }
 
-                        var prevarr = (deplegs[i-1].times[loopt].stopsat.hour * 60) + parseInt(deplegs[i-1].times[loopt].stopsat.min)+1;
+                        var prevarr = (deplegs[i-1].times[loopt].stopsat.hour * 60) + parseInt(deplegs[i-1].times[loopt].stopsat.min);
 
                         if (thisdep < prevarr) {
                             break;
@@ -526,17 +526,7 @@ function getDepTimes() {
                             continue;
                         }
 
-                        for (st = deplegs[i].times.length; st > t; st--) {
-                            deplegs[i].times[st] = deplegs[i].times[st-1];
-                        }
-                        deplegs[i].times[t] = {}
-                        deplegs[i].times[t].notbookable = true;
-                        deplegs[i].times[t].disabled = "disabled";
-                        deplegs[i].times[t].index = 999;
-                        deplegs[i].times[t].formatted = '----';
-                        deplegs[i].times[t].seatsleftstr = '';
-                        deplegs[i].times[t].arr = ''; 
-                        deplegs[i].times[t].skip = true;
+                        addSpacer(deplegs[i], t);
                     }
                 }
             }
@@ -560,6 +550,7 @@ function getDepTimes() {
 
         // Deal with outbound legs that have no return.
         var lastcount = deplegs[deplegs.length-1].times.length;
+
         for (i in deplegs) {
             deplegs[i].minheight = mheight;
             if (deplegs[i].times.length > lastcount) {
@@ -596,6 +587,20 @@ function getDepTimes() {
 
         showTicketStages('deptimes', true);
     });
+}
+
+function addSpacer(depleg, t) {
+    for (st = depleg.times.length; st > t; st--) {
+        depleg.times[st] = depleg.times[st-1];
+    }
+    depleg.times[t] = {}
+    depleg.times[t].notbookable = true;
+    depleg.times[t].disabled = "disabled";
+    depleg.times[t].index = 999;
+    depleg.times[t].formatted = '----';
+    depleg.times[t].seatsleftstr = '';
+    depleg.times[t].arr = ''; 
+    depleg.times[t].skip = true;
 }
 
 
