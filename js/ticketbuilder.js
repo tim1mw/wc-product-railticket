@@ -502,7 +502,7 @@ function getDepTimes() {
         var deptemplate = document.getElementById('deplist_tmpl').innerHTML;
         var data = {};
         data.legs = [];
-console.log(deplegs);
+
         for (i in deplegs) {
             deplegscount[i] = deplegs[i].times.length;
             for (t in deplegs[i].times) {
@@ -517,7 +517,7 @@ console.log(deplegs);
                             continue;
                         }
 
-                        var prevarr = (deplegs[i-1].times[loopt].stopsat.hour * 60) + parseInt(deplegs[i-1].times[loopt].stopsat.min);
+                        var prevarr = (deplegs[i-1].times[loopt].stopsat.hour * 60) + parseInt(deplegs[i-1].times[loopt].stopsat.min)+1;
 
                         if (thisdep < prevarr) {
                             break;
