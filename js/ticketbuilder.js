@@ -517,7 +517,7 @@ function getDepTimes() {
                             continue;
                         }
 
-                        var prevarr = (deplegs[i-1].times[loopt].stopsat.hour * 60) + parseInt(deplegs[i-1].times[loopt].stopsat.min);
+                        var prevarr = (deplegs[i-1].times[loopt].stopsat.hour * 60) + parseInt(deplegs[i-1].times[loopt].stopsat.min)+1;
 
                         if (thisdep < prevarr) {
                             break;
