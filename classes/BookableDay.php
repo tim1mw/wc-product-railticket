@@ -565,7 +565,7 @@ class BookableDay {
                 $trainservice = new \wc_railticket\TrainService($this, $from, $time->key, $to);
                 $capused = $trainservice->get_inventory(false, false);
                 $time->seatsleft = $capused->totalseats;
-                if ($capused->totalseats == 0) {
+                if ($capused->totalseats <= 0) {
                     $time->seatsleftstr = __('FULL - Sorry!', 'wc_railticket');
                     $time->classes .= " railticket_full";
                     if ($nodisable) {
