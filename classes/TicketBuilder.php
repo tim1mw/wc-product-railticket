@@ -608,7 +608,7 @@ class TicketBuilder {
                 'ticketprices' => $pricedata->ticketprices, 'unique' => uniqid());
 
             if ($this->discount) {
-                if (strlen($this->discountnote)) {
+                if (strlen($this->discountnote) > 0) {
                     $cart_item_data['discountnote'] = $this->discountnote;
                 }
                 $this->discount->use();
