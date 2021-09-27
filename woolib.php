@@ -198,7 +198,7 @@ function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
 
     $discount = $bookingorder->get_discount_type();
     if ($discount) {
-        if ($discount->show_notes()) {
+        if ($discount->show_notes() && $bookingorder->get_discount_note() !== false) {
             $dn = " (".$bookingorder->get_discount_note().")";
         } else {
             $dn = "";
