@@ -124,6 +124,15 @@ class CoachManager {
     }
 
     public static function format_booking_bay($bay) {
+        if ($bay->num == 1) {
+            if ($bay->priority) {
+                $name = __('Wheelchair space(s)', 'wc_railticket');
+            } else {
+                $name = __('Seat(s)', 'wc_railticket');
+            }
+            return $bay->num."x ".self::format_bay_name($bay);
+        }
+
         if ($bay->priority) {
             $name = __('Seat Wheelchair Bay', 'wc_railticket');
         } else {
@@ -134,6 +143,14 @@ class CoachManager {
     }
 
     public static function format_bay_name($bay) {
+        if ($bay->baysize == 1) {
+            if ($bay->priority) {
+                return __('Wheelchair Space(s)', 'wc_railticket');
+            } else {
+                return __('Seat(s)', 'wc_railticket');
+            }
+        }
+
         if ($bay->priority) {
             $name = __('Seat Wheelchair Bay', 'wc_railticket');
         } else {
