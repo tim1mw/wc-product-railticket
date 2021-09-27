@@ -960,7 +960,11 @@ function showCapacity(response) {
     for (i in response.capacity) {
         var legdata = {};
         legdata.bays = [];
-        legdata.num = 'Trip '+(parseInt(i)+1);
+        if (response.capacity.length > 1) {
+            legdata.num = 'Trip '+(parseInt(i)+1)+':';
+        } else {
+            legdata.num = '';
+        }
         legdata.name = response.capacity[i].name;
 
         var legcap = response.capacity[i];
