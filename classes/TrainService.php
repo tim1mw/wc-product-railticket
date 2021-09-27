@@ -118,7 +118,11 @@ class TrainService {
         }
 
         $allocatedbays->ok = true;
-        $allocatedbays->name = $this->fromstation->get_name().' - '.$this->tostation->get_name();
+        if ($this->special) {
+            $allocatedbays->name = $this->special->get_name();
+        } else {
+            $allocatedbays->name = $this->fromstation->get_name().' - '.$this->tostation->get_name();
+        }
         return $allocatedbays;
     }
 
