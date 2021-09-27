@@ -19,9 +19,13 @@ class Special {
         return self::get_specials_sql("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date >= '".$year."-01-01' AND date <= '".$year."-12-31'", $dataonly);
     }
 
-    public static function get_specials($date, $dataonly = false) {
+    public static function get_specials($date, $dataonly = false, $onsaleonly = false) {
         global $wpdb;
-        return self::get_specials_sql("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$date."'", $dataonly);
+        if ($onsaleonly) {
+            return self::get_specials_sql("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE onsale = 1 AND date = '".$date."'", $dataonly);
+        } else {
+            return self::get_specials_sql("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date = '".$date."'", $dataonly);
+        }
     }
 
     private static function get_specials_sql($sql, $dataonly = false) {
