@@ -2452,7 +2452,7 @@ function railticket_show_special_summary() {
     $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
     $today->setTimezone($railticket_timezone);
     $today->setTime(0,0,0);
-    $timetable = \wc_railticket\Timetable::get_timetable_by_date($today->format('Y-m-d'));
+    $timetable = \wc_railticket\Timetable::get_timetables()[0];
     $alldata->fromstation = $timetable->get_stations(true);
     $alldata->tostation = $timetable->get_stations(true);
     end($alldata->tostation)->selected = "selected";
