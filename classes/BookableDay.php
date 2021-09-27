@@ -459,7 +459,7 @@ class BookableDay {
     }
 
     public function get_specials_onsale_data($nodisable) {
-        $sps = Special::get_specials($this->data->date);
+        $sps = Special::get_specials($this->data->date, false, true);
         $data = array();
         if (!$sps) {
             return $data;
