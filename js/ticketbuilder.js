@@ -673,6 +673,14 @@ function convert24hour(time) {
 }
 
 function renderTicketSelector() {
+
+    if (ticketdata.travellers.length == 0) {
+        var errordiv = document.getElementById('railticket_error');
+        errordiv.innerHTML = '<p style="text-align:center;font-weight:bold;">Tickets are not currently available to purchase for this service online. Sorry!';
+        errordiv.style.display='block';
+        return;
+    }
+
     if (!specialSelected) {
         var jc = getFormValue('journeychoice');
         var jcparts = jc.split('_');
@@ -1158,6 +1166,9 @@ function disabledRequest() {
 function showTicketStages(stage, doscroll) {
     var display = 'block';
     var scroll = null;
+
+    var errordiv = document.getElementById('railticket_error');
+    errordiv.style.display='none';
 
     var datechooser = document.getElementById('datechooser');
     datechooser.style.display = display;
