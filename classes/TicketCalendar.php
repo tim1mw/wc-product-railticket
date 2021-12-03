@@ -108,19 +108,19 @@ class TicketCalendar
 
             if ($timetable) {
                 if ($datebookable) {
+                    $calendar .= "<a style='".$style."' title='Click to select this date' href=\"javascript:setBookingDate('".$running_day->format("Y-m-d")."');\">";
+                    $calendar .= $running_day->format('j');
+                    $calendar .= '</a>';
+                } else {
                     if ($datesoldout) {
-                        $calendar .= "<a style='".$style."' title='Sold Out' href=\"javascript:soldOut('".$running_day->format("Y-m-d")."');\">";
-                        $calendar .= 'X';
+                        $calendar .= "<a style='".$style." text-decoration: line-through;' title='Sold Out' href=\"javascript:soldOut('".$running_day->format("Y-m-d")."');\">";
+                        $calendar .= $running_day->format('j');
                         $calendar .= '</a>';
                     } else {
-                        $calendar .= "<a style='".$style."' title='Click to select this date' href=\"javascript:setBookingDate('".$running_day->format("Y-m-d")."');\">";
+                        $calendar .= "<a style='".$style."' title='Not available to book on line ---' href=\"javascript:notBookable('".$running_day->format("Y-m-d")."');\">";
                         $calendar .= $running_day->format('j');
                         $calendar .= '</a>';
                     }
-                } else {
-                    $calendar .= "<a style='".$style."' title='Not available to book on line' href=\"javascript:notBookable('".$running_day->format("Y-m-d")."');\">";
-                    $calendar .= $running_day->format('j');
-                    $calendar .= '</a>';
                 }
             } else {
                 $calendar .= $running_day->format('j');
