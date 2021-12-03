@@ -117,7 +117,7 @@ class TicketCalendar
                         $calendar .= $running_day->format('j');
                         $calendar .= '</a>';
                     } else {
-                        $calendar .= "<a style='".$style."' title='Not available to book on line ---' href=\"javascript:notBookable('".$running_day->format("Y-m-d")."');\">";
+                        $calendar .= "<a style='".$style."' title='Not available to book on line' href=\"javascript:notBookable('".$running_day->format("Y-m-d")."');\">";
                         $calendar .= $running_day->format('j');
                         $calendar .= '</a>';
                     }
