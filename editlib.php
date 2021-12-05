@@ -1136,7 +1136,6 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<tr><th>Direction</th><th>".$direction."</th></tr>".
             "<tr><th>Total orders here</th><th>".count($bookings[$station->get_stnid()])."</th></tr>".
             "<tr><th>Wheelchair requests</th><th>".$trainservice->count_priority_requested()."</th></tr>".
-            "<tr><th>Passengers boarding here</th><th>".$seats."</th></tr>".
             "<tr><th>Seats available</th><th>".$capused->totalseats;
 
         if ($capused->totalseats != $capused->totalseatsmax) {
@@ -1144,7 +1143,32 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         }
 
         echo "</th></tr>".
-            "</table></div><br />";
+            "</table>".
+            "<h2>Passengers Summary</h2>".
+            "<table class='railticket_admintable' border='1'>".
+            "<tr><th>Total boarding here</th><th>".$seats."</th></tr>";
+
+        $travellers = array();
+        foreach ($bookings[$station->get_stnid()] as $booking) {
+            $bo = \wc_railticket\BookingOrder::get_booking_order($booking->get_order_id());
+            $tr = $bo->get_travellers();
+            foreach ($tr as $tk => $tt) {
+                $tk = explode('/', $tk)[0];
+                if (!array_key_exists($tk, $travellers)) {
+                    $travellers[$tk] = 0;
+                }
+
+                $travellers[$tk] += $tt;
+            }
+        }
+
+        foreach ($travellers as $tk => $tt) {
+            if ($tt > 0) {
+                echo "<tr><th>".\wc_railticket\FareCalculator::get_traveller($tk)->name."</th><th>".$tt."</th></tr>";
+            }
+        }
+
+        echo "</div><br />";
     }
 
     if ($trainservice->special) {
