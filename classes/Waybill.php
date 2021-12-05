@@ -20,6 +20,7 @@ class Waybill extends Report {
         $this->totaljourneys = 0;
         $this->totalonlineprice = 0;
         $this->totalguardprice = 0;
+        $this->totaltravellers = array();
 
         $bookingids = $this->bookableday->get_all_order_ids();
         foreach ($bookingids as $bookingid) {
@@ -101,6 +102,17 @@ class Waybill extends Report {
             }    
         }
 
+        foreach ($this->lines as $key => $numsold) {
+            $keyparts = explode('|', $key);
+            $ticketcomp = \wc_railticket\FareCalculator::get_ticket_composition($keyparts[3]);
+            foreach ($ticketcomp as $traveller => $number) {
+                if (!array_key_exists($traveller, $this->totaltravellers)) {
+                    $this->totaltravellers[$traveller] = 0;
+                }
+                $this->totaltravellers[$traveller] += $number * $numsold;
+            }
+        }
+
         uksort($this->lines, function ($a, $b) {
             $a = mb_strtolower($a);
             $b = mb_strtolower($b);
@@ -180,6 +192,14 @@ class Waybill extends Report {
         fputcsv($f, array());
         fputcsv($f, array());
 
+        $travellers = array();
+        foreach ($this->totaltravellers as $key => $total) {
+            fputcsv($f, array(\wc_railticket\FareCalculator::get_traveller($key)->name, $total));
+        }
+
+        fputcsv($f, array());
+        fputcsv($f, array());
+
         fputcsv($f, array('Total Passengers', $this->totalseats, ' ', 'Total Manual Booking Revenue', $this->totalmanual));
         fputcsv($f, array('Total Tickets', $this->totaltickets, ' ', 'Total Online Bookings Revenue', $this->totalwoo));
         fputcsv($f, array('Total One Way Journeys', $this->totaljourneys, ' ', 'Total Guards Price Revenue', $this->totalguardprice));
@@ -240,6 +260,14 @@ class Waybill extends Report {
             $plines[] = $nline;
         }
 
+        $travellers = array();
+        foreach ($this->totaltravellers as $key => $total) {
+            $traveller = new \stdclass();
+            $traveller->total = $total;
+            $traveller->name = \wc_railticket\FareCalculator::get_traveller($key)->name;
+            $travellers[] = $traveller;
+        }
+
         $alldata = new \stdclass();
         $alldata->date = $this->bookableday->get_date();
         $alldata->dateformatted = $this->bookableday->get_date(true);
@@ -260,6 +288,8 @@ class Waybill extends Report {
         $alldata->totalsupplements = number_format($this->totalsupplements, 2);
 
         $alldata->guards = $gts;
+
+        $alldata->travellers = $travellers;
 
         $alldata->url = railticket_get_page_url();
 
