@@ -60,6 +60,13 @@ class FareCalculator {
         return $name;
     }
 
+    public static function get_ticket_composition($ticket) {
+        global $wpdb;
+        $tparts = explode('/', $ticket);
+        $name = $wpdb->get_var("SELECT composition FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$tparts[0]."'");
+        return json_decode($name);
+    }
+
     public static function get_all_ticket_types($showhidden = false) {
         global $wpdb;
         if ($showhidden) {
