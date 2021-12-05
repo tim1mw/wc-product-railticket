@@ -192,6 +192,14 @@ class Waybill extends Report {
         fputcsv($f, array());
         fputcsv($f, array());
 
+        $travellers = array();
+        foreach ($this->totaltravellers as $key => $total) {
+            fputcsv($f, array(\wc_railticket\FareCalculator::get_traveller($key)->name, $total));
+        }
+
+        fputcsv($f, array());
+        fputcsv($f, array());
+
         fputcsv($f, array('Total Passengers', $this->totalseats, ' ', 'Total Manual Booking Revenue', $this->totalmanual));
         fputcsv($f, array('Total Tickets', $this->totaltickets, ' ', 'Total Online Bookings Revenue', $this->totalwoo));
         fputcsv($f, array('Total One Way Journeys', $this->totaljourneys, ' ', 'Total Guards Price Revenue', $this->totalguardprice));
