@@ -2643,13 +2643,6 @@ function railticket_get_geo() {
     $end = railticket_getpostfield('end');
     $consolidation = railticket_getpostfield('consolidation');
 
-    header('Content-Type: application/csv');
-    header('Content-Disposition: attachment; filename="geostats_'.$start.'_'.$end.'.csv";');
-    header('Pragma: no-cache');
-    $f = fopen('php://output', 'w');
-    $lines = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stats WHERE ".
-        "date >= '".$start."' AND date <= '".$end."' ORDER BY DATE ASC");
-
     $field = '';
     $fname = '';
     switch ($consolidation) {
@@ -2657,6 +2650,13 @@ function railticket_get_geo() {
         case 'first': $field = 'postcodefirst'; $fname = 'Postcode First Part'; break;
         case 'full': $field = 'postcodes'; $fname = 'Postcode'; break;
     }
+
+    header('Content-Type: application/csv');
+    header('Content-Disposition: attachment; filename="geostats_'.$field.'_'.$start.'_'.$end.'.csv";');
+    header('Pragma: no-cache');
+    $f = fopen('php://output', 'w');
+    $lines = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stats WHERE ".
+        "date >= '".$start."' AND date <= '".$end."' ORDER BY DATE ASC");
 
     $totals = array();
     foreach ($lines as $line) {
@@ -2667,18 +2667,23 @@ function railticket_get_geo() {
         $data = (array) $data;
         foreach ($data as $k => $v) {
             if (array_key_exists($k, $totals)) {
-                $totals[$k] += $v;
+                $totals[$k]->orders += $v->orders;
+                $totals[$k]->seats += $v->seats;
+                $totals[$k]->price += $v->price;
             } else {
-                $totals[$k] = $v;
+                $totals[$k] = new \stdclass();
+                $totals[$k]->orders = $v->orders;
+                $totals[$k]->seats = $v->seats;
+                $totals[$k]->price = $v->price;
             }
         }
     }
 
     arsort($totals);
-    fputcsv($f, array($fname, 'Total Orders'));
+    fputcsv($f, array($fname, 'Total Orders', 'Total Seats', 'Total Revenue'));
     foreach ($totals as $p => $v) {
         unset($line->id);
-        fputcsv($f, array($p, $v));
+        fputcsv($f, array($p, $v->orders, $v->seats, $v->price));
     }
 
     fclose($f);

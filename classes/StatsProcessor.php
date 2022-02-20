@@ -73,9 +73,14 @@ class StatsProcessor {
 
             if (count($postcodeparts) > 0) {
                 if (!array_key_exists($postcode, $allpostcodes)) {
-                    $allpostcodes[$postcode] = 1;
+                    $allpostcodes[$postcode] = new \stdclass();
+                    $allpostcodes[$postcode]->orders = 1;
+                    $allpostcodes[$postcode]->seats = $bookingorder->get_seats();
+                    $allpostcodes[$postcode]->price = $bookingorder->get_price();
                 } else {
-                    $allpostcodes[$postcode] ++;
+                    $allpostcodes[$postcode]->orders ++;
+                    $allpostcodes[$postcode]->seats += $bookingorder->get_seats();
+                    $allpostcodes[$postcode]->price += $bookingorder->get_price();
                 }
 
                 $postcodeparts[0] = trim($postcodeparts[0]);
@@ -84,17 +89,27 @@ class StatsProcessor {
                 }
                 if (strlen($postcodeparts[0]) > 1) {
                     if (!array_key_exists($postcodeparts[0], $postcodefirst)) {
-                        $postcodefirst[$postcodeparts[0]] = 1;
+                        $postcodefirst[$postcodeparts[0]] = new \stdclass();
+                        $postcodefirst[$postcodeparts[0]]->orders = 1;
+                        $postcodefirst[$postcodeparts[0]]->seats = $bookingorder->get_seats();
+                        $postcodefirst[$postcodeparts[0]]->price = $bookingorder->get_price();
                     } else {
-                        $postcodefirst[$postcodeparts[0]] ++;
+                        $postcodefirst[$postcodeparts[0]]->orders ++;
+                        $postcodefirst[$postcodeparts[0]]->seats += $bookingorder->get_seats();
+                        $postcodefirst[$postcodeparts[0]]->price += $bookingorder->get_price();
                     }
                 }
                 $letters = trim(preg_replace('#^([a-z]+).*#i','$1', $postcode));
                 if (strlen($letters) > 0 && strlen($letters) < 3) {
                     if (!array_key_exists($letters, $postcodezone)) {
-                        $postcodezone[$letters] = 1;
+                        $postcodezone[$letters] = new \stdclass();
+                        $postcodezone[$letters]->orders = 1;
+                        $postcodezone[$letters]->seats = $bookingorder->get_seats();
+                        $postcodezone[$letters]->price = $bookingorder->get_price();
                     } else {
-                        $postcodezone[$letters] ++;
+                        $postcodezone[$letters]->orders ++;
+                        $postcodezone[$letters]->seats += $bookingorder->get_seats();
+                        $postcodezone[$letters]->price += $bookingorder->get_price();
                     }
                 }
             }
