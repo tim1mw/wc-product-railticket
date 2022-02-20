@@ -35,6 +35,7 @@ class OrderSummary extends Report{
             $line[] = $bookingorder->get_customer_name();
             $line[] = $bookingorder->get_email();
             $line[] = $bookingorder->get_phone();
+            $line[] = $bookingorder->get_postcode();
             $line[] = $bookings[0]->get_from_station()->get_name();
             if ($bookingorder->get_journeytype() == 'round') {
                 $line[] = $bookings[0]->get_from_station()->get_name();
@@ -78,7 +79,7 @@ class OrderSummary extends Report{
             return strcmp($a, $b);
         });
 
-        $header = array('Order ID', 'Name', 'Email', 'Phone', 'From', 'To', 'Journey', 
+        $header = array('Order ID', 'Name', 'Email', 'Phone', 'Post Code', 'From', 'To', 'Journey', 
             'Tickets', 'Seats', 'Supp.', 'Fare Type', 'Discount Type', 'Discount', 'Total Price', 'Notes');
 
         if ($iscsv) {
