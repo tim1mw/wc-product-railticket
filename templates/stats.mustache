@@ -1,10 +1,27 @@
-<h1>Download stats</h1>
+<h1>Download Order Stats</h1>
 
 <form action='{{adminurl}}' method='post'>
 <input type='hidden' name='action' value='railticketstats.csv' />
 <table>
     <tr><td>Start date</td><td><input type='date' name='start' required /></td></tr>
     <tr><td>End date</td><td><input type='date' name='end' required /></td></tr>
+    <tr><td></td><td><input type='submit' value='Download' /></td></tr>
+</table></form> 
+
+<h1>Download Geographic Stats</h1>
+<p>Note, currently processed UK postcodes only.</p>
+<form action='{{adminurl}}' method='post'>
+<input type='hidden' name='action' value='railticketgeo.csv' />
+<table>
+    <tr><td>Start date</td><td><input type='date' name='start' required /></td></tr>
+    <tr><td>End date</td><td><input type='date' name='end' required /></td></tr>
+    <tr><td>Consolidation Type</td><td>
+        <select name='consolidation'>
+            <option value='zone'>Postcode Zone</option>
+            <option value='first'>Postcode First Part</option>
+            <option value='full'>Full Postcode</option>
+        </select>
+    </td></tr>
     <tr><td></td><td><input type='submit' value='Download' /></td></tr>
 </table></form> 
 

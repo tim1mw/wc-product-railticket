@@ -23,6 +23,9 @@ class StatsProcessor {
         $prebook2 = 0;
         $totalonline = 0;
         $totalmanual = 0;
+        $allpostcodes = array();
+        $postcodefirst = array();
+        $postcodezone = array();
 
         $dtz = new \DateTimeZone(get_option('timezone_string'));
         $pbdate1 = \DateTime::createFromFormat('Y-m-d H:i', $this->bookableday->get_date().' 18:00', $dtz);
@@ -48,6 +51,68 @@ class StatsProcessor {
             if ($created < $pbdate2) {
                 $prebook2 += $bookingorder->get_seats();
             }
+
+            $postcode = trim($bookingorder->get_postcode());
+            if (strlen($postcode) == 0) {
+                continue;
+            }
+
+            $postcode = $this->postcode_format($postcode);
+            if (strlen($postcode) < 6) {
+                continue;
+            }
+
+            if (is_numeric($postcode)) {
+                continue;
+            }
+
+            $postcodeparts = explode(' ', $postcode);
+            if ($postcodeparts == null) {
+                continue;
+            } 
+
+            if (count($postcodeparts) > 0) {
+                if (!array_key_exists($postcode, $allpostcodes)) {
+                    $allpostcodes[$postcode] = new \stdclass();
+                    $allpostcodes[$postcode]->orders = 1;
+                    $allpostcodes[$postcode]->seats = $bookingorder->get_seats();
+                    $allpostcodes[$postcode]->price = $bookingorder->get_price();
+                } else {
+                    $allpostcodes[$postcode]->orders ++;
+                    $allpostcodes[$postcode]->seats += $bookingorder->get_seats();
+                    $allpostcodes[$postcode]->price += $bookingorder->get_price();
+                }
+
+                $postcodeparts[0] = trim($postcodeparts[0]);
+                if (is_numeric($postcodeparts[0])) {
+                    continue;
+                }
+                if (strlen($postcodeparts[0]) > 1) {
+                    if (!array_key_exists($postcodeparts[0], $postcodefirst)) {
+                        $postcodefirst[$postcodeparts[0]] = new \stdclass();
+                        $postcodefirst[$postcodeparts[0]]->orders = 1;
+                        $postcodefirst[$postcodeparts[0]]->seats = $bookingorder->get_seats();
+                        $postcodefirst[$postcodeparts[0]]->price = $bookingorder->get_price();
+                    } else {
+                        $postcodefirst[$postcodeparts[0]]->orders ++;
+                        $postcodefirst[$postcodeparts[0]]->seats += $bookingorder->get_seats();
+                        $postcodefirst[$postcodeparts[0]]->price += $bookingorder->get_price();
+                    }
+                }
+                $letters = trim(preg_replace('#^([a-z]+).*#i','$1', $postcode));
+                if (strlen($letters) > 0 && strlen($letters) < 3) {
+                    if (!array_key_exists($letters, $postcodezone)) {
+                        $postcodezone[$letters] = new \stdclass();
+                        $postcodezone[$letters]->orders = 1;
+                        $postcodezone[$letters]->seats = $bookingorder->get_seats();
+                        $postcodezone[$letters]->price = $bookingorder->get_price();
+                    } else {
+                        $postcodezone[$letters]->orders ++;
+                        $postcodezone[$letters]->seats += $bookingorder->get_seats();
+                        $postcodezone[$letters]->price += $bookingorder->get_price();
+                    }
+                }
+            }
         }
 
         $stations = $this->bookableday->timetable->get_stations();
@@ -70,6 +135,9 @@ class StatsProcessor {
             $rec->maxload = $maxload;
             $rec->prebook1 = $prebook1;
             $rec->prebook2 = $prebook2;
+            $rec->postcodes = json_encode($allpostcodes);
+            $rec->postcodefirst = json_encode($postcodefirst);
+            $rec->postcodezone = json_encode($postcodezone);
             $wpdb->update("{$wpdb->prefix}wc_railticket_stats", (array) $rec, array('id' => $rec->id));
         } else {
             $rec = new \stdclass();
@@ -82,8 +150,25 @@ class StatsProcessor {
             $rec->maxload = $maxload;
             $rec->prebook1 = $prebook1;
             $rec->prebook2 = $prebook2;
+            $rec->postcodes = json_encode($allpostcodes);
+            $rec->postcodefirst = json_encode($postcodefirst);
+            $rec->postcodezone = json_encode($postcodezone);
             $wpdb->insert("{$wpdb->prefix}wc_railticket_stats", (array) $rec);
         }
+    }
+
+
+    private function postcode_format($postcode) {
+        //remove non alphanumeric characters
+        $cleanPostcode = preg_replace("/[^A-Za-z0-9]/", '', $postcode);
+ 
+        //make uppercase
+        $cleanPostcode = strtoupper($cleanPostcode);
+ 
+        //insert space
+        $postcode = substr($cleanPostcode, 0, -3) . " " . substr($cleanPostcode, -3);
+ 
+        return trim($postcode);
     }
 
     private function check_max_load($fromstation, $tostation, $deps, $cmax) {

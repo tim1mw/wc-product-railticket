@@ -14,6 +14,7 @@ add_action ('admin_post_ordersummary.csv', 'railticket_get_ordersummary_csv');
 add_action( 'wp_ajax_railticket_adminajax', 'railticket_ajax_adminrequest');
 add_action('railticket_process_stats_cron', 'railticket_process_stats');
 add_action('admin_post_railticketstats.csv', 'railticket_get_stats');
+add_action('admin_post_railticketgeo.csv', 'railticket_get_geo');
 
 // Schedule an action if it's not already scheduled
 if ( ! wp_next_scheduled( 'railticket_process_stats_cron' ) ) {
@@ -2635,6 +2636,60 @@ function railticket_get_stats() {
     exit;
 }
 
+function railticket_get_geo() {
+    global $wpdb;
+
+    $start = railticket_getpostfield('start');
+    $end = railticket_getpostfield('end');
+    $consolidation = railticket_getpostfield('consolidation');
+
+    $field = '';
+    $fname = '';
+    switch ($consolidation) {
+        case 'zone': $field = 'postcodezone'; $fname = 'Postcode Zone'; break;
+        case 'first': $field = 'postcodefirst'; $fname = 'Postcode First Part'; break;
+        case 'full': $field = 'postcodes'; $fname = 'Postcode'; break;
+    }
+
+    header('Content-Type: application/csv');
+    header('Content-Disposition: attachment; filename="geostats_'.$field.'_'.$start.'_'.$end.'.csv";');
+    header('Pragma: no-cache');
+    $f = fopen('php://output', 'w');
+    $lines = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_stats WHERE ".
+        "date >= '".$start."' AND date <= '".$end."' ORDER BY DATE ASC");
+
+    $totals = array();
+    foreach ($lines as $line) {
+        $data = json_decode($line->$field);
+        if (!$data) {
+            continue;
+        }
+        $data = (array) $data;
+        foreach ($data as $k => $v) {
+            if (array_key_exists($k, $totals)) {
+                $totals[$k]->orders += $v->orders;
+                $totals[$k]->seats += $v->seats;
+                $totals[$k]->price += $v->price;
+            } else {
+                $totals[$k] = new \stdclass();
+                $totals[$k]->orders = $v->orders;
+                $totals[$k]->seats = $v->seats;
+                $totals[$k]->price = $v->price;
+            }
+        }
+    }
+
+    arsort($totals);
+    fputcsv($f, array($fname, 'Total Orders', 'Total Seats', 'Total Revenue'));
+    foreach ($totals as $p => $v) {
+        unset($line->id);
+        fputcsv($f, array($p, $v->orders, $v->seats, $v->price));
+    }
+
+    fclose($f);
+    exit;
+}
+
 function railticket_process_stats($info = false, $limit = 5) {
     global $wpdb;
     $nowdt = new \DateTime();
@@ -2642,7 +2697,7 @@ function railticket_process_stats($info = false, $limit = 5) {
 
     $toprocess = $wpdb->get_results("SELECT bk.id, bk.date FROM {$wpdb->prefix}wc_railticket_bookable bk ". 
         "LEFT join {$wpdb->prefix}wc_railticket_stats stats ON bk.date = stats.date ". 
-        "WHERE stats.id IS NULL AND bk.date < '".$nowdt->format('Y-m-d')."' ORDER BY date DESC LIMIT ".$limit);
+        "WHERE stats.id IS NULL AND bk.date < '".$nowdt->format('Y-m-d')."' ORDER BY date ASC LIMIT ".$limit);
 
     foreach ($toprocess as $tp) {
         if ($info) {
