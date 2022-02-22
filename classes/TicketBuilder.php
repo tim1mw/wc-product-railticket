@@ -13,6 +13,7 @@ class TicketBuilder {
         $nominimum, $show, $localprice, $manual, $discountcode, $discountnote) {
         global $wpdb;
         $this->show = $show;
+        $this->dateoftravel = $dateoftravel;
 
         // Deal with some dates
         $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
@@ -34,8 +35,6 @@ class TicketBuilder {
         if ($this->bookableday == false) {
             throw new TicketException("Sorry, you are trying to book a service that is not current on sale.");
         }
-
-        $this->dateoftravel = $dateoftravel;
 
         /* There should only be one leg for a special, so check the first leg for the special indicator **/
         if ($times && count($times) > 0 && strpos($times[0], 's:') !== false) {
@@ -231,7 +230,7 @@ class TicketBuilder {
 
             $alldata->hideterms = 'display:none;';
 
-            $alldata->guarddiscounts = \wc_railticket\Discount::get_all_guard_discounts();
+            $alldata->guarddiscounts = \wc_railticket\Discount::get_all_guard_discounts($this->dateoftravel);
         } else {
             $alldata->hideguardd = 'display:none;';
             $alldata->termspage = get_option('wc_product_railticket_termspage');
