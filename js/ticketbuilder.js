@@ -748,6 +748,7 @@ function renderTicketSelector() {
         var de = document.getElementById('discountcode');
         if (de.value == '') {
             de.value = a_discountcode;
+            a_discountcode = false;
             validateDiscount(false);
         }
     }
