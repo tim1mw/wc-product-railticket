@@ -5,7 +5,7 @@ namespace wc_railticket;
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class Discount extends DiscountType {
-    public function __construct($data, $fromstation, $tostation, $journeytype) {
+    public function __construct($data, $fromstation, $tostation, $journeytype, $dateoftravel) {
         $this->data = $data;
         $this->data->rules = json_decode($this->data->rules);
         $this->data->customtype = (bool) $this->data->customtype;
@@ -15,10 +15,8 @@ class Discount extends DiscountType {
         $this->data->disabled = (bool) $this->data->disabled;
 
         $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
-        $this->today = new \DateTime();
-        $this->today->setTimezone($this->railticket_timezone);
-        $this->today->setTime(0,0,0);
-
+        $this->dateoftravel = \DateTime::createFromFormat('Y-m-d', $dateoftravel);
+        $this->dateoftravel->setTimezone($this->railticket_timezone);
         $this->fromstation = $fromstation;
         $this->tostation = $tostation;
         $this->journeytype = $journeytype;
@@ -28,7 +26,7 @@ class Discount extends DiscountType {
         if ($this->data->start != null) {
             $startdate = \DateTime::createFromFormat('Y-m-d', $this->data->start);
             $startdate->setTimezone($this->railticket_timezone);
-            if ($this->today < $startdate) {
+            if ($this->dateoftravel < $startdate) {
                 $this->valid = false;
             }
         }
@@ -36,7 +34,7 @@ class Discount extends DiscountType {
         if ($this->data->end != null) {
             $enddate = \DateTime::createFromFormat('Y-m-d', $this->data->end);
             $enddate->setTimezone($this->railticket_timezone);
-            if ($this->today > $enddate) {
+            if ($this->dateoftravel > $enddate) {
                 $this->valid = false;
             }
         }
@@ -63,7 +61,7 @@ class Discount extends DiscountType {
         }
     }
 
-    public static function get_discount($code, $fromstation, $tostation, $journeytype) {
+    public static function get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel) {
         global $wpdb;
 
         $data = $wpdb->get_row("SELECT discounts.*, codes.code, codes.start, codes.end, codes.single, codes.disabled ".
@@ -75,7 +73,7 @@ class Discount extends DiscountType {
             return false;
         }
 
-        return new Discount($data, $fromstation, $tostation, $journeytype);
+        return new Discount($data, $fromstation, $tostation, $journeytype, $dateoftravel);
     }
 
     public static function get_all_discount_data() {

@@ -76,7 +76,7 @@ class TicketBuilder {
         $this->notes = $notes;
         $this->discountnote = $discountnote;
         if (strlen($discountcode) > 0) {
-            $this->discount = \wc_railticket\Discount::get_discount($discountcode, $this->fromstation, $this->tostation, $this->journeytype);
+            $this->discount = \wc_railticket\Discount::get_discount($discountcode, $this->fromstation, $this->tostation, $this->journeytype, $this->dateoftravel);
         } else {
             $this->discount = false;
         }
