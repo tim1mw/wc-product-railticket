@@ -270,6 +270,11 @@ class FareCalculator {
 
     public function get_tickets(Station $fromstation, Station $tostation, $journeytype, $isguard, $localprice, $discount, $special) {
         global $wpdb;
+
+        if ($discount && !$discount->is_valid()) {
+            $discount = false;
+        }
+
         $tickets = new \stdClass();
 
         // The to station and from station should always be the same for round trip pricing, but for the purposes
@@ -447,6 +452,10 @@ class FareCalculator {
         if ($journeytype == 'round') {
             // Round trips are priced as from > to the same station where available.
             $to = $from;
+        }
+
+        if ($discount && !$discount->is_valid()) {
+            $discount = false;
         }
 
         // If we have a discount, count up the seats used by discounted and non discounted travellers
