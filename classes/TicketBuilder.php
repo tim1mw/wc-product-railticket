@@ -665,6 +665,7 @@ class TicketBuilder {
         $str .= $this->preset_javascript('a_station');
         $str .= $this->preset_javascript('a_journeychoice');
         $str .= $this->preset_javascript('a_deptime');
+        $str .= $this->preset_javascript('a_discountcode');
 
         if ($this->is_guard()) {
             $str .= 'var guard=true;';

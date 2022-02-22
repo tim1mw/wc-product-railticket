@@ -176,8 +176,9 @@ function guardDiscountChosen(evt) {
 }
 
 function validateDiscount(evt) {
-    evt.preventDefault();
-
+    if (evt != false) {
+        evt.preventDefault();
+    }
     railTicketAjax('validate_discount', true, function(response) {
         var dv = document.getElementById('discountvalid');
         if (response.valid) {
@@ -703,6 +704,7 @@ function renderTicketSelector() {
             }
         }
     }
+   
 
     var summary = document.getElementById('railticket_summary_service');
     summary.innerHTML = getSelectionSummary();
@@ -741,6 +743,14 @@ function renderTicketSelector() {
     }
 
     travellersChanged();
+
+    if (!guard && a_discountcode !== false) {
+        var de = document.getElementById('discountcode');
+        if (de.value == '') {
+            de.value = a_discountcode;
+            validateDiscount(false);
+        }
+    }
 
     showTicketStages('tickets', true);
 }
