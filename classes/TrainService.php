@@ -101,8 +101,8 @@ class TrainService {
         $outallocatelg = $this->getBays($seatsreq, $outbays->bays, true, $disabledrequest);
 
         if (!$outallocatesm && !$outallocatelg) {
-            $outallocatedbays->error = true;
-            return $outallocatedbays;
+            $allocatedbays->error = true;
+            return $allocatedbays;
         }
 
         if ($outallocatesm[0] > $outallocatelg[0]) {
@@ -181,7 +181,7 @@ class TrainService {
             }
             $smcount ++;
             // Bail out here, something is wrong....
-            if ($smcount > 100) {
+            if ($smcount > 200) {
                 return false;
             }
         }
