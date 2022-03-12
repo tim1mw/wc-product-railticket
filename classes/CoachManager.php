@@ -278,6 +278,11 @@ class CoachManager {
         global $wpdb;
         $coachset = (array) $coachset;
         $data = array();
+        if ($allocateby == 'seat') {
+            $data['1_normal'] = 0;
+            $data['1_priority'] = 0;
+            $data['1_normal/max'] = 0;
+        }
 
         foreach ($coachset as $coach => $count) {
 
@@ -306,5 +311,23 @@ class CoachManager {
         }
         ksort($data);
         return $data;
+    }
+
+    /*
+    * Sanity check filter, ensures that all the bay types in the $tocheck parameter exist as keys in $validtypes
+    * Anything that doesn't exist gets removed.
+    */
+
+    public static function valid_bay_check($validtypes, $tocheck) {
+        $tocheck = (array) $tocheck;
+        $validtypes = (array) $validtypes;
+        $ret = new \stdclass();
+        foreach ($tocheck as $key => $cap) {
+            if (array_key_exists($key, $validtypes)) {
+                $ret->$key = $cap;
+            }
+        }
+
+        return $ret;
     }
 }

@@ -231,6 +231,10 @@ class BookableDay {
                     $jdata = json_decode($ndata->composition);
 
                     $coaches = CoachManager::process_coaches($jdata);
+
+                    // Sanity check the reserve, if we have changed from bay to seat allocation both types may be present.
+                    $coaches->reserve = CoachManager::valid_bay_check($coaches->bays, $coaches->reserve);
+
                     $filtered['composition'] = $ndata->composition;
                     $filtered['daytype'] = $coaches->daytype;
                     $filtered['allocateby'] = $coaches->allocateby;
