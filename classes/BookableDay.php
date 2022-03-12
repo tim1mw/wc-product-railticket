@@ -493,7 +493,7 @@ class BookableDay {
         return $data;
     }
 
-    public function get_bookable_trains(Station $from, Station $to, $nodisable, $after = false, $disableafter = false) {
+    public function get_bookable_trains(Station $from, Station $to, $nodisable, $after = false, $disableafter = false, $usemax = false) {
         $direction = $from->get_direction($to);
         $times = $this->timetable->get_times($from, $direction, "deps", true, $to);
 
@@ -568,8 +568,15 @@ class BookableDay {
             if (!$time->notbookable) {
                 $trainservice = new \wc_railticket\TrainService($this, $from, $time->key, $to);
                 $capused = $trainservice->get_inventory(false, false);
-                $time->seatsleft = $capused->totalseats;
-                if ($capused->totalseats <= 0) {
+
+                if ($usemax && $capused->totalseatsmax > $capused->totalseats) {
+                    $field = 'totalseatsmax';
+                } else {
+                    $field = 'totalseats';
+                }
+
+                $time->seatsleft = $capused->$field;
+                if ($capused->$field <= 0) {
                     $time->seatsleftstr = __('FULL - Sorry!', 'wc_railticket');
                     $time->classes .= " railticket_full";
                     if ($nodisable) {
@@ -579,7 +586,7 @@ class BookableDay {
                         $time->notbookable = true;
                     }
                 } else {
-                    $time->seatsleftstr = $capused->totalseats.'&nbsp;'.__('empty seats', 'wc_railticket');
+                    $time->seatsleftstr = $capused->$field.'&nbsp;'.__('empty seats', 'wc_railticket');
                 }
             }
 

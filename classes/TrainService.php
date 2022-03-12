@@ -77,7 +77,7 @@ class TrainService {
         return $this->bookableday->get_bookings_from_station($this->fromstation, $this->deptime, $this->direction);
     }
 
-    public function get_capacity($caponly = false, $seatsreq = false, $disabledrequest = false) {
+    public function get_capacity($caponly = false, $seatsreq = false, $disabledrequest = false, $usemax = false) {
 
         $allocatedbays = new \stdclass();
         $allocatedbays->ok = false;
@@ -92,10 +92,35 @@ class TrainService {
         }
 
         // Is it worth bothering? If we don't have enough seats left in empty bays for this party give up...
-        if ($outbays->totalseats < $seatsreq) {
+        if ($usemax && $outbays->totalseatsmax > $outbays->totalseats) {
+            $field = 'totalseatsmax';
+        } else {
+            $field = 'totalseats';
+        }
+        if ($outbays->$field < $seatsreq) {
             $allocatedbays->bays = array();
             return $allocatedbays;
         }
+
+        // We need to take /max out here (or move its value to normal if this is the guard
+        $nbays = array();
+        foreach ($outbays->bays as $key => $value) {
+            //$bayd = CoachManager::get_bay_details($bay);
+            $pos = strpos($key, '/max');
+            if ($pos !== false) {
+                if ($usemax) {
+                    $nkey = substr($key, 0, $pos);
+                    $nbays[$nkey] = $value;
+                }
+                continue;
+            }
+
+            // If we're using the max value here, don't overwrite it.
+            if (!array_key_exists($key, $nbays)) {
+                $nbays[$key] = $value;
+            }
+        }
+        $outbays->bays = $nbays;
 
         $outallocatesm = $this->getBays($seatsreq, $outbays->bays, false, $disabledrequest);
         $outallocatelg = $this->getBays($seatsreq, $outbays->bays, true, $disabledrequest);
@@ -139,7 +164,7 @@ class TrainService {
                     $bayd = CoachManager::get_bay_details($bay);
                     if ($bayd[1] == 'priority') {
                         $priorityonly[$bay] = $numleft;
-                     }
+                    }
                 }
 
                 if ($baychoice === false) {
