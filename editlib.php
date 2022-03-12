@@ -1143,8 +1143,15 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             echo " (".$capused->totalseatsmax.")";
         }
 
-        echo "</th></tr>".
-            "</table>".
+        echo "</th></tr><tr><th>Seating Reserve Enabled</th><th>";
+
+        if ($bookableday->has_reserve()) {
+            echo 'Yes';
+        } else {
+            echo 'No';
+        }
+
+        echo "</th></tr></table>".
             "<h2>Passengers Summary</h2>".
             "<table class='railticket_admintable' border='1'>".
             "<tr><th>Total boarding here</th><th>".$seats."</th></tr>";
@@ -1165,7 +1172,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
         foreach ($travellers as $tk => $tt) {
             if ($tt > 0) {
-                echo "<tr><th>".\wc_railticket\FareCalculator::get_traveller($tk)->name."</th><th>".$tt."</th></tr>";
+                echo "<tr><th>".\wc_railticket\FareCalculator::get_traveller($tk)->name."</th><th style='padding-left:10px;padding-right:10px;'>".$tt."</th></tr>";
             }
         }
 
@@ -1223,6 +1230,10 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
     $butemplate = $rtmustache->loadTemplate('bayusage');
     echo $butemplate->render($budata);
+
+    if ($bookableday->has_reserve()) {
+        echo "<p><strong>Seating reserve is enabled, the 'Used Here' figure has been adjusted to account for this.</strong></p>";
+    }
 
     if ($bookableday->get_allocation_type(false) == 'seat') {
         echo "<p>Note: The figure in brackets represents the true maximum capacity of the train vs the capacity advertised to customers shown in the main figure.<p>";
