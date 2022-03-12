@@ -1209,12 +1209,12 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         $budatai->bayd = \wc_railticket\CoachManager::format_bay($bay);
         // Do we have a max parameter?
         if (array_key_exists($bay.'/max', $basebays)) {
-            $budatai->total = $space;
-            $budatai->maxtotal = $basebays[$bay.'/max'];
+            $budatai->custtotal = $space;
+            $budatai->total = $basebays[$bay.'/max'];
             $budatai->used = ($space-$capused->bays[$bay])-$capused->leaveempty[$bay];
             $budatai->collected = $space-$capcollected->bays[$bay];
-            $budatai->available = $capused->bays[$bay];
-            $budatai->avmax = $capused->bays[$bay.'/max'];
+            $budatai->avcust = $capused->bays[$bay];
+            $budatai->available = $capused->bays[$bay.'/max'];
             $budatai->leaveempty = $capused->leaveempty[$bay];
         } else {
             $budatai->total = $space;
@@ -1236,7 +1236,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     }
 
     if ($bookableday->get_allocation_type(false) == 'seat') {
-        echo "<p>Note: The figure in brackets represents the true maximum capacity of the train vs the capacity advertised to customers shown in the main figure.<p>";
+        echo "<p>Note: The figure in brackets represents the capacity advertised to customers if it is less than the real capacity.<p>";
     }
 
     echo "<p>Coaches: ".$trainservice->get_coachset(true)."<br />".
