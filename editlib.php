@@ -1224,6 +1224,10 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     $butemplate = $rtmustache->loadTemplate('bayusage');
     echo $butemplate->render($budata);
 
+    if ($bookableday->get_allocation_type(false) == 'seat') {
+        echo "<p>Note: The figure in brackets represents the true maximum capacity of the train vs the capacity advertised to customers shown in the main figure.<p>";
+    }
+
     echo "<p>Coaches: ".$trainservice->get_coachset(true)."<br />".
         "Reserve: ".$trainservice->get_reserve(true)."</p>";
     if ($summaryonly) {
