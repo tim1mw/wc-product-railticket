@@ -2455,15 +2455,17 @@ function railticket_show_special_summary() {
     $alldata->specials = array();
     $specials = \wc_railticket\Special::get_specials_year($chosenyear);
 
-    foreach ($specials as $sp) {
-        $item = new \stdclass();
-        $item->id = $sp->get_id();
-        $item->date = $sp->get_date(true);
-        $item->name = $sp->get_name();
-        $item->fromstation = $sp->get_from_station()->get_name();
-        $item->tostation = $sp->get_to_station()->get_name();
-        $item->onsale = $sp->on_sale(true);
-        $alldata->specials[] = $item;
+    if ($specials) {
+        foreach ($specials as $sp) {
+            $item = new \stdclass();
+            $item->id = $sp->get_id();
+            $item->date = $sp->get_date(true);
+            $item->name = $sp->get_name();
+            $item->fromstation = $sp->get_from_station()->get_name();
+            $item->tostation = $sp->get_to_station()->get_name();
+            $item->onsale = $sp->on_sale(true);
+            $alldata->specials[] = $item;
+        }
     }
 
     $template = $rtmustache->loadTemplate('manage_specials');
