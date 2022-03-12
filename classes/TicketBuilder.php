@@ -426,16 +426,15 @@ class TicketBuilder {
             $today = false;
         }
 
-/*
         if ($this->is_guard() || $this->overridevalid) {
-            $nodisable = true;
+            $usemax = true;
         } else {
-            $nodisable = false;
+            $usemax = false;
         }
-*/
 
         $data->legs[0] = new \stdclass();
-        $data->legs[0]->times = $this->bookableday->get_bookable_trains($this->fromstation, $this->tostation, $this->overridevalid);
+        $data->legs[0]->times = $this->bookableday->get_bookable_trains($this->fromstation, $this->tostation, $this->overridevalid,
+            false, false, $usemax);
         $data->legs[0]->header ='';
         $data->legs[0]->subheader = __('Departing from', 'wc_railticket').' '.$this->fromstation->get_name();
         $data->legs[0]->leg = 0;
@@ -443,7 +442,7 @@ class TicketBuilder {
             $data->legs[1] = new \stdclass();
             $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->fromstation, $this->overridevalid,
                 reset($data->legs[0]->times)->stopsat,
-                $this->get_first_enabled_stopsat($data->legs[0]->times));
+                $this->get_first_enabled_stopsat($data->legs[0]->times), $usemax);
             $data->legs[1]->leg = 1;
             $data->legs[0]->header = __('Outbound', 'wc_railticket');
             $data->legs[1]->header = __('Return', 'wc_railticket');
@@ -451,11 +450,11 @@ class TicketBuilder {
         } elseif ($this->journeytype == 'round') {
             $data->legs[1] = new \stdclass();
             $data->legs[1]->times = $this->bookableday->get_bookable_trains($this->tostation, $this->rndtostation, $this->overridevalid,
-                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled_stopsat($data->legs[0]->times));
+                reset($data->legs[0]->times)->stopsat, $this->get_first_enabled_stopsat($data->legs[0]->times), $usemax);
             $data->legs[1]->leg = 1;
             $data->legs[2] = new \stdclass();
             $data->legs[2]->times = $this->bookableday->get_bookable_trains($this->rndtostation, $this->fromstation, $this->overridevalid,
-                reset($data->legs[1]->times)->stopsat, $this->get_first_enabled_stopsat($data->legs[1]->times));
+                reset($data->legs[1]->times)->stopsat, $this->get_first_enabled_stopsat($data->legs[1]->times), $usemax);
             $data->legs[2]->leg = 2;
             $data->legs[0]->header = __('1st Train', 'wc_railticket');
             $data->legs[1]->header = __('2nd Train', 'wc_railticket');
@@ -485,22 +484,28 @@ class TicketBuilder {
         $capdata = new \stdclass();
         $capdata->capacity = array();
         $capdata->allocateby = $this->bookableday->get_allocation_type();
+;
+        if ($this->is_guard() || $this->overridevalid) {
+            $usemax = true;
+        } else {
+            $usemax = false;
+        }
 
         switch ($this->journeytype) {
             case 'round':
                 $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
-                $capdata->capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest, $usemax);
                 $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->rndtostation);
-                $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest, $usemax);
                 $ts2 = new TrainService($this->bookableday, $this->rndtostation, $this->times[2], $this->tostation);
-                $capdata->capacity[] = $ts2->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts2->get_capacity(false, $seatsreq, $this->disabledrequest, $usemax);
                 break;
             case 'return':
                 $ts1 = new TrainService($this->bookableday, $this->tostation, $this->times[1], $this->fromstation);
-                $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts1->get_capacity(false, $seatsreq, $this->disabledrequest, $usemax);
             case 'single':
                 $ts0 = new TrainService($this->bookableday, $this->fromstation, $this->times[0], $this->tostation);
-                $capdata->capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest);
+                $capdata->capacity[] = $ts0->get_capacity(false, $seatsreq, $this->disabledrequest, $usemax);
                 $capdata->capacity = array_reverse($capdata->capacity);
         }
 

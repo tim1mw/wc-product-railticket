@@ -836,6 +836,10 @@ function allocateTickets() {
         if (v.value != '') {
             tnum = v.value;
         }
+        if (tnum > 99) {
+            thum = 99;
+            v.value = 99;
+        }
         if (tnum > 0) {
             ticketSelections[code] = parseInt(v.value);
             allocation[code] = parseInt(v.value);

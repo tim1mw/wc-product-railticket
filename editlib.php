@@ -1143,8 +1143,15 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             echo " (".$capused->totalseatsmax.")";
         }
 
-        echo "</th></tr>".
-            "</table>".
+        echo "</th></tr><tr><th>Seating Reserve Enabled</th><th>";
+
+        if ($bookableday->has_reserve()) {
+            echo 'Yes';
+        } else {
+            echo 'No';
+        }
+
+        echo "</th></tr></table>".
             "<h2>Passengers Summary</h2>".
             "<table class='railticket_admintable' border='1'>".
             "<tr><th>Total boarding here</th><th>".$seats."</th></tr>";
@@ -1165,7 +1172,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
         foreach ($travellers as $tk => $tt) {
             if ($tt > 0) {
-                echo "<tr><th>".\wc_railticket\FareCalculator::get_traveller($tk)->name."</th><th>".$tt."</th></tr>";
+                echo "<tr><th>".\wc_railticket\FareCalculator::get_traveller($tk)->name."</th><th style='padding-left:10px;padding-right:10px;'>".$tt."</th></tr>";
             }
         }
 
@@ -1202,12 +1209,12 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         $budatai->bayd = \wc_railticket\CoachManager::format_bay($bay);
         // Do we have a max parameter?
         if (array_key_exists($bay.'/max', $basebays)) {
-            $budatai->total = $space;
-            $budatai->maxtotal = $basebays[$bay.'/max'];
+            $budatai->custtotal = $space;
+            $budatai->total = $basebays[$bay.'/max'];
             $budatai->used = ($space-$capused->bays[$bay])-$capused->leaveempty[$bay];
             $budatai->collected = $space-$capcollected->bays[$bay];
-            $budatai->available = $capused->bays[$bay];
-            $budatai->avmax = $capused->bays[$bay.'/max'];
+            $budatai->avcust = $capused->bays[$bay];
+            $budatai->available = $capused->bays[$bay.'/max'];
             $budatai->leaveempty = $capused->leaveempty[$bay];
         } else {
             $budatai->total = $space;
@@ -1223,6 +1230,14 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
     $butemplate = $rtmustache->loadTemplate('bayusage');
     echo $butemplate->render($budata);
+
+    if ($bookableday->has_reserve()) {
+        echo "<p><strong>Seating reserve is enabled, the 'Used Here' figure has been adjusted to account for this.</strong></p>";
+    }
+
+    if ($bookableday->get_allocation_type(false) == 'seat') {
+        echo "<p>Note: The figure in brackets represents the capacity advertised to customers if it is less than the real capacity.<p>";
+    }
 
     echo "<p>Coaches: ".$trainservice->get_coachset(true)."<br />".
         "Reserve: ".$trainservice->get_reserve(true)."</p>";
@@ -2455,15 +2470,17 @@ function railticket_show_special_summary() {
     $alldata->specials = array();
     $specials = \wc_railticket\Special::get_specials_year($chosenyear);
 
-    foreach ($specials as $sp) {
-        $item = new \stdclass();
-        $item->id = $sp->get_id();
-        $item->date = $sp->get_date(true);
-        $item->name = $sp->get_name();
-        $item->fromstation = $sp->get_from_station()->get_name();
-        $item->tostation = $sp->get_to_station()->get_name();
-        $item->onsale = $sp->on_sale(true);
-        $alldata->specials[] = $item;
+    if ($specials) {
+        foreach ($specials as $sp) {
+            $item = new \stdclass();
+            $item->id = $sp->get_id();
+            $item->date = $sp->get_date(true);
+            $item->name = $sp->get_name();
+            $item->fromstation = $sp->get_from_station()->get_name();
+            $item->tostation = $sp->get_to_station()->get_name();
+            $item->onsale = $sp->on_sale(true);
+            $alldata->specials[] = $item;
+        }
     }
 
     $template = $rtmustache->loadTemplate('manage_specials');
