@@ -278,6 +278,12 @@ class Timetable {
 
         // Check for trains that run/don't run today
         foreach ($times as $time) {
+
+            // Filter out trains that don't stop here, aka, no time stated.
+            if ($time->hour == '' || $time->min == '') {
+                continue;
+            }
+
             $rules = $this->data->colsmeta[$count]->rules;
             $count++;
             foreach ($rules as $rule) {
