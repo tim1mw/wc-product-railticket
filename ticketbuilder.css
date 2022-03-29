@@ -657,3 +657,7 @@ border-radius: 0;
     font-style:italic !important;
     font-weight:bold !important;
 }
+
+.railticket_times_table td {
+    padding:0.15em !important;
+}

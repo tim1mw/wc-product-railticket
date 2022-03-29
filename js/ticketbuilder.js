@@ -533,6 +533,25 @@ function getDepTimes() {
             }
         }
 
+        if (deplegs.length == 3) {
+            for (var t=0; t < deplegs[0].times.length; t++) {
+                var thisarr = (deplegs[0].times[t].stopsat.hour * 60) + parseInt(deplegs[0].times[t].stopsat.min);
+                for (loopt = t; loopt<deplegs[1].times.length; loopt++) {
+                    if (deplegs[1].times[loopt].skip) {
+                        continue;
+                    }
+
+                    var nextdep = (deplegs[1].times[loopt].hour * 60) + parseInt(deplegs[1].times[loopt].min)+1;
+
+                    if (nextdep > thisarr) {
+                        break;
+                    }
+
+                    addSpacer(deplegs[0], t);
+                }
+            }
+        }
+
         var mheight = 0;
         switch (deplegs.length) {
             case 1:
@@ -545,7 +564,7 @@ function getDepTimes() {
                 break;
             case 3:
                 data.twidth = '33%';
-                mheight = '104';
+                mheight = '115';
                 break;
         }
 
@@ -617,15 +636,18 @@ function depTimeChanged(evt) {
     }
 
     // TODO Do I need to worry about the override code here?
-
     var legselections = [];
     for (var leg = 0; leg < deplegs.length; leg++) {
         legselections[leg] = parseInt(getFormValue('dep_'+leg));
-        var deptime = 0;
+        var arrtime = -1;
         var offset = 0;
         if (leg > 0) {
             offset = (deplegscount[leg-1] - deplegscount[leg]);
-            deptime = (legselections[leg-1].hour * 60) + legselections[leg-1].min;
+            var pchoice = deplegs[leg-1].times[legselections[leg-1]-offset];
+            if (typeof pchoice == "undefined" || pchoice.notbookable) {
+                continue;
+            }
+            arrtime = (pchoice.stopsat.hour * 60) + pchoice.stopsat.min;
         }
 
         for (var ti = 0; ti < deplegs[leg].times.length; ti++) {
@@ -639,8 +661,9 @@ function depTimeChanged(evt) {
             }
 
             var ele = document.getElementById('dep_'+leg+'_'+time.index);
+            var deptime = (time.hour * 60) + time.min;
 
-            if (leg > 0 && time.index-offset < legselections[leg-1]) {
+            if (leg > 0 && arrtime > -1 && deptime < arrtime) {
                 ele.disabled = true;
                 ele.checked = false;
             } else {
