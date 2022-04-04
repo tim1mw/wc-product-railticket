@@ -656,9 +656,9 @@ function depTimeChanged(evt) {
         }
     }
 
-    for (var i=1; i < legselections.length; i++) {
-        if (legselections[i] == -1) {
-            legselections[i] = legselections[i-1];
+    for (var i=0; i < legselections.length-1; i++) {
+        if (legselections[i] > legselections[i+1]) {
+            legselections[i+1] = -1;
         }
     }
 
