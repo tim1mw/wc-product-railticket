@@ -88,6 +88,15 @@ var allocateby = {
 
 <div id='composition-edit'></div>
 <p><input type='checkbox' name='compdefault' value='1' />Use coach config as default for this timetable.</p>
+
+<h3>Discount Exclusions</h3>
+
+<ul>
+{{#discounts}}
+<li>{{name}}<li>
+{{/discounts}}
+</ul>
+
 <p style='font-size:large;font-weight:bold'><input type='submit' value='Save Bookable Day Settings' style='padding-left:0px;padding-right:0px;'/></p>
 <br /><br />
 <div id='railticket_serviceeditor_data'></div>

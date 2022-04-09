@@ -73,6 +73,11 @@ class Discount extends DiscountType {
             return false;
         }
 
+        $bk = BookableDay::get_bookable_day($dateoftravel);
+        if (in_array($data->shortname, $bk->get_discount_exclude())) {
+            return false;
+        }
+
         return new Discount($data, $fromstation, $tostation, $journeytype, $dateoftravel);
     }
 
