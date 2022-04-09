@@ -598,6 +598,13 @@ class BookableDay {
         return $ftimes;
     }
 
+    public function get_discount_exclude() {
+        if (strlen($this->data->discountexclude) > 0) {
+            return json_decode($this->data->discountexclude);
+        }
+
+        return array();
+    }
 
     public function get_booking_limits() {
 

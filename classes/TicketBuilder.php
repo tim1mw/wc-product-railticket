@@ -778,7 +778,7 @@ class TicketBuilder {
     public function get_validate_discount() {
         if ($this->discount == false || $this->discount->is_disabled()) {
             return array('valid' => false,
-                'message' => __('Sorry, this discount code is not valid', 'wc_railticket'),
+                'message' => __('Sorry, this discount code is not valid, or cannnot be used on this date.', 'wc_railticket'),
                 'tickets' => $this->get_ticket_data());
         }
 
