@@ -233,7 +233,19 @@ class BookableDay {
                     $coaches = CoachManager::process_coaches($jdata);
 
                     // Sanity check the reserve, if we have changed from bay to seat allocation both types may be present.
-                    $coaches->reserve = CoachManager::valid_bay_check($coaches->bays, $coaches->reserve);
+                    switch ($coaches->daytype) {
+                        case 'simple':
+                            $coaches->reserve = CoachManager::valid_bay_check($coaches->bays, $coaches->reserve);
+                            break;
+                        case 'pertrain':
+                            $nres = array();
+                            foreach ($coaches->reserve as $key => $res) {
+                                $nres[$key] = CoachManager::valid_bay_check($coaches->bays->coachsets[$key], $res);
+                            }
+                            $coaches->reserve = $nres;
+                            break;
+                    }
+
 
                     $filtered['composition'] = $ndata->composition;
                     $filtered['daytype'] = $coaches->daytype;

@@ -533,6 +533,25 @@ function getDepTimes() {
             }
         }
 
+        if (deplegs.length == 3) {
+            for (var t=0; t < deplegs[0].times.length; t++) {
+                var thisarr = (deplegs[0].times[t].stopsat.hour * 60) + parseInt(deplegs[0].times[t].stopsat.min);
+                for (loopt = t; loopt<deplegs[1].times.length; loopt++) {
+                    if (deplegs[1].times[loopt].skip) {
+                        continue;
+                    }
+
+                    var nextdep = (deplegs[1].times[loopt].hour * 60) + parseInt(deplegs[1].times[loopt].min)+1;
+
+                    if (nextdep > thisarr) {
+                        break;
+                    }
+
+                    addSpacer(deplegs[0], t);
+                }
+            }
+        }
+
         var mheight = 0;
         switch (deplegs.length) {
             case 1:
@@ -545,7 +564,7 @@ function getDepTimes() {
                 break;
             case 3:
                 data.twidth = '33%';
-                mheight = '104';
+                mheight = '115';
                 break;
         }
 
@@ -612,50 +631,62 @@ function depTimeChanged(evt) {
 
     // If we only have one leg, or the leg that changed is the last one, we can skip checking the input disabling
     if (deplegs.length == 1) {
-        renderTicketSelector();
+        setTimeout(renderTicketSelector, 500);
         return;
     }
 
-    // TODO Do I need to worry about the override code here?
-
     var legselections = [];
     for (var leg = 0; leg < deplegs.length; leg++) {
-        legselections[leg] = parseInt(getFormValue('dep_'+leg));
-        var deptime = 0;
-        var offset = 0;
-        if (leg > 0) {
-            offset = (deplegscount[leg-1] - deplegscount[leg]);
-            deptime = (legselections[leg-1].hour * 60) + legselections[leg-1].min;
+        var selection = getFormValue('dep_'+leg);
+        if (selection.length == 0) {
+            legselections[leg] = -1;
+            continue;
         }
 
+        selection = parseInt(selection);
+        for (var i=0; i < deplegs[leg].times.length; i++) {
+            if (deplegs[leg].times[i].index == selection) {
+                if (deplegs[leg].times[i].skip || deplegs[leg].times[i].notbookable) {
+                    continue;
+                }
+                var pchoice = deplegs[leg].times[i].stopsat;
+                legselections[leg] = parseInt((pchoice.hour * 60) + pchoice.min);
+                break;
+            }
+        }
+    }
+
+    for (var i=0; i < legselections.length-1; i++) {
+        if (legselections[i] > legselections[i+1]) {
+            legselections[i+1] = -1;
+        }
+    }
+
+    for (var leg = 1; leg < deplegs.length; leg++) {
+        var arrtime = legselections[leg-1];
         for (var ti = 0; ti < deplegs[leg].times.length; ti++) {
             var time = deplegs[leg].times[ti];
-            if (time.skip) {
-                offset --;
-                continue;
-            }
-            if (time.notbookable) {
+            if (time.skip || time.notbookable) {
                 continue;
             }
 
             var ele = document.getElementById('dep_'+leg+'_'+time.index);
-
-            if (leg > 0 && time.index-offset < legselections[leg-1]) {
+            var deptime = parseInt((time.hour * 60) + time.min);
+            if (deptime <= arrtime) {
                 ele.disabled = true;
                 ele.checked = false;
             } else {
                 ele.disabled = false;
             }
-
         }
     }
 
     // See if we still have a valid set of dep times
     var count = 0;
     for (var leg = 0; leg < deplegs.length; leg++) {
-        legselections[leg] = getFormValue('dep_'+leg);
-        if (legselections[leg].length > 0) {
-            count++
+        var value = getFormValue('dep_'+leg);
+        if (value.length > 0) {
+            count++;
         }
     }
 
