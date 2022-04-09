@@ -189,7 +189,7 @@ function validateDiscount(evt) {
             }
             dv.innerHTML += '</p>';
         } else {
-            dv.innerHTML = '<p><span>'+response.message+'<span></p>';
+            dv.innerHTML = '<p><span style="color:red;font-size:large;">'+response.message+'<span></p>';
         }
         ticketdata = response['tickets'];
 console.log(response);

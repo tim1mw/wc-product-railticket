@@ -31,7 +31,7 @@ class TicketBuilder {
             return;
         }
 
-        $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
+         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
         if ($this->bookableday == false) {
             throw new TicketException("Sorry, you are trying to book a service that is not current on sale.");
         }
@@ -778,7 +778,7 @@ class TicketBuilder {
     public function get_validate_discount() {
         if ($this->discount == false || $this->discount->is_disabled()) {
             return array('valid' => false,
-                'message' => __('Sorry, this discount code is not valid, or cannnot be used on this date.', 'wc_railticket'),
+                'message' => __("*** Sorry, this discount code isn't valid, or can't be used on this date. ****", 'wc_railticket'),
                 'tickets' => $this->get_ticket_data());
         }
 
