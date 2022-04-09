@@ -14,7 +14,7 @@ class DiscountType {
         $this->data->shownotes = (bool) $this->data->shownotes;
     }
 
-    public static function get_discount_type($shortname) {
+    public static function get_discount_type($shortname, $dataonly = false) {
         global $wpdb;
 
         $data = $wpdb->get_row("SELECT * FROM ".
@@ -23,6 +23,10 @@ class DiscountType {
 
         if (!$data) {
             return false;
+        }
+
+        if ($dataonly) {
+            return $data;
         }
 
         return new DiscountType($data);

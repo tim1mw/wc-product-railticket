@@ -618,6 +618,19 @@ function railticket_showbookableday() {
     $alldata->dep_times_up = json_encode($bookable->timetable->get_up_deps($downterm, true));
     $alldata->dep_times_down = json_encode($bookable->timetable->get_down_deps($upterm, true));
     $alldata->specials = json_encode($bookable->get_specials(true));
+    $alldata->discounts = array();
+
+    $de = $bookable->get_discount_exclude();
+    if (count($de) == 0) {
+        $d = new \stdclass();
+        $d->name = "None";
+        $alldata->discounts[] = $d;
+    } else {
+        asort($de);
+        foreach ($de as $discount) {
+            $alldata->discounts[] = \wc_railticket\DiscountType::get_discount_type($discount, true);
+        }
+    }
 
     echo file_get_contents(dirname(__FILE__).'/templates/serviceparams.html');
 
