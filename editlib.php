@@ -1372,7 +1372,7 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
                 } else {
                     if ($booking->is_collected()) {
                         $dbk->iscollectedstr = __('Yes', 'wc_railticket');
-                        $bbk->collected = true;
+                        $dbk->collected = true;
                     } else {
                         $dbk->iscollectedstr = __('No', 'wc_railticket');
                     }
