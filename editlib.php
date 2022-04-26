@@ -1611,6 +1611,7 @@ function railticket_show_edit_order() {
     $bkdata = new \stdclass();
     $bkdata->bookings = array();
     $bkdata->date = $bookingorder->get_date();
+    $bkdata->seats = $bookingorder->get_seats();
     $tripdata = array();
     $count = 1;
     $allstns = \wc_railticket\Station::get_stations($bookingorder->bookableday->timetable->get_revision());
@@ -1813,6 +1814,13 @@ function railticket_overridebays() {
 
     if ($notify) {
         $bookingorder->notify();
+    }
+
+    $seats = railticket_getpostfield('seats');
+    if ($seats != $bookingorder->get_seats()) {
+        for ($i=0; $i < count($legbays); $i++) {
+            $bookings[$i]->update_seats($seats);
+        }
     }
 
     $edit->message = 'Order bay update saved';

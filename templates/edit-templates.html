@@ -56,6 +56,9 @@
     </tr>
     {{/bookings}}
     <tr>
+        <th colspan='2'>Requested Seats</th>
+        <td><input type='number' name='seats' value='{{seats}}' min='0' max='99' size='3' /></td>
+    </tr><tr>
         <td colspan='2'><div id='railticket_commitovermessage' style='font-weight:bold;font-size:large;color:blue;text-align:center;'></div></td>
         <td colspan='2' style='text-align:right;padding-top:10px;'>
             <input type='button' name='commit' id='railticket_commitover' value='Commit Changes' /><br />
