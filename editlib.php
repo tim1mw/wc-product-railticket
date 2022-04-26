@@ -1350,6 +1350,7 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
                 $dbk->hasdiscount = __('Yes', 'wc_railticket');
                 if ($booking->is_collected()) {
                     $dbk->iscollectedstr = __('Yes', 'wc_railticket');
+                    $dbk->collected = true;
                 } else {
                     $dbk->iscollectedstr = __('No', 'wc_railticket');
                 }
@@ -1360,6 +1361,7 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
                     if ($booking->is_collected()) {
                         $bkc->actionstr = __('Yes', 'wc_railticket');
                         $bkc->action = 'cancelcollected';
+                        $dbk->collected = true;
                     } else {
                         $bkc->actionstr = __('No', 'wc_railticket');
                         $bkc->action = 'collected';
@@ -1370,6 +1372,7 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
                 } else {
                     if ($booking->is_collected()) {
                         $dbk->iscollectedstr = __('Yes', 'wc_railticket');
+                        $bbk->collected = true;
                     } else {
                         $dbk->iscollectedstr = __('No', 'wc_railticket');
                     }

@@ -667,3 +667,8 @@ border-radius: 0;
 .railticket_times_table td {
     padding:0.15em !important;
 }
+
+.railticket_collected {
+    background:green;
+    color:white;
+}

@@ -14,14 +14,14 @@
         <th>Collected</th>
     </tr>
     {{#bookings}}
-    <tr>
+    <tr {{#collected}}class='railticket_collected'{{/collected}}>
         <td>
             {{#incart}}In Cart{{/incart}}
             {{#orderid}}
             <form action='{{actionurl}}' method='post'>
                 <input type='hidden' name='action' value='showorder' />
                 <input type='hidden' name='orderid' value='{{orderid}}' />
-                <input type='submit' value='{{orderid}}' style='width:100%;margin-top:4px;margin-bottom:4px;' />
+                <input type='submit' value='{{orderid}}' style='width:100%;margin-top:4px;margin-bottom:4px;'/>
             </form>
             {{/orderid}}
         </td>
