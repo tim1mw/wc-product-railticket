@@ -1350,6 +1350,7 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
                 $dbk->hasdiscount = __('Yes', 'wc_railticket');
                 if ($booking->is_collected()) {
                     $dbk->iscollectedstr = __('Yes', 'wc_railticket');
+                    $dbk->collected = true;
                 } else {
                     $dbk->iscollectedstr = __('No', 'wc_railticket');
                 }
@@ -1360,6 +1361,7 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
                     if ($booking->is_collected()) {
                         $bkc->actionstr = __('Yes', 'wc_railticket');
                         $bkc->action = 'cancelcollected';
+                        $dbk->collected = true;
                     } else {
                         $bkc->actionstr = __('No', 'wc_railticket');
                         $bkc->action = 'collected';
@@ -1370,6 +1372,7 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
                 } else {
                     if ($booking->is_collected()) {
                         $dbk->iscollectedstr = __('Yes', 'wc_railticket');
+                        $dbk->collected = true;
                     } else {
                         $dbk->iscollectedstr = __('No', 'wc_railticket');
                     }
@@ -1608,6 +1611,7 @@ function railticket_show_edit_order() {
     $bkdata = new \stdclass();
     $bkdata->bookings = array();
     $bkdata->date = $bookingorder->get_date();
+    $bkdata->seats = $bookingorder->get_seats();
     $tripdata = array();
     $count = 1;
     $allstns = \wc_railticket\Station::get_stations($bookingorder->bookableday->timetable->get_revision());
@@ -1718,7 +1722,11 @@ function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket
         }
         $trainservice = new \wc_railticket\TrainService($bk, $from, $deps[$i]->key, $to);
         $capused = $trainservice->get_inventory(false, false, false, $exclude);
-        $deps[$i]->seats = $capused->totalseats;
+        if ($bk->get_allocation_type() == 'seat') {
+            $deps[$i]->seats = $capused->totalseatsmax." (".$capused->totalseats.")";
+        } else {
+            $deps[$i]->seats = $capused->totalseats;
+        }
     }
 
     return $deps;
@@ -1806,6 +1814,13 @@ function railticket_overridebays() {
 
     if ($notify) {
         $bookingorder->notify();
+    }
+
+    $seats = railticket_getpostfield('seats');
+    if ($seats != $bookingorder->get_seats()) {
+        for ($i=0; $i < count($legbays); $i++) {
+            $bookings[$i]->update_seats($seats);
+        }
     }
 
     $edit->message = 'Order bay update saved';

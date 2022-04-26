@@ -133,6 +133,14 @@ class Booking {
         $this->bays = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_booking_bays WHERE bookingid = ".$this->data->id);
     }
 
+    public function update_seats($seats) {
+        global $wpdb;
+        $this->data->seats = $seats;
+        $wpdb->update($wpdb->prefix.'wc_railticket_bookings',
+            array('seats' => $seats),
+            array('id' => $this->data->id));
+    }
+
     public function get_date($format = false, $nottoday = false) {
         if ($format) {
             $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
@@ -194,6 +202,9 @@ class Booking {
             $cap = $ts->get_inventory(true);
             $nbays = array();
             foreach ($cap as $k => $c) {
+                if (strpos($k, '/max') !== false) {
+                    continue;
+                }
                 $parts = CoachManager::get_bay_details($k);
                 $nbay = new \stdclass();
                 $nbay->key = $k;

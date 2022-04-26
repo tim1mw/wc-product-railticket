@@ -667,3 +667,28 @@ border-radius: 0;
 .railticket_times_table td {
     padding:0.15em !important;
 }
+
+.railticket_collected {
+    background:green;
+    color:white;
+}
+
+.railticket_highlightleg {
+    background:#f2f0a6;
+    opacity:0.9;
+    border-radius: 4px;
+}
+
+.railticket_highlightleg_text {
+     display:none;
+     text-align:center;
+     font-weight:bold;
+     margin-top:0px;
+     border:5px dotted #880000;
+     line-height:0.9;
+     padding-bottom:4px;
+}
+
+.railticket_highlightleg_text span {
+    font-size:xx-large;
+}

@@ -91,7 +91,7 @@ function railTicketEditAjax(data, spinner, callback) {
     var request = new XMLHttpRequest();
     request.open('POST', ajaxurl, true);
     request.onload = function () {
-console.log(request);
+
         if (request.status >= 200 && request.status < 400) {
             callback(JSON.parse(request.responseText).data);
             var spinnerdiv = document.getElementById('pleasewait');
@@ -158,6 +158,7 @@ function getOverFormData() {
     data.append('orderid', orderid);
     data.append('function', 'overridebays');
     data.append('notify', notifyover);
+    data.append('seats', getOverFormValue('seats'));
     var legbays = [];
     for (i=0; i < defaultData.bookings.length; i++) {
         legbays[i] = {};
@@ -168,6 +169,7 @@ function getOverFormData() {
     }
 
     data.append('legbays', JSON.stringify(legbays));
+
     return data;
 }
 

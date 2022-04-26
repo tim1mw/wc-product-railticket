@@ -122,6 +122,7 @@
 </script>
 
 <script id="deplist_tmpl" type="x-tmpl-mustache">
+<div id='legtimes_{{leg}}'>
 <div style='min-height:100px;'>
 <h3>{{header}}</h3>
 <h6>{{subheader}}</h6>
@@ -136,6 +137,8 @@
 </li>
 {{/times}}
 </ul>
+<div id='legtimemessage_{{leg}}' class='railticket_highlightleg_text'><span>&#8593;</span><br />{{nextlegmessage}}</div>
+</div>
 </script>
 
 <script id="travellers_tmpl" type="x-tmpl-mustache">
