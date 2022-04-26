@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", setupEditor);
 
 var notify = true;
 var notifyover = true;
-console.log(defaultData);
+
 function setupEditor() {
     renderEditor(defaultData);
     renderOverride(defaultData)
