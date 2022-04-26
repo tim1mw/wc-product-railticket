@@ -192,7 +192,7 @@ function validateDiscount(evt) {
             dv.innerHTML = '<p><span style="color:red;font-size:large;">'+response.message+'<span></p>';
         }
         ticketdata = response['tickets'];
-console.log(response);
+
         maxdiscountseats = response['maxseats'];
         customtravellers = response['customtravellers'];
         renderTicketSelector();
@@ -626,7 +626,7 @@ function addSpacer(depleg, t) {
 
 function depTimeChanged(evt) {
     var parts = evt.target.id.split('_');
-    var changedLeg = parts[1];
+    var changedLeg = parseInt(parts[1]);
     var changedIndex = parts[2];
 
     // If we only have one leg, or the leg that changed is the last one, we can skip checking the input disabling
@@ -637,6 +637,12 @@ function depTimeChanged(evt) {
 
     var legselections = [];
     for (var leg = 0; leg < deplegs.length; leg++) {
+
+        var lt = document.getElementById('legtimes_'+leg);
+        lt.classList.remove('railticket_highlightleg');
+        var ltt = document.getElementById('legtimemessage_'+leg);
+        ltt.style.display = 'none';
+
         var selection = getFormValue('dep_'+leg);
         if (selection.length == 0) {
             legselections[leg] = -1;
@@ -693,10 +699,24 @@ function depTimeChanged(evt) {
     if (count == deplegs.length) {
         setTimeout(renderTicketSelector, 500);
     } else {
-        showTicketStages('deptimes', false); 
+        showTicketStages('deptimes', false);
+        if (changedLeg <= deplegs.length) {
+            var nextLeg = changedLeg+1;
+            if (legselections[nextLeg] == -1) {
+                var nextEle = document.getElementById('legtimes_'+nextLeg);
+                nextEle.classList.add('railticket_highlightleg');
+                var nextEleT = document.getElementById('legtimemessage_'+nextLeg);
+                nextEleT.style.display = 'block';
+                //setTimeout(function() {
+                //    nextEle.classList.remove('railticket_highlightleg');
+                //    nextEleT.style.display = 'none';
+                //}, 10000);
+            }
+        }
     }
 
 }
+
 
 function convert24hour(time) {
     var parts = time.split(".");
