@@ -1721,7 +1721,11 @@ function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket
         }
         $trainservice = new \wc_railticket\TrainService($bk, $from, $deps[$i]->key, $to);
         $capused = $trainservice->get_inventory(false, false, false, $exclude);
-        $deps[$i]->seats = $capused->totalseats;
+        if ($bk->get_allocation_type() == 'seat') {
+            $deps[$i]->seats = $capused->totalseatsmax." (".$capused->totalseats.")";
+        } else {
+            $deps[$i]->seats = $capused->totalseats;
+        }
     }
 
     return $deps;

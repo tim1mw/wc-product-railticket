@@ -194,6 +194,9 @@ class Booking {
             $cap = $ts->get_inventory(true);
             $nbays = array();
             foreach ($cap as $k => $c) {
+                if (strpos($k, '/max') !== false) {
+                    continue;
+                }
                 $parts = CoachManager::get_bay_details($k);
                 $nbay = new \stdclass();
                 $nbay->key = $k;
