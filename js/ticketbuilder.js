@@ -603,6 +603,11 @@ function getDepTimes() {
                 renderTicketSelector();
                 return;
             }
+
+            var nextEle = document.getElementById('legtimes_1');
+            nextEle.classList.add('railticket_highlightleg');
+            var nextEleT = document.getElementById('legtimemessage_1');
+            nextEleT.style.display = 'block';
         }
 
         showTicketStages('deptimes', true);
@@ -716,7 +721,6 @@ function depTimeChanged(evt) {
     }
 
 }
-
 
 function convert24hour(time) {
     var parts = time.split(".");
