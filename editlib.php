@@ -1092,6 +1092,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         $dt->key = $deptime;
         $dt->formatted = $trainservice->special->get_name();
         $deptime = $dt;
+        $finaldestination = $trainservice->get_to_station();
     }
 
     $bookings = array($station->get_stnid() => $trainservice->get_bookings());
