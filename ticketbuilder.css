@@ -692,3 +692,8 @@ border-radius: 0;
 .railticket_highlightleg_text span {
     font-size:xx-large;
 }
+
+.railticket_intermediate_to {
+    background:khaki;
+    color:black;
+}
