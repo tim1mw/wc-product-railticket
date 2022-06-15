@@ -23,6 +23,7 @@ class TrainService {
         // Is this is a special
         if (strpos($deptime, "s:") === 0) {
             $this->special = Special::get_special($deptime);
+            $this->tostation = $this->special->get_to_station();
 
             // Create a service entry
             $srv = new \stdclass();

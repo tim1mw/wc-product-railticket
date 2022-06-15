@@ -71,7 +71,7 @@ class Booking {
             array('woocartitem' => $key));
     }
 
-    public static function insertBooking($dateoftravel, $itemkey, $time, Station $fromstation, Station $tostation, $totalseats, $allocatedbays, $manual, $disabledrequest) {
+    public static function insertBooking($dateoftravel, $itemkey, $time, Station $fromstation, Station $tostation, $totalseats, $allocatedbays, $manual, $disabledrequest, $setcollected = false) {
         global $wpdb;
 
         $direction = $fromstation->get_direction($tostation);
@@ -96,7 +96,7 @@ class Booking {
         $today->setTimezone($railticket_timezone);
         $today->setTime(0,0,0);
 
-        if ($manual && $dateoftravel == $today->format('Y-m-d')) {
+        if ($manual && $dateoftravel == $today->format('Y-m-d') && $setcollected) {
             $dbdata['collected'] = true;
         }
 

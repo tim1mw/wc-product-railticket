@@ -1092,6 +1092,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         $dt->key = $deptime;
         $dt->formatted = $trainservice->special->get_name();
         $deptime = $dt;
+        $finaldestination = $trainservice->get_to_station();
     }
 
     $bookings = array($station->get_stnid() => $trainservice->get_bookings());
@@ -1334,6 +1335,7 @@ function railticket_show_bookings_table($bookings, \wc_railticket\Station $stati
         }
         $dbk->ordername = $booking->get_order_name();
         $dbk->to = $booking->get_to_station()->get_name();
+        $dbk->intermediate = !$booking->get_to_station()->is_principal();
         $dbk->seats = $booking->get_seats();
         $dbk->priority = $booking->get_priority(true);
         $dbk->bays = $booking->get_bays(true);

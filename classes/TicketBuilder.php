@@ -632,7 +632,7 @@ class TicketBuilder {
         switch ($this->journeytype) {
             case 'round':
                 Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[0], $this->fromstation, $this->tostation, $totalseats,
-                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest);
+                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest, true);
                 Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[1], $this->tostation, $this->rndtostation, $totalseats,
                     $allocatedbays->capacity[1]->bays, $mid, $this->disabledrequest);
                 Booking::insertBooking($this->dateoftravel, $itemkey, $this->times[2], $this->rndtostation, $this->fromstation, $totalseats,
@@ -640,11 +640,11 @@ class TicketBuilder {
                 break;
             case 'single':
                 Booking::insertBooking($this->dateoftravel, $itemkey, $legbayinfo[0]->deptime, $this->fromstation, $this->tostation, $totalseats,
-                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest);
+                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest, true);
                 break;
             case 'return':
                 Booking::insertBooking($this->dateoftravel, $itemkey, $legbayinfo[0]->deptime, $this->fromstation, $this->tostation, $totalseats,
-                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest);
+                    $allocatedbays->capacity[0]->bays, $mid, $this->disabledrequest, true);
                 Booking::insertBooking($this->dateoftravel, $itemkey, $legbayinfo[1]->deptime, $this->tostation, $this->fromstation, $totalseats,
                     $allocatedbays->capacity[1]->bays, $mid, $this->disabledrequest);
         }
