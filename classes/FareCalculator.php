@@ -304,7 +304,7 @@ class FareCalculator {
             $specialval .= implode("','", $tkts)."')";
             // Note journeytype is ignored for specials. Specials are treated as singles for booking purposes because there is only one leg.
             // However the tickets could get entered as either round, return or single for presentation purposes.
-            //$specialval .= " AND special = 1 ";
+            $specialval .= " AND (special = 1 OR journeytype = 'return') ";
         } else {
             $specialval = " AND special = 0 AND journeytype = '".$journeytype."'";
         }
