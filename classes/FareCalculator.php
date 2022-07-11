@@ -77,7 +77,7 @@ class FareCalculator {
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes".$where." ORDER BY sequence ASC");
     }
 
-    public static function add_ticket_type($code, $name, $description, $special, $guardonly) {
+    public static function add_ticket_type($code, $name, $description, $special, $guardonly, $discountcode) {
         global $wpdb;
 
         $code = self::clean_code($code);
@@ -91,12 +91,12 @@ class FareCalculator {
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_tickettypes",
             array('code' => $code, 'name' => $name, 'description' => $description, 'guardonly' => $guardonly,
-            'special' => $special, 'composition' => '{}', 'depends' => '[]', 'sequence' => $seq));
+            'special' => $special, 'composition' => '{}', 'depends' => '[]', 'sequence' => $seq, 'discountcode' => $discountcode));
 
         return true;
     }
 
-    public static function update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends) {
+    public static function update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends, $discountcode) {
         global $wpdb;
 
         $composition = json_encode($composition);
@@ -104,7 +104,8 @@ class FareCalculator {
 
         $wpdb->update("{$wpdb->prefix}wc_railticket_tickettypes",
             array('name' => $name, 'description' => $description, 'guardonly' => $guardonly,
-            'special' => $special, 'hidden' => $hidden, 'composition' => $composition, 'depends' => $depends),
+            'special' => $special, 'hidden' => $hidden, 'composition' => $composition, 'depends' => $depends,
+            'discountcode' => $discountcode),
             array('id' => $id));
     }
 
