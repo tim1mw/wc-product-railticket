@@ -70,7 +70,40 @@ class Discount extends DiscountType {
             "WHERE codes.code = '".strtolower($code)."'");
 
         if (!$data) {
-            return false;
+
+            // This might be a multi-trip discount which uses the order number as the discount code, so look for an order
+            // and see if it contains a valid purchase
+            $order = BookingOrder::get_booking_order($code);
+            if (!$order) {
+                return false;
+            }
+
+            $dtypes = $order->get_discountcode_ticket_codes();
+
+file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt", print_r($dtypes, true)."\n");
+
+            if (!$dtypes) {
+                return false;
+            }
+
+            if (count($dtypes) > 1) {
+                // TODO ??? We can't cope if there is more than one ticket linked discount type here, so behave as though there is no discount
+                return false;
+            }
+
+            $data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_discounts ".
+            "WHERE shortname = '".$dtypes[0]."'");
+file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt", print_r($data, true)."\n", FILE_APPEND);
+            if (!$data) {
+                // Invalid discount type, give up...
+                return false;
+            }
+
+            $data->code = $dtypes[0];
+            $data->start = null;
+            $data->end = null;
+            $data->single = 0;
+            $data->disabled = 0;
         }
 
         $bk = BookableDay::get_bookable_day($dateoftravel);
@@ -80,6 +113,7 @@ class Discount extends DiscountType {
 
         return new Discount($data, $fromstation, $tostation, $journeytype, $dateoftravel);
     }
+
 
     public static function get_all_discount_data() {
         global $wpdb;

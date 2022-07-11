@@ -2056,8 +2056,8 @@ function railticket_tickets() {
                 $description = railticket_getpostfield('description');
                 $special = railticket_gettfpostfield('special');
                 $guardonly = railticket_gettfpostfield('guardonly');
-                $discountcode = railticket_gettfpostfield('discountcode');
-                $res = \wc_railticket\FareCalculator::add_ticket_type($code, $name, $description, $special, $guardonly, $discountcode);
+                $discounttype = railticket_getpostfield('discounttype');
+                $res = \wc_railticket\FareCalculator::add_ticket_type($code, $name, $description, $special, $guardonly, $discounttype);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -2101,9 +2101,6 @@ function railticket_tickets() {
         }
         if ($ticket->special) {
             $ticket->special = 'checked';
-        }
-        if ($ticket->discountcode) {
-            $ticket->discountcode = 'checked';
         }
 
         $ticket->depends = json_decode($ticket->depends);
@@ -2175,7 +2172,7 @@ function railticket_update_tickettypes() {
         $description = railticket_getpostfield('description_'.$id);
         $special = railticket_gettfpostfield('special_'.$id);
         $guardonly = railticket_gettfpostfield('guardonly_'.$id);
-        $discountcode = railticket_gettfpostfield('discountcode_'.$id);
+        $discounttype = railticket_getpostfield('discounttype_'.$id);
         $hidden = railticket_gettfpostfield('hidden_'.$id);
         $composition = new \stdclass();
         foreach ($alltravellers as $tr) {
@@ -2196,7 +2193,7 @@ function railticket_update_tickettypes() {
          }
 
         \wc_railticket\FareCalculator::update_ticket_type($id, $name, $description, $special, $guardonly, $hidden,
-            $composition, $depends, $discountcode);
+            $composition, $depends, $discounttype);
     }
 }
 

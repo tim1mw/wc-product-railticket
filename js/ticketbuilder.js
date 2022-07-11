@@ -289,10 +289,10 @@ function renderSpecials(specialonly) {
         return;
     }
 
-    var title = "Or choose one of these special services:";
+    var title = "Or choose one of these special options:";
     var note = "";
     if (specialonly) {
-         title = "Special services, click/tap to select:";
+         title = "Special options, click/tap to select:";
          note = "<p class='railticket_help'>(Normal services are not yet on sale for this date.)</p>";
     }
 

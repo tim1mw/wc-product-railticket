@@ -17,7 +17,7 @@
 it is a convenience to hide ticket types that are no longer used for new fares. To disable the sale of a ticket type, you must
 disable the fares associated with them.</p>
 
-<p>Discount code option: A ticket of this type can itself be used as a discount code for the booking of further ticktets by entering the order number into the discount code box.</p>
+<p>Discount type option: If you want an order number with this ticket type to be useable as a discount code, enter the discount type here.</p>
 
 
 <form method='post' action='{{actionurl}}' enctype="multipart/form-data">
@@ -31,7 +31,7 @@ disable the fares associated with them.</p>
         <th>Description</th>
         <th>Specials Only</th>
         <th>Guard Only</th>
-        <th>Discount Code</th>
+        <th>Discount Type</th>
         <th>Hidden</th>
         <th>Traveller Composition</th>
         <th>Depends On</th>
@@ -45,7 +45,7 @@ disable the fares associated with them.</p>
         <td><input type='text' name='description_{{id}}' size='20' value='{{description}}' /></td>
         <td style='text-align:center;'><input type='checkbox' name='special_{{id}}' value='1' {{special}} /></td>
         <td style='text-align:center;'><input type='checkbox' name='guardonly_{{id}}' value='1' {{guardonly}} /></td>
-        <td style='text-align:center;'><input type='checkbox' name='discountcode_{{id}}' value='1' {{discountcode}} /></td>
+        <td style='text-align:center;'><input type='text' size='10' name='discounttype_{{id}}' value='{{discounttype}}' /></td>
         <td style='text-align:center;'><input type='checkbox' name='hidden_{{id}}' value='1' {{hidden}} /></td>
         <td><table>
             {{#tcomp}}
@@ -98,8 +98,8 @@ disable the fares associated with them.</p>
         <td>Guard Only</td>
         <td><input type='checkbox' name='guardonly' value='1' /></td>
     </tr><tr>
-        <td>Discount Code</td>
-        <td><input type='checkbox' name='discountcode' value='1' /></td>
+        <td>Discount Type</td>
+        <td><input type='text' name='discounttype' size='10' /></td>
     </tr>
 </table>
 <br />

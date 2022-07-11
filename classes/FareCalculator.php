@@ -60,6 +60,16 @@ class FareCalculator {
         return $name;
     }
 
+    public static function get_ticket_discounttype($ticket) {
+        global $wpdb;
+        $tparts = explode('/', $ticket);
+        $dc = $wpdb->get_var("SELECT discounttype FROM {$wpdb->prefix}wc_railticket_tickettypes WHERE code = '".$tparts[0]."'");
+        if (strlen($dc) == 0) {
+            return false;
+        }
+        return $dc;
+    }
+
     public static function get_ticket_composition($ticket) {
         global $wpdb;
         $tparts = explode('/', $ticket);
@@ -77,7 +87,7 @@ class FareCalculator {
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes".$where." ORDER BY sequence ASC");
     }
 
-    public static function add_ticket_type($code, $name, $description, $special, $guardonly, $discountcode) {
+    public static function add_ticket_type($code, $name, $description, $special, $guardonly, $discounttype) {
         global $wpdb;
 
         $code = self::clean_code($code);
@@ -91,12 +101,12 @@ class FareCalculator {
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_tickettypes",
             array('code' => $code, 'name' => $name, 'description' => $description, 'guardonly' => $guardonly,
-            'special' => $special, 'composition' => '{}', 'depends' => '[]', 'sequence' => $seq, 'discountcode' => $discountcode));
+            'special' => $special, 'composition' => '{}', 'depends' => '[]', 'sequence' => $seq, 'discounttype' => $discounttype));
 
         return true;
     }
 
-    public static function update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends, $discountcode) {
+    public static function update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends, $discounttype) {
         global $wpdb;
 
         $composition = json_encode($composition);
@@ -105,7 +115,7 @@ class FareCalculator {
         $wpdb->update("{$wpdb->prefix}wc_railticket_tickettypes",
             array('name' => $name, 'description' => $description, 'guardonly' => $guardonly,
             'special' => $special, 'hidden' => $hidden, 'composition' => $composition, 'depends' => $depends,
-            'discountcode' => $discountcode),
+            'discounttype' => $discounttype),
             array('id' => $id));
     }
 

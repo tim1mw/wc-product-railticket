@@ -476,4 +476,18 @@ class BookingOrder {
         return $this->bookings[0]->get_created();
     }
 
+    public function get_discountcode_ticket_codes() {
+        $codes = array();
+        foreach ($this->tickets as $ticket => $num) {
+            $code = $this->bookableday->fares->get_ticket_discounttype($ticket);
+            if ($code && !in_array($code, $codes)) {
+                $codes[] = $code;
+            }
+        }
+        if (count($codes) > 0) {
+            return $codes;
+        }
+        return false;
+    }
+
 }
