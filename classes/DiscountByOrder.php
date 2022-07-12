@@ -50,4 +50,11 @@ class DiscountByOrder extends Discount {
 
         return new DiscountByOrder($data, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
     }
+
+
+
+    public function get_max_seats() {
+        // We need to use the max seats from the linked order for this type of discount
+        return $this->order->get_seats();
+    }
 }
