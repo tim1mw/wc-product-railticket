@@ -16,18 +16,18 @@ class DiscountByOrder extends Discount {
             return;
         }
 
+        switch ($journeytype) {
+            case 'single': $this->triplegs = 1; break;
+            case 'return': $this->triplegs = 2; break;
+            case 'round': $this->triplegs = 3; break;
+            default: return;
+        }
+
         if (!property_exists($this->data->rules, 'maxlegs') || $this->data->rules->maxlegs < 0) {
             return;
         }
 
-        switch ($journeytype) {
-            case 'single': $triplegs = 1; break;
-            case 'return': $triplegs = 2; break;
-            case 'round': $triplegs = 3; break;
-            default: return;
-        }
-
-        $legsrequested = $triplegs * $this->order->get_seats();
+        $legsrequested = $this->triplegs * $this->order->get_seats();
         $legsavailable = $this->data->rules->maxlegs * $this->order->get_seats();
         $legsbooked = $this->count_legs_booked();
         $legsleft = $legsavailable - $legsbooked;
@@ -42,7 +42,6 @@ class DiscountByOrder extends Discount {
     }
 
     public static function get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel) {
-        global $wpdb;
         $order = BookingOrder::get_booking_order($code);
         if (!$order) {
             return false;
@@ -59,8 +58,27 @@ class DiscountByOrder extends Discount {
             return false;
         }
 
+        // This is a list of potential discounts in order of priority. Work through it till we get a valid one.
+        $dtypes = explode(',', $dtypes[0]);
+        foreach ($dtypes as $type) {
+            $do = self::get_discountbyorder($type, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
+            if (!$do) {
+                continue;
+            }
+
+            if ($do->is_valid()) {
+                return $do;
+            }
+        }
+
+        // Nothing was valid, return the last invalid one.
+        return $do;
+    }
+
+    private static function get_discountbyorder($type, $fromstation, $tostation, $journeytype, $dateoftravel, $order) {
+        global $wpdb;
         $data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_discounts ".
-            "WHERE shortname = '".$dtypes[0]."'");
+            "WHERE shortname = '".$type."'");
 
         if (!$data) {
             // Invalid discount type, give up...
@@ -82,7 +100,7 @@ class DiscountByOrder extends Discount {
     }
 
     private function count_legs_booked() {
-        return 8;
+        return 12;
     }
 
     public function get_max_seats() {
@@ -96,5 +114,15 @@ class DiscountByOrder extends Discount {
         }
 
         return parent::get_message();
+    }
+
+    public function apply_price_rule($tickettype, $price) {
+        $price = parent::apply_price_rule($tickettype, $price);
+
+        if (property_exists($this->data->rules, 'pricelegmultiply') && $this->data->rules->pricelegmultiply == true) {
+            return $price * $this->triplegs;
+        }
+
+        return $price;
     }
 }
