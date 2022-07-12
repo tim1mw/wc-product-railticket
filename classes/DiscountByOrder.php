@@ -9,6 +9,36 @@ class DiscountByOrder extends Discount {
         parent::__construct($data, $fromstation, $tostation, $journeytype, $dateoftravel);
 
         $this->order = $order;
+        $this->message = false;
+
+        // No point in doing further validation tests if we have already failed.
+        if (!$this->valid) {
+            return;
+        }
+
+        if (!property_exists($this->data->rules, 'maxlegs') || $this->data->rules->maxlegs < 0) {
+            return;
+        }
+
+        switch ($journeytype) {
+            case 'single': $triplegs = 1; break;
+            case 'return': $triplegs = 2; break;
+            case 'round': $triplegs = 3; break;
+            default: return;
+        }
+
+        $legsrequested = $triplegs * $this->order->get_seats();
+        $legsavailable = $this->data->rules->maxlegs * $this->order->get_seats();
+        $legsbooked = $this->count_legs_booked();
+        $legsleft = $legsavailable - $legsbooked;
+
+        if ($legsrequested > $legsleft) {
+            $this->valid = false;
+            $this->message = "You have insufficient trips left to make this booking, ".($legsbooked/$this->order->get_seats()).
+                " out of ".$this->data->rules->maxlegs." single trips used.";
+        } else {
+            $this->message = "Valid code: You currently have ".$legsavailable." single trips remaining for all passengers.";
+        }
     }
 
     public static function get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel) {
@@ -37,24 +67,34 @@ class DiscountByOrder extends Discount {
             return false;
         }
 
+        $bk = BookableDay::get_bookable_day($dateoftravel);
+        if (in_array($data->shortname, $bk->get_discount_exclude())) {
+            return false;
+        }
+
         $data->code = $dtypes[0];
         $data->start = $order->get_date();
         $data->end = $data->start;
         $data->single = 0;
         $data->disabled = 0;
 
-        $bk = BookableDay::get_bookable_day($dateoftravel);
-        if (in_array($data->shortname, $bk->get_discount_exclude())) {
-            return false;
-        }
-
         return new DiscountByOrder($data, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
     }
 
-
+    private function count_legs_booked() {
+        return 8;
+    }
 
     public function get_max_seats() {
         // We need to use the max seats from the linked order for this type of discount
         return $this->order->get_seats();
+    }
+
+    public function get_message() {
+        if ($this->message) {
+            return $this->message;
+        }
+
+        return parent::get_message();
     }
 }
