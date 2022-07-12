@@ -39,25 +39,27 @@ class Discount extends DiscountType {
             }
         }
 
-        switch ($this->data->triptype) {
-            case 'full': 
-                if ($this->fromstation==false || $this->tostation==false || $this->journeytype==false || $this->journeytype == 'single') {
-                    $this->valid = false;
-                    break;
-                }
+        if ($this->valid) {
+            switch ($this->data->triptype) {
+                case 'full': 
+                    if ($this->fromstation==false || $this->tostation==false || $this->journeytype==false || $this->journeytype == 'single') {
+                        $this->valid = false;
+                        break;
+                    }
 
-                if ( $this->journeytype == 'round') {
-                    break;
-                }
+                    if ( $this->journeytype == 'round') {
+                        break;
+                    }
 
-                if (!$this->fromstation->is_principal() || !$this->tostation->is_principal()) {
-                    $this->valid = false;
-                }
+                    if (!$this->fromstation->is_principal() || !$this->tostation->is_principal()) {
+                        $this->valid = false;
+                    }
                     
-                break;
-            case 'any':
-                $this->valid = true;
-                break;
+                    break;
+                case 'any':
+                    $this->valid = true;
+                    break;
+            }
         }
     }
 
@@ -80,8 +82,6 @@ class Discount extends DiscountType {
 
             $dtypes = $order->get_discountcode_ticket_codes();
 
-file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt", print_r($dtypes, true)."\n");
-
             if (!$dtypes) {
                 return false;
             }
@@ -93,15 +93,15 @@ file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt", print_r($dty
 
             $data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_discounts ".
             "WHERE shortname = '".$dtypes[0]."'");
-file_put_contents("/home/httpd/balashoptest.my-place.org.uk/x.txt", print_r($data, true)."\n", FILE_APPEND);
+
             if (!$data) {
                 // Invalid discount type, give up...
                 return false;
             }
 
             $data->code = $dtypes[0];
-            $data->start = null;
-            $data->end = null;
+            $data->start = $order->get_date();
+            $data->end = $data->start;
             $data->single = 0;
             $data->disabled = 0;
         }
