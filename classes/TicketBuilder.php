@@ -591,6 +591,11 @@ class TicketBuilder {
         $totalseats = $this->bookableday->fares->count_seats($this->ticketselections);
 
         if ($this->manual) {
+            if ($this->discount) {
+               $discountcode = $this->discount->get_code();
+            } else {
+               $discountcode = '';
+            }
             $data = array(
                 'journeytype' => $this->journeytype,
                 'price' => $pricedata->price,
@@ -601,7 +606,8 @@ class TicketBuilder {
                 'ticketprices' => json_encode($pricedata->ticketprices),
                 'notes' => $this->notes,
                 'createdby' => get_current_user_id(),
-                'discountnote' => $this->discountnote
+                'discountnote' => $this->discountnote,
+                'discountcode' => $discountcode
             );
             $wpdb->insert("{$wpdb->prefix}wc_railticket_manualbook", $data);
             $mid = $wpdb->insert_id;
