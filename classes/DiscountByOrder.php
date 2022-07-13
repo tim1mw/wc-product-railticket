@@ -61,7 +61,7 @@ class DiscountByOrder extends Discount {
         // This is a list of potential discounts in order of priority. Work through it till we get a valid one.
         $dtypes = explode(',', $dtypes[0]);
         foreach ($dtypes as $type) {
-            $do = self::get_discountbyorder($type, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
+            $do = self::get_discountbyorder($code, $type, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
             if (!$do) {
                 continue;
             }
@@ -75,7 +75,7 @@ class DiscountByOrder extends Discount {
         return $do;
     }
 
-    private static function get_discountbyorder($type, $fromstation, $tostation, $journeytype, $dateoftravel, $order) {
+    private static function get_discountbyorder($code, $type, $fromstation, $tostation, $journeytype, $dateoftravel, $order) {
         global $wpdb;
         $data = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_discounts ".
             "WHERE shortname = '".$type."'");
@@ -90,7 +90,7 @@ class DiscountByOrder extends Discount {
             return false;
         }
 
-        $data->code = $dtypes[0];
+        $data->code = $code;
         $data->start = $order->get_date();
         $data->end = $data->start;
         $data->single = 0;
