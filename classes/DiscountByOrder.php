@@ -37,7 +37,7 @@ class DiscountByOrder extends Discount {
             $this->message = "You have insufficient trips left to make this booking, ".($legsbooked/$this->order->get_seats()).
                 " out of ".$this->data->rules->maxlegs." single trips used.";
         } else {
-            $this->message = "Valid code: You currently have ".$legsavailable." single trips remaining for all passengers.";
+            $this->message = "Valid code: You currently have ".$legsleft." single trips remaining for all passengers.";
         }
     }
 
@@ -100,7 +100,13 @@ class DiscountByOrder extends Discount {
     }
 
     private function count_legs_booked() {
-        return 8;
+        $orders = BookingOrder::get_booking_orders_by_discountcode($this->data->code);
+        $total = 0;
+        foreach($orders as $order) {
+            $total += $order->total_trips();
+        }
+
+        return $total;
     }
 
     public function get_travellers() {

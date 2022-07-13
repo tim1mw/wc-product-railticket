@@ -157,6 +157,26 @@ class BookingOrder {
         return new BookingOrder($bookings, $bookings[0]->wooorderid, false);    
     }
 
+    public static function get_booking_orders_by_discountcode($code) {
+        global $wpdb;
+        $orders = array();
+
+        // Get the woocommerce orders
+        $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE meta_key = 'ticketprices-__discountcode' ".
+            " AND meta_value = '".$code."'");
+
+        foreach ($items as $item) {
+            $orders[] = self::get_booking_order_itemid($item->order_item_id);
+        }
+
+        $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE discountcode = '".$code."'");
+        foreach ($items as $item) {
+            $orders[] = self::get_booking_order($item->id, true);
+        }
+
+        return $orders;
+    }
+
     private function get_woo_meta($metakey, $wooorderitem) {
         global $wpdb;
         $woometas = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
@@ -256,6 +276,15 @@ class BookingOrder {
 
     public function get_bookings() {
         return $this->bookings;
+    }
+
+    /**
+    * Counts the total number of single trips represented by this order
+    * journey legs * seats used
+    **/
+
+    public function total_trips() {
+        return count($this->bookings) * $this->bookings[0]->get_seats();
     }
 
     public function get_tickets($format = false) {
