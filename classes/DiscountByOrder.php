@@ -100,12 +100,24 @@ class DiscountByOrder extends Discount {
     }
 
     private function count_legs_booked() {
-        return 12;
+        return 8;
+    }
+
+    public function get_travellers() {
+        return $this->order->get_travellers();
     }
 
     public function get_max_seats() {
         // We need to use the max seats from the linked order for this type of discount
         return $this->order->get_seats();
+    }
+
+    public function lock_travellers() {
+        if (!property_exists($this->data->rules, 'locktravellers')) {
+            return false;
+        }
+
+        return $this->data->rules->locktravellers;
     }
 
     public function get_message() {

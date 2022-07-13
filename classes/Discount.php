@@ -182,6 +182,14 @@ class Discount extends DiscountType {
         return $this->get_name()." ".__('discount is not valid for you selection', 'wc_railticket');
     }
 
+    public function get_travellers() {
+        return array();
+    }
+
+    public function lock_travellers() {
+        return false;
+    }
+
     public function ticket_has_discount($tickettype) {
         if (!$this->valid) {
             return false;

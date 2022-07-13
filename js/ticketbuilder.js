@@ -10,6 +10,7 @@ var fromstationdata, tostationdata, journeychoicedata, journeytypedata, alljourn
 var manual = false;
 var maxdiscountseats = 999;
 var customtravellers = false;
+var prefilltravellers = [];
 var deplegscount = [];
 
 
@@ -195,14 +196,27 @@ function validateDiscount(evt) {
 
         maxdiscountseats = response['maxseats'];
         customtravellers = response['customtravellers'];
-        renderTicketSelector();
+        if ('prefilltravellers' in response) {
+            prefilltravellers = response['prefilltravellers'];
+        } else {
+            prefilltravellers = [];
+        }
+
+        renderTicketSelectorMain();
         allocateTickets();
         if (response.valid && response.shownotes && response.pattern.length > 0) {
             discountCheck(true);
             document.getElementById('dnotes').addEventListener('input', validateDiscountNote);
         } else {
             discountCheck(false);
+            if ('locktravellers' in response && response['locktravellers'] && response.valid) {
+                disableDiv('ticket_travellers', true);
+            } else {
+                disableDiv('ticket_travellers', false);
+            }
         }
+
+
     });
 }
 
@@ -213,6 +227,7 @@ function validateDiscountNote() {
     } else {
         discountCheck( true);
     }
+    //TODO Account for locktravellers here.
 }
 
 function discountCheck(state) {
@@ -729,6 +744,14 @@ function convert24hour(time) {
 }
 
 function renderTicketSelector() {
+    if (getFormValue('discountcode').trim().length > 0) {
+        validateDiscount(false);
+    } else {
+        renderTicketSelectorMain();
+    }
+}
+
+function renderTicketSelectorMain() {
 
     if (ticketdata.travellers.length == 0) {
         var errordiv = document.getElementById('railticket_error');
@@ -770,9 +793,14 @@ function renderTicketSelector() {
     for (i in ticketdata.travellers) {
         var value = '';
         var code = ticketdata.travellers[i].code;
-        if (code in ticketSelections) {
-            ticketdata.travellers[i].value = ticketSelections[ticketdata.travellers[i].code];
+        if (code in prefilltravellers) {
+            ticketdata.travellers[i].value = prefilltravellers[code];
             nTicketSelections[code] = value;
+        } else {
+            if (code in ticketSelections) {
+                ticketdata.travellers[i].value = ticketSelections[ticketdata.travellers[i].code];
+                nTicketSelections[code] = value;
+            }
         }
         if (ticketdata.travellers[i].code.indexOf('/') > -1) {
             ticketdata.travellers[i].extracss = 'railticket_travellers_discount';
@@ -783,6 +811,8 @@ function renderTicketSelector() {
             sep = true;
         }
     }
+
+    prefilltravellers = [];
 
     ticketSelections = nTicketSelections;
 
