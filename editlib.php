@@ -2624,6 +2624,7 @@ function railticket_show_edit_special() {
     $item->action = 'updatespecial';
     $item->button = 'Update';
     $item->title = 'Update Special';
+    $item->longdesc = $sp->get_long_description();
 
     $template = $rtmustache->loadTemplate('edit_special');
     echo $template->render($item);
@@ -2654,7 +2655,8 @@ function railticket_update_special() {
             substr($background, 1),
             railticket_getpostfield('fromstation'),
             railticket_getpostfield('tostation'),
-            $_REQUEST['tickettypes']
+            $_REQUEST['tickettypes'],
+            $_REQUEST['longdesc']
         );
     } else {
         $sp = \wc_railticket\Special::get_special($id);
@@ -2667,7 +2669,8 @@ function railticket_update_special() {
             substr($background, 1),
             railticket_getpostfield('fromstation'),
             railticket_getpostfield('tostation'),
-            $_REQUEST['tickettypes']
+            $_REQUEST['tickettypes'],
+            $_REQUEST['longdesc']
         );
     }
 }
