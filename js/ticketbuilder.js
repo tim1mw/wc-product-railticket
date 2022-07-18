@@ -753,6 +753,10 @@ function renderTicketSelector() {
 
 function renderTicketSelectorMain() {
 
+     var splong = document.getElementById('ticket_splongdesc');
+     splong.innerHTML = '';
+     splong.style.display = "none";
+
     if (ticketdata.travellers.length == 0) {
         var errordiv = document.getElementById('railticket_error');
         errordiv.innerHTML = '<p style="text-align:center;font-weight:bold;">Tickets are not currently available to purchase for this service online. Sorry!';
@@ -780,6 +784,19 @@ function renderTicketSelectorMain() {
             if (alljourneys[i].code == jc) {
                 journeychoicedata = alljourneys[i];
             }
+        }
+    } else {
+        var selected = getFormValue('specials');
+        var special = false;
+        for (index in specialsData) {
+            if (specialsData[index].id == selected) {
+                special = specialsData[index];
+            }
+        }
+        if (special.longdesc.length > 0) {
+            var spltemplate = document.getElementById('splongdesc_tmpl').innerHTML;
+            splong.innerHTML = Mustache.render(spltemplate, special);
+            splong.style.display = "block";
         }
     }
    

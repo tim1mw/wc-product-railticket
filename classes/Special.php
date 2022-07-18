@@ -71,6 +71,7 @@ class Special {
         $data->id = $this->data->id;
         $data->name = $this->data->name;
         $data->description = $this->data->description;
+        $data->longdesc = $this->data->longdesc;
 
         return $data;
     }
