@@ -1470,16 +1470,32 @@ function railticket_show_order_main($orderid) {
     railticket_show_bookingorder($bookingorder);
 
     $dctickets = $bookingorder->get_discountcode_ticket_codes();
+    $exclude = false;
     if (!$dctickets) {
-        return;
+        // See if this order could have been used as a discount code.
+        $dcode = $bookingorder->get_discount_code();
+        if (strlen($dcode) == 0) {
+            return;
+        }
+        $order = \wc_railticket\BookingOrder::get_booking_order($dcode);
+        if (!$order) {
+            return;
+        }
+        echo "<hr class='railticket_thick_hr' /><h3>".__("The order above was placed using the order below as a discount code.</h3>");
+        railticket_show_bookingorder($order);
+        $exclude = $orderid;
+        $orderid = $dcode;
     }
 
     // This order number can be used as a discount code, so find all the linked orders and display.
 
     $orders = \wc_railticket\BookingOrder::get_booking_orders_by_discountcode($orderid);
-    echo "<hr /><h3>".__("This order can be used as a discount code. All linked orders shown below.</h3>");
+    echo "<hr class='railticket_thick_hr' /><h3>".__("The following orders were all linked to the original order via a discount</h3>");
 
     foreach ($orders as $order) {
+        if ($order->get_order_id() == $exclude) {
+            continue;
+        }
         railticket_show_bookingorder($order);
         echo "<hr class='railticket_thick_hr' />";
     }
