@@ -1468,6 +1468,21 @@ function railticket_show_order_main($orderid) {
         return;
     }
     railticket_show_bookingorder($bookingorder);
+
+    $dctickets = $bookingorder->get_discountcode_ticket_codes();
+    if (!$dctickets) {
+        return;
+    }
+
+    // This order number can be used as a discount code, so find all the linked orders and display.
+
+    $orders = \wc_railticket\BookingOrder::get_booking_orders_by_discountcode($orderid);
+    echo "<hr /><h3>".__("This order can be used as a discount code. All linked orders shown below.</h3>");
+
+    foreach ($orders as $order) {
+        railticket_show_bookingorder($order);
+        echo "<hr class='railticket_thick_hr' />";
+    }
 }
 
 function railticket_show_bookingorder($bookingorder) {
