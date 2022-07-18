@@ -29,6 +29,8 @@ add_action('woocommerce_new_order', 'railticket_cart_check_cart_at_checkout');
 add_action('woocommerce_order_status_refunded', 'railticket_order_cancel_refund');
 add_action('woocommerce_order_status_cancelled', 'railticket_order_cancel_refund');
 //add_action('woocommerce_after_single_product_summary', 'railticket_product_front');
+add_action( 'woocommerce_email_order_meta', 'railticket_add_email_order_meta', 10, 3 );
+
 
 // General options refuse to show without an advanced element we don't need....
 add_action( 'woocommerce_product_options_general_product_data', function(){
@@ -525,5 +527,38 @@ function railticket_order_cancel_refund($order_id) {
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($order_id);
     if ($bookingorder) {
         $bookingorder->delete();
+    }
+}
+
+
+function railticket_add_email_order_meta($order, $sent_to_admin, $plain_text) {
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($order->get_id());
+    if (!$bookingorder || !$bookingorder->is_special()) {
+        return;
+    }
+
+    $special = $bookingorder->get_special();
+    if (!$special) {
+        return;
+    }
+
+    $desc = $special->get_long_description();
+    if (strlen($desc) == 0) {
+        return;
+    }
+    // TODO Use setting for /book
+    $url = site_url().'/book?a_discountcode='.$bookingorder->get_order_id()."&a_dateofjourney=".$bookingorder->get_date();
+
+    if ($bookingorder->get_discountcode_ticket_codes()) {
+        $bookbtn = '<h3>Reserving your seats<h3><p style="font-weight:bold;font-size:large;"><a href="'.$url.'">Click here to reserve seats for your journeys using our booking system</a></p>';
+    } else {
+        $bookbrn = '';
+    }
+
+    if ($plain_text === false) {
+        echo $bookbtn.$desc;
+    } else {
+        echo "Use this link to reserve seats for your journeys using our booking system: ".$url."\n\n".strip_tags($desc);
     }
 }

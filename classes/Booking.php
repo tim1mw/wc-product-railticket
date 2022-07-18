@@ -345,6 +345,10 @@ class Booking {
         $this->insertBays($this->data->id, $bays);
     }
 
+    public function get_special() {
+        return $this->special;
+    }
+
     private function update_record() {
         global $wpdb;
         $wpdb->update($wpdb->prefix.'wc_railticket_bookings',
