@@ -1,0 +1,36 @@
+<div class='railticket_review_container'>
+    <div class='railticket_review_header'>Order Number: {{orderid}}</div>
+    <table>
+    {{# details }}
+        <tr><th width='30%' style='text-align:right'>{{item}}</th><td class='railticket_meta'>{{{value}}}</td></tr>
+    {{/ details }}
+    {{# discounts }}
+        <tr><th width='30%' style='text-align:right'>{{name}}</th><td class='railticket_meta'>{{{message}}}</td></tr>
+    {{/ discounts }}
+    </table>
+    {{# bookurl }}
+        <form action="{{bookurl}}" method="post">
+            <input name="show" type="hidden" value="1">
+            <input name="a_dateofjourney" type="hidden" value="{{dateofjourney}}">
+            <input name="a_discountcode" type="hidden" value="{{orderid}}">
+            <div class='railticket_review_book'><input style="width:50%;" name="submit" type="submit" value="Click here to book more tickets"></div>
+       </form>
+    {{/ bookurl }}
+    <div style='{{otheritemsstyle}}'>
+    <h4>{{otheritemsstr}}</h4>
+    <table >
+    {{# otheritems }}
+        <tr><th width='30%' style='text-align:right'>{{qty}} x</th><td class='railticket_meta'>{{{name}}}</td></tr>
+    {{/ otheritems }}
+    </table>
+    </div>
+
+    {{# bookings }}
+        <h4>{{title}}</h4>
+        <table>
+            <tr><th width='30%' style='text-align:right'>{{tripstr}}</th><td class='railticket_meta'>{{stns}}</td></tr>
+            <tr><th style='text-align:right'>{{timestr}}</th><td class='railticket_meta'>{{deptime}}</td></tr>
+            <tr><th style='text-align:right'>{{baystr}}</th><td class='railticket_meta'>{{{bays}}}</td></tr>
+        </table>
+    {{/ bookings }}
+</div>

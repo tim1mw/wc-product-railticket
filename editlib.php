@@ -40,6 +40,8 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_prioritynotify');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_calmonths');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enckey');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enciv');
 
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
@@ -240,6 +242,14 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_prioritynotify">Notify these email addresses when a wheelchair booking is made<br />(comma seperated list)</label></th>
             <td><input size='60'  type="text" id="wc_product_railticket_prioritynotify" name="wc_product_railticket_prioritynotify" value="<?php echo get_option('wc_product_railticket_prioritynotify'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_enckey">Encryption Key for links</label></th>
+            <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_enckey">Encryption IV for links</label></th>
+            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
         </tr>
     </table>
     <?php submit_button(); ?>
@@ -1518,6 +1528,8 @@ function railticket_show_bookingorder($bookingorder) {
 
     $template = $rtmustache->loadTemplate('showorder');
     echo $template->render($alldata);
+
+    //echo urlencode($bookingorder->get_review_code());
 }
 
 function railticket_get_booking_order_data(\wc_railticket\BookingOrder $bookingorder) {

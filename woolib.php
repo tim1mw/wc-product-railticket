@@ -534,8 +534,16 @@ function railticket_order_cancel_refund($order_id) {
 function railticket_add_email_order_meta($order, $sent_to_admin, $plain_text) {
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order($order->get_id());
-    if (!$bookingorder || !$bookingorder->is_special()) {
+    if (!$bookingorder) {
         return;
+    }
+
+    $reviewurl = site_url().'/review-order?ref='.urlencode($bookingorder->get_review_code());
+
+    if ($plain_text === false) {
+        echo "<p><a href=".$reviewurl." style='font-weight:bold;font-size:large;'>Click here to view your booking on our website</a></p>";
+    } else {
+        echo "Use this link view your booking on our website: ".$reviewurl."\n\n";
     }
 
     $special = $bookingorder->get_special();
@@ -551,14 +559,14 @@ function railticket_add_email_order_meta($order, $sent_to_admin, $plain_text) {
     $url = site_url().'/book?a_discountcode='.$bookingorder->get_order_id()."&a_dateofjourney=".$bookingorder->get_date();
 
     if ($bookingorder->get_discountcode_ticket_codes()) {
-        $bookbtn = '<h3>Reserving your seats<h3><p style="font-weight:bold;font-size:large;"><a href="'.$url.'">Click here to reserve seats for your journeys using our booking system</a></p>';
-    } else {
-        $bookbrn = '';
-    }
+        $bookbtn = '<h2>Reserving your seats</h2><p style="font-weight:bold;font-size:large;"><a href="'.$url.'">Click here to reserve seats for your journeys using our booking system</a></p>';
+        $bookpln = "Use this link to reserve seats for your journeys using our booking system: ".$url."\n\n";
+    } 
+
 
     if ($plain_text === false) {
         echo $bookbtn.$desc;
     } else {
-        echo "Use this link to reserve seats for your journeys using our booking system: ".$url."\n\n".strip_tags($desc);
+        echo $bookpln.strip_tags($desc);
     }
 }

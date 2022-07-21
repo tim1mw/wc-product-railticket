@@ -10,6 +10,7 @@ class DiscountByOrder extends Discount {
 
         $this->order = $order;
         $this->message = false;
+        $this->usage = __("No limit");
 
         // No point in doing further validation tests if we have already failed.
         if (!$this->valid) {
@@ -34,14 +35,15 @@ class DiscountByOrder extends Discount {
 
         if ($legsrequested > $legsleft) {
             $this->valid = false;
-            $this->message = "You have insufficient trips left to make this booking, ".($legsbooked/$this->order->get_seats()).
-                " out of ".$this->data->rules->maxlegs." single trips used.";
+            $this->message = "No more no more trips left, all ".$legsavailable." single trips used.";
+            $this->usage = "All ".$legsavailable." single trips used.";
         } else {
-            $this->message = "Valid code: You currently have ".$legsleft." single trips remaining for all passengers.";
+            $this->message = "Discount Validated: You have ".$legsleft." out of ".$legsavailable." single trips remaining for all passengers.";
+            $this->usage = $legsleft." out of ".$legsavailable." single trips remaining for all passengers.";
         }
     }
 
-    public static function get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel) {
+    public static function get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel, $all = false) {
         $order = BookingOrder::get_booking_order($code);
         if (!$order) {
             return false;
@@ -60,6 +62,15 @@ class DiscountByOrder extends Discount {
 
         // This is a list of potential discounts in order of priority. Work through it till we get a valid one.
         $dtypes = explode(',', $dtypes[0]);
+
+        if ($all) {
+            $all = array();
+            foreach ($dtypes as $type) {
+                $all[] = self::get_discountbyorder($code, $type, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
+            }
+            return $all;
+        }
+
         foreach ($dtypes as $type) {
             $do = self::get_discountbyorder($code, $type, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
             if (!$do) {
@@ -74,6 +85,8 @@ class DiscountByOrder extends Discount {
         // Nothing was valid, return the last invalid one.
         return $do;
     }
+
+
 
     private static function get_discountbyorder($code, $type, $fromstation, $tostation, $journeytype, $dateoftravel, $order) {
         global $wpdb;
@@ -100,7 +113,7 @@ class DiscountByOrder extends Discount {
     }
 
     private function count_legs_booked() {
-        $orders = BookingOrder::get_booking_orders_by_discountcode($this->data->code);
+        $orders = BookingOrder::get_booking_orders_by_discountcode($this->data->code, $this->data->shortname);
         $total = 0;
         foreach($orders as $order) {
             $total += $order->total_trips();
@@ -142,5 +155,9 @@ class DiscountByOrder extends Discount {
         }
 
         return $price;
+    }
+
+    public function get_usage() {
+        return $this->usage;
     }
 }

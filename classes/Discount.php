@@ -75,7 +75,7 @@ class Discount extends DiscountType {
         if (!$data) {
             // This might be a multi-trip discount which uses the order number as the discount code, so look for an order
             // and see if it contains a valid purchase
-            $d = DiscountByOrder:: get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel);
+            $d = DiscountByOrder::get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel);
             if ($d) {
                 return $d;
             }
