@@ -66,7 +66,11 @@ class DiscountByOrder extends Discount {
         if ($all) {
             $all = array();
             foreach ($dtypes as $type) {
-                $all[] = self::get_discountbyorder($code, $type, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
+                $do = self::get_discountbyorder($code, $type, $fromstation, $tostation, $journeytype, $dateoftravel, $order);
+                if (!$do) {
+                    continue;
+                }
+                $all[] = $do;
             }
             return $all;
         }
