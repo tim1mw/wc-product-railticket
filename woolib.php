@@ -29,7 +29,8 @@ add_action('woocommerce_new_order', 'railticket_cart_check_cart_at_checkout');
 add_action('woocommerce_order_status_refunded', 'railticket_order_cancel_refund');
 add_action('woocommerce_order_status_cancelled', 'railticket_order_cancel_refund');
 //add_action('woocommerce_after_single_product_summary', 'railticket_product_front');
-add_action( 'woocommerce_email_order_meta', 'railticket_add_email_order_meta', 10, 3 );
+add_action('woocommerce_email_order_meta', 'railticket_add_email_order_meta', 10, 3 );
+add_action( 'woocommerce_after_checkout_validation', 'railticket_matching_email_addresses', 10, 2 );
 
 
 // General options refuse to show without an advanced element we don't need....
@@ -570,3 +571,29 @@ function railticket_add_email_order_meta($order, $sent_to_admin, $plain_text) {
         echo $bookpln.strip_tags($desc);
     }
 }
+
+function railticket_matching_email_addresses($param) {
+    $cart = WC()->cart;
+    $items = $cart->get_cart();
+    $bookingorder = false;
+    foreach ($items as $item) {
+
+        $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($item);
+        if ($bookingorder) {
+            $dcode = $bookingorder->get_discount_code();
+            $linkedorder = \wc_railticket\BookingOrder::get_booking_order($dcode);
+            if (!$linkedorder) {
+                return;
+            }
+            $email1 = strtolower(trim($_POST['billing_email']));
+            $email2 = strtolower(trim($linkedorder->get_email()));
+            if ($email2 !== $email1 ) {
+                wc_add_notice('Your need to enter the same email address that was used for your first order (number '.$dcode.') in order to claim the discount.', 'error' );
+                return;
+            }
+        }
+    }
+
+}
+
+
