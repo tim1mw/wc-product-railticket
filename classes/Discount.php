@@ -39,26 +39,29 @@ class Discount extends DiscountType {
             }
         }
 
-        switch ($this->data->triptype) {
-            case 'full': 
-                if ($this->fromstation==false || $this->tostation==false || $this->journeytype==false || $this->journeytype == 'single') {
-                    $this->valid = false;
-                    break;
-                }
+        if ($this->valid) {
+            switch ($this->data->triptype) {
+                case 'full': 
+                    if ($this->fromstation==false || $this->tostation==false || $this->journeytype==false || $this->journeytype == 'single') {
+                        $this->valid = false;
+                        break;
+                    }
 
-                if ( $this->journeytype == 'round') {
-                    break;
-                }
+                    if ( $this->journeytype == 'round') {
+                        break;
+                    }
 
-                if (!$this->fromstation->is_principal() || !$this->tostation->is_principal()) {
-                    $this->valid = false;
-                }
+                    if (!$this->fromstation->is_principal() || !$this->tostation->is_principal()) {
+                        $this->valid = false;
+                    }
                     
-                break;
-            case 'any':
-                $this->valid = true;
-                break;
+                    break;
+                case 'any':
+                    $this->valid = true;
+                    break;
+            }
         }
+
     }
 
     public static function get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel) {
@@ -70,6 +73,12 @@ class Discount extends DiscountType {
             "WHERE codes.code = '".strtolower($code)."'");
 
         if (!$data) {
+            // This might be a multi-trip discount which uses the order number as the discount code, so look for an order
+            // and see if it contains a valid purchase
+            $d = DiscountByOrder::get_discount($code, $fromstation, $tostation, $journeytype, $dateoftravel);
+            if ($d) {
+                return $d;
+            }
             return false;
         }
 
@@ -80,6 +89,7 @@ class Discount extends DiscountType {
 
         return new Discount($data, $fromstation, $tostation, $journeytype, $dateoftravel);
     }
+
 
     public static function get_all_discount_data() {
         global $wpdb;
@@ -170,6 +180,14 @@ class Discount extends DiscountType {
             return __('Discount Validated', 'wc_railticket').": ".$this->get_name();
         }
         return $this->get_name()." ".__('discount is not valid for you selection', 'wc_railticket');
+    }
+
+    public function get_travellers() {
+        return array();
+    }
+
+    public function lock_travellers() {
+        return false;
     }
 
     public function ticket_has_discount($tickettype) {

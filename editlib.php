@@ -40,6 +40,8 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_bookinglimits');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_prioritynotify');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_calmonths');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enckey');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enciv');
 
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
@@ -240,6 +242,14 @@ function railticket_options() {
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_prioritynotify">Notify these email addresses when a wheelchair booking is made<br />(comma seperated list)</label></th>
             <td><input size='60'  type="text" id="wc_product_railticket_prioritynotify" name="wc_product_railticket_prioritynotify" value="<?php echo get_option('wc_product_railticket_prioritynotify'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_enckey">Encryption Key for links</label></th>
+            <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_enckey">Encryption IV for links</label></th>
+            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
         </tr>
     </table>
     <?php submit_button(); ?>
@@ -1468,6 +1478,37 @@ function railticket_show_order_main($orderid) {
         return;
     }
     railticket_show_bookingorder($bookingorder);
+
+    $dctickets = $bookingorder->get_discountcode_ticket_codes();
+    $exclude = false;
+    if (!$dctickets) {
+        // See if this order could have been used as a discount code.
+        $dcode = $bookingorder->get_discount_code();
+        if (strlen($dcode) == 0) {
+            return;
+        }
+        $order = \wc_railticket\BookingOrder::get_booking_order($dcode);
+        if (!$order) {
+            return;
+        }
+        echo "<hr class='railticket_thick_hr' /><h3>".__("The order above was placed using the order below as a discount code.</h3>");
+        railticket_show_bookingorder($order);
+        $exclude = $orderid;
+        $orderid = $dcode;
+    }
+
+    // This order number can be used as a discount code, so find all the linked orders and display.
+
+    $orders = \wc_railticket\BookingOrder::get_booking_orders_by_discountcode($orderid);
+    echo "<hr class='railticket_thick_hr' /><h3>".__("The following orders were all linked to the original order via a discount</h3>");
+
+    foreach ($orders as $order) {
+        if ($order->get_order_id() == $exclude) {
+            continue;
+        }
+        railticket_show_bookingorder($order);
+        echo "<hr class='railticket_thick_hr' />";
+    }
 }
 
 function railticket_show_bookingorder($bookingorder) {
@@ -1487,6 +1528,8 @@ function railticket_show_bookingorder($bookingorder) {
 
     $template = $rtmustache->loadTemplate('showorder');
     echo $template->render($alldata);
+
+    //echo urlencode($bookingorder->get_review_code());
 }
 
 function railticket_get_booking_order_data(\wc_railticket\BookingOrder $bookingorder) {
@@ -2056,7 +2099,8 @@ function railticket_tickets() {
                 $description = railticket_getpostfield('description');
                 $special = railticket_gettfpostfield('special');
                 $guardonly = railticket_gettfpostfield('guardonly');
-                $res = \wc_railticket\FareCalculator::add_ticket_type($code, $name, $description, $special, $guardonly);
+                $discounttype = railticket_getpostfield('discounttype');
+                $res = \wc_railticket\FareCalculator::add_ticket_type($code, $name, $description, $special, $guardonly, $discounttype);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -2171,6 +2215,7 @@ function railticket_update_tickettypes() {
         $description = railticket_getpostfield('description_'.$id);
         $special = railticket_gettfpostfield('special_'.$id);
         $guardonly = railticket_gettfpostfield('guardonly_'.$id);
+        $discounttype = railticket_getpostfield('discounttype_'.$id);
         $hidden = railticket_gettfpostfield('hidden_'.$id);
         $composition = new \stdclass();
         foreach ($alltravellers as $tr) {
@@ -2190,7 +2235,8 @@ function railticket_update_tickettypes() {
             }
          }
 
-        \wc_railticket\FareCalculator::update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends);
+        \wc_railticket\FareCalculator::update_ticket_type($id, $name, $description, $special, $guardonly, $hidden,
+            $composition, $depends, $discounttype);
     }
 }
 
@@ -2590,6 +2636,7 @@ function railticket_show_edit_special() {
     $item->action = 'updatespecial';
     $item->button = 'Update';
     $item->title = 'Update Special';
+    $item->longdesc = $sp->get_long_description();
 
     $template = $rtmustache->loadTemplate('edit_special');
     echo $template->render($item);
@@ -2620,7 +2667,8 @@ function railticket_update_special() {
             substr($background, 1),
             railticket_getpostfield('fromstation'),
             railticket_getpostfield('tostation'),
-            $_REQUEST['tickettypes']
+            $_REQUEST['tickettypes'],
+            $_REQUEST['longdesc']
         );
     } else {
         $sp = \wc_railticket\Special::get_special($id);
@@ -2633,7 +2681,8 @@ function railticket_update_special() {
             substr($background, 1),
             railticket_getpostfield('fromstation'),
             railticket_getpostfield('tostation'),
-            $_REQUEST['tickettypes']
+            $_REQUEST['tickettypes'],
+            $_REQUEST['longdesc']
         );
     }
 }

@@ -157,6 +157,71 @@ class BookingOrder {
         return new BookingOrder($bookings, $bookings[0]->wooorderid, false);    
     }
 
+    public static function get_booking_orders_by_discountcode($code, $type = false) {
+        global $wpdb;
+        $orders = array();
+
+        // Get the woocommerce orders
+        $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE meta_key = 'ticketprices-__discountcode' ".
+            " AND meta_value = '".$code."'");
+
+        foreach ($items as $item) {
+            if ($type) {
+                $dt = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE meta_key = 'ticketprices-__discounttype' ".
+                    " AND meta_value = '".$type."' AND order_item_id = ".$item->order_item_id);
+                if (count($dt) == 0) {
+                    continue;
+                }  
+            }
+
+            $orders[] = self::get_booking_order_itemid($item->order_item_id);
+        }
+
+        $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE discountcode = '".$code."'");
+        foreach ($items as $item) {
+            $order = self::get_booking_order($item->id, true);
+            if ($type && $order->get_discount_type()->get_short_name() != $type) {
+                continue;
+            }
+            $orders[] = $order;
+        }
+
+        return $orders;
+    }
+
+    public static function get_booking_order_byrefcode($code) {
+        $output = false;
+        $encrypt_method = "AES-256-CBC";
+        $secret_key = get_option('wc_product_railticket_enckey');
+        $secret_iv = get_option('wc_product_railticket_enciv');
+        $key = hash('sha256', $secret_key);    
+        $iv = substr(hash('sha256', $secret_iv), 0, 16);
+        $output = openssl_decrypt(base64_decode($code), $encrypt_method, $key, 0, $iv);
+        if (!$output) {
+            return false;
+        }
+
+        $output = json_decode($output);
+        if (!$output) {
+            return false;
+        }
+
+        if (!property_exists($output, 'orderid')) {
+            return false;
+        }
+
+        $order = self::get_booking_order($output->orderid);
+        if (!$order) {
+            return false;
+        }
+
+        if ($order->get_email() != $output->email) {
+            return false;
+        }
+
+        return $order;
+    }
+
     private function get_woo_meta($metakey, $wooorderitem) {
         global $wpdb;
         $woometas = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE ".
@@ -256,6 +321,15 @@ class BookingOrder {
 
     public function get_bookings() {
         return $this->bookings;
+    }
+
+    /**
+    * Counts the total number of single trips represented by this order
+    * journey legs * seats used
+    **/
+
+    public function total_trips() {
+        return count($this->bookings) * $this->bookings[0]->get_seats();
     }
 
     public function get_tickets($format = false) {
@@ -410,6 +484,11 @@ class BookingOrder {
         return $this->bookings[0]->is_special();
     }
 
+    public function get_special() {
+        // Bookings for a single order are always for the same day, so we can shortcut this safely
+        return $this->bookings[0]->get_special();
+    }
+
     public function get_seats() {
         // Bookings for a single order are always for the same day, so we can shortcut this safely
         return $this->bookings[0]->get_seats();
@@ -474,6 +553,44 @@ class BookingOrder {
 
     public function get_created() {
         return $this->bookings[0]->get_created();
+    }
+
+    public function get_discountcode_ticket_codes() {
+        $codes = array();
+        foreach ($this->tickets as $ticket => $num) {
+            $code = $this->bookableday->fares->get_ticket_discounttype($ticket);
+            if ($code && !in_array($code, $codes)) {
+                $codes[] = $code;
+            }
+        }
+        if (count($codes) > 0) {
+            return $codes;
+        }
+        return false;
+    }
+
+    public function get_review_code() {
+        if ($this->manual) {
+            return false;
+        }
+
+        $data = new \stdclass();
+        $data->email = $this->customeremail;
+        $data->orderid = $this->orderid;
+        $data = json_encode($data);
+
+        $output = false;
+        $encrypt_method = "AES-256-CBC";
+        $secret_key = get_option('wc_product_railticket_enckey');
+        $secret_iv = get_option('wc_product_railticket_enciv');
+        // hash
+        $key = hash('sha256', $secret_key);    
+        // iv - encrypt method AES-256-CBC expects 16 bytes 
+        $iv = substr(hash('sha256', $secret_iv), 0, 16);
+        $output = openssl_encrypt($data, $encrypt_method, $key, 0, $iv);
+        $output = base64_encode($output);
+
+        return $output;
     }
 
 }

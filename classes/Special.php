@@ -71,6 +71,7 @@ class Special {
         $data->id = $this->data->id;
         $data->name = $this->data->name;
         $data->description = $this->data->description;
+        $data->longdesc = $this->data->longdesc;
 
         return $data;
     }
@@ -150,7 +151,11 @@ class Special {
         return json_decode($this->data->tickettypes);
     }
 
-    public function update($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes) {
+    public function get_long_description() {
+        return $this->data->longdesc;
+    }
+
+    public function update($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes, $longdesc) {
         $this->data->name = $name;
         $this->data->date = $date;
         $this->data->onsale = $onsale;
@@ -160,6 +165,7 @@ class Special {
         $this->data->fromstation = $fromstationid;
         $this->data->tostation = $tostationid;
         $this->data->tickettypes = json_encode($tickettypes);
+        $this->data->longdesc = $longdesc;
         $this->update_record();
     }
 

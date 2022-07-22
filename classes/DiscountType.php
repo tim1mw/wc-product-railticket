@@ -112,6 +112,9 @@ class DiscountType {
             case 'fixed':
                 $price = $price - $rule->value;
                 break;
+            case 'price':
+                $price = $rule->value;
+                break;
         }
 
         return $price;

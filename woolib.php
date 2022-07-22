@@ -29,6 +29,9 @@ add_action('woocommerce_new_order', 'railticket_cart_check_cart_at_checkout');
 add_action('woocommerce_order_status_refunded', 'railticket_order_cancel_refund');
 add_action('woocommerce_order_status_cancelled', 'railticket_order_cancel_refund');
 //add_action('woocommerce_after_single_product_summary', 'railticket_product_front');
+add_action('woocommerce_email_order_meta', 'railticket_add_email_order_meta', 10, 3 );
+add_action( 'woocommerce_after_checkout_validation', 'railticket_matching_email_addresses', 10, 2 );
+
 
 // General options refuse to show without an advanced element we don't need....
 add_action( 'woocommerce_product_options_general_product_data', function(){
@@ -527,3 +530,70 @@ function railticket_order_cancel_refund($order_id) {
         $bookingorder->delete();
     }
 }
+
+
+function railticket_add_email_order_meta($order, $sent_to_admin, $plain_text) {
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order($order->get_id());
+    if (!$bookingorder) {
+        return;
+    }
+
+    $reviewurl = site_url().'/review-order?ref='.urlencode($bookingorder->get_review_code());
+
+    if ($plain_text === false) {
+        echo "<p><a href=".$reviewurl." style='font-weight:bold;font-size:large;'>Click here to view your booking on our website</a></p>";
+    } else {
+        echo "Use this link view your booking on our website: ".$reviewurl."\n\n";
+    }
+
+    $special = $bookingorder->get_special();
+    if (!$special) {
+        return;
+    }
+
+    $desc = $special->get_long_description();
+    if (strlen($desc) == 0) {
+        return;
+    }
+    // TODO Use setting for /book
+    $url = site_url().'/book?a_discountcode='.$bookingorder->get_order_id()."&a_dateofjourney=".$bookingorder->get_date();
+
+    if ($bookingorder->get_discountcode_ticket_codes()) {
+        $bookbtn = '<h2>Reserving your seats</h2><p style="font-weight:bold;font-size:large;"><a href="'.$url.'">Click here to reserve seats for your journeys using our booking system</a></p>';
+        $bookpln = "Use this link to reserve seats for your journeys using our booking system: ".$url."\n\n";
+    } 
+
+
+    if ($plain_text === false) {
+        echo $bookbtn.$desc;
+    } else {
+        echo $bookpln.strip_tags($desc);
+    }
+}
+
+function railticket_matching_email_addresses($param) {
+    $cart = WC()->cart;
+    $items = $cart->get_cart();
+    $bookingorder = false;
+    foreach ($items as $item) {
+
+        $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($item);
+        if ($bookingorder) {
+            $dcode = $bookingorder->get_discount_code();
+            $linkedorder = \wc_railticket\BookingOrder::get_booking_order($dcode);
+            if (!$linkedorder) {
+                return;
+            }
+            $email1 = strtolower(trim($_POST['billing_email']));
+            $email2 = strtolower(trim($linkedorder->get_email()));
+            if ($email2 !== $email1 ) {
+                wc_add_notice('Your need to enter the same email address that was used for your first order (number '.$dcode.') in order to claim the discount.', 'error' );
+                return;
+            }
+        }
+    }
+
+}
+
+

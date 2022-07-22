@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
 add_shortcode('railticket_special', 'railticket_get_special_button');
+add_shortcode('railticket_review', 'railticket_review_order');
 add_action( 'wp_ajax_nopriv_railticket_ajax', 'railticket_ajax_request');
 add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
 
@@ -186,5 +187,140 @@ function railticket_get_special_button($attr) {
         "<input type='hidden' name='a_direction' value='' />".
         "<input type='hidden' name='show' value='1' />".
         "</form><br />";
+}
+
+function railticket_review_order() {
+    $ref = railticket_getpostfield('ref');
+
+    if (!$ref) {
+        return "<p>No order reference code specified. You need to use the link in your booking email to review your orders.</p>";
+    }
+
+    $ref = urldecode($ref);
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_byrefcode($ref);
+    if (!$bookingorder) {
+        return "<p>Sorry, invalid reference code. The order could not be found.</p>";
+    }
+
+    global $rtmustache;
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/revieworder.css'));
+    wp_enqueue_style('railticket_style');
+
+    $alldata = railticket_get_customer_booking_order_data($bookingorder);
+    $template = $rtmustache->loadTemplate('showordercustomer');
+    $retstring = $template->render($alldata);
+
+    $dctickets = $bookingorder->get_discountcode_ticket_codes();
+    $exclude = false;
+    if (!$dctickets) {
+        // See if this order could have been used as a discount code.
+        $dcode = $bookingorder->get_discount_code();
+        if (strlen($dcode) == 0) {
+            return $retstring;
+        }
+        $order = \wc_railticket\BookingOrder::get_booking_order($dcode);
+        if (!$order) {
+            return $retstring;
+        }
+        $retstring .= "<h3>".__("The order is part of a multi-trip booking:</h3>");
+        $alldata = railticket_get_customer_booking_order_data($order);
+        $retstring .= $template->render($alldata);
+        $exclude = $bookingorder->get_order_id();
+        $bookingorder = $order;
+    }
+
+
+    // This order number can be used as a discount code, so find all the linked orders and display.
+
+    $orders = \wc_railticket\BookingOrder::get_booking_orders_by_discountcode($bookingorder->get_order_id());
+    if (count($orders) == 0) {
+        return $retstring;
+    }
+    $retstring .= "<h3>".__("The following orders are part of you multi-trip booking:</h3><br />");
+
+    foreach ($orders as $order) {
+        if ($order->get_order_id() == $exclude) {
+            continue;
+        }
+
+        $alldata = railticket_get_customer_booking_order_data($order);
+        $retstring .= $template->render($alldata);
+    }
+
+    return $retstring;
+}
+
+function railticket_get_customer_booking_order_data(\wc_railticket\BookingOrder $bookingorder) {
+    $discount = $bookingorder->get_discount_type();
+
+    $orderdata = array();
+    if ($discount) {
+        $orderdata[] = array('item' => __('Discount', 'wc_railticket'), 'value' => $discount->get_name(), 'style' => 'color:blue');
+        if ($discount->show_notes()) {
+            $orderdata[] = array('item' => $discount->get_note_type(),
+                'value' => '<div style="text-align:center;">'.
+                    '<span style="font-weight:bold;color:red;font-size:x-large;">'.$bookingorder->get_discount_note().'</span></div>');
+        }
+    }
+    if ($bookingorder->get_price() > 0) {
+        $orderdata[] = array('item' => __('Total Price', 'wc_railticket'), 'value' => $bookingorder->get_price(true));
+    
+        $orderdata[] = array('item' => __('Price Breakdown', 'wc_railticket'), 'value' => $bookingorder->get_ticket_prices(true));
+        if ($bookingorder->get_supplement() > 0) {
+            $orderdata[] = array('item' => __('Supplement', 'wc_railticket'), 'value' => $bookingorder->get_supplement(true));
+        }
+    }
+    $orderdata[] = array('item' => __('Tickets'), 'value' => $bookingorder->get_tickets(true));
+    $orderdata[] = array('item' => __('Date'), 'value' => $bookingorder->get_date(true));
+    if ($bookingorder->is_special()) {
+        $orderdata[] = array('item' => __('Special'), 'value' => $bookingorder->get_special()->get_name());
+    } else {
+        $orderdata[] = array('item' => __('Journey Type'), 'value' => $bookingorder->get_journeytype(true));
+    }
+    $orderdata[] = array('item' => __('Wheelchair space requested'), 'value' => $bookingorder->priority_requested(true));
+
+    $alldata = array(
+        'dateofjourney' => $bookingorder->get_date(),
+        'details' => $orderdata,
+        'timestr' => __('Departure Time', 'wc_railticket'),
+        'tripstr' => __('Trip', 'wc_railticket'),
+        'baystr' => __('Bays', 'wc_railticket'),
+        'otheritemsstr' => __('Shop Items to Collect', 'wc_railticket'),
+        'collectedstr' => __('Collected', 'wc_railticket'),
+        'orderid' => $bookingorder->get_order_id(),
+        'otheritems' => $bookingorder->other_items()
+    );
+
+    if (!$bookingorder->is_special()) {
+        $alldata['bookings'] = railticket_get_booking_render_data($bookingorder);
+    }
+
+    if ($alldata['otheritems'] == false || count($alldata['otheritems']) == 0) {
+        $alldata['otheritemsstyle'] = 'display:none';
+    }
+
+    $booking = $bookingorder->get_bookings()[0];
+    $discounts = \wc_railticket\DiscountByOrder::get_discount($bookingorder->get_order_id(), $booking->get_from_station(), $booking->get_to_station(), $bookingorder->get_journeytype(), $bookingorder->get_date(), true);
+    if (!$discounts) {
+        return $alldata;
+    }
+
+    $alldata['discounts'] = array();
+    $valid = false;
+    foreach ($discounts as $discount) {
+        $d = new \stdclass();
+        $d->name = $discount->get_name();
+        $d->message = $discount->get_usage();
+        $alldata['discounts'][] = $d;
+        if ($discount->is_valid()) {
+            $valid = true;
+        }
+    }
+
+    if ($valid) {
+        $alldata['bookurl'] = site_url().'/book';
+    }
+    return $alldata;
 }
 

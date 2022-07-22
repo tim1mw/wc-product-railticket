@@ -1,0 +1,37 @@
+ 
+.railticket_review_container {
+
+    border: 2px solid #880000;
+    margin: 2px;
+    border-radius: 4px;
+    min-width:240px;
+    max-width:900px;
+    margin-left:auto;
+    margin-right:auto;
+    margin-bottom:15px;
+}
+
+.railticket_review_container table {
+    width:100%;
+    margin:0px;
+}
+
+.railticket_review_header {
+    font-size:x-large;
+    font-weight:bold;
+    width:100%;
+    color:#880000;
+    background-color:#f2f0a6;
+    padding-left:5%;
+}
+
+.railticket_review_container h4 {
+    padding-left:5%;
+}
+
+.railticket_review_book {
+    text-align:center;
+    margin-top:8px;
+    margin-bottom:8px;
+    font-size:large;
+}

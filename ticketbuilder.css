@@ -697,3 +697,7 @@ border-radius: 0;
     background:khaki;
     color:black;
 }
+
+.railticket_thick_hr {
+    border-top: 4px solid blue; 
+}
