@@ -49,7 +49,7 @@ class Special {
         return $sp;
     }
 
-    public static function add($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes) {
+    public static function add($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes, $longdesc) {
         global $wpdb;
         $data = new \stdclass();
         $data->name = $name;
@@ -61,6 +61,7 @@ class Special {
         $data->fromstation = $fromstationid;
         $data->tostation = $tostationid;
         $data->tickettypes = json_encode($tickettypes);
+        $data->longdesc = $longdesc;
         $wpdb->insert($wpdb->prefix.'wc_railticket_specials', get_object_vars($data));
     }
 
