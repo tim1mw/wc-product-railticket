@@ -791,16 +791,39 @@ class TicketBuilder {
                 'tickets' => $this->get_ticket_data());
         }
 
+        // Sanity check, multi-trip discounts could be sold to traveller types that don't have fares for all trips. 
+        $ticketdata = $this->get_ticket_data();
+        $prefiltra = $this->discount->get_travellers();
+        $prevkey = false;
+        foreach ($prefiltra as $ptra => $pnum) {
+            foreach ($ticketdata->travellers as $tra) {
+               if ($tra->code == $ptra) {
+                   $prevkey = $ptra;
+                   continue 2;
+               }
+            }
+
+            $tdata = FareCalculator::get_traveller($ptra);
+            foreach ($ticketdata->travellers as $tra) {
+               if ($tdata->seats == $tra->seats) {
+                   $prefiltra[$tra->code] += $pnum;
+                   unset($prefiltra[$ptra]);
+                   break;
+               }
+            }
+
+        }
+
         return array('valid' => $this->discount->is_valid(),
             'message' => $this->discount->get_message(),
             'dcomment' => $this->discount->get_comment(),
             'shownotes' => $this->discount->show_notes(),
             'pattern' => $this->discount->get_pattern(),
             'notesinstructions' => $this->discount->get_note_instructions(),
-            'tickets' => $this->get_ticket_data(),
+            'tickets' => $ticketdata,
             'maxseats' =>  $this->discount->get_max_seats(),
             'customtravellers' => $this->discount->use_custom_type(),
-            'prefilltravellers' => $this->discount->get_travellers(),
+            'prefilltravellers' => $prefiltra,
             'locktravellers' => $this->discount->lock_travellers());
     }
 } 

@@ -180,7 +180,7 @@ class BookingOrder {
         $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE discountcode = '".$code."'");
         foreach ($items as $item) {
             $order = self::get_booking_order($item->id, true);
-            if ($type && $order->get_discount_type()->get_short_name() != $type) {
+            if ($type && $order->get_discount_type()->get_shortname() != $type) {
                 continue;
             }
             $orders[] = $order;
