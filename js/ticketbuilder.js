@@ -13,6 +13,39 @@ var customtravellers = false;
 var prefilltravellers = [];
 var deplegscount = [];
 
+var interval = window.setInterval(function() {
+    var errordiv = document.getElementById('railticket_error');
+    errordiv.style.display='block';
+    errordiv.innerHTML = "<h3>Your booking session has expired.<br />Please re-load this page and try again.</h3>";
+
+    var cal = document.getElementById('railticket-cal');
+    cal.style.display = 'none';
+
+    var datechooser = document.getElementById('datechooser');
+    datechooser.style.display = 'none';
+
+    var stations = document.getElementById('stations');
+    stations.style.display = 'none';
+    var datechoosen = document.getElementById('datechooser');
+
+    var journeychoice = document.getElementById('journeychoice');
+    journeychoice.style.display = 'none';
+
+    var deptimes = document.getElementById('deptimes');
+    deptimes.style.display = 'none';
+
+    var tickets = document.getElementById('tickets');
+    tickets.style.display = 'none';
+
+    var tickets = document.getElementById('addtocart');
+    addtocart.style.display = 'none';
+
+    var cart = document.getElementById('addticketstocart');
+    cart.style.display = 'none';
+
+    window.clearInterval(interval);
+}, 3600000);
+
 
 function setupTickets() {
     var dbuttons = document.getElementsByClassName("railticket_datebuttons");
