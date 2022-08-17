@@ -121,6 +121,16 @@ function railticket_getticketbuilder() {
     $discountcode = railticket_getpostfield('discountcode');
     $discountnote = railticket_getpostfield('discountnote');
 
+    // If any of the pre-sets exist, go straight to the ticket builder.
+    if (array_key_exists('a_dateofjourney', $_REQUEST) ||
+        array_key_exists('a_deptime', $_REQUEST) ||
+        array_key_exists('a_station', $_REQUEST) ||
+        array_key_exists('a_journeychoice', $_REQUEST) ||
+        array_key_exists('a_discountcode', $_REQUEST)
+       ) {
+        $show = true;
+    }
+
     $times = null;
     if (array_key_exists('times', $_REQUEST)) {
         $times = json_decode(stripslashes($_REQUEST['times']));
