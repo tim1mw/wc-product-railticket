@@ -31,7 +31,7 @@ class TicketBuilder {
             return;
         }
 
-         $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
+        $this->bookableday = BookableDay::get_bookable_day($dateoftravel);
         if ($this->bookableday == false) {
             throw new TicketException("Sorry, you are trying to book a service that is not current on sale.");
         }
@@ -98,6 +98,12 @@ class TicketBuilder {
         if ($this->is_booking_admin()) {
             $this->localprice = $localprice;
             $this->manual = $manual;
+        } else {
+            // Date Sanity check only admins can book in the past
+            $check = \DateTime::createFromFormat('Y-m-d', $dateoftravel, $this->railticket_timezone);
+            if ($check < $this->today) {
+                throw new TicketException("Sorry, you are trying to book a date in the past (".$this->bookableday->get_date(true)."). Please select a valid date.");
+            }
         }
 
         if ($disabledrequest == 'true') {
