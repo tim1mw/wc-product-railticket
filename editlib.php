@@ -2031,8 +2031,9 @@ function railticket_travellers() {
                 $description = railticket_getpostfield('description');
                 $seats = railticket_getpostfield('seats');
                 $guardonly = railticket_gettfpostfield('guardonly');
-                $tkoption = railticket_gettfpostfield('guardonly');
-                $res = \wc_railticket\FareCalculator::add_traveller($code, $name, $description, $seats, $guardonly, $tkoption);
+                $tkoption = railticket_gettfpostfield('tkoption');
+                $special = railticket_gettfpostfield('special');
+                $res = \wc_railticket\FareCalculator::add_traveller($code, $name, $description, $seats, $guardonly, $tkoption, $special);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -2059,6 +2060,11 @@ function railticket_travellers() {
         } else {
             $tra->tkoption = '';
         }
+        if ($tra->special) {
+            $tra->special = 'checked';
+        } else {
+            $tra->special = '';
+        }
 
         $alldata->ids[] = $tra->id;
     }
@@ -2077,7 +2083,8 @@ function railticket_update_travellers() {
         $seats = railticket_getpostfield('seats_'.$id);
         $guardonly = railticket_gettfpostfield('guardonly_'.$id);
         $tkoption = railticket_gettfpostfield('tkoption_'.$id);
-        \wc_railticket\FareCalculator::update_traveller($id, $name, $description, $seats, $guardonly, $tkoption);
+        $special = railticket_gettfpostfield('special_'.$id);
+        \wc_railticket\FareCalculator::update_traveller($id, $name, $description, $seats, $guardonly, $tkoption, $special);
     }
 }
 
@@ -2131,12 +2138,14 @@ function railticket_tickets() {
         $alldata->showhiddencheck = 'checked';
     }
 
-    $travellers = array_values(\wc_railticket\FareCalculator::get_all_travellers_filter(0));
-    $tkopts = array_values(\wc_railticket\FareCalculator::get_all_travellers_filter(1));
+    //$travellers = array_values(\wc_railticket\FareCalculator::get_all_travellers_filter(0));
+    //$tkopts = array_values(\wc_railticket\FareCalculator::get_all_travellers_filter(1));
     $alldata->tickets = array_values(\wc_railticket\FareCalculator::get_all_ticket_types($showhidden));
     $alltickets = \wc_railticket\FareCalculator::get_all_ticket_types(true);
     foreach ($alldata->tickets as $ticket) {
         $alldata->ids[] = $ticket->id;
+
+        $toptions = array_values(\wc_railticket\FareCalculator::get_all_travellers_filter($ticket->tkoption, $ticket->special));
 
         if ($ticket->hidden) {
             $ticket->hidden = 'checked';
@@ -2149,10 +2158,7 @@ function railticket_tickets() {
         }
         if ($ticket->tkoption) {
             $ticket->tkoption = 'checked';
-            $toptions = $tkopts;
-        } else {
-            $toptions = $travellers;
-        } 
+        }
 
         $ticket->depends = json_decode($ticket->depends);
         $ticket->depselect = array();

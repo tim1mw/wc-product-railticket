@@ -16,6 +16,7 @@ and work the same way in terms of set up, but are not actually "normal" travelle
         <th>Seats</th>
         <th>Guard Only</th>
         <th>Ticket Option</th>
+        <th>Special Only</th>
     </tr>
     {{#travellers}}
     <tr>
@@ -25,6 +26,7 @@ and work the same way in terms of set up, but are not actually "normal" travelle
         <td><input type='number' name='seats_{{id}}' value='{{seats}}' size='2' max='99' min='0' /></td>
         <td style='text-align:center;'><input type='checkbox' name='guardonly_{{id}}' value='1' {{guardonly}} /></td>
         <td style='text-align:center;'><input type='checkbox' name='tkoption_{{id}}' value='1' {{tkoption}} /></td>
+        <td style='text-align:center;'><input type='checkbox' name='special_{{id}}' value='1' {{special}} /></td>
         <td><a href='?action=deletetra&page=railticket-travellers&id={{id}}'>Delete</a></td>
     </tr>
     {{/travellers}}
@@ -55,6 +57,9 @@ and work the same way in terms of set up, but are not actually "normal" travelle
     </tr><tr>
         <td>Ticket Option</td>
         <td><input type='checkbox' name='tkoption' value='1' /></td>
+    </tr><tr>
+        <td>Special Only</td>
+        <td><input type='checkbox' name='special' value='1' /></td>
     </tr>
 </table>
 <br />
