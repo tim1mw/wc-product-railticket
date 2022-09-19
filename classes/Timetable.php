@@ -114,6 +114,30 @@ class Timetable {
         return $revisions;
     }
 
+    public static function get_placeholder($date) {
+        global $wpdb;
+
+        $revision = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE ".
+            "datefrom <= '".$date."' AND dateto >= '".$date."'");
+
+        if ($revision == 0) {
+            return false;
+        }
+
+        $data = new \stdclass();
+        $data->timetableid = 0;
+        $data->timetable = 'none';
+        $data->revision = $revision;
+        $data->background = '000000';
+        $data->colour = 'ffffff';
+        $data->totaltrains = 0;
+        $data->html = '';
+        $data->buylink = '';
+        $data->hidden = 0;
+        
+        return new Timetable($data);
+    }
+
     public function get_revision() {
         return $this->data->revision;
     }
