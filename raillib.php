@@ -336,14 +336,14 @@ function railticket_get_customer_booking_order_data(\wc_railticket\BookingOrder 
 }
 
 function railticket_survey() {
-    $key = railticket_cart_item();
+    $item = railticket_cart_item();
 
-    if (!$key) {
+    if (!$item) {
         wp_redirect('/basket/');
         return;
     }
 
-    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_bycartkey($key);
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($item);
 
     if (!$bookingorder) {
         wp_redirect('/basket/');

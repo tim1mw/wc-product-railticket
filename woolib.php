@@ -505,7 +505,7 @@ function railticket_cart_item() {
     $items = $woocommerce->cart->get_cart();
     foreach($items as $item => $values) { 
         if ($ticketid == $values['data']->get_id()) {
-            return $item;
+            return $values;
         }
     }
 
@@ -611,13 +611,13 @@ function railticket_matching_email_addresses($param) {
 }
 
 function railticket_check_needs_survey() {
-    $key = railticket_cart_item();
+    $item = railticket_cart_item();
 
-    if (!$key) {
+    if (!$item) {
         return;
     }
 
-    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_bycartkey($key);
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($item);
 
     if (!$bookingorder) {
         return;

@@ -1,1 +1,20 @@
-Christmas Children Survey
+<form method='post'>
+    <table>
+    {{#tickets}}
+        <tr style='vertical-align:middle;'>
+            <th style='font-size:large;'>{{name}}</th>
+            <td style='font-weight:bold;'>Gender<td>
+            <td><select name='gender_{{key}}' required>
+                <option value=''>Please select</option>
+                <option value='f'>Female</option>
+                <option value='m'>Male</option>
+            </select></td>
+            <td style='font-weight:bold;'>Age</td>
+            <td><input type='number' max='16' min='1' size='2' step='1' required name='age_{{key}}'/><td>
+        </tr>
+    {{/tickets}}
+    <tr>
+        <td><input type='submit' value='Submit Responses' /></td>
+    </tr>
+    </table>
+</form>
