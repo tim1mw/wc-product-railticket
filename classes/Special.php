@@ -49,7 +49,7 @@ class Special {
         return $sp;
     }
 
-    public static function add($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes, $longdesc, $survey) {
+    public static function add($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes, $longdesc, $survey, $surveyconfig) {
         global $wpdb;
         $data = new \stdclass();
         $data->name = $name;
@@ -63,6 +63,7 @@ class Special {
         $data->tickettypes = json_encode($tickettypes);
         $data->longdesc = $longdesc;
         $data->survey = $survey;
+        $data->surveyconfig = $surveyconfig;
         $wpdb->insert($wpdb->prefix.'wc_railticket_specials', get_object_vars($data));
     }
 
@@ -173,10 +174,14 @@ class Special {
         if (strlen($this->data->survey) == 0) {
             return false;
         }
-        return survey\Surveys::get_survey($this->data->survey, $this);
+        return survey\Surveys::get_survey($this->data->survey, $this, $this->data->surveyconfig);
     }
 
-    public function update($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes, $longdesc, $survey) {
+    public function get_survey_config() {
+        return $this->data->surveyconfig;
+    }
+
+    public function update($name, $date, $description, $onsale, $colour, $background, $fromstationid, $tostationid, $tickettypes, $longdesc, $survey, $surveyconfig) {
         $this->data->name = $name;
         $this->data->date = $date;
         $this->data->onsale = $onsale;
@@ -188,7 +193,9 @@ class Special {
         $this->data->tickettypes = json_encode($tickettypes);
         $this->data->longdesc = $longdesc;
         $this->data->survey = $survey;
+        $this->data->surveyconfig = $surveyconfig;
         $this->update_record();
+
     }
 
     private function update_record() {

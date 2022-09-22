@@ -8,7 +8,7 @@
     <table>
         <tr><th style='text-align:right'>Date</th><td><input type='date' name='date' value='{{date}}' required /></td></tr>
         <tr><th style='text-align:right'>Name</th><td><input type='name' name='name' value='{{name}}' required /></td></tr>
-        <tr><th style='text-align:right'>Name</th><td><textarea cols='60' rows='4' name='description' />{{description}}</textarea></td></tr>
+        <tr><th style='text-align:right'>Short Description</th><td><textarea cols='60' rows='4' name='description' />{{description}}</textarea></td></tr>
         <tr>
             <th style='text-align:right'>Journey From</th>
             <td><select name='fromstation'>
@@ -55,6 +55,7 @@
                 </select>
             </td>
         </tr>
+        <tr><th style='text-align:right'>Survey Config (json)</th><td><textarea cols='60' rows='4' name='surveyconfig' />{{{surveyconfig}}}</textarea></td></tr>
         <tr><td></td><td><input type='submit' value='{{button}}' /></td></tr>
     </table>
 </form>

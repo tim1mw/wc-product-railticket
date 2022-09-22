@@ -6,8 +6,10 @@ use \wc_railticket\BookingOrder;
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class XmasSurvey implements SurveyBase {
-    public function __construct(Special $special) {
+
+    public function __construct(Special $special, $config) {
         $this->special = $special;
+        $this->config = json_decode($config);
     }
 
     public function do_survey(BookingOrder $bookingorder) {

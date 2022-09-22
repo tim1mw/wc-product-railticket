@@ -2658,6 +2658,7 @@ function railticket_show_edit_special() {
     $item->title = 'Update Special';
     $item->longdesc = $sp->get_long_description();
     $item->surveytypes = \wc_railticket\survey\Surveys::get_types_template($sp->get_survey_type());
+    $item->surveyconfig = $sp->get_survey_config();
 
     $template = $rtmustache->loadTemplate('edit_special');
     echo $template->render($item);
@@ -2690,7 +2691,8 @@ function railticket_update_special() {
             railticket_getpostfield('tostation'),
             $_REQUEST['tickettypes'],
             $_REQUEST['longdesc'],
-            railticket_getpostfield('surveytype')
+            railticket_getpostfield('surveytype'),
+            stripslashes($_REQUEST['surveyconfig'])
         );
     } else {
         $sp = \wc_railticket\Special::get_special($id);
@@ -2705,7 +2707,8 @@ function railticket_update_special() {
             railticket_getpostfield('tostation'),
             $_REQUEST['tickettypes'],
             $_REQUEST['longdesc'],
-            railticket_getpostfield('surveytype')
+            railticket_getpostfield('surveytype'),
+            stripslashes($_REQUEST['surveyconfig'])
         );
     }
 }

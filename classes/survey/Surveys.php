@@ -6,9 +6,9 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 class Surveys {
 
-    public static function get_survey($type, Special $special) {
+    public static function get_survey($type, Special $special, $config) {
         switch ($type) {
-            case 'XmasSurvey': return new XmasSurvey($special); 
+            case 'XmasSurvey': return new XmasSurvey($special, $config); 
         }
 
         throw new TicketException("Invalid Survey Type: ".$type);
