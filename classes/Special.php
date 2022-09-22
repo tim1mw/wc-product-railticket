@@ -170,6 +170,9 @@ class Special {
     }
 
     public function get_survey() {
+        if (strlen($this->data->survey) == 0) {
+            return false;
+        }
         return survey\Surveys::get_survey($this->data->survey, $this);
     }
 

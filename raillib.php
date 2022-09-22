@@ -8,6 +8,7 @@ add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
 add_shortcode('railticket_special', 'railticket_get_special_button');
 add_shortcode('railticket_review', 'railticket_review_order');
+add_shortcode('railticket_survey', 'railticket_survey');
 add_action( 'wp_ajax_nopriv_railticket_ajax', 'railticket_ajax_request');
 add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
 
@@ -334,3 +335,31 @@ function railticket_get_customer_booking_order_data(\wc_railticket\BookingOrder 
     return $alldata;
 }
 
+function railticket_survey() {
+    $key = railticket_cart_item();
+
+    if (!$key) {
+        wp_redirect('/basket/');
+        return;
+    }
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_bycartkey($key);
+
+    if (!$bookingorder) {
+        wp_redirect('/basket/');
+        return;
+    }
+
+    if (!$bookingorder->is_special()) {
+        wp_redirect('/basket/');
+        return;
+    }
+
+    $survey = $bookingorder->get_special()->get_survey();
+    if (!$survey || $survey->completed($bookingorder)) {
+        wp_redirect('/basket/');
+        return;
+    }
+
+    return $survey->do_survey($bookingorder);
+}

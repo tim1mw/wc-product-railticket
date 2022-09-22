@@ -1292,7 +1292,11 @@ function submitTickets() {
                     '<br />'+
                     '<a href="/wp-admin/admin.php?page=railticket-top-level-handle">Tap or Click here to return to service summary</a>';
             } else {
-                window.location.replace('/basket');
+                if (response.gotosurvey) {
+                    window.location.replace('/more-details');
+                } else {
+                    window.location.replace('/basket');
+                }
             }
         } else {
             var errordiv = document.getElementById('railticket_error');

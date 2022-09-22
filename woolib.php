@@ -31,6 +31,7 @@ add_action('woocommerce_order_status_cancelled', 'railticket_order_cancel_refund
 //add_action('woocommerce_after_single_product_summary', 'railticket_product_front');
 add_action('woocommerce_email_order_meta', 'railticket_add_email_order_meta', 10, 3 );
 add_action( 'woocommerce_after_checkout_validation', 'railticket_matching_email_addresses', 10, 2 );
+add_action( 'woocommerce_before_checkout_form', 'railticket_check_needs_survey', 10, 2 );
 
 
 // General options refuse to show without an advanced element we don't need....
@@ -498,6 +499,19 @@ function railticket_cart_check_cart() {
     }
 }
 
+function railticket_cart_item() {
+	global $woocommerce, $wpdb;
+    $ticketid = get_option('wc_product_railticket_woocommerce_product');
+    $items = $woocommerce->cart->get_cart();
+    foreach($items as $item => $values) { 
+        if ($ticketid == $values['data']->get_id()) {
+            return $item;
+        }
+    }
+
+    return false;
+}
+
 function railticket_cart_check_cart_at_checkout($callable) {
 	global $woocommerce, $wpdb;
     $ticketid = get_option('wc_product_railticket_woocommerce_product');
@@ -596,4 +610,28 @@ function railticket_matching_email_addresses($param) {
 
 }
 
+function railticket_check_needs_survey() {
+    $key = railticket_cart_item();
+
+    if (!$key) {
+        return;
+    }
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_bycartkey($key);
+
+    if (!$bookingorder) {
+        return;
+    }
+
+    if (!$bookingorder->is_special()) {
+        return;
+    }
+
+    $survey = $bookingorder->get_special()->get_survey();
+    if (!$survey || $survey->completed($bookingorder)) {
+        return;
+    }
+
+    wp_redirect('/more-details/');
+}
 
