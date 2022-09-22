@@ -44,6 +44,17 @@
             <input type='color' name='background' value='#{{background}}' />
         </td></tr>
         <tr><th style='text-align:right'>Long Description</th><td><textarea cols='60' rows='4' name='longdesc' />{{{longdesc}}}</textarea></td></tr>
+        <tr>
+            <th style='text-align:right'>Traveller Survey</th>
+            <td>
+                <select name='surveytype'>
+                    <option value=''>None</option>
+                {{# surveytypes}}
+                    <option value='{{code}}' {{selected}}>{{name}}</option>
+                {{/ surveytypes}}
+                </select>
+            </td>
+        </tr>
         <tr><td></td><td><input type='submit' value='{{button}}' /></td></tr>
     </table>
 </form>

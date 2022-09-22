@@ -2593,6 +2593,7 @@ function railticket_show_special_summary() {
     $alldata->colourdefault = 'checked';
     $alldata->backgrounddefault = 'checked';
     $alldata->tickettypes = \wc_railticket\FareCalculator::get_all_ticket_types();
+    $alldata->surveytypes = \wc_railticket\survey\Surveys::getTypesTemplate();
 
     echo $template->render($alldata);
 }
@@ -2656,6 +2657,7 @@ function railticket_show_edit_special() {
     $item->button = 'Update';
     $item->title = 'Update Special';
     $item->longdesc = $sp->get_long_description();
+    $item->surveytypes = \wc_railticket\survey\Surveys::getTypesTemplate($sp->get_survey_type());
 
     $template = $rtmustache->loadTemplate('edit_special');
     echo $template->render($item);
@@ -2687,7 +2689,8 @@ function railticket_update_special() {
             railticket_getpostfield('fromstation'),
             railticket_getpostfield('tostation'),
             $_REQUEST['tickettypes'],
-            $_REQUEST['longdesc']
+            $_REQUEST['longdesc'],
+            railticket_getpostfield('surveytype')
         );
     } else {
         $sp = \wc_railticket\Special::get_special($id);
@@ -2701,7 +2704,8 @@ function railticket_update_special() {
             railticket_getpostfield('fromstation'),
             railticket_getpostfield('tostation'),
             $_REQUEST['tickettypes'],
-            $_REQUEST['longdesc']
+            $_REQUEST['longdesc'],
+            railticket_getpostfield('surveytype')
         );
     }
 }
