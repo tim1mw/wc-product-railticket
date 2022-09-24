@@ -14,6 +14,7 @@ class BookingOrder {
         $this->orderid = $orderid;
         $this->manual = $manual;
         $this->incart = false;
+        $this->cart_item = 0;
 
         if ($cart_item) {
             $this->tickets =(array) $cart_item['ticketsallocated'];
@@ -591,6 +592,10 @@ class BookingOrder {
         $output = base64_encode($output);
 
         return $output;
+    }
+
+    public function in_cart() {
+        return $this->incart;
     }
 
 }

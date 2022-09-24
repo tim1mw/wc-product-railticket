@@ -275,8 +275,12 @@ class Booking {
         if ($this->data->manual > 0) {
             return "M".$this->data->manual;
         }
+        
+        if ($this->data->wooorderid > 0) {
+            return $this->data->wooorderid;
+        }
 
-        return $this->data->wooorderid;
+        return $this->data->woocartitem;
     }
 
     public function in_cart() {
