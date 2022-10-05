@@ -36,4 +36,10 @@ class Surveys {
         return $data;
     }
 
+    public static function do_purchase($orderid, $cartkey) {
+        global $wpdb;
+
+        $wpdb->update('wc_railticket_surveyresp', array('woocartitem' => 0, 'wooorderid' => $orderid), array('woocartitem' => $cartkey))
+    }
+
 }

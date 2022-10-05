@@ -435,6 +435,11 @@ function railticket_cart_complete($order_id) {
                 // Sanity check just in case somebody managed to get past all the expiry checks and the order
                 // took so long the booking expired....
                 $bo = \wc_railticket\BookingOrder::get_booking_order($order_id);
+
+                if ($bo->is_special() && $bo->get_special()->has_survey()) {
+                    \wc_railticket\survey\Surveys::do_purchase($order_id, $key);
+                }
+
                 if ($bo == false) {
                     railticket_send_broken_order($order_id, $pn, $key);
                     continue;
