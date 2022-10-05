@@ -1319,6 +1319,15 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     ?>
     </div>
     <?php
+
+    if ($trainservice->is_special()) {
+        $special = $trainservice->get_special();
+        if ($special->has_survey()) {
+            $survey = $special->get_survey();
+            echo '<hr style="border-top: dotted 1px; max-width:550px;margin-left:0px;"/>';
+            echo $survey->get_report($bookings[$station->get_stnid()]);
+        }
+    }
 }
 
 function railticket_show_bookings_table($bookings, \wc_railticket\Station $station, $collectedbtn) {

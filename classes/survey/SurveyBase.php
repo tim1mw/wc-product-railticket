@@ -11,7 +11,7 @@ interface SurveyBase {
 
     public function process_input(BookingOrder $bookingorder);
 
-    public function get_report();
+    public function get_report($bookings);
 
     public function completed(BookingOrder $bookingorder);
 

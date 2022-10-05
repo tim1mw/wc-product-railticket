@@ -1,0 +1,16 @@
+<h3>Santa Special Survey Report</h3>
+
+<table class='railticket_admintable' border='1'><tbody>
+    <tr>
+        <th>Gender</th>
+        <th>Age</th>
+        <th>Count</th>
+    </tr>
+{{#children}}
+    <tr>
+        <td class='railticket_meta' style='text-align:center'>{{gender}}</td>
+        <td class='railticket_meta' style='text-align:center'>{{age}}</td>
+        <td class='railticket_meta' style='text-align:center'>{{count}}</td>
+    </tr>
+{{/children}}
+</tbody></table>

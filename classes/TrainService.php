@@ -579,4 +579,16 @@ class TrainService {
         }
     }
 
+    public function is_special() {
+        if ($this->special) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function get_special() {
+        return $this->special;
+    }
+
 }

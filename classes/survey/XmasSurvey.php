@@ -90,9 +90,42 @@ class XmasSurvey implements SurveyBase {
         return "<h5>Thankyou for completing the survey, please continue to the <a href='/checkout'>checkout</a> to complete your purchase.</h5>";
     }
 
-    public function get_report() {
+    public function get_report($bookings) {
         global $rtmustache, $wpdb;
+
+        $genders = array('m' => array(), 'f' => array());
+        foreach ($genders as $genderkey => $genderval) {
+            for ($loop = $this->config->minage; $loop < $this->config->maxage + 1; $loop ++) {
+                $genders[$genderkey][$loop] = 0;
+            }
+        }
+
+        foreach ($bookings as $booking) {
+            $result = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_surveyresp WHERE ".$this->get_select_fragment($booking));
+            $response = json_decode($result->response);
+            foreach ($response->children as $child) {
+                $genders[$child->gender][$child->age] ++;
+            }
+        }
+
         $item = new \stdclass();
+        $item->children = array();
+
+        foreach ($genders as $genderkey => $genderval) {
+            switch ($genderkey) {
+                case 'f': $gname = 'Female'; break;
+                case 'm': $gname = 'Male'; break;
+            }
+
+            for ($loop = $this->config->minage; $loop < $this->config->maxage + 1; $loop ++) {
+                $group = new \stdclass();
+                $group->gender = $gname;
+                $group->age = $loop;
+                $group->count = $genders[$genderkey][$loop];
+                $item->children[] = $group;
+            }
+        }
+
         $template = $rtmustache->loadTemplate('survey/xmassurvey_report');
         return $template->render($item);
     }
@@ -108,9 +141,9 @@ class XmasSurvey implements SurveyBase {
         }
     }
 
-    private function get_select_fragment(BookingOrder $bookingorder) {
+    private function get_select_fragment($bookingorder) {
         if ($bookingorder->is_manual()) {
-            $id = substr($bookingorder->get_order_id());
+            $id = substr($bookingorder->get_order_id(), 1);
             $field = 'manual';
         } else {
             if ($bookingorder->in_cart()) {
