@@ -97,6 +97,9 @@ function railticket_every_two_minutes_event_func() {
         $wpdb->delete("{$wpdb->prefix}wc_railticket_bookings", array('id' => $booking->id));
         unset($booking->id);
         $wpdb->insert("{$wpdb->prefix}wc_railticket_bookings_expired", (array) $booking);
+        if (strpos($booking->time, "s:") === 0) {
+            \wc_railticket\survey\Surveys::expire($booking->woocartitem);
+        }
     }
 
     $sql = "SELECT id FROM {$wpdb->prefix}wc_railticket_bookings WHERE woocartitem != '' AND expiring = 0 AND created < ".$expiretime;

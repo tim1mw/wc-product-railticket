@@ -541,6 +541,13 @@ class BookingOrder {
         if ($this->manual) {
             $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$this->orderid);
         }  
+
+        if ($this->is_special()) {
+            $special = $this->get_special();
+            if ($special->has_survey()) {
+                \wc_railticket\survey\Surveys::delete($this->orderid, $this->manual);
+            }
+        }
     }
 
     public function set_date(BookableDay $bk) {

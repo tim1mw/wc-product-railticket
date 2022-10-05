@@ -39,7 +39,22 @@ class Surveys {
     public static function do_purchase($orderid, $cartkey) {
         global $wpdb;
 
-        $wpdb->update('wc_railticket_surveyresp', array('woocartitem' => 0, 'wooorderid' => $orderid), array('woocartitem' => $cartkey))
+        $wpdb->update("{$wpdb->prefix}wc_railticket_surveyresp", array('woocartitem' => 0, 'wooorderid' => $orderid), array('woocartitem' => $cartkey));
     }
 
+
+    public static function expire($cartkey) {
+        global $wpdb;
+
+        $wpdb->delete("{$wpdb->prefix}wc_railticket_surveyresp", array('woocartitem' => $cartkey));
+    }
+
+    public static function delete($orderid, $manual) {
+        global $wpdb;
+        if ($manual) {
+            $wpdb->delete("{$wpdb->prefix}wc_railticket_surveyresp", array('manual' => $orderid));
+        } else {
+            $wpdb->delete("{$wpdb->prefix}wc_railticket_surveyresp", array('wooorderid' => $orderid));
+        }
+    }
 }

@@ -87,7 +87,7 @@ class XmasSurvey implements SurveyBase {
         }
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_surveyresp", $data);
-        return "<h5>Thankyou for completing the survey, please continue to the checkout to complete your purchase.</h5>";
+        return "<h5>Thankyou for completing the survey, please continue to the <a href='/checkout'>checkout</a> to complete your purchase.</h5>";
     }
 
     public function get_report() {
