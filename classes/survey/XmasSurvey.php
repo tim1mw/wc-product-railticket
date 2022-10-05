@@ -91,12 +91,24 @@ class XmasSurvey implements SurveyBase {
     }
 
     public function get_report() {
-
+        global $rtmustache, $wpdb;
+        $item = new \stdclass();
+        $template = $rtmustache->loadTemplate('survey/xmassurvey_report');
+        return $template->render($item);
     }
 
     public function completed(BookingOrder $bookingorder) {
         global $wpdb;
 
+        $c = $wpdb->get_var("SELECT COUNT(id) FROM {$wpdb->prefix}wc_railticket_surveyresp WHERE ".$this->get_select_fragment($bookingorder));
+        if ($c > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private function get_select_fragment(BookingOrder $bookingorder) {
         if ($bookingorder->is_manual()) {
             $id = substr($bookingorder->get_order_id());
             $field = 'manual';
@@ -110,12 +122,17 @@ class XmasSurvey implements SurveyBase {
             }
         }
 
-        $c = $wpdb->get_var("SELECT COUNT(id) FROM {$wpdb->prefix}wc_railticket_surveyresp WHERE ".$field." = '".$id."'");
-        if ($c > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return $field." = '".$id."'";
+    }
+
+    public function format_response(BookingOrder$bookingorder) {
+        global $rtmustache, $wpdb;
+        $template = $rtmustache->loadTemplate('survey/xmassurvey_response');
+        $result = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_surveyresp WHERE ".$this->get_select_fragment($bookingorder));
+
+        $item = json_decode($result->response);
+
+        return $template->render($item);
     }
 
 

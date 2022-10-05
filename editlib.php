@@ -1479,6 +1479,15 @@ function railticket_show_order_main($orderid) {
     }
     railticket_show_bookingorder($bookingorder);
 
+    // Did the user complete a survey?
+    if ($bookingorder->is_special()) {
+        $special = $bookingorder->get_special();
+        if ($special->has_survey()) {
+            $survey = $special->get_survey();
+            echo $survey->format_response($bookingorder);
+        }
+    }
+
     $dctickets = $bookingorder->get_discountcode_ticket_codes();
     $exclude = false;
     if (!$dctickets) {

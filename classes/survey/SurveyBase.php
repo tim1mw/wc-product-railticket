@@ -14,4 +14,6 @@ interface SurveyBase {
     public function get_report();
 
     public function completed(BookingOrder $bookingorder);
+
+    public function format_response(BookingOrder $bookingorder);
 }
