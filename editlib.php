@@ -121,6 +121,9 @@ function railticket_view_bookings() {
             case 'viewseatsummary':
                 railticket_get_seatsummary();
                 break;
+            case 'viewdaysurveys':
+                railticket_get_daysurveys();
+                break;
             case 'viewordersummary':
                 railticket_get_ordersummary(false);
                 return;
@@ -886,6 +889,48 @@ function railticket_get_seatsummary() {
     <?php
 }
 
+function railticket_get_daysurveys() {
+    $dateofjourney = sanitize_text_field($_REQUEST['dateofjourney']);
+    $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
+    $specials = \wc_railticket\Special::get_specials($dateofjourney);
+    if (!$specials || count($specials) == 0) {
+        echo "No specials found.";
+        return;
+    }
+
+    global $rtmustache;
+
+    $data = '';
+    $allbookings = array();
+    foreach ($specials as $special) {
+        if (!$special->has_survey()) {
+            continue;
+        }
+
+        $ts = new \wc_railticket\TrainService($bookableday, $special->get_from_station(), 's:'.$special->get_id(), $special->get_to_station());
+        $bookings = $ts->get_bookings();
+
+        $survey = $special->get_survey();
+        $data .= '<div "page-break-after: always;"><hr style="border-top: dotted 1px; max-width:550px;margin-left:0px;"/>'.
+            '<h2>'.$special->get_name().'</h2>'.
+             $survey->get_report($bookings).
+            '</div>';
+
+        $allbookings = array_merge($allbookings, $bookings);
+    }
+
+    // TODO: This is assuming all the surveys on any given day are of the same type. Which may not be the case...
+
+    if (count($specials) > 1) {
+        $data = '<div "page-break-after: always;"><hr style="border-top: dotted 1px; max-width:550px;margin-left:0px;"/>'.
+            '<h2>Combined Results</h2>'.
+            $survey->get_report($allbookings).
+            '</div>'.$data;
+    }
+
+    echo $data;
+}
+
 
 function railticket_show_bookings_summary($dateofjourney, $today) {
     global $rtmustache;
@@ -942,6 +987,7 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
         railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable, 'up');
     }
 
+    $surveys = false;
     $specials = \wc_railticket\Special::get_specials($dateofjourney);
     if ($specials && count($specials) > 0) {
         echo "<h3>Specials</h3>";
@@ -960,6 +1006,10 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
                 <input type='submit' name='submit' value='<?php echo $special->get_name() ?>' />
             </form></li>
             <?php
+
+            if ($special->has_survey()) {
+                $surveys = true;
+            }
         }
         echo "</ul></div>";
     }
@@ -1000,7 +1050,16 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
         <input type='hidden' name='action' value='viewseatsummary' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Seat/Bay Usage Summary' style='width:100%' />
-    </form></td>
+    </form></td><?php
+    if ($surveys) { 
+    ?>
+    <tr><td colspan='2'><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='allstns' value='<?php echo $allstnsalt;?>' />
+        <input type='hidden' name='action' value='viewdaysurveys' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Full Survey Summary' style='width:100%' />
+    </form></td></tr>
+    <?php } ?>
     </tr></table>
     <?php
     if (current_user_can('admin_tickets')) {
