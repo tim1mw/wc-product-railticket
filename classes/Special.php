@@ -28,6 +28,8 @@ class Special {
         }
     }
 
+
+
     private static function get_specials_sql($sql, $dataonly = false) {
         global $wpdb;
 
@@ -92,6 +94,24 @@ class Special {
         }
 
         return false;
+    }
+
+    public static function copy_special($id) {
+        global $wpdb;
+
+        if (strpos($id, "s:") === 0) {
+            $id = substr($id, 2);
+        }
+
+        $special = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE id = ".$id);
+        if (!$special) {
+            return false;
+        }
+        unset ($special->id);
+        $special->onsale = 0;
+        $special->name = $special->name." (copy)";
+        $id = $wpdb->insert($wpdb->prefix.'wc_railticket_specials', get_object_vars($special));
+        return $wpdb->insert_id;
     }
 
     public function get_id() {

@@ -2612,6 +2612,9 @@ function railticket_manage_specials() {
 
     if (array_key_exists('action', $_REQUEST)) {
         switch ($_REQUEST['action']) {
+            case 'copyspecial':
+                railticket_copy_special();
+                return;
             case 'editspecial':
                 railticket_show_edit_special();
                 return;
@@ -2676,10 +2679,18 @@ function railticket_show_special_summary() {
     echo $template->render($alldata);
 }
 
-function railticket_show_edit_special() {
+function railticket_copy_special() {
+    $id = sanitize_text_field($_REQUEST['id']);
+    $spid = \wc_railticket\Special::copy_special($id);
+    railticket_show_edit_special($spid);
+}
+
+function railticket_show_edit_special($id = false) {
     global $rtmustache;
 
-    $id = sanitize_text_field($_REQUEST['id']);
+    if ($id == false) {
+        $id = sanitize_text_field($_REQUEST['id']);
+    }
     $sp = \wc_railticket\Special::get_special($id);
     $timetable = \wc_railticket\Timetable::get_timetable_by_date($sp->get_date());
     if (!$timetable) {
