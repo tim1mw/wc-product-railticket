@@ -31,19 +31,22 @@ class XmasSurvey implements SurveyBase {
         global $rtmustache;
         $item = new \stdclass();
         $item->tickets = array();
-        $item->maxage = $this->config->maxage;
-        $item->minage = $this->config->minage;
         $tickets = $bookingorder->get_tickets();
         foreach ($this->config->tickets as $ticket) {
-            if (!array_key_exists($ticket, $tickets)) {
+            if (!array_key_exists($ticket->type, $tickets)) {
                 continue;
             }
 
-            $name = FareCalculator::get_ticket_name($ticket);
-            for ($loop=0; $loop < $tickets[$ticket]; $loop++) {
+            $name = FareCalculator::get_ticket_name($ticket->type);
+            for ($loop=0; $loop < $tickets[$ticket->type]; $loop++) {
                 $entry = new \stdclass();
                 $entry->name = $name." ".($loop+1);
-                $entry->key = $ticket."_".$loop;
+                $entry->key = $ticket->type."_".$loop;
+                $entry->maxage = $ticket->maxage;
+                $entry->minage = $ticket->minage;
+                if ($entry->maxage != $entry->minage) {
+                    $entry->age = true;
+                }
                 $item->tickets[] = $entry;
             }
         }
@@ -58,14 +61,14 @@ class XmasSurvey implements SurveyBase {
         $response = new \stdclass();
         $response->children = array();
         foreach ($this->config->tickets as $ticket) {
-            if (!array_key_exists($ticket, $tickets)) {
+            if (!array_key_exists($ticket->type, $tickets)) {
                 continue;
             }
 
-            $name = FareCalculator::get_ticket_name($ticket);
-            for ($loop=0; $loop < $tickets[$ticket]; $loop++) {
+            $name = FareCalculator::get_ticket_name($ticket->type);
+            for ($loop=0; $loop < $tickets[$ticket->type]; $loop++) {
                 $entry = new \stdclass();
-                $key = $ticket."_".$loop;
+                $key = $ticket->type."_".$loop;
                 $entry->gender = railticket_getpostfield('gender_'.$key);
                 $entry->age = railticket_getpostfield('age_'.$key);
                 $response->children[] = $entry;
@@ -93,9 +96,20 @@ class XmasSurvey implements SurveyBase {
     public function get_report($bookings) {
         global $rtmustache, $wpdb;
 
+        $maxage = 0;
+        $minage = 100;
+        foreach ($this->config->tickets as $ticket) {
+            if ($ticket->maxage > $maxage) {
+                $maxage = $ticket->maxage;
+            }
+            if ($ticket->minage < $minage) {
+                $minage = $ticket->minage;
+            }
+        }
+
         $genders = array('m' => array(), 'f' => array());
         foreach ($genders as $genderkey => $genderval) {
-            for ($loop = $this->config->minage; $loop < $this->config->maxage + 1; $loop ++) {
+            for ($loop = $minage; $loop < $maxage + 1; $loop ++) {
                 $genders[$genderkey][$loop] = 0;
             }
         }
@@ -117,7 +131,7 @@ class XmasSurvey implements SurveyBase {
                 case 'm': $gname = 'Male'; break;
             }
 
-            for ($loop = $this->config->minage; $loop < $this->config->maxage + 1; $loop ++) {
+            for ($loop = $minage; $loop < $maxage + 1; $loop ++) {
                 $group = new \stdclass();
                 $group->gender = $gname;
                 $group->age = $loop;
