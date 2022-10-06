@@ -29,6 +29,7 @@ disable the fares associated with them.</p>
         <th>Code</th>
         <th>Name</th>
         <th>Description</th>
+        <th>Ticket Option</th>
         <th>Specials Only</th>
         <th>Guard Only</th>
         <th>Discount Type</th>
@@ -43,6 +44,7 @@ disable the fares associated with them.</p>
         <td style='text-align:center;'>{{code}}</td>
         <td><input type='text' name='name_{{id}}' value='{{name}}' size='10' required /></td>
         <td><input type='text' name='description_{{id}}' size='20' value='{{description}}' /></td>
+        <td style='text-align:center;'><input type='checkbox' name='tkoption_{{id}}' value='1' {{tkoption}} /></td> 
         <td style='text-align:center;'><input type='checkbox' name='special_{{id}}' value='1' {{special}} /></td>
         <td style='text-align:center;'><input type='checkbox' name='guardonly_{{id}}' value='1' {{guardonly}} /></td>
         <td style='text-align:center;'><input type='text' size='10' name='discounttype_{{id}}' value='{{discounttype}}' /></td>
@@ -52,8 +54,10 @@ disable the fares associated with them.</p>
             <tr>
                 <td>{{name1}}</td>
                 <td style='border-right:1px solid black;padding-right:4px;'><input type='number' value='{{value1}}' name='composition_{{id}}_{{code1}}' min='0' max='99' size='2' /></td>
+                {{#name2}}
                 <td>{{name2}}</td>
                 <td><input type='number' value='{{value2}}' name='composition_{{id}}_{{code2}}' min='0' max='99' size='2' /></td>
+                {{/name2}}
             </tr>
             {{/tcomp}}
         </table></td>
@@ -91,6 +95,9 @@ disable the fares associated with them.</p>
     </tr><tr>
         <td>Description</td>
         <td><input type='text' name='description' value='' size='30' /></td>
+    </tr><tr>
+        <td>Ticket Option</td>
+        <td><input type='checkbox' name='tkoption' value='1' /></td>
     </tr><tr>
         <td>Specials Only</td>
         <td><input type='checkbox' name='special' value='1' /></td>

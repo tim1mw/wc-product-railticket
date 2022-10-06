@@ -87,7 +87,7 @@ class FareCalculator {
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes".$where." ORDER BY sequence ASC");
     }
 
-    public static function add_ticket_type($code, $name, $description, $special, $guardonly, $discounttype) {
+    public static function add_ticket_type($code, $name, $description, $special, $guardonly, $discounttype, $tkoption) {
         global $wpdb;
 
         $code = self::clean_code($code);
@@ -101,12 +101,12 @@ class FareCalculator {
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_tickettypes",
             array('code' => $code, 'name' => $name, 'description' => $description, 'guardonly' => $guardonly,
-            'special' => $special, 'composition' => '{}', 'depends' => '[]', 'sequence' => $seq, 'discounttype' => $discounttype));
+            'special' => $special, 'composition' => '{}', 'depends' => '[]', 'sequence' => $seq, 'discounttype' => $discounttype, 'tkoption' => $tkoption));
 
         return true;
     }
 
-    public static function update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends, $discounttype) {
+    public static function update_ticket_type($id, $name, $description, $special, $guardonly, $hidden, $composition, $depends, $discounttype, $tkoption) {
         global $wpdb;
 
         $composition = json_encode($composition);
@@ -115,7 +115,7 @@ class FareCalculator {
         $wpdb->update("{$wpdb->prefix}wc_railticket_tickettypes",
             array('name' => $name, 'description' => $description, 'guardonly' => $guardonly,
             'special' => $special, 'hidden' => $hidden, 'composition' => $composition, 'depends' => $depends,
-            'discounttype' => $discounttype),
+            'discounttype' => $discounttype, 'tkoption' => $tkoption),
             array('id' => $id));
     }
 
@@ -152,12 +152,23 @@ class FareCalculator {
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers");
     }
 
+    public static function get_all_travellers_filter($tkoption, $special) {
+        global $wpdb;
+
+        $sql = "SELECT * FROM {$wpdb->prefix}wc_railticket_travellers WHERE tkoption = ".$tkoption;
+        if (!$special) {
+            $sql .= " AND special = 0";
+        }
+
+        return $wpdb->get_results($sql);
+    }
+
     public static function get_traveller($code) {
         global $wpdb;
         return $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_travellers WHERE code='".$code."'");
     }
 
-    public static function add_traveller($code, $name, $description, $seats, $guardonly, $tkoption) {
+    public static function add_traveller($code, $name, $description, $seats, $guardonly, $tkoption, $special) {
         global $wpdb;
         $code = self::clean_code($code);
 
@@ -168,7 +179,7 @@ class FareCalculator {
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_travellers",
             array('code' => $code, 'name' => $name, 'description' => $description,
-                'seats' => $seats, 'guardonly' => $guardonly, 'tkoption' => $tkoption));
+                'seats' => $seats, 'guardonly' => $guardonly, 'tkoption' => $tkoption, 'special' => $special));
 
         return true;
     }
@@ -179,10 +190,10 @@ class FareCalculator {
         return str_replace(' ', '_', $code);
     }
 
-    public static function update_traveller($id, $name, $description, $seats, $guardonly, $tkoption) {
+    public static function update_traveller($id, $name, $description, $seats, $guardonly, $tkoption, $special) {
         global $wpdb;
         $wpdb->update("{$wpdb->prefix}wc_railticket_travellers",
-            array('name' => $name, 'description' => $description, 'seats' => $seats, 'guardonly' => $guardonly, 'tkoption' => $tkoption),
+            array('name' => $name, 'description' => $description, 'seats' => $seats, 'guardonly' => $guardonly, 'tkoption' => $tkoption, 'special' => $special),
             array('id' => $id));
     }
 

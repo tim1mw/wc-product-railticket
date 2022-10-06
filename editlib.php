@@ -121,6 +121,9 @@ function railticket_view_bookings() {
             case 'viewseatsummary':
                 railticket_get_seatsummary();
                 break;
+            case 'viewdaysurveys':
+                railticket_get_daysurveys();
+                break;
             case 'viewordersummary':
                 railticket_get_ordersummary(false);
                 return;
@@ -886,6 +889,48 @@ function railticket_get_seatsummary() {
     <?php
 }
 
+function railticket_get_daysurveys() {
+    $dateofjourney = sanitize_text_field($_REQUEST['dateofjourney']);
+    $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
+    $specials = \wc_railticket\Special::get_specials($dateofjourney);
+    if (!$specials || count($specials) == 0) {
+        echo "No specials found.";
+        return;
+    }
+
+    global $rtmustache;
+
+    $data = '';
+    $allbookings = array();
+    foreach ($specials as $special) {
+        if (!$special->has_survey()) {
+            continue;
+        }
+
+        $ts = new \wc_railticket\TrainService($bookableday, $special->get_from_station(), 's:'.$special->get_id(), $special->get_to_station());
+        $bookings = $ts->get_bookings();
+
+        $survey = $special->get_survey();
+        $data .= '<div "page-break-after: always;"><hr style="border-top: dotted 1px; max-width:550px;margin-left:0px;"/>'.
+            '<h2>'.$special->get_name().'</h2>'.
+             $survey->get_report($bookings).
+            '</div>';
+
+        $allbookings = array_merge($allbookings, $bookings);
+    }
+
+    // TODO: This is assuming all the surveys on any given day are of the same type. Which may not be the case...
+
+    if (count($specials) > 1) {
+        $data = '<div "page-break-after: always;"><hr style="border-top: dotted 1px; max-width:550px;margin-left:0px;"/>'.
+            '<h2>Combined Results</h2>'.
+            $survey->get_report($allbookings).
+            '</div>'.$data;
+    }
+
+    echo $data;
+}
+
 
 function railticket_show_bookings_summary($dateofjourney, $today) {
     global $rtmustache;
@@ -942,6 +987,7 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
         railticket_show_station_summary($dateofjourney, $station, $bookableday->timetable, 'up');
     }
 
+    $surveys = false;
     $specials = \wc_railticket\Special::get_specials($dateofjourney);
     if ($specials && count($specials) > 0) {
         echo "<h3>Specials</h3>";
@@ -960,6 +1006,10 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
                 <input type='submit' name='submit' value='<?php echo $special->get_name() ?>' />
             </form></li>
             <?php
+
+            if ($special->has_survey()) {
+                $surveys = true;
+            }
         }
         echo "</ul></div>";
     }
@@ -1000,7 +1050,16 @@ function railticket_show_bookings_summary($dateofjourney, $today) {
         <input type='hidden' name='action' value='viewseatsummary' />
         <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
         <input type='submit' name='submit' value='Seat/Bay Usage Summary' style='width:100%' />
-    </form></td>
+    </form></td><?php
+    if ($surveys) { 
+    ?>
+    <tr><td colspan='2'><form method='post' action='<?php echo railticket_get_page_url() ?>'>
+        <input type='hidden' name='allstns' value='<?php echo $allstnsalt;?>' />
+        <input type='hidden' name='action' value='viewdaysurveys' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Full Survey Summary' style='width:100%' />
+    </form></td></tr>
+    <?php } ?>
     </tr></table>
     <?php
     if (current_user_can('admin_tickets')) {
@@ -1319,6 +1378,15 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
     ?>
     </div>
     <?php
+
+    if ($trainservice->is_special()) {
+        $special = $trainservice->get_special();
+        if ($special->has_survey()) {
+            $survey = $special->get_survey();
+            echo '<hr style="border-top: dotted 1px; max-width:550px;margin-left:0px;"/>';
+            echo $survey->get_report($bookings[$station->get_stnid()]);
+        }
+    }
 }
 
 function railticket_show_bookings_table($bookings, \wc_railticket\Station $station, $collectedbtn) {
@@ -1528,6 +1596,16 @@ function railticket_show_bookingorder($bookingorder) {
 
     $template = $rtmustache->loadTemplate('showorder');
     echo $template->render($alldata);
+
+    // Did the user complete a survey?
+    if ($bookingorder->is_special()) {
+        $special = $bookingorder->get_special();
+        if ($special->has_survey()) {
+            $survey = $special->get_survey();
+            echo '<hr style="border-top: dotted 1px; max-width:550px;margin-left:0px;"/>';
+            echo $survey->format_response($bookingorder);
+        }
+    }
 
     //echo urlencode($bookingorder->get_review_code());
 }
@@ -2031,8 +2109,9 @@ function railticket_travellers() {
                 $description = railticket_getpostfield('description');
                 $seats = railticket_getpostfield('seats');
                 $guardonly = railticket_gettfpostfield('guardonly');
-                $tkoption = railticket_gettfpostfield('guardonly');
-                $res = \wc_railticket\FareCalculator::add_traveller($code, $name, $description, $seats, $guardonly, $tkoption);
+                $tkoption = railticket_gettfpostfield('tkoption');
+                $special = railticket_gettfpostfield('special');
+                $res = \wc_railticket\FareCalculator::add_traveller($code, $name, $description, $seats, $guardonly, $tkoption, $special);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -2059,6 +2138,11 @@ function railticket_travellers() {
         } else {
             $tra->tkoption = '';
         }
+        if ($tra->special) {
+            $tra->special = 'checked';
+        } else {
+            $tra->special = '';
+        }
 
         $alldata->ids[] = $tra->id;
     }
@@ -2077,7 +2161,8 @@ function railticket_update_travellers() {
         $seats = railticket_getpostfield('seats_'.$id);
         $guardonly = railticket_gettfpostfield('guardonly_'.$id);
         $tkoption = railticket_gettfpostfield('tkoption_'.$id);
-        \wc_railticket\FareCalculator::update_traveller($id, $name, $description, $seats, $guardonly, $tkoption);
+        $special = railticket_gettfpostfield('special_'.$id);
+        \wc_railticket\FareCalculator::update_traveller($id, $name, $description, $seats, $guardonly, $tkoption, $special);
     }
 }
 
@@ -2100,7 +2185,8 @@ function railticket_tickets() {
                 $special = railticket_gettfpostfield('special');
                 $guardonly = railticket_gettfpostfield('guardonly');
                 $discounttype = railticket_getpostfield('discounttype');
-                $res = \wc_railticket\FareCalculator::add_ticket_type($code, $name, $description, $special, $guardonly, $discounttype);
+                $tkoption = railticket_getpostfield('tkoption');
+                $res = \wc_railticket\FareCalculator::add_ticket_type($code, $name, $description, $special, $guardonly, $discounttype, $tkoption);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -2130,11 +2216,14 @@ function railticket_tickets() {
         $alldata->showhiddencheck = 'checked';
     }
 
-    $travellers = $alldata->travellers = array_values(\wc_railticket\FareCalculator::get_all_travellers());
+    //$travellers = array_values(\wc_railticket\FareCalculator::get_all_travellers_filter(0));
+    //$tkopts = array_values(\wc_railticket\FareCalculator::get_all_travellers_filter(1));
     $alldata->tickets = array_values(\wc_railticket\FareCalculator::get_all_ticket_types($showhidden));
     $alltickets = \wc_railticket\FareCalculator::get_all_ticket_types(true);
     foreach ($alldata->tickets as $ticket) {
         $alldata->ids[] = $ticket->id;
+
+        $toptions = array_values(\wc_railticket\FareCalculator::get_all_travellers_filter($ticket->tkoption, $ticket->special));
 
         if ($ticket->hidden) {
             $ticket->hidden = 'checked';
@@ -2144,6 +2233,9 @@ function railticket_tickets() {
         }
         if ($ticket->special) {
             $ticket->special = 'checked';
+        }
+        if ($ticket->tkoption) {
+            $ticket->tkoption = 'checked';
         }
 
         $ticket->depends = json_decode($ticket->depends);
@@ -2167,8 +2259,9 @@ function railticket_tickets() {
 
         $ticket->composition = json_decode($ticket->composition);
         $ticket->tcomp = array();
-        for ($i=0; $i< count($travellers); $i++) {
-            $traveller = $travellers[$i];
+
+        for ($i=0; $i< count($toptions); $i++) {
+            $traveller = $toptions[$i];
             $tr = new \stdclass();
             $tr->id = $ticket->id;
             $tr->code1 = $traveller->code;
@@ -2181,11 +2274,11 @@ function railticket_tickets() {
             }
 
             $i++;
-            if ($i >= count($travellers)) {
+            if ($i >= count($toptions)) {
                 $ticket->tcomp[] = $tr;
                 break;
             }
-            $traveller = $travellers[$i];
+            $traveller = $toptions[$i];
             $tr->code2 = $traveller->code;
             $tr->name2 = $traveller->name;
             $code = $traveller->code;
@@ -2217,6 +2310,7 @@ function railticket_update_tickettypes() {
         $guardonly = railticket_gettfpostfield('guardonly_'.$id);
         $discounttype = railticket_getpostfield('discounttype_'.$id);
         $hidden = railticket_gettfpostfield('hidden_'.$id);
+        $tkoption = railticket_gettfpostfield('tkoption_'.$id);
         $composition = new \stdclass();
         foreach ($alltravellers as $tr) {
             $code = $tr->code;
@@ -2236,7 +2330,7 @@ function railticket_update_tickettypes() {
          }
 
         \wc_railticket\FareCalculator::update_ticket_type($id, $name, $description, $special, $guardonly, $hidden,
-            $composition, $depends, $discounttype);
+            $composition, $depends, $discounttype, $tkoption);
     }
 }
 
@@ -2577,6 +2671,7 @@ function railticket_show_special_summary() {
     $alldata->colourdefault = 'checked';
     $alldata->backgrounddefault = 'checked';
     $alldata->tickettypes = \wc_railticket\FareCalculator::get_all_ticket_types();
+    $alldata->surveytypes = \wc_railticket\survey\Surveys::get_types_template();
 
     echo $template->render($alldata);
 }
@@ -2587,6 +2682,9 @@ function railticket_show_edit_special() {
     $id = sanitize_text_field($_REQUEST['id']);
     $sp = \wc_railticket\Special::get_special($id);
     $timetable = \wc_railticket\Timetable::get_timetable_by_date($sp->get_date());
+    if (!$timetable) {
+        $timetable = \wc_railticket\Timetable::get_placeholder($sp->get_date());   
+    }
 
     $item = new \stdclass();
     $item->id = $sp->get_id();
@@ -2637,6 +2735,8 @@ function railticket_show_edit_special() {
     $item->button = 'Update';
     $item->title = 'Update Special';
     $item->longdesc = $sp->get_long_description();
+    $item->surveytypes = \wc_railticket\survey\Surveys::get_types_template($sp->get_survey_type());
+    $item->surveyconfig = $sp->get_survey_config();
 
     $template = $rtmustache->loadTemplate('edit_special');
     echo $template->render($item);
@@ -2668,7 +2768,9 @@ function railticket_update_special() {
             railticket_getpostfield('fromstation'),
             railticket_getpostfield('tostation'),
             $_REQUEST['tickettypes'],
-            $_REQUEST['longdesc']
+            $_REQUEST['longdesc'],
+            railticket_getpostfield('surveytype'),
+            stripslashes($_REQUEST['surveyconfig'])
         );
     } else {
         $sp = \wc_railticket\Special::get_special($id);
@@ -2682,7 +2784,9 @@ function railticket_update_special() {
             railticket_getpostfield('fromstation'),
             railticket_getpostfield('tostation'),
             $_REQUEST['tickettypes'],
-            $_REQUEST['longdesc']
+            $_REQUEST['longdesc'],
+            railticket_getpostfield('surveytype'),
+            stripslashes($_REQUEST['surveyconfig'])
         );
     }
 }

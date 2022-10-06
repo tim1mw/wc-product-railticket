@@ -31,6 +31,7 @@ add_action('woocommerce_order_status_cancelled', 'railticket_order_cancel_refund
 //add_action('woocommerce_after_single_product_summary', 'railticket_product_front');
 add_action('woocommerce_email_order_meta', 'railticket_add_email_order_meta', 10, 3 );
 add_action( 'woocommerce_after_checkout_validation', 'railticket_matching_email_addresses', 10, 2 );
+add_action( 'woocommerce_before_checkout_form', 'railticket_check_needs_survey', 10, 2 );
 
 
 // General options refuse to show without an advanced element we don't need....
@@ -434,6 +435,11 @@ function railticket_cart_complete($order_id) {
                 // Sanity check just in case somebody managed to get past all the expiry checks and the order
                 // took so long the booking expired....
                 $bo = \wc_railticket\BookingOrder::get_booking_order($order_id);
+
+                if ($bo->is_special() && $bo->get_special()->has_survey()) {
+                    \wc_railticket\survey\Surveys::do_purchase($order_id, $key);
+                }
+
                 if ($bo == false) {
                     railticket_send_broken_order($order_id, $pn, $key);
                     continue;
@@ -496,6 +502,19 @@ function railticket_cart_check_cart() {
             }
         }
     }
+}
+
+function railticket_cart_item() {
+	global $woocommerce, $wpdb;
+    $ticketid = get_option('wc_product_railticket_woocommerce_product');
+    $items = $woocommerce->cart->get_cart();
+    foreach($items as $item => $values) { 
+        if ($ticketid == $values['data']->get_id()) {
+            return $values;
+        }
+    }
+
+    return false;
 }
 
 function railticket_cart_check_cart_at_checkout($callable) {
@@ -596,4 +615,28 @@ function railticket_matching_email_addresses($param) {
 
 }
 
+function railticket_check_needs_survey() {
+    $item = railticket_cart_item();
+
+    if (!$item) {
+        return;
+    }
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($item);
+
+    if (!$bookingorder) {
+        return;
+    }
+
+    if (!$bookingorder->is_special()) {
+        return;
+    }
+
+    $survey = $bookingorder->get_special()->get_survey();
+    if (!$survey || $survey->completed($bookingorder)) {
+        return;
+    }
+
+    wp_redirect('/more-details/');
+}
 

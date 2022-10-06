@@ -662,6 +662,11 @@ class TicketBuilder {
         }
 
         $purchase->ok = true;
+        if ($this->special && $this->special->has_survey()) {
+            $purchase->gotosurvey = true;
+        } else {
+            $purchase->gotosurvey = false;
+        }
 
         return $purchase;
     }

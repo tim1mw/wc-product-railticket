@@ -1,0 +1,25 @@
+<div style='margin-top:10px;font-size:large;'>
+<h5>We need some more details from you to complete your booking. Please fill out the form below:</h5>
+<p>Please note, children under the age of 1 are not listed here, we need no further details for them.</p>
+<form method='post'>
+    <input type='hidden' name='submission' value='1' />
+    <table>
+    {{#tickets}}
+        <tr style='vertical-align:middle;'>
+            <th style='font-size:large;'>{{name}}</th>
+            <td style='font-weight:bold;'>Gender<td>
+            <td><select name='gender_{{key}}' required>
+                <option value=''>Please select</option>
+                <option value='f'>Female</option>
+                <option value='m'>Male</option>
+            </select></td>
+            <td style='font-weight:bold;'>Age</td>
+            <td><input type='number' max='{{maxage}}' min='{{minage}}' size='2' step='1' required name='age_{{key}}'/><td>
+        </tr>
+    {{/tickets}}
+    <tr>
+        <td><input type='submit' value='Submit Responses' /></td>
+    </tr>
+    </table>
+</form>
+</div>

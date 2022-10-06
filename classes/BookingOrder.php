@@ -14,6 +14,7 @@ class BookingOrder {
         $this->orderid = $orderid;
         $this->manual = $manual;
         $this->incart = false;
+        $this->cart_item = 0;
 
         if ($cart_item) {
             $this->tickets =(array) $cart_item['ticketsallocated'];
@@ -540,6 +541,13 @@ class BookingOrder {
         if ($this->manual) {
             $wpdb->get_results("DELETE FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$this->orderid);
         }  
+
+        if ($this->is_special()) {
+            $special = $this->get_special();
+            if ($special->has_survey()) {
+                \wc_railticket\survey\Surveys::delete($this->orderid, $this->manual);
+            }
+        }
     }
 
     public function set_date(BookableDay $bk) {
@@ -591,6 +599,10 @@ class BookingOrder {
         $output = base64_encode($output);
 
         return $output;
+    }
+
+    public function in_cart() {
+        return $this->incart;
     }
 
 }
