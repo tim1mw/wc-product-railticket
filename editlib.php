@@ -1236,8 +1236,7 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
         echo "</th></tr></table>".
             "<h2>Passengers Summary</h2>".
-            "<table class='railticket_admintable' border='1'>".
-            "<tr><th>Total boarding here</th><th>".$seats."</th></tr>";
+            "<table class='railticket_admintable' border='1'>";
 
         $travellers = array();
         foreach ($bookings[$station->get_stnid()] as $booking) {
@@ -1255,11 +1254,11 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
 
         foreach ($travellers as $tk => $tt) {
             if ($tt > 0) {
-                echo "<tr><th>".\wc_railticket\FareCalculator::get_traveller($tk)->name."</th><th style='padding-left:10px;padding-right:10px;'>".$tt."</th></tr>";
+                $trav = \wc_railticket\FareCalculator::get_traveller($tk);
+                echo "<tr><th>".$trav->name."</th><td style='font-size:small;'>".$trav->description."</td><th style='padding-left:10px;padding-right:10px;'>".$tt."</th></tr>";
             }
         }
-
-        echo "</div><br />";
+        echo "<tr><td></td><th>Total boarding here</th><th>".$seats."</th></tr></table></div><br />";
     }
 
     if ($trainservice->special) {
