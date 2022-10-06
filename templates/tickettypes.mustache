@@ -52,11 +52,11 @@ disable the fares associated with them.</p>
         <td><table>
             {{#tcomp}}
             <tr>
-                <td>{{name1}}</td>
-                <td style='border-right:1px solid black;padding-right:4px;'><input type='number' value='{{value1}}' name='composition_{{id}}_{{code1}}' min='0' max='99' size='2' /></td>
+                <td title='{{title1}}'>{{name1}}</td>
+                <td style='border-right:1px solid black;padding-right:4px;'><input  title='{{title1}}' type='number' value='{{value1}}' name='composition_{{id}}_{{code1}}' min='0' max='99' size='2' /></td>
                 {{#name2}}
-                <td>{{name2}}</td>
-                <td><input type='number' value='{{value2}}' name='composition_{{id}}_{{code2}}' min='0' max='99' size='2' /></td>
+                <td title='{{title2}}'>{{name2}}</td>
+                <td><input  title='{{title2}}' type='number' value='{{value2}}' name='composition_{{id}}_{{code2}}' min='0' max='99' size='2' /></td>
                 {{/name2}}
             </tr>
             {{/tcomp}}

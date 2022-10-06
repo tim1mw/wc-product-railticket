@@ -2266,6 +2266,7 @@ function railticket_tickets() {
             $tr->id = $ticket->id;
             $tr->code1 = $traveller->code;
             $tr->name1 = $traveller->name;
+            $tr->title1 = $traveller->description;
             $code = $traveller->code;
             if (property_exists($ticket->composition, $code)) {
                 $tr->value1 = $ticket->composition->$code;
@@ -2281,6 +2282,7 @@ function railticket_tickets() {
             $traveller = $toptions[$i];
             $tr->code2 = $traveller->code;
             $tr->name2 = $traveller->name;
+            $tr->title2 = $traveller->description;
             $code = $traveller->code;
             if (property_exists($ticket->composition, $code)) {
                 $tr->value2 = $ticket->composition->$code;
