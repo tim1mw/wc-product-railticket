@@ -1239,8 +1239,14 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             "<table class='railticket_admintable' border='1'>";
 
         $travellers = array();
+        $seatsincart = 0;
         foreach ($bookings[$station->get_stnid()] as $booking) {
-            $bo = \wc_railticket\BookingOrder::get_booking_order($booking->get_order_id());
+            if ($booking->in_cart()) {
+                $seatsincart += $booking->get_seats();
+                continue;
+            } else {
+                $bo = \wc_railticket\BookingOrder::get_booking_order($booking->get_order_id());
+            }
             $tr = $bo->get_travellers();
             foreach ($tr as $tk => $tt) {
                 $tk = explode('/', $tk)[0];
@@ -1258,7 +1264,8 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
                 echo "<tr><th>".$trav->name."</th><td style='font-size:small;'>".$trav->description."</td><th style='padding-left:10px;padding-right:10px;'>".$tt."</th></tr>";
             }
         }
-        echo "<tr><td></td><th>Total boarding here</th><th>".$seats."</th></tr></table></div><br />";
+        echo "<tr><th>Seats in Cart</th><td></td><th style='padding-left:10px;padding-right:10px;'>".$seatsincart."</th></tr>".
+            "<tr><td></td><th>Total boarding here</th><th>".$seats."</th></tr></table></div><br />";
     }
 
     if ($trainservice->special) {

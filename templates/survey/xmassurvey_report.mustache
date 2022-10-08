@@ -14,3 +14,37 @@
     </tr>
 {{/children}}
 </tbody></table>
+
+<br />
+<h4>Summary<h4>
+<table class='railticket_admintable' border='1'><tbody>
+    <tr>
+        <th style='text-align:left'>Male Children & Babies</th>
+        <td>{{mtotal}}</tr>
+    </tr>
+    <tr>
+        <th style='text-align:left'>Female Children & Babies</th>
+        <td>{{ftotal}}</tr>
+    </tr>
+    {{#travellers}}
+    <tr>
+        <th style='text-align:left'>{{name}}</th>
+        <td>{{count}}</tr>
+    </tr> 
+    {{/travellers}}
+
+</tbody></table>
+
+<h4>Orders with highlighted travellers<h4>
+<table class='railticket_admintable' border='1'><tbody>
+{{#highlight}}
+<tr>
+    <td><form action="" method="post">
+        <input type="hidden" name="action" value="showorder">
+        <input type="hidden" name="orderid" value="{{orderid}}">
+        <input type="submit" value="{{orderid}}" style="width:100%;margin-top:4px;margin-bottom:4px;">
+   </form></td>
+    <td>{{name}}</td>
+</tr>
+{{/highlight}}
+</tbody></table>
