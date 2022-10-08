@@ -114,16 +114,45 @@ class XmasSurvey implements SurveyBase {
             }
         }
 
+        $gtotals = array('n' => 0, 'f' => 0);
+        $travellers = array();
+        $highlight = array();
         foreach ($bookings as $booking) {
             $result = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_surveyresp WHERE ".$this->get_select_fragment($booking));
             $response = json_decode($result->response);
             foreach ($response->children as $child) {
                 $genders[$child->gender][$child->age] ++;
+                $gtotals[$child->gender] ++;
+            }
+
+            $bo = \wc_railticket\BookingOrder::get_booking_order($booking->get_order_id());
+            $tr = $bo->get_travellers();
+            foreach ($tr as $tk => $tt) {
+                $tk = explode('/', $tk)[0];
+                $tr = FareCalculator::get_traveller($tk);
+                if (!array_key_exists($tk, $travellers)) {
+                    $travellers[$tk] = new \stdclass();
+                    $travellers[$tk]->count = 0;
+                    $travellers[$tk]->name = $tr->name.' '.$tr->description;
+                }
+
+                $travellers[$tk]->count += $tt;
+
+                if (in_array($tk, $this->config->highlight)) {
+                    $hl = new \stdclass();
+                    $hl->orderid = $booking->get_order_id();
+                    $hl->name = $tr->name.' '.$tr->description;
+                    $highlight[] = $hl;
+                }
             }
         }
 
         $item = new \stdclass();
         $item->children = array();
+        $item->mtotal = $gtotals['m'];
+        $item->ftotal = $gtotals['f'];
+        $item->travellers = array_values($travellers);
+        $item->highlight = $highlight;
 
         foreach ($genders as $genderkey => $genderval) {
             switch ($genderkey) {
