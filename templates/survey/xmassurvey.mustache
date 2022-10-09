@@ -13,7 +13,7 @@
                 <option value='m'>Male</option>
             </select></td>
             {{#age}}<td style='font-weight:bold;'>Age</td>
-            <td><input type='number' max='{{maxage}}' min='{{minage}}' size='2' step='1' required name='age_{{key}}'/><td>{{/age}}
+            <td><input type='number' pattern='d\*'  max='{{maxage}}' min='{{minage}}' size='2' step='1' required name='age_{{key}}'/><td>{{/age}}
             {{^age}}<td style='font-weight:bold;'>Age</td>
             <td>Under 1<input type='hidden' max='{{maxage}}' value='0' name='age_{{key}}'/><td>{{/age}}
         </tr>
