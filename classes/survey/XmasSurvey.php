@@ -127,6 +127,7 @@ class XmasSurvey implements SurveyBase {
 
             $bo = \wc_railticket\BookingOrder::get_booking_order($booking->get_order_id());
             $tr = $bo->get_travellers();
+
             foreach ($tr as $tk => $tt) {
                 $tk = explode('/', $tk)[0];
                 $tr = FareCalculator::get_traveller($tk);
@@ -138,7 +139,7 @@ class XmasSurvey implements SurveyBase {
 
                 $travellers[$tk]->count += $tt;
 
-                if (in_array($tk, $this->config->highlight)) {
+                if ($tt > 0 && in_array($tk, $this->config->highlight)) {
                     $hl = new \stdclass();
                     $hl->orderid = $booking->get_order_id();
                     $hl->name = $tr->name.' '.$tr->description;
