@@ -124,7 +124,9 @@ class XmasSurvey implements SurveyBase {
                 $genders[$child->gender][$child->age] ++;
                 $gtotals[$child->gender] ++;
             }
-
+            if ($booking->in_cart()) {
+                continue;
+            }
             $bo = \wc_railticket\BookingOrder::get_booking_order($booking->get_order_id());
             $tr = $bo->get_travellers();
 
