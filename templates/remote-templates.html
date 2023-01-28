@@ -85,19 +85,22 @@
 {{/popular}}
 
 <hr style='{{nootitle}}' />
+<a id='showotherchoicesbutton'>Show more journey choices<a/>
+<div id="railticketotherchoice">
 <h4 style='{{nootitle}}'>Other Choices</h4>
-<div class='railticket_listselect_left'>
-    <div class='inner'>
-    {{#otherleft}}
-        <input type='radio' name='journeychoice' id='journeychoice{{code}}' value='{{code}}'
-            class='railticket_journeychoice ' {{disabled}} />
-        <label for='journeychoice{{code}}'>
-        <span class='railticket_otherstation'>{{journeydesc}}</span><br />
-        <div class='railticket_stndesc'>{{extradesc}}</div>
-        </label>
-    {{/otherleft}}
+    <div class='railticket_listselect_left'>
+        <div class='inner'>
+        {{#otherleft}}
+            <input type='radio' name='journeychoice' id='journeychoice{{code}}' value='{{code}}'
+                class='railticket_journeychoice ' {{disabled}} />
+            <label for='journeychoice{{code}}'>
+            <span class='railticket_otherstation'>{{journeydesc}}</span><br />
+            <div class='railticket_stndesc'>{{extradesc}}</div>
+            </label>
+        {{/otherleft}}
     </div>
 </div>
+<div>
 <div class='railticket_listselect_right'>
     <div class='inner'>
     {{#otherright}}

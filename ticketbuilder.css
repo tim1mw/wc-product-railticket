@@ -320,6 +320,17 @@
     display:none;
 }
 
+#showotherchoicesbutton {
+    background:#880000;
+    font-weight:bold;
+    font-size:large;
+    color:white;
+    padding-top:6px;
+    padding-bottom:10px;
+    padding-left:12px;
+    padding-right:12px;
+}
+
 .railticket_error{
     color:#880000;
     font-weight:bold;
