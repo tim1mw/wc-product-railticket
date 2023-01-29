@@ -491,6 +491,15 @@ function fromStationChanged(evt) {
             jcs[i].addEventListener('click', getDepTimes);
         }
 
+        var otherButton = document.getElementById('showotherchoicesbutton');
+        if (guard) {
+            otherButton.style.display = 'none';
+        } else {
+            var otherChoices = document.getElementById('railticketotherchoice');
+            otherChoices.style.display = 'none';
+            otherButton.addEventListener('click', showOther);
+        }
+
         if (a_journeychoice) {
             var ajc = document.getElementById('journeychoice'+a_journeychoice);
             ajc.checked = true;
@@ -500,6 +509,15 @@ function fromStationChanged(evt) {
             showTicketStages('journeychoice', true);
         }
     });
+}
+
+function showOther(evt) {
+   var showOtherButton = document.getElementById('showotherchoicesbutton');
+   showOtherButton.style.display = 'none';
+   var other = document.getElementById('railticketotherchoice');
+   other.style.display = 'block';
+   evt.preventDefault();
+   evt.stopImmediatePropagation();
 }
 
 function specialClicked(evt) {
