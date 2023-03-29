@@ -41,6 +41,11 @@ class Discount extends DiscountType {
 
         if ($this->valid) {
             switch ($this->data->triptype) {
+                case 'fullsgl':
+                    if (!$this->fromstation->is_principal() || !$this->tostation->is_principal() || $this->journeytype != 'single') {
+                        $this->valid = false;
+                    }
+                    break;
                 case 'full': 
                     if ($this->fromstation==false || $this->tostation==false || $this->journeytype==false || $this->journeytype == 'single') {
                         $this->valid = false;
