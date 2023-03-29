@@ -404,11 +404,12 @@ class FareCalculator {
             }
 
             // See if the discount uses a different price field.
-            $ppfield = 'ori'.$discount->check_price_field($pfield);
+            $dpfield = $discount->check_price_field($pfield);
+            $ppfield = 'ori'.$dpfield;
 
             // If we aren't using a custom ticket type+traveller here, just adjust the price and continue
             if (!$discount->use_custom_type()) {
-                $ticketd->price = $discount->apply_price_rule($ticketd->tickettype, $ticketd->$ppfield);
+                $ticketd->price = $discount->apply_price_rule($ticketd->tickettype, $ticketd->$ppfield, $dpfield);
                 continue;
             }
 
@@ -416,7 +417,7 @@ class FareCalculator {
             // PHP only performs a shallow copy of the object with clone(), that's no good. So use json to clone!
             $customticket = json_decode(json_encode($ticketd));
             $customticket->tickettype = $customticket->tickettype.'/'.$discount->get_shortname();
-            $customticket->price = $discount->apply_price_rule($customticket->tickettype, $ticketd->$ppfield);
+            $customticket->price = $discount->apply_price_rule($customticket->tickettype, $ticketd->$ppfield, $dpfield);
             $customticket->description = $discount->get_name();
             $customticket->composition = new \stdclass();
             $comp = (array) $ticketd->composition;
@@ -584,7 +585,7 @@ class FareCalculator {
         $price = $wpdb->get_var($sql);
 
         if ($discount) {
-            $price = $discount->apply_price_rule($ttype, $price);
+            $price = $discount->apply_price_rule($ttype, $price, $pfield);
         }
 
         return $price;

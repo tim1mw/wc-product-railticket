@@ -151,8 +151,8 @@ class DiscountByOrder extends Discount {
         return parent::get_message();
     }
 
-    public function apply_price_rule($tickettype, $price) {
-        $price = parent::apply_price_rule($tickettype, $price);
+    public function apply_price_rule($tickettype, $price, $pfield) {
+        $price = parent::apply_price_rule($tickettype, $price, $localprice, $pfield);
 
         if (property_exists($this->data->rules, 'pricelegmultiply') && $this->data->rules->pricelegmultiply == true) {
             return $price * $this->triplegs;
