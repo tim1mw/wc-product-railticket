@@ -51,7 +51,7 @@
         </td>
     </tr><tr>
         <td>Code</td>
-        <td><input type='text' name='code' size='20' minlength='4' maxlength='20' /></td>
+        <td><input type='text' name='code' size='20' minlength='3' maxlength='20' /></td>
     </tr><tr>
         <td>Start Date</td>
         <td><input type='date' name='start' /></td>
@@ -67,6 +67,9 @@
     </tr><tr>
         <td>Notes</td>
         <td><textarea name='notes'></textarea></td>
+    </tr><tr>
+        <td>Batch</td>
+        <td><input type='number' name='batch' value='1' /> Note: if set to more than 1, the code value will have additional characters appended.</td>
     </tr><tr>
         <td></td>
         <td><input type='submit' value='Add' id='railticket-add-discount-codes' /></td>
