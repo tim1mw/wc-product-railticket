@@ -611,7 +611,7 @@ class BookableDay {
     }
 
     public function get_discount_exclude() {
-        if (strlen($this->data->discountexclude) > 0) {
+        if (property_exists($this->data, 'discountexclude') && strlen($this->data->discountexclude) > 0) {
             return json_decode($this->data->discountexclude);
         }
 

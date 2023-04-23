@@ -83,7 +83,7 @@ class DiscountType {
         return $this->data->basefare;
     }
 
-    public function apply_price_rule($tickettype, $price) {
+    public function apply_price_rule($tickettype, $price, $pfield) {
         $tparts = explode('/', $tickettype);
         if (!property_exists($this->data->rules->discounts, $tparts[0])) {
             return $price;
@@ -113,7 +113,11 @@ class DiscountType {
                 $price = $price - $rule->value;
                 break;
             case 'price':
-                $price = $rule->value;
+                if (is_object($rule->value)) {
+                    $price = $rule->value->$pfield;
+                } else {
+                    $price = $rule->value;
+                }
                 break;
         }
 
