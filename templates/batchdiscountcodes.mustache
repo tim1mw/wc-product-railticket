@@ -1,15 +1,35 @@
 {{#codes}}
-<div style="break-inside: avoid;">
-<table><tr>
-  <td>{{{image}}}</td>
-  <td><h2>{{title}}</h2></td>
+<div style="break-inside: avoid;"><div style="border: 2px solid black;margin-bottom:10px;padding-left:8px;padding-right:8px;margin-top:10px;margin-left:20px;margin-right:20px;">
+<table style="width:100%;"><tr>
+  <td style="width:80px;">{{{image}}}</td>
+  <td style="text-align:left;"><h2>{{title}}</h2></td>
+  <td><h3>{{name}}</h3></td>
 </tr></table>
-<h3>{{name}}</h3>
-<p>{{comment}}</p>
-<p>Please use the code below in our booking system:</p>
-<p style="font-size:large;font-weight:bold;">{{.}}</p>
-<p> Valid from {{start}} to {{end}}</p>
-<p>{{url}}/book</p>
-<hr />
-</div>
+<p>{{comment}} Please navigate to {{url}}/book and enter the code below into the discount code box when you reach the "Choose Tickets" stage:</p>
+<p style="font-size:large;font-weight:bold;text-align:center;">{{.}}</p>
+<p style="font-weight:bold;text-align:center">Valid from {{start}} to {{end}}</p>
+</div></div>
 {{/codes}} 
+<style type="text/css">
+@media print {
+    #adminmenumain {
+        display: none !important;
+        width:0px !important;
+        height:0px;
+    }
+    #adminmenuback {
+        display: none !important;
+        width:0px !important;
+        height:0px;
+    }
+    #wpfooter {
+        display: none !important;
+    }
+    #wpcontent {
+        margin-left:0px !important;
+    }
+    .notice {
+        display: none !important;
+    }
+}
+</style>
