@@ -149,6 +149,48 @@ class Discount extends DiscountType {
         return true;
     }
 
+    public static function add_discount_code_batch($shortname, $code, $start, $end, $single, $disabled, $notes, $batch) {
+        global $wpdb;
+
+        if (strlen($end) == 0) {
+            $end = null;
+        }
+
+        if (strlen($start) == 0) {
+            $start = null;
+        }
+
+        $length = strlen($code);
+        $allcodes = array();
+
+        for ($loop = 0; $loop < $batch; $loop++) {
+            $ncode = $code.self::generateRandomString($length);
+
+            $check = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_discountcodes WHERE code='".$code."'");
+            if ($check) {
+                continue;
+            }
+
+            $allcodes[] = $ncode;
+
+            $wpdb->insert("{$wpdb->prefix}wc_railticket_discountcodes",
+                array('shortname' => $shortname, 'code' => $ncode, 'start' => $start, 'end' => $end,
+                'single' => $single, 'disabled' => $disabled, 'notes' => $notes));
+        }
+
+        return $allcodes;
+    }
+
+    private static function generateRandomString($length) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyz';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[random_int(0, $charactersLength - 1)];
+        }
+        return $randomString;
+    }
+
     public static function update_discount_code($id, $code, $start, $end, $single, $disabled, $notes) {
         global $wpdb;
 

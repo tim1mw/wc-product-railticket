@@ -2433,9 +2433,32 @@ function railticket_discount_codes() {
                 $single = railticket_gettfpostfield('single');
                 $disabled = railticket_gettfpostfield('disabled');
                 $notes = railticket_getpostfield('note');
-                $check = \wc_railticket\Discount::add_discount_code($shortname, $code, $start, $end, $single, $disabled, $notes);
-                if (!$check) {
-                    echo "<span style='color:red'>Duplicate discount code '".$code."' detected, cannot add.</span><br />";
+                $batch = railticket_getpostfield('batch');
+                if ($batch > 1) {
+                    $codes = \wc_railticket\Discount::add_discount_code_batch($shortname, $code, $start, $end, $single, $disabled, $notes, $batch);
+                    if ($codes > 0) {
+                        $dt = \wc_railticket\DiscountType::get_discount_type($shortname);
+                        $alldata = new \stdclass();
+                        $alldata->codes = $codes;
+                        $alldata->name = $dt->get_name();
+                        $alldata->comment = $dt->get_comment();
+                        $alldata->title = get_bloginfo( 'name' );
+                        $alldata->url = get_site_url();
+                        $alldata->image = get_custom_logo();
+                        $start = \DateTime::createFromFormat("Y-m-d", $start);
+                        $end = \DateTime::createFromFormat("Y-m-d", $end);
+                        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+                        $alldata->start = railticket_timefunc(get_option('wc_railticket_date_format'), $start->getTimestamp(), $railticket_timezone);
+                        $alldata->end = railticket_timefunc(get_option('wc_railticket_date_format'), $end->getTimestamp(), $railticket_timezone);
+                        $template = $rtmustache->loadTemplate('batchdiscountcodes');
+                        echo $template->render($alldata);
+                        return;
+                    }
+                } else {
+                    $check = \wc_railticket\Discount::add_discount_code($shortname, $code, $start, $end, $single, $disabled, $notes);
+                    if (!$check) {
+                        echo "<span style='color:red'>Duplicate discount code '".$code."' detected, cannot add.</span><br />";
+                    }
                 }
                 break;
             case 'deletediscountcode':
