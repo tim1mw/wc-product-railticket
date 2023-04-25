@@ -96,13 +96,20 @@ class Discount extends DiscountType {
     }
 
 
-    public static function get_all_discount_data() {
+    public static function get_all_discount_data($singleuse = false) {
         global $wpdb;
-
-        return $wpdb->get_results("SELECT discounts.name, codes.* ".
+        if ($singleuse) {
+            $singleuse = 1;
+        } else {
+            $singleuse = 0;
+        }
+        $sql = "SELECT discounts.name, codes.* ".
             "FROM {$wpdb->prefix}wc_railticket_discountcodes codes ".
             "INNER JOIN {$wpdb->prefix}wc_railticket_discounts discounts ON discounts.shortname = codes.shortname ".
-            "ORDER BY codes.shortname, codes.code");
+            "WHERE codes.single = ".$singleuse." ".
+            "ORDER BY codes.shortname, codes.code";
+
+        return $wpdb->get_results($sql);
     }
 
     public static function get_all_guard_discounts($dateoftravel) {
@@ -253,9 +260,25 @@ class Discount extends DiscountType {
         return $this->data->disabled;
     }
 
-    public function use() {
+    public function use($ticketselections) {
         if (!$this->data->single) {
             return;
+        }
+
+        if ($this->data->customtype) {
+            $ticketselections = (array) $ticketselections;
+            $found = false;
+            foreach ($ticketselections as $tsk => $tsv) {
+                if (strpos($tsk, "/".$this->data->shortname) !== false && $tsv > 0) {
+                    $found = true;
+                }
+            }
+
+            // The code was entered, but nothing claimed, so don't disable.
+            if (!$found) {
+                return;
+            }
+
         }
 
         $this->disable();

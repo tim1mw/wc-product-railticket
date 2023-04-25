@@ -1,5 +1,11 @@
 <h3>Manange Discount Codes</h3>
 
+<p><form method='get'>
+    <input type='hidden' name='page' value='railticket-discount-codes' />
+    <input type='hidden' name='singleuse' value='{{singleuse}}' />
+    <input type='submit' value='{{singleusemessage}}' />
+</form></p>
+
 <form method='post' action='{{actionurl}}'>
 <input type='hidden' name='ids' value='{{ids}}' />
 <input type='hidden' name='action' value='updatediscountcodes' />
