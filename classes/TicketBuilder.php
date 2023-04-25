@@ -599,6 +599,7 @@ class TicketBuilder {
         if ($this->manual) {
             if ($this->discount) {
                $discountcode = $this->discount->get_code();
+               $this->discount->use($this->ticketselections);
             } else {
                $discountcode = '';
             }
@@ -630,7 +631,7 @@ class TicketBuilder {
                 if (strlen($this->discountnote) > 0) {
                     $cart_item_data['discountnote'] = $this->discountnote;
                 }
-                $this->discount->use();
+                $this->discount->use($this->ticketselections);
             }
 
             $bridge_product = get_option('wc_product_railticket_woocommerce_product');

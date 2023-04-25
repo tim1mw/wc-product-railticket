@@ -260,9 +260,25 @@ class Discount extends DiscountType {
         return $this->data->disabled;
     }
 
-    public function use() {
+    public function use($ticketselections) {
         if (!$this->data->single) {
             return;
+        }
+
+        if ($this->data->customtype) {
+            $ticketselections = (array) $ticketselections;
+            $found = false;
+            foreach ($ticketselections as $tsk => $tsv) {
+                if (strpos($tsk, "/".$this->data->shortname) !== false && $tsv > 0) {
+                    $found = true;
+                }
+            }
+
+            // The code was entered, but nothing claimed, so don't disable.
+            if (!$found) {
+                return;
+            }
+
         }
 
         $this->disable();
