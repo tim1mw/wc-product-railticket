@@ -2470,10 +2470,18 @@ function railticket_discount_codes() {
         }
     }
 
+    $singleuse = railticket_gettfpostfield('singleuse');
+
     $alldata = new \stdclass();
     $alldata->dtypes = array_values(\wc_railticket\DiscountType::get_all_discount_type_mindata());
-    $alldata->dcodes = array_values(\wc_railticket\Discount::get_all_discount_data());
+    $alldata->dcodes = array_values(\wc_railticket\Discount::get_all_discount_data($singleuse));
     $alldata->ids = array();
+    $alldata->singleuse = !$singleuse;
+    if ($singleuse) {
+        $alldata->singleusemessage = "Show multi use codes";
+    } else {
+         $alldata->singleusemessage = "Show single use codes";
+    }
     foreach ($alldata->dcodes as $dcode) {
        $alldata->ids[] = $dcode->id;
        if ($dcode->single == 1) {
