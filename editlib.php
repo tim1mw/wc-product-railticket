@@ -15,6 +15,7 @@ add_action( 'wp_ajax_railticket_adminajax', 'railticket_ajax_adminrequest');
 add_action('railticket_process_stats_cron', 'railticket_process_stats');
 add_action('admin_post_railticketstats.csv', 'railticket_get_stats');
 add_action('admin_post_railticketgeo.csv', 'railticket_get_geo');
+add_action('admin_post_railticketwaybillcomb.csv', 'railticket_get_waybillcomb');
 
 // Schedule an action if it's not already scheduled
 if ( ! wp_next_scheduled( 'railticket_process_stats_cron' ) ) {
@@ -2938,6 +2939,13 @@ function railticket_get_geo() {
 
     fclose($f);
     exit;
+}
+
+function railticket_get_waybillcomb() {
+    $start = railticket_getpostfield('start');
+    $end = railticket_getpostfield('end');
+    $wbcomb = new \wc_railticket\WaybillCombined($start, $end);
+    $wbcomb->show_waybill(true);
 }
 
 function railticket_process_stats($info = false, $limit = 5) {

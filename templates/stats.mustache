@@ -25,12 +25,23 @@
     <tr><td></td><td><input type='submit' value='Download' /></td></tr>
 </table></form> 
 
+<h1>Download Combined Waybill</h1>
+
+<form action='{{adminurl}}' method='post'>
+<input type='hidden' name='action' value='railticketwaybillcomb.csv' />
+<table>
+    <tr><td>Start date</td><td><input type='date' name='start' required /></td></tr>
+    <tr><td>End date</td><td><input type='date' name='end' required /></td></tr>
+    <tr><td></td><td><input type='submit' value='Download' /></td></tr>
+</table></form> 
+
+
 <h2>Manual Stats Process Run</h2>
 <p>Manually run the stats processor. Do this if Stats processing has "gotten behind" for some reason and dates are missing from the stats table.
 Not normally needed if things are behaving. This places a heavy load on the system, so it is reccomended to limit the number
 of days processed at once.</p>
 <form action='{{actionurl}}' method='post'>
     <input type='hidden' name='action' value='statsprocess' />
-    Max days to process: <input type='number' value='5' name='maxdays' min='1' max='30' size='2' required />
+    Max days to process: <input type='number' value='5' name='maxdays' min='1' max='50' size='2' required />
     <input type='submit' value='Run Stats processor' />
 </form>
