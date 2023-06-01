@@ -17,6 +17,7 @@ class WaybillBase extends Report {
         $this->totalonlineprice = 0;
         $this->totalguardprice = 0;
         $this->totaltravellers = array();
+        $this->discountuse = array();
     }
 
     function show_waybill($iscsv) {
@@ -120,6 +121,14 @@ class WaybillBase extends Report {
             fputcsv($f, array($gt->name, $gt->total));
         }
 
+        fputcsv($f, array());
+        fputcsv($f, array('Discount Passengers Breakdown'));
+        fputcsv($f, array());
+        foreach ($this->discountuse as $dcode => $num) {
+            $discount = DiscountType::get_discount_type($dcode);
+            fputcsv($f, array($discount->get_name(), $num));
+        }
+
         fclose($f);
         return;
     }
@@ -218,6 +227,7 @@ class WaybillBase extends Report {
         $data->totalonlineprice = $this->totalonlineprice;
         $data->totalguardprice = $this->totalguardprice;
         $data->totaltravellers = $this->totaltravellers;
+        $data->discountuse = $this->discountuse;
 
         return json_encode($data);
     }

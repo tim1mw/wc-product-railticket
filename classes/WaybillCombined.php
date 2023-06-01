@@ -17,7 +17,6 @@ class WaybillCombined extends WaybillBase {
         "date >= '".$this->startdate."' AND date <= '".$this->enddate."' ORDER BY DATE ASC");
 
         foreach ($days as $day) {
-
             $daydata = json_decode($day->waybill);
             $this->merge_array('lines', $daydata->lines);
 
@@ -32,6 +31,7 @@ class WaybillCombined extends WaybillBase {
             $this->totalonlineprice += $daydata->totalonlineprice;
             $this->totalguardprice += $daydata->totalguardprice;
             $this->merge_array('totaltravellers', $daydata->totaltravellers);
+            $this->merge_array('discountuse', $daydata->discountuse);
         }
     }
 

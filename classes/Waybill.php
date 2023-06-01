@@ -60,17 +60,25 @@ class Waybill extends WaybillBase {
                 $discounttypesn = 'AAAAAAAAAAAAAAAAA';
                 // If we have a discount add it as a sorting key
                 if ($discounttype) {
+
+                    $dsn = $discounttype->get_shortname();
                     if ($discounttype->use_custom_type()) {
                         // If we have custom travellers, check this is a custom traveller and that it is valid for the ticket type
                         $tparts = explode('/', $ticket);
                         if (count($tparts) == 2 && $discounttype->ticket_has_discount($tparts[0])) {
-                            $discounttypesn = $discounttype->get_shortname();
+                            $discounttypesn = $dsn;
                         }
                     } else {
                         // If we are not using custom travellers, then simply check if the discount is valid for the ticket type
                         if ($discounttype->ticket_has_discount($ticket)) {
-                            $discounttypesn = $discounttype->get_shortname();
+                            $discounttypesn = $dsn;
                         }
+                    }
+
+                    if (array_key_exists($dsn, $this->discountuse)) {
+                        $this->discountuse[$dsn] += $num;
+                    } else {
+                        $this->discountuse[$dsn] = $num;
                     }
                 } 
 
