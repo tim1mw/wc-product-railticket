@@ -909,6 +909,9 @@ function railticket_get_seatsummary() {
 function railticket_show_seatsummary($dateofjourney, $showall) {
 
     $timetable = \wc_railticket\Timetable::get_timetable_by_date($dateofjourney);
+    if (!$timetable) {
+        return;
+    }
     ?>
     <div style="page-break-after:always">
     <div style="width:100%;background-color:black;color:white;padding-top:5px;padding-bottom:5px;padding-left:10px">
