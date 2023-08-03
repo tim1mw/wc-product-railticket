@@ -850,7 +850,12 @@ function railticket_getdayselect($chosenday) {
 
 function railticket_get_seatsummary() {
     $dateofjourney = sanitize_text_field($_REQUEST['dateofjourney']);
-    $timetable = \wc_railticket\Timetable::get_timetable_by_date($dateofjourney);
+    if (array_key_exists('enddate', $_REQUEST)) {
+        $enddate = sanitize_text_field($_REQUEST['enddate']);
+    } else {
+        $enddate = $dateofjourney;
+    }
+
     $showall = false;
     $allstns = 1;
     $allstnsmes = "Show All Stations";
@@ -861,7 +866,22 @@ function railticket_get_seatsummary() {
     }
 
 
-    ?><h1>Seat/Bay usage summary for <?php echo $timetable->get_date(true); ?></h1>
+    if (current_user_can('admin_tickets')) {
+    ?>
+    <div class='railticket_editdate'>
+    <form method='post' action='<?php echo railticket_get_page_url(); ?>'>
+    <input type='hidden' name='action' value='viewseatsummary' />
+    <table>
+        <tr><th style="text-align:right">Start Date</th><td><input type='date' name='dateofjourney' value='<?php echo $dateofjourney;?>' /></td></tr>
+        <tr><th style="text-align:right">End Date</th><td><input type='date' name='enddate' value='<?php echo $enddate;?>' /></td></tr>
+        <tr><th style="text-align:right">Show All Stations</th><td><input type='checkbox' name='allstns' value='1' <?php if (!$allstns) echo "checked" ?> /></td></tr>
+        <tr><td></td><td><input type='submit' value='Show' style='max-width:550px;' /></td></tr>
+    </table>
+    </form>
+    </div>
+    <hr />
+    <?php } else {?>
+
     <div class='railticket_editdate'>
     <form method='post' action='<?php echo railticket_get_page_url(); ?>'>
         <input type='hidden' name='action' value='viewseatsummary' />
@@ -869,6 +889,31 @@ function railticket_get_seatsummary() {
         <input type='hidden' name='allstns' value='<?php echo $allstns;?>' />
         <input type='submit' value='<?php echo $allstnsmes;?>' style='max-width:550px;' />
     </form>
+    </div>
+    <?php }
+
+    $stopdate = DateTime::createFromFormat('Y-m-d', $enddate);
+    $stopdate->modify('+1 day');
+    $tdate = DateTime::createFromFormat('Y-m-d', $dateofjourney);
+    while ($tdate != $stopdate) {
+        railticket_show_seatsummary($tdate->format('Y-m-d'), $showall);
+        $tdate->modify('+1 day');
+    }
+
+    ?><form action='<?php echo railticket_get_page_url() ?>' method='post'>
+        <input type='hidden' name='action' value='filterbookings' />
+        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
+        <input type='submit' name='submit' value='Back to Services' style='font-size:x-large'/>
+    </form><?php
+}
+
+function railticket_show_seatsummary($dateofjourney, $showall) {
+
+    $timetable = \wc_railticket\Timetable::get_timetable_by_date($dateofjourney);
+    ?>
+    <div style="page-break-after:always">
+    <div style="width:100%;background-color:black;color:white;padding-top:5px;padding-bottom:5px;padding-left:10px">
+    <h1 style="color:white;">Seat/Bay usage summary for <?php echo $timetable->get_date(true); ?></h1>
     </div>
     <?php
 
@@ -882,11 +927,8 @@ function railticket_get_seatsummary() {
         railticket_show_station_summary($dateofjourney, $station, $timetable, 'up', true);
     }
     ?>
-    <form action='<?php echo railticket_get_page_url() ?>' method='post'>
-        <input type='hidden' name='action' value='filterbookings' />
-        <input type='hidden' name='dateofjourney' value='<?php echo $dateofjourney; ?>' />
-        <input type='submit' name='submit' value='Back to Services' style='font-size:x-large'/>
-    </form>
+
+    </div>
     <?php
 }
 
