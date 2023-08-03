@@ -466,6 +466,9 @@ function coachSetCount(evt) {
     var setid = parts[1];
     var coach = parts[2];
     var coachset = getCoachSet(parts[1]);
+    if (evt.target.value.length == 0) {
+        evt.target.value = 0;
+    }
     coachset[parts[2]] = evt.target.value;
 
     if (coachset[parts[2]] < 1) {
@@ -480,6 +483,9 @@ function coachSetCount(evt) {
 function coachSetReserve(evt) {
     var parts = evt.target.id.split('-');
     var resset = getReserve(parts[1]);
+    if (evt.target.value.length == 0) {
+        evt.target.value = 0;
+    }
     resset[parts[2]] = evt.target.value;
     renderEditorData();
     renderEditorCoachSets();
