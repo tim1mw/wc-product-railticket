@@ -1672,7 +1672,7 @@ function railticket_get_booking_order_data(\wc_railticket\BookingOrder $bookingo
     $orderdata[] = array('item' => __('Paid', 'wc_railticket'), 'value' => $bookingorder->is_paid(true));
     $orderdata[] = array('item' => __('Price', 'wc_railticket'), 'value' => $bookingorder->get_price(true));
     if ($discount) {
-        $orderdata[] = array('item' => __('Discount Type Applied', 'wc_railticket'), 'value' => $discount->get_name(), 'style' => 'color:blue');
+        $orderdata[] = array('item' => __('Discount Type Applied', 'wc_railticket'), 'value' => $discount->get_name().' ('.$bookingorder->get_discount_code().')', 'style' => 'color:blue');
         if ($discount->show_notes()) {
             $orderdata[] = array('item' => $discount->get_note_type(),
                 'value' => '<div style="text-align:center;">'.
