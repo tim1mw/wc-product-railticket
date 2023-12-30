@@ -24,7 +24,16 @@ class Waybill extends Report {
 
         $bookingids = $this->bookableday->get_all_order_ids();
         foreach ($bookingids as $bookingid) {
-            $bookingorder = BookingOrder::get_booking_order($bookingid);
+            if ($bookingid == 0) {
+                continue;
+            }
+            try {
+                $bookingorder = BookingOrder::get_booking_order($bookingid);
+            }
+            catch (Exception $e) {
+                // TODO Log issues proerly here
+                continue;
+            }
             $bookings = $bookingorder->get_bookings();
 
             $this->totalseats += $bookingorder->get_seats();
