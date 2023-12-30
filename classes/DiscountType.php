@@ -26,6 +26,7 @@ class DiscountType {
         }
 
         if ($dataonly) {
+            self::format_data($data);
             return $data;
         }
 
@@ -37,6 +38,44 @@ class DiscountType {
 
         return $wpdb->get_results("SELECT id, name, shortname FROM ".
             "{$wpdb->prefix}wc_railticket_discounts");
+    }
+
+    public static function get_all_discount_types($dataonly = false) {
+        global $wpdb;
+
+        $dts = $wpdb->get_results("SELECT * FROM ".
+            "{$wpdb->prefix}wc_railticket_discounts");
+
+        if ($dataonly) {
+            foreach ($dts as $dt) {
+                self::format_data($dt);
+            }
+            return $dts;
+        }
+
+        $alldt = array();
+        foreach ($dts as $dt) {
+            $alldt = new DiscountType($dt);
+        }
+        return $alldt;
+    }
+
+    private static function format_data(&$dt) {
+        switch ($dt->basefare) {
+            case 'auto': $dt->basefarefmt = 'Automatic'; break;
+            case 'price': $dt->basefarefmt = 'Always Online'; break;
+            case 'localprice': $dt->basefarefmt = 'Always Guard'; break;
+        }
+        if ($dt->customtype == 1) {
+            $dt->customtypefmt = 'Yes';
+        } else {
+            $dt->customtypefmt = 'No';
+        }
+        switch ($dt->triptype) {
+            case 'full': $dt->triptypefmt = 'Full Line Return'; break;
+            case 'fullsgl': $dt->triptypefmt = 'Full Line Single'; break;
+            case 'any': $dt->triptypefmt = 'Any Trip'; break;
+        }
     }
 
     public function get_shortname() {

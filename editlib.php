@@ -2598,7 +2598,11 @@ function railticket_update_discountcodes() {
 
 function railticket_discount_types() {
     global $rtmustache;
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
     $alldata = new \stdclass();
+    $alldata->discounttypes = \wc_railticket\DiscountType::get_all_discount_types(true);
+
 
     $template = $rtmustache->loadTemplate('discounttypes');
     echo $template->render($alldata);

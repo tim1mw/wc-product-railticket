@@ -1,1 +1,23 @@
-<p>This page is not here yet. Move along.</p>
+<h2>Discount Types</h2>
+<table border='1' class='railticket_admintable'>
+    <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Base fare</th>
+        <th>Custom<br>Travellers</th>
+        <th>Trip Type</th>
+        <th>Actions</th>
+    </tr>
+    {{#discounttypes}}
+    <tr>
+        <td>{{shortname}}</td>
+        <td>{{name}}</td>
+        <td style='text-align:center;'>{{basefarefmt}}</td>
+        <td style='text-align:center;'>{{customtypefmt}}</td>
+        <td style='text-align:center;'>{{triptypefmt}}</td>
+        <td style='text-align:center;'>
+            <a href=''>Edit</a>
+        </td>
+    </tr>
+    {{/discounttypes}}
+</table>
