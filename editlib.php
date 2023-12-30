@@ -1292,6 +1292,10 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
             } else {
                 $bo = \wc_railticket\BookingOrder::get_booking_order($booking->get_order_id());
             }
+            if ($bo == null) {
+                // TODO Log bad data?
+                continue;
+            }
             $tr = $bo->get_travellers();
             foreach ($tr as $tk => $tt) {
                 $tk = explode('/', $tk)[0];
