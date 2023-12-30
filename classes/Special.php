@@ -150,6 +150,20 @@ class Special {
     public function get_to_station() {
         return Station::get_station($this->data->tostation, $this->ttrevision);
     }
+    
+    public function is_from($id) {
+        if ($this->data->fromstation == $id) {
+            return true;
+        }
+        return false;
+    }
+
+    public function is_to($id) {
+        if ($this->data->tostation == $id) {
+            return true;
+        }
+        return false;
+    }
 
     public function on_sale($format = false) {
         if ($format) {

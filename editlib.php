@@ -1895,6 +1895,7 @@ function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket
     $method = 'get_'.$from->get_direction($to).'_deps';
     $deps = $bk->timetable->$method($from, true, $to);
 
+    $index = 0;
     for ($i = 0; $i < count($deps); $i++) {
         if ($deps[$i]->key == $dt) {
             $deps[$i]->selected = 'selected';
@@ -1906,6 +1907,32 @@ function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket
         } else {
             $deps[$i]->seats = $capused->totalseats;
         }
+        if ($deps[$i]->index > $index) {
+            $index = $deps[$i]->index;
+        }
+    }
+    
+    $specials = $bk->get_specials();
+    foreach ($specials as $special) {
+        if (!$special->is_from($from->get_stnid()) || !$special->is_to($to->get_stnid())) {
+            continue;
+        }
+        $index ++;
+        $trainservice = new \wc_railticket\TrainService($bk, $from, $special->get_dep_id(), $to);
+        $capused = $trainservice->get_inventory(false, false, false, $exclude);
+        $dep = new \stdclass();
+        $dep->index = $index;
+        $dep->key = $special->get_dep_id();
+        $dep->formatted = $special->get_name();
+        if ($bk->get_allocation_type() == 'seat') {
+            $dep->seats = $capused->totalseatsmax." (".$capused->totalseats.")";
+        } else {
+            $dep->seats = $capused->totalseats;
+        }
+        if ($dep->key == $dt) {
+            $dep->selected = 'selected';
+        }
+        $deps[] = $dep;
     }
 
     return $deps;
