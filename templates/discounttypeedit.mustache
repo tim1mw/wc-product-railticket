@@ -1,0 +1,45 @@
+<h1>{{title}}</h1>
+
+<form method='post' action='{{{actionurl}}}' autocomplete="off">
+    <input type='hidden' name='page' value='railticket-discount-types' />
+    <input type='hidden' name='action' value='{{action}}' />
+    <input type='hidden' name='shortname' value='{{shortname}}' />
+
+    <table>
+        <tr><th style='text-align:right'>Name</th><td><input type='text' name='name' value='{{name}}' size='50' max='100' required /></td></tr>
+        <tr><th style='text-align:right'>Description</th><td><textarea name='comment' rows='3' cols='50'>{{comment}}</textarea></td></tr>
+        <tr>
+            <th style='text-align:right'>Trip Type</th>
+            <td>
+                <select name='triptype'>
+                    <option value='full' {{#triptypefull}}selected{{/triptypefull}} />Full Line Return or Round Ticket</option>
+                    <option value='fullsgl' {{#triptypefullsgl}}selected{{/triptypefullsgl}} />Full Line Single Ticket</option>
+                    <option value='any' {{#triptypeany}}selected{{/triptypeany}} />Any Ticket</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style='text-align:right'>Base Fare</th>
+            <td>
+                <select name='basefare'>
+                    <option value='auto' {{#basefareauto}}selected{{/basefareauto}} />Automatic</option>
+                    <option value='price' {{#basefareprice}}selected{{/basefareprice}} />Online Price</option>
+                    <option value='localprice' {{#basefarelocalprice}}selected{{/basefarelocalprice}} />Guards Price</option>
+                </select>
+            </td>
+        </tr>
+        <tr><th style='text-align:right'>Maximum Seats</th><td><input type='number' name='maxseats' value='{{maxseats}}' max='999' min='1' size='5' required /></td></tr>
+        <tr><th style='text-align:right'>Use Custom Travellers</th><td><input type='checkbox' name='customtype' value='1' {{#customtype}}checked{{/customtype}} /></td></tr>
+        <tr><th style='text-align:right'>Inherit Ticket Type Dependencies</th><td><input type='checkbox' name='inheritdeps' value='1' {{#inheritdeps}}checked{{/inheritdeps}} /></td></tr>
+        <tr><th style='text-align:right'>Do not add to guards discount list</th><td><input type='checkbox' name='notguard' value='1' {{#notguard}}checked{{/notguard}} /></td></tr>
+        <tr><th style='text-align:center' colspan='2'><hr />Customer Validation Options<br /></th></tr>
+        <tr><th style='text-align:right'>Show Customer Validation</th><td><input type='checkbox' name='shownotes' value='1' {{#shownotes}}checked{{/shownotes}} /></td></tr>
+        <tr><th style='text-align:right'>Validation Instructions</th><td><textarea name='noteinstructions' rows='3' cols='50'>{{noteinstructions}}</textarea></td></tr>
+        <tr><th style='text-align:right'>Validation Field Name</th><td><input type='text' name='notetype' value='{{notetype}}' size='50' max='50' /></td></tr>
+        <tr><th style='text-align:right'>Validation Field Regex</th><td><input type='text' name='pattern' value='{{pattern}}' size='50' max='255' /></td></tr>
+        <tr><th style='text-align:center' colspan='2'><hr />Rules<br /></th></tr>
+        <tr><th style='text-align:right'>Rule Data</th><td><textarea name='rules' rows='10' cols='50'>{{rules}}</textarea></td></tr>
+        <tr><th style='text-align:center' colspan='2'><hr /></th></tr>
+        <tr><td></td><td><input type='submit' value='{{button}}' /></td></tr>
+    <table>
+</form>

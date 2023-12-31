@@ -37,14 +37,14 @@ class DiscountType {
         global $wpdb;
 
         return $wpdb->get_results("SELECT id, name, shortname FROM ".
-            "{$wpdb->prefix}wc_railticket_discounts");
+            "{$wpdb->prefix}wc_railticket_discounts ORDER BY name");
     }
 
     public static function get_all_discount_types($dataonly = false) {
         global $wpdb;
 
         $dts = $wpdb->get_results("SELECT * FROM ".
-            "{$wpdb->prefix}wc_railticket_discounts");
+            "{$wpdb->prefix}wc_railticket_discounts ORDER BY name");
 
         if ($dataonly) {
             foreach ($dts as $dt) {
@@ -112,6 +112,18 @@ class DiscountType {
 
     public function get_baseprice_field() {
         return $this->data->basefare;
+    }
+
+    public function get_triptype_field() {
+        return $this->data->triptype;
+    }
+
+    public function not_guard() {
+        return $this->data->notguard;
+    }
+
+    public function get_rules_data() {
+        return $this->data->rules;
     }
 
     public function check_price_field($prefered) {
@@ -193,5 +205,35 @@ class DiscountType {
 
     public function get_excludes() {
         return $this->data->rules->excludes;
+    }
+
+    public function update($name, $basefare, $customtype, $inheritdeps, $maxseats, $triptype, $rules, $comment, $shownotes,
+        $noteinstructions, $notetype, $pattern, $notguard) {
+        global $wpdb;
+        $this->data->name = $name;
+        $this->data->basefare = $basefare;
+        $this->data->customtype = $customtype;
+        $this->data->inheritdeps = $inheritdeps;
+        $this->data->maxseats = $maxseats;
+        $this->data->triptype = $triptype;
+        $this->data->rules = json_decode($rules);
+        $this->data->comment = $comment;
+        $this->data->shownotes = $shownotes;
+        $this->data->noteinstructions = $noteinstructions;
+        $this->data->notetype = $notetype;
+        $this->data->pattern = $pattern;
+        $this->data->notguard = $notguard;
+        $this->update_record();
+    }
+
+    private function update_record() {
+        global $wpdb;
+
+        $data = get_object_vars($this->data);
+        $data['rules'] = json_encode($data['rules']);
+
+        $wpdb->update($wpdb->prefix.'wc_railticket_discounts',
+            $data,
+            array('id' => $this->data->id));
     }
 }

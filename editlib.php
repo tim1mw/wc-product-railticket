@@ -2600,12 +2600,107 @@ function railticket_discount_types() {
     global $rtmustache;
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
+
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'dtedit':
+                railticket_show_edit_discount_type();
+                return;
+            case 'adddt':
+            case 'updatedt':
+                railticket_update_discount_type();
+                break;
+        }
+    }
+
     $alldata = new \stdclass();
     $alldata->discounttypes = \wc_railticket\DiscountType::get_all_discount_types(true);
 
 
     $template = $rtmustache->loadTemplate('discounttypes');
     echo $template->render($alldata);
+}
+
+function railticket_show_edit_discount_type($id = false) {
+    global $rtmustache;
+
+    if ($id == false) {
+        $id = sanitize_text_field($_REQUEST['id']);
+    }
+
+    $dt = \wc_railticket\DiscountType::get_discount_type($id);
+
+    $alldata = new \stdclass();
+    $alldata->actionurl = railticket_get_page_url();
+    $alldata->action = 'updatedt';
+    $alldata->shortname = $dt->get_shortname();
+    $alldata->name = $dt->get_name();
+
+    switch ($dt->get_baseprice_field()) {
+        case 'auto': $alldata->basefareauto = true; break;
+        case 'price': $alldata->basefareprice = true; break;
+        case 'localprice': $alldata->basefarelocalprice = true; break;
+    }
+
+    if ($dt->use_custom_type() == 1) {
+        $alldata->customtype = true;
+    }
+
+    if ($dt->inherit_deps() == 1) {
+        $alldata->inheritdeps = true;
+    }
+
+    $alldata->maxseats = $dt->get_max_seats();
+
+    switch ($dt->get_triptype_field()) {
+        case 'full': $alldata->triptypefull = true; break;
+        case 'fullsgl': $alldata->triptypefullsgl = true; break;
+        case 'any': $alldata->triptypeany = true; break;
+    }
+
+    $alldata->comment = $dt->get_comment();
+
+    if ($dt->not_guard() == 1) {
+        $alldata->notguard = true;
+    }
+
+    if ($dt->show_notes() == 1) {
+        $alldata->shownotes = true;
+    } 
+
+    $alldata->noteinstructions = $dt->get_note_instructions();
+    $alldata->notetype = $dt->get_note_type();
+    $alldata->pattern = $dt->get_pattern();
+    $alldata->button = 'Update';
+
+    $alldata->rules = json_encode($dt->get_rules_data(), JSON_PRETTY_PRINT);
+
+    $template = $rtmustache->loadTemplate('discounttypeedit');
+    echo $template->render($alldata);
+}
+
+function railticket_update_discount_type() {
+    $sn = sanitize_text_field($_REQUEST['shortname']);
+    if ($sn == -1) {
+
+    } else {
+        $dt = \wc_railticket\DiscountType::get_discount_type($sn);
+        $dt->update(
+            railticket_getpostfield('name'),
+            railticket_getpostfield('basefare'),
+            railticket_gettfpostfield('customtype'),
+            railticket_gettfpostfield('inheritdeps'),
+            railticket_getpostfield('maxseats'),
+            railticket_getpostfield('triptype'),
+            stripslashes($_REQUEST['rules']),
+            railticket_getpostfield('comment'),
+            railticket_gettfpostfield('shownotes'),
+            railticket_getpostfield('noteinstructions'),
+            railticket_getpostfield('notetype'),
+            railticket_getpostfield('pattern'),
+            railticket_gettfpostfield('notguard')
+        );
+    }
 }
 
 function railticket_rebook($action) {
