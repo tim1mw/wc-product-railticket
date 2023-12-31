@@ -85,6 +85,10 @@ class DiscountType {
         if ($dt) {
             throw new TicketException("The short code ".$shortname." is already in use.");
         }
+        if (!json_decode($rules)) {
+            throw new TicketException("The supplied rules could not be decoded - invalid JSON.");
+        }
+
         $data = array(
             'shortname' => $shortname,
             'name' => $name,
@@ -236,13 +240,19 @@ class DiscountType {
 
     public function update($name, $basefare, $customtype, $inheritdeps, $maxseats, $triptype, $rules, $comment, $shownotes,
         $noteinstructions, $notetype, $pattern, $notguard) {
+
+        $rules = json_decode($rules);
+        if (!$rules) {
+            throw new TicketException("The supplied rules could not be decoded - invalid JSON.");
+        }
+
         $this->data->name = $name;
         $this->data->basefare = $basefare;
         $this->data->customtype = $customtype;
         $this->data->inheritdeps = $inheritdeps;
         $this->data->maxseats = $maxseats;
         $this->data->triptype = $triptype;
-        $this->data->rules = json_decode($rules);
+        $this->data->rules = $rules;
         $this->data->comment = $comment;
         $this->data->shownotes = $shownotes;
         $this->data->noteinstructions = $noteinstructions;

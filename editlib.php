@@ -2603,16 +2603,21 @@ function railticket_discount_types() {
 
     $adddata = false;
     if (array_key_exists('action', $_REQUEST)) {
-        switch ($_REQUEST['action']) {
-            case 'dtedit':
-                railticket_show_edit_discount_type();
-                return;
-            case 'adddt':
-                $adddata = railticket_add_discount_type();
-                break;
-            case 'updatedt':
-                railticket_update_discount_type();
-                break;
+        try {
+            switch ($_REQUEST['action']) {
+                case 'dtedit':
+                    railticket_show_edit_discount_type();
+                    return;
+                case 'adddt':
+                    $adddata = railticket_add_discount_type();
+                    break;
+                case 'updatedt':
+                    railticket_update_discount_type();
+                    break;
+            }
+        }
+        catch (\wc_railticket\TicketException $e) {
+            echo "<p style='font-size:large;color:red;'>Error: ".$e->getMessage()."</p>";
         }
     }
 
