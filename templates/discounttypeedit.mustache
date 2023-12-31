@@ -1,13 +1,17 @@
 <h1>{{title}}</h1>
 
-<form method='post' action='{{{actionurl}}}' autocomplete="off">
+<script type='text/javascript'>
+var tickettypes = {{{tickettypes}}};
+</script>
+
+<form method='post' action='{{{actionurl}}}' autocomplete="off" id='rt_discounttypeform'>
     <input type='hidden' name='page' value='railticket-discount-types' />
     <input type='hidden' name='action' value='{{action}}' />
     {{#shortname}}<input type='hidden' name='shortname' value='{{shortname}}' />{{/shortname}}
 
     <table>
-        {{^badshortname}}{{^shortname}}<tr><th style='text-align:right'>Unique Code</th><td><input type='text' name='shortname' value='' size='10' max='10' required /></td></tr>{{/shortname}}{{/badshortname}}
-        {{#badshortname}}<tr><th style='text-align:right;'>Unique Code</th><td style='border: 1px solid red;'><input type='text' name='shortname' value='{{badshortname}}' size='10' max='10' required />
+        {{^badshortname}}{{^shortname}}<tr><th style='text-align:right'>Unique Code</th><td><input type='text' name='shortname' value='' size='10' max='10' pattern='^\S+$' required /></td></tr>{{/shortname}}{{/badshortname}}
+        {{#badshortname}}<tr><th style='text-align:right;'>Unique Code</th><td style='border: 1px solid red;'><input type='text' name='shortname' value='{{badshortname}}' size='10' max='10' pattern='^\S+$'  required />
         <span style='color:red'>Error code already in use</span></td></tr>{{/badshortname}}
         <tr><th style='text-align:right'>Name</th><td><input type='text' name='name' value='{{name}}' size='50' max='100' required /></td></tr>
         <tr><th style='text-align:right'>Description</th><td><textarea name='comment' rows='3' cols='50'>{{comment}}</textarea></td></tr>
@@ -41,8 +45,18 @@
         <tr><th style='text-align:right'>Validation Field Name</th><td><input type='text' name='notetype' value='{{notetype}}' size='50' max='50' /></td></tr>
         <tr><th style='text-align:right'>Validation Field Regex</th><td><input type='text' name='pattern' value='{{pattern}}' size='50' max='255' /></td></tr>
         <tr><th style='text-align:center' colspan='2'><hr />Rules<br /></th></tr>
-        <tr><th style='text-align:right'>Rule Data</th><td><textarea name='rules' rows='10' cols='50'>{{rules}}</textarea></td></tr>
+        <tr>
+            <td colspan='2'><div id='rt_rules'></div></td>
+        </tr>
+        <tr>
+            <th style='text-align:right;vertical-align:top;'>
+                Show Rule Data: <input type='checkbox' name='showrules' id='rt_showrules' value='1' />
+            </th>
+            <td>
+                <textarea style='display:none' name='rules' rows='10' cols='50' id='rt_ruledata'>{{rules}}</textarea>
+            </td>
+        </tr>
         <tr><th style='text-align:center' colspan='2'><hr /></th></tr>
-        <tr><td></td><td><input type='submit' value='{{button}}' /></td></tr>
+        <tr><td></td><td><input type='submit' value='{{button}}' id='rt_submitdt'/></td></tr>
     <table>
 </form>

@@ -2600,6 +2600,8 @@ function railticket_discount_types() {
     global $rtmustache;
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
+    wp_register_script('railticket_script_sp', plugins_url('wc-product-railticket/js/discounttype.js'));
+    wp_enqueue_script('railticket_script_sp');
 
     $adddata = false;
     if (array_key_exists('action', $_REQUEST)) {
@@ -2638,6 +2640,7 @@ function railticket_discount_types() {
     $adddata->title = 'Add New Discount Type';
     $adddata->button = 'Add';
     $adddata->action = 'adddt';
+    $adddata->tickettypes = json_encode(\wc_railticket\FareCalculator::get_all_ticket_types(false, false));
 
     $template = $rtmustache->loadTemplate('discounttypeedit');
     echo $template->render($adddata);
@@ -2696,6 +2699,7 @@ function railticket_show_edit_discount_type($id = false) {
     $alldata->pattern = $dt->get_pattern();
     $alldata->button = 'Update';
     $alldata->rules = json_encode($dt->get_rules_data(), JSON_PRETTY_PRINT);
+    $alldata->ticketypes = json_encode(\wc_railticket\FareCalculator::get_all_ticket_types(false, false));
 
     $template = $rtmustache->loadTemplate('discounttypeedit');
     echo $template->render($alldata);
@@ -2750,6 +2754,8 @@ function railticket_add_discount_type() {
         railticket_gettfpostfield('notguard')
     );
 
+
+    wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-discount-types');
     return false;
 }
 
@@ -2772,6 +2778,7 @@ function railticket_update_discount_type() {
         railticket_getpostfield('pattern'),
         railticket_gettfpostfield('notguard')
     );
+   wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-discount-types');
 }
 
 function railticket_rebook($action) {

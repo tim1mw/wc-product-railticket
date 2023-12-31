@@ -77,14 +77,21 @@ class FareCalculator {
         return json_decode($name);
     }
 
-    public static function get_all_ticket_types($showhidden = false) {
+    public static function get_all_ticket_types($showhidden = false, $allfields = true) {
         global $wpdb;
         if ($showhidden) {
             $where = "";
         } else {
             $where = " WHERE hidden = 0";
         }
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_tickettypes".$where." ORDER BY sequence ASC");
+
+        if ($allfields) {
+            $fields = '*';
+        } else {
+            $fields = 'id, code, sequence, name, description';
+        }
+
+        return $wpdb->get_results("SELECT ".$fields." FROM {$wpdb->prefix}wc_railticket_tickettypes".$where." ORDER BY sequence ASC");
     }
 
     public static function add_ticket_type($code, $name, $description, $special, $guardonly, $discounttype, $tkoption) {
