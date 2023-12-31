@@ -3,9 +3,12 @@
 <form method='post' action='{{{actionurl}}}' autocomplete="off">
     <input type='hidden' name='page' value='railticket-discount-types' />
     <input type='hidden' name='action' value='{{action}}' />
-    <input type='hidden' name='shortname' value='{{shortname}}' />
+    {{#shortname}}<input type='hidden' name='shortname' value='{{shortname}}' />{{/shortname}}
 
     <table>
+        {{^badshortname}}{{^shortname}}<tr><th style='text-align:right'>Unique Code</th><td><input type='text' name='shortname' value='' size='10' max='10' required /></td></tr>{{/shortname}}{{/badshortname}}
+        {{#badshortname}}<tr><th style='text-align:right;'>Unique Code</th><td style='border: 1px solid red;'><input type='text' name='shortname' value='{{badshortname}}' size='10' max='10' required />
+        <span style='color:red'>Error code already in use</span></td></tr>{{/badshortname}}
         <tr><th style='text-align:right'>Name</th><td><input type='text' name='name' value='{{name}}' size='50' max='100' required /></td></tr>
         <tr><th style='text-align:right'>Description</th><td><textarea name='comment' rows='3' cols='50'>{{comment}}</textarea></td></tr>
         <tr>

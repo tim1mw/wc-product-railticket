@@ -78,6 +78,33 @@ class DiscountType {
         }
     }
 
+    public static function create($shortname, $name, $basefare, $customtype, $inheritdeps, $maxseats, $triptype, $rules, $comment, $shownotes,
+        $noteinstructions, $notetype, $pattern, $notguard) {
+        global $wpdb;
+        $dt = \wc_railticket\DiscountType::get_discount_type($shortname);
+        if ($dt) {
+            throw new TicketException("The short code ".$shortname." is already in use.");
+        }
+        $data = array(
+            'shortname' => $shortname,
+            'name' => $name,
+            'basefare' => $basefare,
+            'customtype' => $customtype,
+            'inheritdeps' => $inheritdeps,
+            'maxseats' => $maxseats,
+            'triptype' => $triptype,
+            'rules' => $rules,
+            'comment' => $comment,
+            'shownotes' => $shownotes,
+            'noteinstructions' => $noteinstructions,
+            'notetype' => $notetype,
+            'pattern' => $pattern,
+            'notguard' => $notguard
+        );
+
+        $wpdb->insert($wpdb->prefix.'wc_railticket_discounts', $data);
+    }
+
     public function get_shortname() {
         return $this->data->shortname;
     }
@@ -209,7 +236,6 @@ class DiscountType {
 
     public function update($name, $basefare, $customtype, $inheritdeps, $maxseats, $triptype, $rules, $comment, $shownotes,
         $noteinstructions, $notetype, $pattern, $notguard) {
-        global $wpdb;
         $this->data->name = $name;
         $this->data->basefare = $basefare;
         $this->data->customtype = $customtype;
