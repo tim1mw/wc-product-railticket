@@ -122,6 +122,11 @@ class BookingOrder {
             return false;
         }
 
+        // If we still have an order ID of 0 here, something is wrong....
+        if ($orderid == 0) {
+            return false;
+        }
+
         return new BookingOrder($bookings, $orderid, $manual);
     }
 

@@ -34,6 +34,11 @@ class Waybill extends Report {
                 // TODO Log issues proerly here
                 continue;
             }
+
+            if ($bookingorder == false) {
+                continue;
+            }
+
             $bookings = $bookingorder->get_bookings();
 
             $this->totalseats += $bookingorder->get_seats();
