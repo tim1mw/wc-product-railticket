@@ -209,6 +209,8 @@ class WaybillBase extends Report {
 
         $alldata->url = railticket_get_page_url();
 
+        $alldata->faulty = $this->faulty;
+
         $template = $rtmustache->loadTemplate('waybill');
         echo $template->render($alldata);
     }

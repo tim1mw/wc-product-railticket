@@ -10,8 +10,11 @@ class Waybill extends WaybillBase {
         $this->date = $date;
         $this->bookableday = BookableDay::get_bookable_day($this->date);
         $this->bookings = $this->bookableday->get_all_bookings();
+        $this->faulty = array();
 
         $bookingids = $this->bookableday->get_all_order_ids();
+        $faulty= array();
+
         foreach ($bookingids as $bookingid) {
             if ($bookingid == 0) {
                 continue;
@@ -21,6 +24,14 @@ class Waybill extends WaybillBase {
             }
             catch (Exception $e) {
                 // TODO Log issues proerly here
+                $booking = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE id = '".$bookingid);
+                $this->faulty[] = "table id=".$bookingid." caused an error when retriving from the database. Skipped. Data=".print_r($booking, true);
+                continue;
+            }
+            
+            if ($bookingorder == false) {
+                $booking = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_bookings WHERE id = '".$bookingid);
+                $this->faulty[] = "table id=".$bookingid." was empty. Skipped.".print_r($booking, true);
                 continue;
             }
             $bookings = $bookingorder->get_bookings();
@@ -132,6 +143,10 @@ class Waybill extends WaybillBase {
 
     function get_bookable_day() {
         return $this->bookableday;
+    }
+
+    function get_faulty() {
+        return $this->faulty;
     }
 
 }
