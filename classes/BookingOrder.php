@@ -38,7 +38,7 @@ class BookingOrder {
         } elseif ($manual) {
             $mb = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_manualbook WHERE id = ".$orderid);
             $this->tickets = (array) json_decode($mb->tickets);
-            $this->travellers = (array) json_decode($mb->travellers);
+            $this->travellers = (array) json_decode($mb->travellers); 
             if (property_exists($mb, 'ticketprices')) {
                 $this->ticketprices = (array) json_decode($mb->ticketprices);
             } else {
@@ -119,6 +119,11 @@ class BookingOrder {
         }
 
         if (count($bookings) == 0) {
+            return false;
+        }
+        
+        // If we still have an order ID of 0 here, something is wrong....
+        if ($orderid == 0) {
             return false;
         }
 
