@@ -21,6 +21,9 @@ class OrderSummary extends Report{
 
         foreach ($bookingids as $bookingid) {
             $bookingorder = BookingOrder::get_booking_order($bookingid);
+            if ($bookingorder == false) {
+                continue;
+            }
             $bookings = $bookingorder->get_bookings();
             $line = array();
             if ($iscsv) {
