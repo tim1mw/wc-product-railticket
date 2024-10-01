@@ -2058,15 +2058,36 @@ function railticket_fares() {
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
 
+    // Need to do this first
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'addrevision':
+                \wc_railticket\FareCalculator::add_revision(railticket_getpostfield('name'), railticket_getpostfield('datefrom'), railticket_getpostfield('dateto'));
+                break;
+        }
+    }
+
     $pricerevisionid = railticket_getpostfield('pricerevision');
     if ($pricerevisionid == false) {
         $pricerevisionid = \wc_railticket\FareCalculator::get_last_revision_id();
     }
+
+    if ($pricerevisionid == false) {
+        echo "<h3>No Price Revisions Present</h3>";
+
+        $template = $rtmustache->loadTemplate('add_new_price_revision');
+        $alldata = new \stdclass;
+        $alldata->actionurl = railticket_get_page_url();
+        echo $template->render($alldata);
+        return;
+    }
+
     $stnchoice = railticket_getpostfield('stn');
     $showdisabled = railticket_gettfpostfield('showdisabled');
 
     $farecalc = \wc_railticket\FareCalculator::get_fares($pricerevisionid); 
     $timetable = $farecalc->get_last_timetable();
+
     $alldata = new \stdclass();
     $alldata->stations = $timetable->get_stations(true);
     if ($stnchoice == false) {
@@ -2084,6 +2105,9 @@ function railticket_fares() {
             case 'deletefare':
                 $id = railticket_getpostfield('id');
                 $farecalc->delete_fare($id);
+                break;
+            case 'addrevision':
+                \wc_railticket\FareCalculator::add_revision(railticket_gettfpostfield('name'), railticket_gettfpostfield('datefrom'), railticket_gettfpostfield('dateto'));
                 break;
         }
     }
