@@ -2442,7 +2442,7 @@ function railticket_coach_types() {
                 $maxcapacity = railticket_getpostfield('maxcapacity');
                 $priority = railticket_getpostfield('priority');
                 $image = railticket_getpostfield('image');
-                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $priority, $maxcapacity, $image);
+                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $maxcapacity, $priority, $image);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
