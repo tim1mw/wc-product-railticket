@@ -55,10 +55,13 @@ class Timetable {
             $revision = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE ".
                 "datefrom <= '".$date."' AND dateto >= '".$date."'");
         }
+        $alltt = array();
+        if ($revision == false) {
+           return $alltt;
+        }
 
         $tts = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}wc_railticket_timetables WHERE revision = ".$revision);
 
-        $alltt = array();
         foreach ($tts as $tt) {
             $alltt[] = new Timetable($tt);
         }

@@ -2088,6 +2088,11 @@ function railticket_fares() {
     $farecalc = \wc_railticket\FareCalculator::get_fares($pricerevisionid); 
     $timetable = $farecalc->get_last_timetable();
 
+    if ($timetable == false) {
+        echo "<p>No timetables have been loaded. Please load a timetable.</p>";
+        return;
+    }
+
     $alldata = new \stdclass();
     $alldata->stations = $timetable->get_stations(true);
     if ($stnchoice == false) {
@@ -2986,7 +2991,12 @@ function railticket_show_special_summary() {
     $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
     $today->setTimezone($railticket_timezone);
     $today->setTime(0,0,0);
-    $timetable = \wc_railticket\Timetable::get_timetables()[0];
+    $timetables = \wc_railticket\Timetable::get_timetables();
+    if (count($timetables) == 0) {
+        echo "<p>No timetables have been loaded. Please load a timetable</p>";
+        return;
+    }
+    $timetable = $timetables[0];
     $alldata->fromstation = $timetable->get_stations(true);
     $alldata->tostation = $timetable->get_stations(true);
     end($alldata->tostation)->selected = "selected";
