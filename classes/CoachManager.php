@@ -232,6 +232,10 @@ class CoachManager {
                 $r->daytype = 'simple';
                 $r->allocateby = 'seat';
                 $r->coachset = new \stdclass();
+                $r->coachset->daytype = 'simple';
+                $r->coachset->allocateby = 'seat';
+                $r->coachset->reserve = new \stdclass();
+                $r->coachset->coachset = new \stdclass();
                 $r->reserve = new \stdclass();
                 $r->bays = new \stdclass();
                 return $r;
