@@ -250,7 +250,7 @@ CREATE TABLE `wp_wc_railticket_specials` (
 ".$charset_collate;
 
 $sql[] = "
-REATE TABLE `wp_wc_railticket_stations` (
+CREATE TABLE `wp_wc_railticket_stations` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `stnid` int(11) NOT NULL,
   `revision` int(11) NOT NULL,

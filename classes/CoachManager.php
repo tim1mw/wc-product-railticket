@@ -216,17 +216,26 @@ class CoachManager {
 
     public static function process_coaches($parsed, Timetable $timetable = null) {
         global $wpdb;
-
         if ($timetable != null) {
             $timetable = $timetable->get_key_name();
             // Should we use the same data as some other timetable. Saves duplication.
-            $copy = $parsed->$timetable->copy;
-            if ($copy) {
-                $parsed = $parsed->$copy;
+            if (property_exists($parsed, $timetable)) {
+                $copy = $parsed->$timetable->copy;
+                if ($copy) {
+                    $parsed = $parsed->$copy;
+                } else {
+                    $parsed = $parsed->$timetable;
+                }
+                unset($parsed->copy);
             } else {
-                $parsed = $parsed->$timetable;
+                $r = new \stdclass();
+                $r->daytype = 'simple';
+                $r->allocateby = 'seat';
+                $r->coachset = new \stdclass();
+                $r->reserve = new \stdclass();
+                $r->bays = new \stdclass();
+                return $r;
             }
-            unset($parsed->copy);
         }
     
         $r = new \stdclass();
