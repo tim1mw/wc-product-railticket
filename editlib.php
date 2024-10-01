@@ -2376,8 +2376,10 @@ function railticket_tickets() {
         }
     }
 
-    reset($alldata->tickets)->showup = 'display:none';
-    end($alldata->tickets)->showdown = 'display:none';
+    if (count($alldata->tickets) > 0) {
+        reset($alldata->tickets)->showup = 'display:none';
+        end($alldata->tickets)->showdown = 'display:none';
+    }
 
     $alldata->ids = implode(',', $alldata->ids);
     $template = $rtmustache->loadTemplate('tickettypes');
