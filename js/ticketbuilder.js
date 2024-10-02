@@ -1079,7 +1079,7 @@ function allocateTickets() {
         t.num = ticketsAllocated[i];
         t.name = tkt.name;
         t.price = formatter.format(tkt.price * ticketsAllocated[i]);
-        if (t.image.length > 0) {
+        if (typeof t.image != 'undefined' && t.image.length > 0) {
             t.image = tkt.image;
         } else {
             t.image = false;   
