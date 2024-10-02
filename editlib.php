@@ -3030,7 +3030,7 @@ function railticket_show_edit_special($id = false) {
     $item->id = $sp->get_id();
     $item->date = $sp->get_date();
     $item->name = $sp->get_name();
-    $item->description = $sp->get_description();
+    $item->description = stripslashes($sp->get_description());
     $item->colour = $sp->get_colour();
     $item->background = $sp->get_background();
     if ($item->colour == '') {
@@ -3074,7 +3074,7 @@ function railticket_show_edit_special($id = false) {
     $item->action = 'updatespecial';
     $item->button = 'Update';
     $item->title = 'Update Special';
-    $item->longdesc = $sp->get_long_description();
+    $item->longdesc = stripslashes($sp->get_long_description());
     $item->surveytypes = \wc_railticket\survey\Surveys::get_types_template($sp->get_survey_type());
     $item->surveyconfig = $sp->get_survey_config();
 
