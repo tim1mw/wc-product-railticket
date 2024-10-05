@@ -5,7 +5,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 $sql = array();
 
 
-$sql[] = "CREATE TABLE wp_wc_railticket_bookable (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_bookable (
   id int(11) NOT NULL AUTO_INCREMENT,
   daytype varchar(10) NOT NULL,
   allocateby varchar(10) NOT NULL,
@@ -30,7 +30,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_bookable (
   KEY date (date)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_booking_bays (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_booking_bays (
   id int(11) NOT NULL AUTO_INCREMENT,
   bookingid int(11) NOT NULL,
   num int(2) NOT NULL,
@@ -40,7 +40,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_booking_bays (
   KEY bookingid (bookingid)
 ) ".$charset_collate;
 
-$sql[] = " CREATE TABLE wp_wc_railticket_bookings (
+$sql[] = " CREATE TABLE {$wpdb->prefix}wc_railticket_bookings (
   id int(11) NOT NULL AUTO_INCREMENT,
   wooorderid int(11) NOT NULL,
   wooorderitem int(11) NOT NULL,
@@ -68,7 +68,7 @@ $sql[] = " CREATE TABLE wp_wc_railticket_bookings (
   KEY tostation (tostation) 
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_bookings_expired (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_bookings_expired (
   id int(11) NOT NULL AUTO_INCREMENT,
   wooorderid int(11) NOT NULL,
   wooorderitem int(11) NOT NULL,
@@ -96,7 +96,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_bookings_expired (
   KEY tostation (tostation)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_coachtypes (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_coachtypes (
   id int(11) NOT NULL AUTO_INCREMENT,
   code varchar(10) NOT NULL,
   name varchar(50) NOT NULL,
@@ -109,7 +109,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_coachtypes (
   PRIMARY KEY (id)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_dates (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_dates (
   id int(11) NOT NULL AUTO_INCREMENT,
   timetableid int(11) NOT NULL,
   date date NOT NULL,
@@ -118,7 +118,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_dates (
   KEY date_index (date)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_discountcodes (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_discountcodes (
   id int(11) NOT NULL AUTO_INCREMENT,
   shortname varchar(10) NOT NULL,
   code varchar(20) NOT NULL,
@@ -132,7 +132,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_discountcodes (
   KEY code (code)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_discounts (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_discounts (
   id int(11) NOT NULL AUTO_INCREMENT,
   shortname varchar(10) NOT NULL,
   name varchar(100) NOT NULL,
@@ -152,7 +152,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_discounts (
   UNIQUE KEY shortname (shortname) USING BTREE
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_manualbook (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_manualbook (
   id int(11) NOT NULL AUTO_INCREMENT,
   journeytype varchar(6) NOT NULL,
   price double NOT NULL,
@@ -169,7 +169,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_manualbook (
   KEY discountcode (discountcode)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_pricerevisions (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_pricerevisions (
   id int(11) NOT NULL AUTO_INCREMENT,
   datefrom date NOT NULL,
   dateto date NOT NULL,
@@ -177,7 +177,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_pricerevisions (
   PRIMARY KEY (id)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_prices (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_prices (
   id int(11) NOT NULL AUTO_INCREMENT,
   revision int(11) NOT NULL,
   stationone int(11) NOT NULL,
@@ -192,7 +192,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_prices (
   KEY stationfrom (stationone)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_specials (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_specials (
   id int(11) NOT NULL AUTO_INCREMENT,
   date date NOT NULL,
   name varchar(60) NOT NULL,
@@ -210,7 +210,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_specials (
   KEY date (date)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_stations (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_stations (
   id int(11) NOT NULL AUTO_INCREMENT,
   stnid int(11) NOT NULL,
   revision int(11) NOT NULL,
@@ -225,7 +225,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_stations (
   KEY sequence (sequence)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_stats (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_stats (
   id int(10) NOT NULL AUTO_INCREMENT,
   date date NOT NULL,
   passengers int(6) NOT NULL,
@@ -243,7 +243,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_stats (
   UNIQUE KEY date (date)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_stntimes (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_stntimes (
   id int(11) NOT NULL AUTO_INCREMENT,
   station tinyint(4) NOT NULL,
   timetableid int(11) NOT NULL,
@@ -257,7 +257,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_stntimes (
   KEY revision (revision)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_surveyresp (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_surveyresp (
   id int(11) NOT NULL AUTO_INCREMENT,
   wooorderid int(11) NOT NULL DEFAULT 0,
   woocartitem varchar(50) NOT NULL DEFAULT '',
@@ -272,7 +272,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_surveyresp (
   KEY woocartitem (woocartitem)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_tickettypes (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_tickettypes (
   id int(11) NOT NULL AUTO_INCREMENT,
   code varchar(10) NOT NULL,
   sequence int(4) NOT NULL,
@@ -290,7 +290,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_tickettypes (
   KEY discounttype (discounttype)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_timetables (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_timetables (
   id int(11) NOT NULL AUTO_INCREMENT,
   timetableid int(11) NOT NULL,
   timetable varchar(12) NOT NULL,
@@ -307,7 +307,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_timetables (
   KEY revision (revision)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_travellers (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_travellers (
   id int(11) NOT NULL AUTO_INCREMENT,
   code varchar(10) NOT NULL,
   name varchar(25) NOT NULL,
@@ -319,7 +319,7 @@ $sql[] = "CREATE TABLE wp_wc_railticket_travellers (
   PRIMARY KEY (id)
 ) ".$charset_collate;
 
-$sql[] = "CREATE TABLE wp_wc_railticket_ttrevisions (
+$sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_ttrevisions (
   id int(11) NOT NULL AUTO_INCREMENT,
   datefrom date NOT NULL,
   dateto date NOT NULL,
