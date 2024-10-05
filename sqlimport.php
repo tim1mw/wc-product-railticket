@@ -5,21 +5,6 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 $sql = array();
 
 
-
-/*
-$sql[] = "
-CREATE TABLE {$wpdb->prefix}railtimetable_dates (
-  id int(11) NOT NULL AUTO_INCREMENT,
-  timetableid int(11) NOT NULL,
-  date date NOT NULL,
-  PRIMARY KEY (id),
-  KEY date_index (date)
-)
-".$charset_collate;
-
-*/
-
-
 $sql[] = "
 CREATE TABLE `wp_wc_railticket_bookable` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
