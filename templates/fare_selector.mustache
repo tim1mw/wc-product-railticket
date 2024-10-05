@@ -58,7 +58,7 @@
         <td><input type='number' step='any' name='price_{{id}}' value='{{price}}' size='5' /></td>
         <td><input type='number' step='any' name='localprice_{{id}}' value='{{localprice}}' size='5' /></td>
         <td style='text-align:center'><input type='checkbox' name='disabled_{{id}}' {{disabled}} value='1' /></td>
-        <td><input type='text' name='image_{{id}}' value='{{image}}' size='25' /></td>
+        <td><input type='text' name='image_{{id}}' value='{{image}}' size='25' maxlength='255' /></td>
         <td><a href='?action=deletefare&page=railticket-fares&id={{id}}'>Delete</a></td>
     </tr>
     {{/fares}}
@@ -113,7 +113,7 @@
         <td><input type='checkbox' name='n_disabled' value='1' />
     </tr><tr>
         <td>Image</td>
-        <td><input type='text' name='n_image' value='' size='25' />
+        <td><input type='text' name='n_image' value='' size='25' maxlength='255' />
     </tr>
 </table>
 <p><input type='submit' value='Add Fare' /></p>

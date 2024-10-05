@@ -47,7 +47,7 @@ disable the fares associated with them.</p>
         <td style='text-align:center;'><input type='checkbox' name='tkoption_{{id}}' value='1' {{tkoption}} /></td> 
         <td style='text-align:center;'><input type='checkbox' name='special_{{id}}' value='1' {{special}} /></td>
         <td style='text-align:center;'><input type='checkbox' name='guardonly_{{id}}' value='1' {{guardonly}} /></td>
-        <td style='text-align:center;'><input type='text' size='10' name='discounttype_{{id}}' value='{{discounttype}}' /></td>
+        <td style='text-align:center;'><input type='text' size='10' maxlength='255' name='discounttype_{{id}}' value='{{discounttype}}' /></td>
         <td style='text-align:center;'><input type='checkbox' name='hidden_{{id}}' value='1' {{hidden}} /></td>
         <td><table>
             {{#tcomp}}
@@ -88,13 +88,13 @@ disable the fares associated with them.</p>
 <table border='1' class='railticket_admintable'>
     <tr>
         <td>Unique Code</td>
-        <td><input type='text' name='code' value='' size='10' max='10' required /> (lower case only, no spaces or pipe symbols)</td>
+        <td><input type='text' name='code' value='' size='10' maxlength='10' required /> (lower case only, no spaces or pipe symbols)</td>
     </tr><tr>
         <td>Name</td>
-        <td><input type='text' name='name' value='' size='15' required /></td>
+        <td><input type='text' name='name' value='' size='25' maxlength='25' required /></td>
     </tr><tr>
         <td>Description</td>
-        <td><input type='text' name='description' value='' size='30' /></td>
+        <td><input type='text' name='description' value='' size='30' maxlength='255' /></td>
     </tr><tr>
         <td>Ticket Option</td>
         <td><input type='checkbox' name='tkoption' value='1' /></td>
@@ -106,7 +106,7 @@ disable the fares associated with them.</p>
         <td><input type='checkbox' name='guardonly' value='1' /></td>
     </tr><tr>
         <td>Discount Type</td>
-        <td><input type='text' name='discounttype' size='10' /></td>
+        <td><input type='text' name='discounttype' size='25' maxlength='255'/></td>
     </tr>
 </table>
 <br />
