@@ -32,6 +32,10 @@ require_once('raillib.php');
 require_once('woolib.php');
 require_once('editlib.php');
 
+// Install the DB
+register_activation_hook( __FILE__, 'railticket_create_db' );
+add_action( 'upgrader_process_complete', 'railticket_create_db', 10, 2 );
+
 function wc_railticket_autoloader($class) {
     $namespace = 'wc_railticket';
     if (strpos($class, $namespace) !== 0) {

@@ -4,10 +4,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     return;
 }
 
-// Install the DB
-register_activation_hook( __FILE__, 'railticket_create_db' );
-add_action( 'upgrader_process_complete', 'railticket_create_db', 10, 2 );
-
 add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
 add_shortcode('railticket_special', 'railticket_get_special_button');
