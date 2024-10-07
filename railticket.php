@@ -6,7 +6,7 @@
  * Description: Designed for use by Heritage railways, this booking plugin allows for sales based on a standard timetable and one off specials.
  * Author:      Tim Williams, AutoTrain (tmw@autotrain.org)
  * Author URI:  https://github.com/tim1mw/
- * Version:     0.0.4
+ * Version:     0.0.5
  * Text Domain: railtimetable
  * License:     GPL3
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
