@@ -150,7 +150,15 @@ class BookableDay {
 
     public static function create_bookable_day($dateofjourney) {
         $timetable = Timetable::get_timetable_by_date($dateofjourney);
+        if (!$timetable) {
+            throw new TicketException("No timetables exist. Please import a timetable.");
+        }
+
         $fares = FareCalculator::get_fares_by_date($dateofjourney);
+
+        if (!$fares) {
+            throw new TicketException("No fares exist. Please create a fare revision.");
+        }
 
         $ssr = false;
         if (get_option('wc_product_railticket_sameservicereturn') == 'on') {

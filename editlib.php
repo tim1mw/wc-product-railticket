@@ -263,27 +263,31 @@ function railticket_options() {
 
 
 function railticket_bookable_days() {
-    if (array_key_exists('action', $_REQUEST)) {
-        switch ($_REQUEST['action']) {
-            case 'updatebookable':
-                railticket_updatebookable();
-            case 'filterbookable':
-                railticket_show_cal_selector();
-                railticket_showcalendaredit(intval($_REQUEST['year']), intval($_REQUEST['month']));
-                break;
-            case 'showbookableday':
-                railticket_showbookableday();
-                break;
-            case 'addbookable':
-                railticket_addbookableday();
-                break;
-            case 'deletebookable':
-                railticket_deletebookableday();
-                break;
+    try {
+        if (array_key_exists('action', $_REQUEST)) {
+            switch ($_REQUEST['action']) {
+                case 'updatebookable':
+                    railticket_updatebookable();
+                case 'filterbookable':
+                    railticket_show_cal_selector();
+                    railticket_showcalendaredit(intval($_REQUEST['year']), intval($_REQUEST['month']));
+                    break;
+                case 'showbookableday':
+                    railticket_showbookableday();
+                    break;
+                case 'addbookable':
+                    railticket_addbookableday();
+                    break;
+                case 'deletebookable':
+                    railticket_deletebookableday();
+                    break;
+            }
+        } else {
+            railticket_show_cal_selector();
+            railticket_showcalendaredit(intval(date("Y")), intval(date("n")));
         }
-    } else {
-        railticket_show_cal_selector();
-        railticket_showcalendaredit(intval(date("Y")), intval(date("n")));
+    } catch (\wc_railticket\TicketException $e) {
+        echo "<h3>".$e->getMessage()."</h3>";
     }
 }
 

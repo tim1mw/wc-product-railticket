@@ -219,7 +219,7 @@ class CoachManager {
         if ($timetable != null) {
             $timetable = $timetable->get_key_name();
             // Should we use the same data as some other timetable. Saves duplication.
-            if (property_exists($parsed, $timetable)) {
+            if ($parsed && property_exists($parsed, $timetable)) {
                 $copy = $parsed->$timetable->copy;
                 if ($copy) {
                     $parsed = $parsed->$copy;

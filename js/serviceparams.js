@@ -19,7 +19,7 @@ function setupEditor() {
     for (i in specials) {
         specials_keys[specials[i].id] = i;
     }
-
+console.log(data);
     check_all_dep_times();
 
     for (i in coaches) {
@@ -635,7 +635,7 @@ function get_dep_times(times) {
 }
 
 function check_all_dep_times() {
-    if (data.daytype == 'simple') {
+    if (data.daytype != 'pertrain') {
         return;
     }
 
