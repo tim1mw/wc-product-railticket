@@ -26,6 +26,7 @@ class DiscountType {
         }
 
         if ($dataonly) {
+            self::format_data($data);
             return $data;
         }
 
@@ -36,7 +37,76 @@ class DiscountType {
         global $wpdb;
 
         return $wpdb->get_results("SELECT id, name, shortname FROM ".
-            "{$wpdb->prefix}wc_railticket_discounts");
+            "{$wpdb->prefix}wc_railticket_discounts ORDER BY name");
+    }
+
+    public static function get_all_discount_types($dataonly = false) {
+        global $wpdb;
+
+        $dts = $wpdb->get_results("SELECT * FROM ".
+            "{$wpdb->prefix}wc_railticket_discounts ORDER BY name");
+
+        if ($dataonly) {
+            foreach ($dts as $dt) {
+                self::format_data($dt);
+            }
+            return $dts;
+        }
+
+        $alldt = array();
+        foreach ($dts as $dt) {
+            $alldt = new DiscountType($dt);
+        }
+        return $alldt;
+    }
+
+    private static function format_data(&$dt) {
+        switch ($dt->basefare) {
+            case 'auto': $dt->basefarefmt = 'Automatic'; break;
+            case 'price': $dt->basefarefmt = 'Always Online'; break;
+            case 'localprice': $dt->basefarefmt = 'Always Guard'; break;
+        }
+        if ($dt->customtype == 1) {
+            $dt->customtypefmt = 'Yes';
+        } else {
+            $dt->customtypefmt = 'No';
+        }
+        switch ($dt->triptype) {
+            case 'full': $dt->triptypefmt = 'Full Line Return'; break;
+            case 'fullsgl': $dt->triptypefmt = 'Full Line Single'; break;
+            case 'any': $dt->triptypefmt = 'Any Trip'; break;
+        }
+    }
+
+    public static function create($shortname, $name, $basefare, $customtype, $inheritdeps, $maxseats, $triptype, $rules, $comment, $shownotes,
+        $noteinstructions, $notetype, $pattern, $notguard) {
+        global $wpdb;
+        $dt = \wc_railticket\DiscountType::get_discount_type($shortname);
+        if ($dt) {
+            throw new TicketException("The short code ".$shortname." is already in use.");
+        }
+        if (!json_decode($rules)) {
+            throw new TicketException("The supplied rules could not be decoded - invalid JSON.");
+        }
+
+        $data = array(
+            'shortname' => $shortname,
+            'name' => $name,
+            'basefare' => $basefare,
+            'customtype' => $customtype,
+            'inheritdeps' => $inheritdeps,
+            'maxseats' => $maxseats,
+            'triptype' => $triptype,
+            'rules' => $rules,
+            'comment' => $comment,
+            'shownotes' => $shownotes,
+            'noteinstructions' => $noteinstructions,
+            'notetype' => $notetype,
+            'pattern' => $pattern,
+            'notguard' => $notguard
+        );
+
+        $wpdb->insert($wpdb->prefix.'wc_railticket_discounts', $data);
     }
 
     public function get_shortname() {
@@ -73,6 +143,18 @@ class DiscountType {
 
     public function get_baseprice_field() {
         return $this->data->basefare;
+    }
+
+    public function get_triptype_field() {
+        return $this->data->triptype;
+    }
+
+    public function not_guard() {
+        return $this->data->notguard;
+    }
+
+    public function get_rules_data() {
+        return $this->data->rules;
     }
 
     public function check_price_field($prefered) {
@@ -154,5 +236,40 @@ class DiscountType {
 
     public function get_excludes() {
         return $this->data->rules->excludes;
+    }
+
+    public function update($name, $basefare, $customtype, $inheritdeps, $maxseats, $triptype, $rules, $comment, $shownotes,
+        $noteinstructions, $notetype, $pattern, $notguard) {
+
+        $rules = json_decode($rules);
+        if (!$rules) {
+            throw new TicketException("The supplied rules could not be decoded - invalid JSON.");
+        }
+
+        $this->data->name = $name;
+        $this->data->basefare = $basefare;
+        $this->data->customtype = $customtype;
+        $this->data->inheritdeps = $inheritdeps;
+        $this->data->maxseats = $maxseats;
+        $this->data->triptype = $triptype;
+        $this->data->rules = $rules;
+        $this->data->comment = $comment;
+        $this->data->shownotes = $shownotes;
+        $this->data->noteinstructions = $noteinstructions;
+        $this->data->notetype = $notetype;
+        $this->data->pattern = $pattern;
+        $this->data->notguard = $notguard;
+        $this->update_record();
+    }
+
+    private function update_record() {
+        global $wpdb;
+
+        $data = get_object_vars($this->data);
+        $data['rules'] = json_encode($data['rules']);
+
+        $wpdb->update($wpdb->prefix.'wc_railticket_discounts',
+            $data,
+            array('id' => $this->data->id));
     }
 }

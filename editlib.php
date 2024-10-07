@@ -15,6 +15,7 @@ add_action( 'wp_ajax_railticket_adminajax', 'railticket_ajax_adminrequest');
 add_action('railticket_process_stats_cron', 'railticket_process_stats');
 add_action('admin_post_railticketstats.csv', 'railticket_get_stats');
 add_action('admin_post_railticketgeo.csv', 'railticket_get_geo');
+add_action('admin_post_railticketwaybillcomb.csv', 'railticket_get_waybillcomb');
 
 // Schedule an action if it's not already scheduled
 if ( ! wp_next_scheduled( 'railticket_process_stats_cron' ) ) {
@@ -1894,6 +1895,7 @@ function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket
     $method = 'get_'.$from->get_direction($to).'_deps';
     $deps = $bk->timetable->$method($from, true, $to);
 
+    $index = 0;
     for ($i = 0; $i < count($deps); $i++) {
         if ($deps[$i]->key == $dt) {
             $deps[$i]->selected = 'selected';
@@ -1905,6 +1907,32 @@ function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket
         } else {
             $deps[$i]->seats = $capused->totalseats;
         }
+        if ($deps[$i]->index > $index) {
+            $index = $deps[$i]->index;
+        }
+    }
+    
+    $specials = $bk->get_specials();
+    foreach ($specials as $special) {
+        if (!$special->is_from($from->get_stnid()) || !$special->is_to($to->get_stnid())) {
+            continue;
+        }
+        $index ++;
+        $trainservice = new \wc_railticket\TrainService($bk, $from, $special->get_dep_id(), $to);
+        $capused = $trainservice->get_inventory(false, false, false, $exclude);
+        $dep = new \stdclass();
+        $dep->index = $index;
+        $dep->key = $special->get_dep_id();
+        $dep->formatted = $special->get_name();
+        if ($bk->get_allocation_type() == 'seat') {
+            $dep->seats = $capused->totalseatsmax." (".$capused->totalseats.")";
+        } else {
+            $dep->seats = $capused->totalseats;
+        }
+        if ($dep->key == $dt) {
+            $dep->selected = 'selected';
+        }
+        $deps[] = $dep;
     }
 
     return $deps;
@@ -2030,15 +2058,41 @@ function railticket_fares() {
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
 
+    // Need to do this first
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'addrevision':
+                \wc_railticket\FareCalculator::add_revision(railticket_getpostfield('name'), railticket_getpostfield('datefrom'), railticket_getpostfield('dateto'));
+                break;
+        }
+    }
+
     $pricerevisionid = railticket_getpostfield('pricerevision');
     if ($pricerevisionid == false) {
         $pricerevisionid = \wc_railticket\FareCalculator::get_last_revision_id();
     }
+
+    if ($pricerevisionid == false) {
+        echo "<h3>No Price Revisions Present</h3>";
+
+        $template = $rtmustache->loadTemplate('add_new_price_revision');
+        $alldata = new \stdclass;
+        $alldata->actionurl = railticket_get_page_url();
+        echo $template->render($alldata);
+        return;
+    }
+
     $stnchoice = railticket_getpostfield('stn');
     $showdisabled = railticket_gettfpostfield('showdisabled');
 
     $farecalc = \wc_railticket\FareCalculator::get_fares($pricerevisionid); 
     $timetable = $farecalc->get_last_timetable();
+
+    if ($timetable == false) {
+        echo "<p>No timetables have been loaded. Please load a timetable.</p>";
+        return;
+    }
+
     $alldata = new \stdclass();
     $alldata->stations = $timetable->get_stations(true);
     if ($stnchoice == false) {
@@ -2056,6 +2110,9 @@ function railticket_fares() {
             case 'deletefare':
                 $id = railticket_getpostfield('id');
                 $farecalc->delete_fare($id);
+                break;
+            case 'addrevision':
+                \wc_railticket\FareCalculator::add_revision(railticket_gettfpostfield('name'), railticket_gettfpostfield('datefrom'), railticket_gettfpostfield('dateto'));
                 break;
         }
     }
@@ -2348,8 +2405,10 @@ function railticket_tickets() {
         }
     }
 
-    reset($alldata->tickets)->showup = 'display:none';
-    end($alldata->tickets)->showdown = 'display:none';
+    if (count($alldata->tickets) > 0) {
+        reset($alldata->tickets)->showup = 'display:none';
+        end($alldata->tickets)->showdown = 'display:none';
+    }
 
     $alldata->ids = implode(',', $alldata->ids);
     $template = $rtmustache->loadTemplate('tickettypes');
@@ -2414,7 +2473,7 @@ function railticket_coach_types() {
                 $maxcapacity = railticket_getpostfield('maxcapacity');
                 $priority = railticket_getpostfield('priority');
                 $image = railticket_getpostfield('image');
-                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $priority, $maxcapacity, $image);
+                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $maxcapacity, $priority, $image);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -2570,10 +2629,187 @@ function railticket_update_discountcodes() {
 
 function railticket_discount_types() {
     global $rtmustache;
-    $alldata = new \stdclass();
+    wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
+    wp_enqueue_style('railticket_style');
+    wp_register_script('railticket_script_sp', plugins_url('wc-product-railticket/js/discounttype.js'));
+    wp_enqueue_script('railticket_script_sp');
 
-    $template = $rtmustache->loadTemplate('discounttypes');
+    $adddata = false;
+    if (array_key_exists('action', $_REQUEST)) {
+        try {
+            switch ($_REQUEST['action']) {
+                case 'dtedit':
+                    railticket_show_edit_discount_type();
+                    return;
+                case 'adddt':
+                    $adddata = railticket_add_discount_type();
+                    break;
+                case 'updatedt':
+                    railticket_update_discount_type();
+                    break;
+            }
+        }
+        catch (\wc_railticket\TicketException $e) {
+            echo "<p style='font-size:large;color:red;'>Error: ".$e->getMessage()."</p>";
+        }
+    }
+
+    if (!$adddata) {
+        $alldata = new \stdclass();
+        $alldata->discounttypes = \wc_railticket\DiscountType::get_all_discount_types(true);
+
+        $template = $rtmustache->loadTemplate('discounttypes');
+        echo $template->render($alldata);
+        echo '<br /><hr />';
+
+        $adddata = new \stdclass();
+        $adddata->shortname = '';
+        $adddata->rules = "{\n    \"excludes\":[],\n    \"discounts\":{}\n}";
+        $adddata->maxseats = 999;
+    }
+
+    $adddata->title = 'Add New Discount Type';
+    $adddata->button = 'Add';
+    $adddata->action = 'adddt';
+    $adddata->tickettypes = json_encode(\wc_railticket\FareCalculator::get_all_ticket_types(false, false));
+
+    $template = $rtmustache->loadTemplate('discounttypeedit');
+    echo $template->render($adddata);
+}
+
+
+function railticket_show_edit_discount_type($id = false) {
+    global $rtmustache;
+
+    if ($id == false) {
+        $id = sanitize_text_field($_REQUEST['id']);
+    }
+
+    $dt = \wc_railticket\DiscountType::get_discount_type($id);
+
+    $alldata = new \stdclass();
+    $alldata->actionurl = railticket_get_page_url();
+    $alldata->action = 'updatedt';
+    $alldata->shortname = $dt->get_shortname();
+    $alldata->name = $dt->get_name();
+
+    switch ($dt->get_baseprice_field()) {
+        case 'auto': $alldata->basefareauto = true; break;
+        case 'price': $alldata->basefareprice = true; break;
+        case 'localprice': $alldata->basefarelocalprice = true; break;
+    }
+
+    if ($dt->use_custom_type() == 1) {
+        $alldata->customtype = true;
+    }
+
+    if ($dt->inherit_deps() == 1) {
+        $alldata->inheritdeps = true;
+    }
+
+    $alldata->maxseats = $dt->get_max_seats();
+
+    switch ($dt->get_triptype_field()) {
+        case 'full': $alldata->triptypefull = true; break;
+        case 'fullsgl': $alldata->triptypefullsgl = true; break;
+        case 'any': $alldata->triptypeany = true; break;
+    }
+
+    $alldata->comment = $dt->get_comment();
+
+    if ($dt->not_guard() == 1) {
+        $alldata->notguard = true;
+    }
+
+    if ($dt->show_notes() == 1) {
+        $alldata->shownotes = true;
+    } 
+
+    $alldata->noteinstructions = $dt->get_note_instructions();
+    $alldata->notetype = $dt->get_note_type();
+    $alldata->pattern = $dt->get_pattern();
+    $alldata->button = 'Update';
+    $alldata->rules = json_encode($dt->get_rules_data(), JSON_PRETTY_PRINT);
+    $alldata->ticketypes = json_encode(\wc_railticket\FareCalculator::get_all_ticket_types(false, false));
+
+    $template = $rtmustache->loadTemplate('discounttypeedit');
     echo $template->render($alldata);
+}
+
+function railticket_add_discount_type() {
+    $sn = sanitize_text_field($_REQUEST['shortname']);
+    $dt = \wc_railticket\DiscountType::get_discount_type($sn);
+    if ($dt) {
+        $adddata = new \stdclass();
+        $adddata->badshortname = railticket_getpostfield('shortname');
+        $adddata->name = railticket_getpostfield('name');
+        $adddata->customtype = railticket_gettfpostfield('customtype');
+        $adddata->inheritdeps = railticket_gettfpostfield('inheritdeps');
+        $adddata->maxseats = railticket_getpostfield('maxseats');
+        $adddata->rules = stripslashes($_REQUEST['rules']);
+        $adddata->comment = railticket_getpostfield('comment');
+        $adddata->shownotes = railticket_gettfpostfield('shownotes');
+        $adddata->noteinstructions = railticket_getpostfield('noteinstructions');
+        $adddata->notetype = railticket_getpostfield('notetype');
+        $adddata->pattern = railticket_getpostfield('pattern');
+        $adddata->notguard = railticket_gettfpostfield('notguard');
+
+        switch (railticket_getpostfield('basefare')) {
+            case 'full': $adddata->triptypefull = true; break;
+            case 'fullsgl': $adddata->triptypefullsgl = true; break;
+            case 'any': $adddata->triptypeany = true; break;
+        }
+
+        switch (railticket_getpostfield('triptype')) {
+            case 'full': $adddata->triptypefull = true; break;
+            case 'fullsgl': $adddata->triptypefullsgl = true; break;
+            case 'any': $adddata->triptypeany = true; break;
+        }
+        return $adddata;
+    }
+
+     \wc_railticket\DiscountType::create(
+        railticket_getpostfield('shortname'),
+        railticket_getpostfield('name'),
+        railticket_getpostfield('basefare'),
+        railticket_gettfpostfield('customtype'),
+        railticket_gettfpostfield('inheritdeps'),
+        railticket_getpostfield('maxseats'),
+        railticket_getpostfield('triptype'),
+        stripslashes($_REQUEST['rules']),
+        railticket_getpostfield('comment'),
+        railticket_gettfpostfield('shownotes'),
+        railticket_getpostfield('noteinstructions'),
+        railticket_getpostfield('notetype'),
+        railticket_getpostfield('pattern'),
+        railticket_gettfpostfield('notguard')
+    );
+
+
+    wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-discount-types');
+    return false;
+}
+
+function railticket_update_discount_type() {
+    $sn = sanitize_text_field($_REQUEST['shortname']);
+
+    $dt = \wc_railticket\DiscountType::get_discount_type($sn);
+    $dt->update(
+        railticket_getpostfield('name'),
+        railticket_getpostfield('basefare'),
+        railticket_gettfpostfield('customtype'),
+        railticket_gettfpostfield('inheritdeps'),
+        railticket_getpostfield('maxseats'),
+        railticket_getpostfield('triptype'),
+        stripslashes($_REQUEST['rules']),
+        railticket_getpostfield('comment'),
+        railticket_gettfpostfield('shownotes'),
+        railticket_getpostfield('noteinstructions'),
+        railticket_getpostfield('notetype'),
+        railticket_getpostfield('pattern'),
+        railticket_gettfpostfield('notguard')
+    );
+   wp_redirect(site_url().'/wp-admin/admin.php?page=railticket-discount-types');
 }
 
 function railticket_rebook($action) {
@@ -2755,7 +2991,12 @@ function railticket_show_special_summary() {
     $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
     $today->setTimezone($railticket_timezone);
     $today->setTime(0,0,0);
-    $timetable = \wc_railticket\Timetable::get_timetables()[0];
+    $timetables = \wc_railticket\Timetable::get_timetables();
+    if (count($timetables) == 0) {
+        echo "<p>No timetables have been loaded. Please load a timetable</p>";
+        return;
+    }
+    $timetable = $timetables[0];
     $alldata->fromstation = $timetable->get_stations(true);
     $alldata->tostation = $timetable->get_stations(true);
     end($alldata->tostation)->selected = "selected";
@@ -2789,7 +3030,7 @@ function railticket_show_edit_special($id = false) {
     $item->id = $sp->get_id();
     $item->date = $sp->get_date();
     $item->name = $sp->get_name();
-    $item->description = $sp->get_description();
+    $item->description = stripslashes($sp->get_description());
     $item->colour = $sp->get_colour();
     $item->background = $sp->get_background();
     if ($item->colour == '') {
@@ -2833,7 +3074,7 @@ function railticket_show_edit_special($id = false) {
     $item->action = 'updatespecial';
     $item->button = 'Update';
     $item->title = 'Update Special';
-    $item->longdesc = $sp->get_long_description();
+    $item->longdesc = stripslashes($sp->get_long_description());
     $item->surveytypes = \wc_railticket\survey\Surveys::get_types_template($sp->get_survey_type());
     $item->surveyconfig = $sp->get_survey_config();
 
@@ -2987,6 +3228,13 @@ function railticket_get_geo() {
 
     fclose($f);
     exit;
+}
+
+function railticket_get_waybillcomb() {
+    $start = railticket_getpostfield('start');
+    $end = railticket_getpostfield('end');
+    $wbcomb = new \wc_railticket\WaybillCombined($start, $end);
+    $wbcomb->show_waybill(true);
 }
 
 function railticket_process_stats($info = false, $limit = 5) {

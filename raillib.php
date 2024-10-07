@@ -15,6 +15,17 @@ add_action( 'wp_ajax_railticket_ajax', 'railticket_ajax_request');
 add_filter( 'cron_schedules', 'railticket_add_every_two_minutes' );
 add_action( 'railticket_add_every_two_minutes', 'railticket_every_two_minutes_event_func' );
 
+
+function railticket_create_db() {
+    global $wpdb;
+    $charset_collate = $wpdb->get_charset_collate();
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    include('sqlimport.php');
+    foreach ($sql as $s) {
+        dbDelta($s);
+    }
+}
+
 /*
 * Work around method for WordPress's very inconsistent handling of timezones.
 **/

@@ -123,7 +123,8 @@ class StatsProcessor {
             $maxload = $this->check_max_load($station, $tostationdown,  $this->bookableday->timetable->get_down_deps($station), $maxload);
         }
 
-        $specials = \wc_railticket\Special::get_specials($this->bookableday->get_date());
+        //$specials = \wc_railticket\Special::get_specials($this->bookableday->get_date());
+        $waybill = new \wc_railticket\Waybill($this->bookableday->get_date());
 
         $rec = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_stats WHERE date = '".$this->bookableday->get_date()."'");
         if ($rec) {
@@ -138,6 +139,7 @@ class StatsProcessor {
             $rec->postcodes = json_encode($allpostcodes);
             $rec->postcodefirst = json_encode($postcodefirst);
             $rec->postcodezone = json_encode($postcodezone);
+            $rec->waybill = $waybill->get_waybill_json();
             $wpdb->update("{$wpdb->prefix}wc_railticket_stats", (array) $rec, array('id' => $rec->id));
         } else {
             $rec = new \stdclass();
@@ -153,6 +155,7 @@ class StatsProcessor {
             $rec->postcodes = json_encode($allpostcodes);
             $rec->postcodefirst = json_encode($postcodefirst);
             $rec->postcodezone = json_encode($postcodezone);
+            $rec->waybill = $waybill->get_waybill_json();
             $wpdb->insert("{$wpdb->prefix}wc_railticket_stats", (array) $rec);
         }
     }

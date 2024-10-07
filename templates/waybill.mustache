@@ -75,3 +75,11 @@
     <input type='submit' name='submit' value='Back to Services' />
 </form>
 </p>
+
+{{#faulty}}
+<hr />
+<h2>Errors found</h2>
+{{#faulty}}
+{{.}}<br />
+{{/faulty}}
+{{/faulty}}
