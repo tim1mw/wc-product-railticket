@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action('init', 'register_railticket_product_type');
 add_filter('product_type_selector', 'add_railticket_product');
 
-add_action('woocommerce_before_calculate_totals', 'railticket_custom_price_to_cart_item', 99 );
+add_action('woocommerce_before_calculate_totals', 'railticket_custom_price_to_cart_item', 1100 );
 add_filter('woocommerce_prevent_admin_access', '__return_false' );
 add_filter('woocommerce_disable_admin_bar', '__return_false' );
 add_filter('woocommerce_is_sold_individually', 'railticket_remove_quantity_fields', 10, 2 );
@@ -98,7 +98,7 @@ function railticket_custom_product_admin_custom_js() {
 }
 
 
-function railticket_custom_price_to_cart_item( $cart_object ) {  
+function railticket_custom_price_to_cart_item( $cart_object ) {
     if( !WC()->session->__isset( "reload_checkout" )) {
         foreach ( $cart_object->cart_contents as $key => $value ) {
             if( isset( $value["custom_price"] ) ) {
@@ -106,6 +106,7 @@ function railticket_custom_price_to_cart_item( $cart_object ) {
                 //$value['data']->price = $value["custom_price"];
                 //for woocommerce version +3
                 $value['data']->set_price($value["custom_price"]);
+                $value['data']->set_sale_price($value["custom_price"]);
             }
         }  
     }  
