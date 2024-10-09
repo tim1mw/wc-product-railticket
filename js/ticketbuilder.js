@@ -1317,7 +1317,7 @@ function submitTickets() {
                 if (response.gotosurvey) {
                     window.location.replace('/more-details');
                 } else {
-                    window.location.replace('/basket');
+                    window.location.replace(finishurl);
                 }
             }
         } else {

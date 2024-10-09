@@ -43,6 +43,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_calmonths');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enckey');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enciv');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_finishurl');
 
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
@@ -249,11 +250,15 @@ function railticket_options() {
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_enckey">Encryption Key for links</label></th>
-            <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
+            <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_enckey" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_enckey">Encryption IV for links</label></th>
-            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
+            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_enciv" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_enckey">Ticket Selection Finish URL</label></th>
+            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_finishurl" name="wc_product_railticket_finishurl" value="<?php echo get_option('wc_product_railticket_finishurl'); ?>" /></td>
         </tr>
     </table>
     <?php submit_button(); ?>
