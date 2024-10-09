@@ -497,7 +497,11 @@ function fromStationChanged(evt) {
         } else {
             var otherChoices = document.getElementById('railticketotherchoice');
             otherChoices.style.display = 'none';
-            otherButton.addEventListener('click', showOther);
+            if (data.otherleft.length == 0 && data.otherright.length == 0) {
+                otherButton.style.display = 'none';
+            } else {
+                otherButton.addEventListener('click', showOther);
+            }
         }
 
         if (a_journeychoice) {
