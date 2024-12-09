@@ -1966,6 +1966,9 @@ function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket
         if ($deps[$i]->index > $index) {
             $index = $deps[$i]->index;
         }
+        if ($bk->special_only()) {
+            $deps[$i]->disabled = 'disabled';
+        }
     }
     
     $specials = $bk->get_specials();
