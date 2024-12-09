@@ -16,7 +16,7 @@ class Special {
 
     public static function get_specials_year($year, $dataonly = false) {
         global $wpdb;
-        return self::get_specials_sql("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date >= '".$year."-01-01' AND date <= '".$year."-12-31'", $dataonly);
+        return self::get_specials_sql("SELECT * FROM {$wpdb->prefix}wc_railticket_specials WHERE date >= '".$year."-01-01' AND date <= '".$year."-12-31' ORDER BY date, id ASC", $dataonly);
     }
 
     public static function get_specials($date, $dataonly = false, $onsaleonly = false) {

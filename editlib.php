@@ -43,6 +43,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_calmonths');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enckey');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enciv');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_finishurl');
 
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
@@ -143,6 +144,9 @@ function railticket_view_bookings() {
                 break;
             case 'managespecials':
                 railticket_manage_specials();
+                break;
+            case 'emailservice':
+                railticket_email_service();
                 break;
             case 'filterbookings':
             default:
@@ -249,11 +253,15 @@ function railticket_options() {
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_enckey">Encryption Key for links</label></th>
-            <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
+            <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_enckey" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_enckey">Encryption IV for links</label></th>
-            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
+            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_enciv" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_enckey">Ticket Selection Finish URL</label></th>
+            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_finishurl" name="wc_product_railticket_finishurl" value="<?php echo get_option('wc_product_railticket_finishurl'); ?>" /></td>
         </tr>
     </table>
     <?php submit_button(); ?>
@@ -1434,8 +1442,28 @@ function railticket_show_departure($dateofjourney, \wc_railticket\Station $stati
         $alldata->direction = $direction;
         $alldata->dep = $deptime->key;
         echo $template->render($alldata);
+
+        $allbkids = array();
+        foreach ($bookings as $stnid => $bks) {
+            foreach ($bks as $b) {
+                $allbkids[] = $b->get_order_id();
+            }
+        }
+        $allbkids = implode(',', $allbkids);
+        ?>
+        <form action='<?php echo railticket_get_page_url() ?>'  method='post'>
+            <input type='hidden' name='action' value='emailservice' />
+            <input type='hidden' name='bkids' value='<?php echo $allbkids;?>' />
+            <table><tr><td>
+                <input type='submit' name='submit' value='Re-send All Booking Emails' style='width:100%' />
+            </td><td>
+                 Are you sure you want to do this?<input type='checkbox' name='sure' value='1' />
+            </td></tr></table>
+        </form>
+        <?php
     }
     ?>
+
     </div>
     <?php
 
@@ -1763,6 +1791,30 @@ function railticket_get_booking_render_data($bookingorder) {
     return $data;
 }
 
+function railticket_email_service() {
+    $sure = railticket_gettfpostfield('sure');
+    if (!$sure) {
+        echo "<p>You were not sure about this!</p>";
+        return;
+    }
+    $bkids = explode(',', railticket_getpostfield('bkids'));
+
+    foreach ($bkids as $bkid) {
+        $bookingorder = \wc_railticket\BookingOrder::get_booking_order($bkid);
+        if (!$bookingorder) {
+            echo "Order ".$bkid." not found<br />";
+            continue;
+        }
+
+        if ($bookingorder->is_manual()) {
+            echo "Order ".$bkid." is a manual booking, cannot email<br />";
+        }
+
+        $bookingorder->notify();
+        echo "Order ".$bkid." email sent<br />";
+    }
+}
+
 function railticket_show_edit_order() {
     global $rtmustache;
 
@@ -1913,6 +1965,9 @@ function railticket_get_depselect(\wc_railticket\BookableDay $bk, \wc_railticket
         }
         if ($deps[$i]->index > $index) {
             $index = $deps[$i]->index;
+        }
+        if ($bk->special_only()) {
+            $deps[$i]->disabled = 'disabled';
         }
     }
     
@@ -2637,6 +2692,9 @@ function railticket_discount_types() {
     wp_enqueue_style('railticket_style');
     wp_register_script('railticket_script_sp', plugins_url('wc-product-railticket/js/discounttype.js'));
     wp_enqueue_script('railticket_script_sp');
+    wp_register_script('railticket_script_mustache', plugins_url('wc-product-railticket/js/mustache.min.js'));
+    wp_enqueue_script('railticket_script_mustache');
+    echo file_get_contents(dirname(__FILE__).'/templates/discounttypes.html');
 
     $adddata = false;
     if (array_key_exists('action', $_REQUEST)) {
@@ -2734,7 +2792,7 @@ function railticket_show_edit_discount_type($id = false) {
     $alldata->pattern = $dt->get_pattern();
     $alldata->button = 'Update';
     $alldata->rules = json_encode($dt->get_rules_data(), JSON_PRETTY_PRINT);
-    $alldata->ticketypes = json_encode(\wc_railticket\FareCalculator::get_all_ticket_types(false, false));
+    $alldata->tickettypes = json_encode(\wc_railticket\FareCalculator::get_all_ticket_types(false, false));
 
     $template = $rtmustache->loadTemplate('discounttypeedit');
     echo $template->render($alldata);

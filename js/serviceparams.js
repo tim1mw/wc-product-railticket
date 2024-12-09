@@ -19,7 +19,7 @@ function setupEditor() {
     for (i in specials) {
         specials_keys[specials[i].id] = i;
     }
-console.log(data);
+console.log(compdata);
     check_all_dep_times();
 
     for (i in coaches) {
@@ -42,8 +42,8 @@ function renderEditorSP() {
     var sp = document.getElementById('railticket_serviceeditor_sp');
     var sptempl = document.getElementById('serviceparams_tmpl').innerHTML;
     var spdata = {};
-    spdata.daytypes = processSelect(daytypes, data.daytype);
-    spdata.allocateby = processSelect(allocateby, data.allocateby);
+    spdata.daytypes = processSelect(daytypes, compdata.daytype);
+    spdata.allocateby = processSelect(allocateby, compdata.allocateby);
 
     sp.innerHTML = Mustache.render(sptempl, spdata);
 
@@ -56,15 +56,15 @@ function renderEditorCoachSets() {
     cdata.avcoaches = coachesAV;
     cdata.defaultcoachimg = defaultcoachimg;
 
-    switch (data.daytype) {
+    switch (compdata.daytype) {
         case 'pertrain':
-            for (i in data.coachsets) {
+            for (i in compdata.coachsets) {
                 var parts = i.split('_');
-                cdata.sets.push(processCoachSet(parts[1], data.coachsets[i].coachset, data.coachsets[i].reserve));
+                cdata.sets.push(processCoachSet(parts[1], compdata.coachsets[i].coachset, compdata.coachsets[i].reserve));
             }
             break;
         case 'simple':
-            cdata.sets.push(processCoachSet(0, data.coachset, data.reserve));
+            cdata.sets.push(processCoachSet(0, compdata.coachset, compdata.reserve));
             break;
     }
 
@@ -80,14 +80,14 @@ function renderEditorCoachSets() {
 
     document.getElementById('addsetbtn', 'click', addCoachSet).addEventListener('click', addCoachSet);
 
-    if (data.daytype == 'simple') {
+    if (compdata.daytype == 'simple') {
         document.getElementById('addsetbtn').style.display = 'none';
         var dels = document.getElementsByClassName('deleteset');
         for (i=0; i<dels.length; i++) {
             dels[i].style.display = 'none';
         }
     } else {
-        if (Object.keys(data.coachsets).length < 3) {
+        if (Object.keys(compdata.coachsets).length < 3) {
             var dels = document.getElementsByClassName('deleteset');
             for (i=0; i<dels.length; i++) {
                 dels[i].style.display = 'none';
@@ -100,7 +100,7 @@ function renderEditorCoachSets() {
 
 function renderServiceAllocation() {
     var a = document.getElementById('railticket_serviceeditor_a');
-    if (data.daytype == 'simple') {
+    if (compdata.daytype == 'simple') {
         a.innerHTML = '';
         return;
     }
@@ -130,7 +130,7 @@ function renderServiceAllocation() {
         adata.alldeps.push(row);
     }
 
-    var setkeys = Object.keys(data.coachsets);
+    var setkeys = Object.keys(compdata.coachsets);
     for (i in setkeys) {
         var parts = setkeys[i].split('_');
 
@@ -149,14 +149,14 @@ function renderServiceAllocation() {
         var e = elements[i];
         e.addEventListener('change', dep_set_changed);
         var parts=e.id.split('_');
-        var selected = data[parts[0]][parts[2]];
+        var selected = compdata[parts[0]][parts[2]];
         e.value = selected;
     }
 }
 
 function renderEditorData() {
     var cdata = {
-        composition: JSON.stringify(data, null, 4)
+        composition: JSON.stringify(compdata, null, 4)
     };
 
     var c = document.getElementById('railticket_serviceeditor_data');
@@ -177,7 +177,7 @@ function renderEditorData() {
     document.getElementById('setserviceparams', 'click').addEventListener('click', function (evt) {
         try {
             var ndata = JSON.parse(document.getElementById('servicecomp').value);
-            data = ndata;
+            compdata = ndata;
         } catch (err) {
             var e = document.getElementById('serviceparseerror');
             e.innerHTML = '<p style="color:red">Error parsing service data: '+err+'</p>';
@@ -226,7 +226,7 @@ function processCoachSet(num, set, reserve) {
         c.selectedcoaches.push(tc);
     }
 
-    if (data.allocateby == 'bay') {
+    if (compdata.allocateby == 'bay') {
         var stats = getCoachBayStats(set);
         c.seats = stats.seats;
         c.bays = formatBays(stats.bays);
@@ -267,16 +267,16 @@ function processCoachSet(num, set, reserve) {
 }
 
 function formatBays(bays) {
-    var data = [];
+    var baydata = [];
     for (i in bays) {
         var parts = i.split('_');
         if (parts[1] == 'priority') {
-            data.push(bays[i]+"x "+parts[0]+" Seat Wheelchair Bay");    
+            baydata.push(bays[i]+"x "+parts[0]+" Seat Wheelchair Bay");    
         } else {
-            data.push(bays[i]+"x "+parts[0]+" Seat Normal Bay");  
+            baydata.push(bays[i]+"x "+parts[0]+" Seat Normal Bay");  
         }
     }
-    return data;
+    return baydata;
 }
 
 function getCoachSeatStats(coachset) {
@@ -359,11 +359,11 @@ function railTicketSPAjax(datareq, spinner, callback) {
         }
     };
 
-    var data = new FormData();
-    data.append('action', 'railticket_adminajax');
-    data.append('function', datareq);
+    var fdata = new FormData();
+    fdata.append('action', 'railticket_adminajax');
+    fdata.append('function', datareq);
 
-    request.send(data);
+    request.send(fdata);
 }
 
 function getCBFormValue(param) {
@@ -399,18 +399,18 @@ function addCoachToSet(evt) {
 
 function deleteCoachSet(evt) {
     // Sanity check....
-    if (data.daytype == 'simple') {
+    if (compdata.daytype == 'simple') {
         console.log("This is a simple day...");
         return;
     }
     var parts = evt.target.id.split('_');
 
     var delkey = 'set_'+parts[1];
-    delete data.coachsets[delkey];
+    delete compdata.coachsets[delkey];
 
     // Remove this set from the allocatiosn
-    remove_set_from_allocation(delkey, data.up);
-    remove_set_from_allocation(delkey, data.down);
+    remove_set_from_allocation(delkey, compdata.up);
+    remove_set_from_allocation(delkey, compdata.down);
 
     renderEditorData();
     renderEditorCoachSets();
@@ -418,7 +418,7 @@ function deleteCoachSet(evt) {
 }
 
 function remove_set_from_allocation(delkey, allocation) {
-    var setkeys = Object.keys(data.coachsets);
+    var setkeys = Object.keys(compdata.coachsets);
     for (i in allocation) {
         if (allocation[i] == delkey) {
             allocation[i] = setkeys[0];
@@ -428,33 +428,33 @@ function remove_set_from_allocation(delkey, allocation) {
 
 function addCoachSet(evt) {
     // Sanity check....
-    if (data.daytype == 'simple') {
+    if (compdata.daytype == 'simple') {
         console.log("This is a simple day...");
         return;
     }
 
     for (i = 0; i<100; i++) {
         var setkey = "set_"+i;
-        if (data.coachsets.hasOwnProperty(setkey)) {
+        if (compdata.coachsets.hasOwnProperty(setkey)) {
             continue;
         }
 
-        data.coachsets['set_'+i] = {
+        compdata.coachsets['set_'+i] = {
             "coachset": {},
             "reserve": {}
         };
         break;
     }
 
-    var keys = Object.keys(data.coachsets);
+    var keys = Object.keys(compdata.coachsets);
     keys.sort();
 
     var ncoachsets = {};
     for (i = 0; i < keys.length; i++) {
-        ncoachsets[keys[i]] = data.coachsets[keys[i]];
+        ncoachsets[keys[i]] = compdata.coachsets[keys[i]];
     }
 
-    data.coachsets = ncoachsets;
+    compdata.coachsets = ncoachsets;
 
     renderEditorData();
     renderEditorCoachSets();
@@ -492,7 +492,7 @@ function coachSetReserve(evt) {
 }
 
 function validateReserve(setid) {
-    if (data.allocateby == 'seat') {
+    if (compdata.allocateby == 'seat') {
         return;
     }
 
@@ -518,39 +518,39 @@ function validateReserve(setid) {
 }
 
 function getCoachSet(setid) {
-    switch (data.daytype) {
+    switch (compdata.daytype) {
         case 'simple':
-            return data.coachset;
+            return compdata.coachset;
             break;
         case 'pertrain':
-            return data.coachsets['set_'+setid].coachset;
+            return compdata.coachsets['set_'+setid].coachset;
             break;
     }
 
-    console.log("bad day type... "+data.daytype);
+    console.log("bad day type... "+compdata.daytype);
 }
 
 function getReserve(setid) {
-    switch (data.daytype) {
+    switch (compdata.daytype) {
         case 'simple':
-            return data.reserve;
+            return compdata.reserve;
             break;
         case 'pertrain':
-            return data.coachsets['set_'+setid].reserve;
+            return compdata.coachsets['set_'+setid].reserve;
             break;
     }
 
-    console.log("bad day type... "+data.daytype);
+    console.log("bad day type... "+compdata.daytype);
 }
 
 function setSPOpt(evt) {
     switch(evt.target.name) {
         case 'sp_daytype':
-            data.daytype = evt.target.value;
+            compdata.daytype = evt.target.value;
             convertDayType();
             break;
         case 'sp_allocateby':
-            data.allocateby = evt.target.value;
+            compdata.allocateby = evt.target.value;
             convertAllocateType();
             break;
     }
@@ -560,23 +560,23 @@ function setSPOpt(evt) {
 }
 
 function convertAllocateType() {
-    if (data.allocateby == 'bay') {
-        if (data.daytype == 'simple') {
-            data.reserve = {};
+    if (compdata.allocateby == 'bay') {
+        if (compdata.daytype == 'simple') {
+            compdata.reserve = {};
             validateReserve(0);
         } else {
-            for (i in data.coachsets) {
+            for (i in compdata.coachsets) {
                 var parts = i.split('_');
-                data.coachsets[i].reserve = {};
+                compdata.coachsets[i].reserve = {};
                 validateReserve(parts[1]);
             }
         }
     } else {
-        if (data.daytype == 'simple') {
-           data.reserve = {"1_normal" : 0, "1_priority" : 0};
+        if (compdata.daytype == 'simple') {
+           compdata.reserve = {"1_normal" : 0, "1_priority" : 0};
         } else {
-            for (i in data.coachsets) {
-                data.coachsets[i].reserve = {"1_normal" : 0, "1_priority" : 0};
+            for (i in compdata.coachsets) {
+                compdata.coachsets[i].reserve = {"1_normal" : 0, "1_priority" : 0};
             }
         }
     }
@@ -584,35 +584,35 @@ function convertAllocateType() {
 
 function convertDayType() {
     // Detect what we have rather than relying on the daytype so we don't loose too much when switching
-    if (data.hasOwnProperty('coachsets')) {
-        if (data.daytype == 'simple') {
+    if (compdata.hasOwnProperty('coachsets')) {
+        if (compdata.daytype == 'simple') {
             // Convert Structure
-            var sets = Object.keys(data.coachsets);
-            data.coachset = data.coachsets[sets[0]].coachset;
-            data.reserve = data.coachsets[sets[0]].reserve;
-            delete data.coachsets;
-            delete data.down;
-            delete data.up;
+            var sets = Object.keys(compdata.coachsets);
+            compdata.coachset = compdata.coachsets[sets[0]].coachset;
+            compdata.reserve = compdata.coachsets[sets[0]].reserve;
+            delete compdata.coachsets;
+            delete compdata.down;
+            delete compdata.up;
         }
     } else {
-        if (data.hasOwnProperty('coachset')) {
-            if (data.daytype != 'simple') {
+        if (compdata.hasOwnProperty('coachset')) {
+            if (compdata.daytype != 'simple') {
                 // Convert Structure
-                data.coachsets = {
+                compdata.coachsets = {
                     "set_0": {
-                        "coachset": data.coachset,
-                        "reserve": data.reserve
+                        "coachset": compdata.coachset,
+                        "reserve": compdata.reserve
                     },
                     "set_1": {
                         "coachset": {},
                         "reserve": {}
                     }
                 };
-                delete data.coachset;
-                delete data.reserve;
+                delete compdata.coachset;
+                delete compdata.reserve;
 
-                data.up = get_dep_times(dep_times_up);
-                data.down = get_dep_times(dep_times_down);
+                compdata.up = get_dep_times(dep_times_up);
+                compdata.down = get_dep_times(dep_times_down);
             }
         }
     }
@@ -621,7 +621,7 @@ function convertDayType() {
 function get_dep_times(times) {
     var tt = {}
     var count = 0;
-    var sets = Object.keys(data.coachsets);
+    var sets = Object.keys(compdata.coachsets);
 
     for (i in times) {
         tt[times[i].key] = sets[count];
@@ -635,27 +635,27 @@ function get_dep_times(times) {
 }
 
 function check_all_dep_times() {
-    if (data.daytype != 'pertrain') {
+    if (compdata.daytype != 'pertrain') {
         return;
     }
 
     // Do a sanity check on the dep times in the config against the ones for the time configured at load time.
-    data.up = check_dep_times(data.up, dep_times_up_keys, false);
-    data.down = check_dep_times(data.down, dep_times_down_keys, false);
+    compdata.up = check_dep_times(compdata.up, dep_times_up_keys, false);
+    compdata.down = check_dep_times(compdata.down, dep_times_down_keys, false);
 
     if (specials.length > 0) {
-       if (!data.hasOwnProperty('specials')) {
-           data.specials = {};
-           var sets = Object.keys(data.coachsets);
+       if (!compdata.hasOwnProperty('specials')) {
+           compdata.specials = {};
+           var sets = Object.keys(compdata.coachsets);
            for (i in specials) {
-               data.specials[specials[i].id] = sets[0];
+               compdata.specials[specials[i].id] = sets[0];
            }
 
        } else {
-           data.specials = check_dep_times(data.specials, specials_keys, true);
+           compdata.specials = check_dep_times(compdata.specials, specials_keys, true);
        }
     } else {
-       delete data.specials;
+       delete compdata.specials;
     }
 }
 
@@ -668,7 +668,7 @@ function check_dep_times(ctimes, ttimes, nosort) {
         delete ctimes[i];
     }
 
-    var sets = Object.keys(data.coachsets);
+    var sets = Object.keys(compdata.coachsets);
     var count = 0;
 
     for (i in ttimes) {
@@ -709,6 +709,6 @@ function check_dep_times(ctimes, ttimes, nosort) {
 
 function dep_set_changed(evt) {
     var parts = evt.target.id.split('_');
-    data[parts[0]][parts[2]] = evt.target.value;
+    compdata[parts[0]][parts[2]] = evt.target.value;
     renderEditorData();
 }

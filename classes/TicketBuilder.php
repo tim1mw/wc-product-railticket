@@ -697,6 +697,7 @@ class TicketBuilder {
         } else {
             $str .= 'var guard=false;';
         }
+        $str .= 'var finishurl="'.get_option('wc_product_railticket_finishurl').'"';
 
         $str .= "</script>";
 

@@ -353,25 +353,25 @@ function railticket_survey() {
     $item = railticket_cart_item();
 
     if (!$item) {
-        wp_redirect('/basket/');
+        wp_redirect(get_option('wc_product_railticket_finishurl'));
         return;
     }
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($item);
 
     if (!$bookingorder) {
-        wp_redirect('/basket/');
+        wp_redirect(get_option('wc_product_railticket_finishurl'));
         return;
     }
 
     if (!$bookingorder->is_special()) {
-        wp_redirect('/basket/');
+        wp_redirect(get_option('wc_product_railticket_finishurl'));
         return;
     }
 
     $survey = $bookingorder->get_special()->get_survey();
     if (!$survey || $survey->completed($bookingorder)) {
-        wp_redirect('/basket/');
+        wp_redirect(get_option('wc_product_railticket_finishurl'));
         return;
     }
 
