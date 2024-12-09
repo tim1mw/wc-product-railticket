@@ -8,11 +8,30 @@ var RTDiscountType = {
 
         document.getElementById('rt_discounttypeform').addEventListener('submit', RTDiscountType.submit);
         document.getElementById('rt_showrules').addEventListener('click', RTDiscountType.showRules);
+
+        RTDiscountType.render();
     },
 
     submit: function(e) {
     
         //e.preventDefault();
+    },
+
+    render: function() {
+        var c = document.getElementById('rt_rules');
+        var ctempl = document.getElementById('discounttypes_tmpl').innerHTML;
+
+        var discounts = [];
+        for (i in RTDiscountType.data.discounts) {
+            RTDiscountType.data.discounts[i].key = i;
+            discounts.push(RTDiscountType.data.discounts[i]);
+        }
+
+        c.innerHTML = Mustache.render(ctempl, {
+            "tickettypes": tickettypes,
+            "excludes": RTDiscountType.data.excludes,
+            "discounts": discounts
+        });
     },
 
     showRules: function(e) {
