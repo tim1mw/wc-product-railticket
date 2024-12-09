@@ -1,0 +1,14 @@
+<h2>Add New Price Revision</h2>
+<form method='post' action='{{{actionurl}}}'>
+    <input type='hidden' name='page' value='railticket-fares' />
+    <input type='hidden' name='action' value='addrevision' />
+    <table><tr>
+        <td>Revison Name</td><td><input type='text' name='name' size='11' maxlength='11' required /></td>
+    </tr><tr>
+        <td>From</td><td><input type='date' name='datefrom' required /></td>
+    </tr><tr>
+        <td>To</td><td><input type='date' name='dateto' required /></td>
+    </tr><tr>
+        <td><input type='submit' value='Add Revision'></td>
+    </tr></table>
+</form>

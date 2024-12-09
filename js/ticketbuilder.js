@@ -497,7 +497,11 @@ function fromStationChanged(evt) {
         } else {
             var otherChoices = document.getElementById('railticketotherchoice');
             otherChoices.style.display = 'none';
-            otherButton.addEventListener('click', showOther);
+            if (data.otherleft.length == 0 && data.otherright.length == 0) {
+                otherButton.style.display = 'none';
+            } else {
+                otherButton.addEventListener('click', showOther);
+            }
         }
 
         if (a_journeychoice) {
@@ -1079,7 +1083,11 @@ function allocateTickets() {
         t.num = ticketsAllocated[i];
         t.name = tkt.name;
         t.price = formatter.format(tkt.price * ticketsAllocated[i]);
-        t.image = tkt.image;
+        if (typeof t.image != 'undefined' && t.image.length > 0) {
+            t.image = tkt.image;
+        } else {
+            t.image = false;   
+        }
         t.description = tkt.description;
 
         td.allocated.push(t);
@@ -1313,7 +1321,7 @@ function submitTickets() {
                 if (response.gotosurvey) {
                     window.location.replace('/more-details');
                 } else {
-                    window.location.replace('/basket');
+                    window.location.replace(finishurl);
                 }
             }
         } else {

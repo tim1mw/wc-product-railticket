@@ -11,9 +11,9 @@ var tickettypes = {{{tickettypes}}};
 
     <table>
         {{^badshortname}}{{^shortname}}<tr><th style='text-align:right'>Unique Code</th><td><input type='text' name='shortname' value='' size='10' max='10' pattern='^\S+$' required /></td></tr>{{/shortname}}{{/badshortname}}
-        {{#badshortname}}<tr><th style='text-align:right;'>Unique Code</th><td style='border: 1px solid red;'><input type='text' name='shortname' value='{{badshortname}}' size='10' max='10' pattern='^\S+$'  required />
+        {{#badshortname}}<tr><th style='text-align:right;'>Unique Code</th><td style='border: 1px solid red;'><input type='text' name='shortname' value='{{badshortname}}' size='10' maxlength='10' pattern='^\S+$'  required />
         <span style='color:red'>Error code already in use</span></td></tr>{{/badshortname}}
-        <tr><th style='text-align:right'>Name</th><td><input type='text' name='name' value='{{name}}' size='50' max='100' required /></td></tr>
+        <tr><th style='text-align:right'>Name</th><td><input type='text' name='name' value='{{name}}' size='50' maxlength='100' required /></td></tr>
         <tr><th style='text-align:right'>Description</th><td><textarea name='comment' rows='3' cols='50'>{{comment}}</textarea></td></tr>
         <tr>
             <th style='text-align:right'>Trip Type</th>
@@ -42,8 +42,8 @@ var tickettypes = {{{tickettypes}}};
         <tr><th style='text-align:center' colspan='2'><hr />Customer Validation Options<br /></th></tr>
         <tr><th style='text-align:right'>Show Customer Validation</th><td><input type='checkbox' name='shownotes' value='1' {{#shownotes}}checked{{/shownotes}} /></td></tr>
         <tr><th style='text-align:right'>Validation Instructions</th><td><textarea name='noteinstructions' rows='3' cols='50'>{{noteinstructions}}</textarea></td></tr>
-        <tr><th style='text-align:right'>Validation Field Name</th><td><input type='text' name='notetype' value='{{notetype}}' size='50' max='50' /></td></tr>
-        <tr><th style='text-align:right'>Validation Field Regex</th><td><input type='text' name='pattern' value='{{pattern}}' size='50' max='255' /></td></tr>
+        <tr><th style='text-align:right'>Validation Field Name</th><td><input type='text' name='notetype' value='{{notetype}}' size='50' maxlength='50' /></td></tr>
+        <tr><th style='text-align:right'>Validation Field Regex</th><td><input type='text' name='pattern' value='{{pattern}}' size='50' maxlength='255' /></td></tr>
         <tr><th style='text-align:center' colspan='2'><hr />Rules<br /></th></tr>
         <tr>
             <td colspan='2'><div id='rt_rules'></div></td>

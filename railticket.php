@@ -1,8 +1,16 @@
 <?php
 
 /**
- * Plugin Name: WooCommerce Ticket Product Type
- * Description: Works with railtimetable
+ * Plugin Name: Heritage railway ticket sales and booking for Woocommerce
+ * Plugin URI:   * Plugin URI:  https://github.com/tim1mw/railtimetable
+ * Description: Designed for use by Heritage railways, this booking plugin allows for sales based on a standard timetable and one off specials.
+ * Author:      Tim Williams, AutoTrain (tmw@autotrain.org)
+ * Author URI:  https://github.com/tim1mw/
+ * Version:     0.0.5
+ * Text Domain: railtimetable
+ * License:     GPL3
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * Requires Plugins: woocommerce
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,6 +31,10 @@ spl_autoload_register('wc_railticket_autoloader');
 require_once('raillib.php');
 require_once('woolib.php');
 require_once('editlib.php');
+
+// Install the DB
+register_activation_hook( __FILE__, 'railticket_create_db' );
+add_action( 'upgrader_process_complete', 'railticket_create_db', 10, 2 );
 
 function wc_railticket_autoloader($class) {
     $namespace = 'wc_railticket';

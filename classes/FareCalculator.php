@@ -24,6 +24,11 @@ class FareCalculator {
         return new FareCalculator($revision);
     }
 
+    public static function add_revision($name, $datefrom, $dateto) {
+        global $wpdb;
+        $wpdb->insert("{$wpdb->prefix}wc_railticket_pricerevisions", array('name' => $name, 'datefrom' => $datefrom, 'dateto' => $dateto));
+    }
+
     public static function get_last_revision_id() {
         global $wpdb;
         return $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_pricerevisions ORDER BY id DESC LIMIT 1");

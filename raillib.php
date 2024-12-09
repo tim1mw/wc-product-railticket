@@ -4,10 +4,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     return;
 }
 
-// Install the DB
-register_activation_hook( __FILE__, 'railticket_create_db' );
-add_action( 'upgrader_process_complete', 'railticket_create_db', 10, 2 );
-
 add_action('admin_footer', 'railticket_custom_product_admin_custom_js');
 add_shortcode('railticket_selector', 'railticket_selector');
 add_shortcode('railticket_special', 'railticket_get_special_button');
@@ -357,25 +353,25 @@ function railticket_survey() {
     $item = railticket_cart_item();
 
     if (!$item) {
-        wp_redirect('/basket/');
+        wp_redirect(get_option('wc_product_railticket_finishurl'));
         return;
     }
 
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($item);
 
     if (!$bookingorder) {
-        wp_redirect('/basket/');
+        wp_redirect(get_option('wc_product_railticket_finishurl'));
         return;
     }
 
     if (!$bookingorder->is_special()) {
-        wp_redirect('/basket/');
+        wp_redirect(get_option('wc_product_railticket_finishurl'));
         return;
     }
 
     $survey = $bookingorder->get_special()->get_survey();
     if (!$survey || $survey->completed($bookingorder)) {
-        wp_redirect('/basket/');
+        wp_redirect(get_option('wc_product_railticket_finishurl'));
         return;
     }
 

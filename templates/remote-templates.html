@@ -168,7 +168,7 @@
             <td><span>{{num}}&nbsp;x</span></td>
             <td><span>{{{name}}}</span><br />{{{description}}}</td>
             <td><span>{{price}}</span></td>
-            <td><img src="{{image}}" class="railticket_image" /></td>
+            <td>{{#image}}<img src="{{image}}" class="railticket_image" />{{/image}}</td>
         </tr>
     {{/allocated}}
         <tr style='{{hidemin}}'>

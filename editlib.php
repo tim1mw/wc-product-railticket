@@ -43,6 +43,7 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_calmonths');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enckey');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enciv');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_finishurl');
 
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
@@ -252,11 +253,15 @@ function railticket_options() {
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_enckey">Encryption Key for links</label></th>
-            <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
+            <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_enckey" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
         </tr>
         <tr valign="top">
             <th scope="row"><label for="wc_product_railticket_enckey">Encryption IV for links</label></th>
-            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
+            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_enciv" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_enckey">Ticket Selection Finish URL</label></th>
+            <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_finishurl" name="wc_product_railticket_finishurl" value="<?php echo get_option('wc_product_railticket_finishurl'); ?>" /></td>
         </tr>
     </table>
     <?php submit_button(); ?>
@@ -266,27 +271,31 @@ function railticket_options() {
 
 
 function railticket_bookable_days() {
-    if (array_key_exists('action', $_REQUEST)) {
-        switch ($_REQUEST['action']) {
-            case 'updatebookable':
-                railticket_updatebookable();
-            case 'filterbookable':
-                railticket_show_cal_selector();
-                railticket_showcalendaredit(intval($_REQUEST['year']), intval($_REQUEST['month']));
-                break;
-            case 'showbookableday':
-                railticket_showbookableday();
-                break;
-            case 'addbookable':
-                railticket_addbookableday();
-                break;
-            case 'deletebookable':
-                railticket_deletebookableday();
-                break;
+    try {
+        if (array_key_exists('action', $_REQUEST)) {
+            switch ($_REQUEST['action']) {
+                case 'updatebookable':
+                    railticket_updatebookable();
+                case 'filterbookable':
+                    railticket_show_cal_selector();
+                    railticket_showcalendaredit(intval($_REQUEST['year']), intval($_REQUEST['month']));
+                    break;
+                case 'showbookableday':
+                    railticket_showbookableday();
+                    break;
+                case 'addbookable':
+                    railticket_addbookableday();
+                    break;
+                case 'deletebookable':
+                    railticket_deletebookableday();
+                    break;
+            }
+        } else {
+            railticket_show_cal_selector();
+            railticket_showcalendaredit(intval(date("Y")), intval(date("n")));
         }
-    } else {
-        railticket_show_cal_selector();
-        railticket_showcalendaredit(intval(date("Y")), intval(date("n")));
+    } catch (\wc_railticket\TicketException $e) {
+        echo "<h3>".$e->getMessage()."</h3>";
     }
 }
 
@@ -2105,15 +2114,41 @@ function railticket_fares() {
     wp_register_style('railticket_style', plugins_url('wc-product-railticket/ticketbuilder.css'));
     wp_enqueue_style('railticket_style');
 
+    // Need to do this first
+    if (array_key_exists('action', $_REQUEST)) {
+        switch ($_REQUEST['action']) {
+            case 'addrevision':
+                \wc_railticket\FareCalculator::add_revision(railticket_getpostfield('name'), railticket_getpostfield('datefrom'), railticket_getpostfield('dateto'));
+                break;
+        }
+    }
+
     $pricerevisionid = railticket_getpostfield('pricerevision');
     if ($pricerevisionid == false) {
         $pricerevisionid = \wc_railticket\FareCalculator::get_last_revision_id();
     }
+
+    if ($pricerevisionid == false) {
+        echo "<h3>No Price Revisions Present</h3>";
+
+        $template = $rtmustache->loadTemplate('add_new_price_revision');
+        $alldata = new \stdclass;
+        $alldata->actionurl = railticket_get_page_url();
+        echo $template->render($alldata);
+        return;
+    }
+
     $stnchoice = railticket_getpostfield('stn');
     $showdisabled = railticket_gettfpostfield('showdisabled');
 
     $farecalc = \wc_railticket\FareCalculator::get_fares($pricerevisionid); 
     $timetable = $farecalc->get_last_timetable();
+
+    if ($timetable == false) {
+        echo "<p>No timetables have been loaded. Please load a timetable.</p>";
+        return;
+    }
+
     $alldata = new \stdclass();
     $alldata->stations = $timetable->get_stations(true);
     if ($stnchoice == false) {
@@ -2131,6 +2166,9 @@ function railticket_fares() {
             case 'deletefare':
                 $id = railticket_getpostfield('id');
                 $farecalc->delete_fare($id);
+                break;
+            case 'addrevision':
+                \wc_railticket\FareCalculator::add_revision(railticket_gettfpostfield('name'), railticket_gettfpostfield('datefrom'), railticket_gettfpostfield('dateto'));
                 break;
         }
     }
@@ -2423,8 +2461,10 @@ function railticket_tickets() {
         }
     }
 
-    reset($alldata->tickets)->showup = 'display:none';
-    end($alldata->tickets)->showdown = 'display:none';
+    if (count($alldata->tickets) > 0) {
+        reset($alldata->tickets)->showup = 'display:none';
+        end($alldata->tickets)->showdown = 'display:none';
+    }
 
     $alldata->ids = implode(',', $alldata->ids);
     $template = $rtmustache->loadTemplate('tickettypes');
@@ -2489,7 +2529,7 @@ function railticket_coach_types() {
                 $maxcapacity = railticket_getpostfield('maxcapacity');
                 $priority = railticket_getpostfield('priority');
                 $image = railticket_getpostfield('image');
-                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $priority, $maxcapacity, $image);
+                $res = \wc_railticket\CoachManager::add_coach($code, $name, $capacity, $maxcapacity, $priority, $image);
                 if (!$res) {
                     echo "<p style='color:red;font-weight:bold;'>".__("The code used must be unique", "wc_railticket")."</p>";
                 }
@@ -3010,7 +3050,12 @@ function railticket_show_special_summary() {
     $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
     $today->setTimezone($railticket_timezone);
     $today->setTime(0,0,0);
-    $timetable = \wc_railticket\Timetable::get_timetables()[0];
+    $timetables = \wc_railticket\Timetable::get_timetables();
+    if (count($timetables) == 0) {
+        echo "<p>No timetables have been loaded. Please load a timetable</p>";
+        return;
+    }
+    $timetable = $timetables[0];
     $alldata->fromstation = $timetable->get_stations(true);
     $alldata->tostation = $timetable->get_stations(true);
     end($alldata->tostation)->selected = "selected";
@@ -3044,7 +3089,7 @@ function railticket_show_edit_special($id = false) {
     $item->id = $sp->get_id();
     $item->date = $sp->get_date();
     $item->name = $sp->get_name();
-    $item->description = $sp->get_description();
+    $item->description = stripslashes($sp->get_description());
     $item->colour = $sp->get_colour();
     $item->background = $sp->get_background();
     if ($item->colour == '') {
@@ -3088,7 +3133,7 @@ function railticket_show_edit_special($id = false) {
     $item->action = 'updatespecial';
     $item->button = 'Update';
     $item->title = 'Update Special';
-    $item->longdesc = $sp->get_long_description();
+    $item->longdesc = stripslashes($sp->get_long_description());
     $item->surveytypes = \wc_railticket\survey\Surveys::get_types_template($sp->get_survey_type());
     $item->surveyconfig = $sp->get_survey_config();
 
