@@ -713,7 +713,12 @@ function railticket_editbookableday() {
     // Make sure the json is crunched here for efficieny.
     $composition = json_decode(stripslashes($_REQUEST['composition']));
     $ndata->composition = json_encode($composition);
-    $bookable->update_bookable($ndata);
+    try {
+        $bookable->update_bookable($ndata);
+    } catch (\wc_railticket\TicketException $e) {
+        echo $e->getMessage();
+        exit;
+    }
 
     $p = explode('-', $bkdate);
 
