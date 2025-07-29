@@ -6,8 +6,10 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 class BookableDay {
     private $data;
     public $timetable, $fares;
+    private $dataerror = false;
 
     private function __construct($data, $timetable = false, $fares = false) {
+
         $this->railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
         if (!$timetable) {
             $this->timetable = Timetable::get_timetable($data->timetableid, $data->ttrevision, $data->date);
@@ -29,6 +31,23 @@ class BookableDay {
         }
         $this->data->reserve = json_decode($this->data->reserve);
         $this->data->bays = json_decode($this->data->bays);
+
+        // Sanity check so we don't crash the system if bad data has gotten in
+        if (!$this->data->reserve) {
+            $coaches = self::get_default_coaches($data->date);
+            $this->data->reserve = $coaches->reserve;
+            $this->dataerror = true;
+        }
+        if (!$this->data->bays) {
+            $coaches = self::get_default_coaches($data->date);
+            $this->data->bays = $coaches->bays;
+            $this->dataerror = true;
+        }
+        if ($this->data->composition == null || $this->data->composition == 'null' || strlen($this->data->composition) == 0) {
+            $coaches = self::get_default_coaches($data->date);
+            $this->data->composition = json_encode($coaches->coachset);
+            $this->dataerror = true;
+        }
     }
 
     public static function get_bookable_day($dateofjourney, $usedateid = false) {
@@ -44,12 +63,11 @@ class BookableDay {
         }
 
         $bd = $wpdb->get_row($sql, OBJECT);
-
-        if ($bd) {
-            return new BookableDay($bd);
+        if (!$bd) {
+            return false;
         }
 
-        return false;
+        return new BookableDay($bd);
     }
 
     public static function get_next_bookable_dates($date, $num) {
@@ -149,10 +167,7 @@ class BookableDay {
     }
 
     public static function create_bookable_day($dateofjourney) {
-        $timetable = Timetable::get_timetable_by_date($dateofjourney);
-        if (!$timetable) {
-            throw new TicketException("No timetables exist. Please import a timetable.");
-        }
+
 
         $fares = FareCalculator::get_fares_by_date($dateofjourney);
 
@@ -164,7 +179,7 @@ class BookableDay {
         if (get_option('wc_product_railticket_sameservicereturn') == 'on') {
             $ssr = true;
         }
-        $coaches = CoachManager::process_coaches(json_decode(get_option('wc_product_railticket_defaultcoaches')), $timetable);
+        $coaches = self::get_default_coaches($dateofjourney);
         $data = new \stdclass();
         $data->date = $dateofjourney;
         $data->daytype = $coaches->daytype;
@@ -187,6 +202,14 @@ class BookableDay {
         $data->id = -1;
 
         return new BookableDay($data, $timetable, $fares);
+    }
+
+    private static function get_default_coaches($dateofjourney) {
+        $timetable = Timetable::get_timetable_by_date($dateofjourney);
+        if (!$timetable) {
+            throw new TicketException("No timetables exist. Please import a timetable.");
+        }
+        return CoachManager::process_coaches(json_decode(get_option('wc_product_railticket_defaultcoaches')), $timetable);
     }
 
     private static function randomString() {
@@ -380,7 +403,11 @@ class BookableDay {
             return json_decode($this->data->composition);
         }
 
-        return CoachManager::format_composition(json_decode($this->data->composition), $this->data->daytype);
+        $str = CoachManager::format_composition(json_decode($this->data->composition), $this->data->daytype);
+        if ($this->dataerror) {
+            $str .= "Warning: coach composition error - edit to fix";
+        }
+        return $str;
     }
 
     public function get_all_bookings($order = false, $objects = false) {
