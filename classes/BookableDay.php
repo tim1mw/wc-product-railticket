@@ -48,6 +48,16 @@ class BookableDay {
             $this->data->composition = json_encode($coaches->coachset);
             $this->dataerror = true;
         }
+        if (strlen($this->data->daytype) == 0) {
+            $coaches = self::get_default_coaches($data->date);
+            $data->daytype = $coaches->daytype;
+            $this->dataerror = true;
+        }
+        if (strlen($this->data->allocateby) == 0) {
+            $coaches = self::get_default_coaches($data->date);
+            $data->allocateby = $coaches->allocateby;
+            $this->dataerror = true;
+        }
     }
 
     public static function get_bookable_day($dateofjourney, $usedateid = false) {
@@ -405,7 +415,7 @@ class BookableDay {
 
         $str = CoachManager::format_composition(json_decode($this->data->composition), $this->data->daytype);
         if ($this->dataerror) {
-            $str .= "Warning: coach composition error - edit to fix";
+            return "<span style='font-weight:bold;font-size:large;'>Warning: Formation data error - edit to fix</span>";
         }
         return $str;
     }
