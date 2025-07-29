@@ -271,6 +271,10 @@ class BookableDay {
                     // This should always be coming from the coach set manager wigit as JSON, so decode
                     $jdata = json_decode($ndata->composition);
 
+                    if (!$jdata) {
+                        throw new TicketException("Invalid composition data submitted - not valid JSON. Not updating bookable day.");
+                    }
+
                     $coaches = CoachManager::process_coaches($jdata);
 
                     // Sanity check the reserve, if we have changed from bay to seat allocation both types may be present.
