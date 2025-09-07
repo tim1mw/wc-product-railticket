@@ -185,11 +185,17 @@ class BookableDay {
             throw new TicketException("No fares exist. Please create a fare revision.");
         }
 
+        $timetable = Timetable::get_timetable_by_date($dateofjourney);
+        if (!$timetable) {
+            throw new TicketException("No timetable revision exist. Please create a timetable revision.");
+        }
+
         $ssr = false;
         if (get_option('wc_product_railticket_sameservicereturn') == 'on') {
             $ssr = true;
         }
         $coaches = self::get_default_coaches($dateofjourney);
+
         $data = new \stdclass();
         $data->date = $dateofjourney;
         $data->daytype = $coaches->daytype;
