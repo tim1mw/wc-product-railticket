@@ -16,4 +16,6 @@ interface SurveyBase {
     public function completed(BookingOrder $bookingorder);
 
     public function format_response(BookingOrder $bookingorder);
+
+    public function is_processed();
 }

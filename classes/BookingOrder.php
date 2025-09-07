@@ -495,6 +495,10 @@ class BookingOrder {
         return $this->bookings[0]->get_special();
     }
 
+    public function get_bookable_day() {
+        return $this->bookableday;
+    }
+
     public function get_seats() {
         // Bookings for a single order are always for the same day, so we can shortcut this safely
         return $this->bookings[0]->get_seats();

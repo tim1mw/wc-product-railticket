@@ -16,10 +16,10 @@ add_action('woocommerce_before_calculate_totals', 'railticket_custom_price_to_ca
 add_filter('woocommerce_prevent_admin_access', '__return_false' );
 add_filter('woocommerce_disable_admin_bar', '__return_false' );
 add_filter('woocommerce_is_sold_individually', 'railticket_remove_quantity_fields', 10, 2 );
-add_filter('woocommerce_get_price_html', 'railticket_remove_price_fields', 10, 2 );
+add_filter('woocommerce_get_price_html', 'railticket_custom_price_fields', 10, 2 );
 add_filter('woocommerce_get_item_data', 'railticket_cart_item_custom_meta_data', 10, 2 );
 add_filter('woocommerce_order_item_get_formatted_meta_data', 'railticket_order_item_get_formatted_meta_data', 10, 1 );
-add_action('woocommerce_remove_cart_item', 'railticket_cart_updated', 10, 2 );
+add_action('woocommerce_remove_cart_item', 'railticket_cart_item_removed', 10, 2 );
 add_action('woocommerce_checkout_create_order_line_item', 'railticket_cart_order_item_metadata', 10, 4 );
 //add_action('woocommerce_before_thankyou', 'railticket_cart_complete', 10, 1);
 add_action('woocommerce_payment_complete', 'railticket_cart_complete', 10, 1);
@@ -32,12 +32,73 @@ add_action('woocommerce_order_status_cancelled', 'railticket_order_cancel_refund
 add_action('woocommerce_email_order_meta', 'railticket_add_email_order_meta', 10, 3 );
 add_action( 'woocommerce_after_checkout_validation', 'railticket_matching_email_addresses', 10, 2 );
 add_action( 'woocommerce_before_checkout_form', 'railticket_check_needs_survey', 10, 2 );
-
+add_filter( 'woocommerce_add_cart_item_data', 'railticket_add_cart_item_data', 10, 3 );
 
 // General options refuse to show without an advanced element we don't need....
 add_action( 'woocommerce_product_options_general_product_data', function(){
     echo '<div class="options_group show_if_advanced clear"></div>';
 } );
+add_action( 'woocommerce_single_product_summary', 'custom_product_add_to_cart_button', 60 );
+function custom_product_add_to_cart_button () {
+    global $product;
+
+    // Make sure it's our custom product type
+    if ('railticketfollowup' != $product->get_type()) {
+        return;
+    }
+
+    $followup = \wc_railticket\FollowUpProduct::get_follow_up_product($product->get_id());
+    if (railticket_calculate_followup_price($product, $followup) == "") {
+        echo "You can only purchase this product if you have qualifying tickets in your basket.";
+        return;
+    }
+
+    do_action('woocommerce_before_add_to_cart_button');
+
+    $cartitem = railticket_product_cart_item ($product->get_id());
+    if ($followup->use_choice() && !$cartitem) {
+        $addurl = esc_url( $product->add_to_cart_url() . '?add-to-cart='.$product->get_id());
+        $removeurl = esc_url(wc_get_cart_url());
+
+        echo '<p class="cart"><strong>Do you want to purchase this?</strong> &nbsp;<a href="'.$addurl.'" rel="nofollow" class="single_add_to_cart_button button alt">Yes</a>&nbsp;';
+        echo '<a href="'.$removeurl.'" rel="nofollow" class="single_add_to_cart_button button alt">No</a></p>';
+    } else {
+        if ($cartitem) {
+            $removeurl = wc_get_cart_remove_url($cartitem['key']);
+            echo '<p class="cart"><a href="'.$removeurl.'" rel="nofollow" class="single_add_to_cart_button button alt">Remove from Basket</a></p>';
+        } else {
+            $addurl = esc_url( $product->add_to_cart_url() . '?add-to-cart='.$product->get_id());
+            echo '<p class="cart"><a href="'.$addurl.'" rel="nofollow" class="single_add_to_cart_button button alt">Add to Basket</a></p>';
+        }
+    }
+
+    do_action('woocommerce_after_add_to_cart_button');
+}
+
+
+function railticket_add_cart_item_data( $cart_item_data, $product_id, $variation_id ) {
+
+    $followup = \wc_railticket\FollowUpProduct::get_follow_up_product($product_id);
+    if (!$followup) {
+        return $cart_item_data;
+    }
+
+    $item = railticket_cart_item();
+
+    if (!$item) {
+        return $cart_item_data;
+    }
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($item);
+
+    if (!$bookingorder) {
+        return $cart_item_data;
+    }
+
+    $cart_item_data['custom_price'] = $followup->calculate_price($bookingorder, $item['data']->get_price());
+
+    return $cart_item_data;
+}
 
 /**
 * Show information on the product page
@@ -71,11 +132,13 @@ function railticket_get_ticket_data() {
 
 function register_railticket_product_type() {
     require_once(plugin_dir_path(__FILE__).'includes/class-wc-product-railticket.php');
+    require_once(plugin_dir_path(__FILE__).'includes/class-wc-product-railticketfollowup.php');
 }
 
 function add_railticket_product($types){
     // Key should be exactly the same as in the class product_type parameter
     $types[ 'railticket' ] = __( 'Rail Ticket', 'railticket_product' );
+    $types[ 'railticketfollowup' ] = __( 'Rail Ticket Follow Up', 'railticket_product' );
     return $types;
 }
 
@@ -92,6 +155,7 @@ function railticket_custom_product_admin_custom_js() {
         jQuery(document).ready(function () {
             // You can't selectively show just the tax classes, which are all I want, so enable the simple ones and then disable price.
             jQuery('.options_group.show_if_simple').addClass('show_if_railticket').show();
+            jQuery('.options_group.show_if_simple').addClass('show_if_railticketfollowup').show();
         });
     </script>
     <?php
@@ -113,25 +177,48 @@ function railticket_custom_price_to_cart_item( $cart_object ) {
 }
 
 function railticket_remove_quantity_fields( $return, $product ) {
-    switch ( $product->product_type ) :
+    switch ( $product->product_type ) {
         case "railticket":
+        case "railticketfollowup":
             return true;
-            break;
         default: 
             return false;
-            break;
-    endswitch;
+    }
 }
 
-function railticket_remove_price_fields( $price, $product ) {
-    switch ( $product->product_type ) :
+function railticket_custom_price_fields( $price, $product ) {
+    if (is_admin()) {
+        return $price;
+    }
+
+    switch ( $product->product_type ) {
         case "railticket":
             return "";
-            break;
+        case "railticketfollowup":
+            $followup = \wc_railticket\FollowUpProduct::get_follow_up_product($product->get_id());
+            return railticket_calculate_followup_price($product, $followup);
         default: 
             return $price;
-            break;
-    endswitch;
+    }
+}
+
+function railticket_calculate_followup_price ($product, $followup) {
+    $cart_item = railticket_cart_item();
+
+    if ($followup == false || $cart_item == false) {
+        return "";
+    }
+
+    $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($cart_item, $product->get_price());
+    if (!$bookingorder) {
+        return "";
+    }
+
+    if (!$followup->is_allowed($bookingorder)) {
+        return "";
+    }
+
+    return wc_price($followup->calculate_price($bookingorder, $product->get_price()));
 }
 
 function railticket_cart_item_custom_meta_data($item_data, $cart_item) {
@@ -376,11 +463,22 @@ function railticket_order_item_get_formatted_meta_data($formatted_meta) {
     return $retmeta;
 }
 
-function railticket_cart_updated($cart_item_key, $cart) {
+function railticket_cart_item_removed($cart_item_key, $cart) {
     $bookingorder = \wc_railticket\BookingOrder::get_booking_order_cart($cart->cart_contents[$cart_item_key]);
     if ($bookingorder) {
         \wc_railticket\Discount::unuse($bookingorder->get_discount_code());
         $bookingorder->delete();
+        railticket_remove_followups();
+    }
+}
+
+function railticket_remove_followups() {
+    global $woocommerce;
+    $items = $woocommerce->cart->get_cart();
+    foreach($items as $item => $values) { 
+        if ($values['data']->get_type() == 'railticketfollowup') {
+            $woocommerce->cart->remove_cart_item($item);
+        }
     }
 }
 
@@ -506,11 +604,19 @@ function railticket_cart_check_cart() {
 }
 
 function railticket_cart_item() {
-	global $woocommerce, $wpdb;
-    $ticketid = get_option('wc_product_railticket_woocommerce_product');
+    return railticket_product_cart_item(get_option('wc_product_railticket_woocommerce_product'));
+}
+
+function railticket_product_cart_item ($productid) {
+    global $woocommerce, $wpdb;
+
+    if (!$woocommerce->cart) {
+        return false;
+    }
+
     $items = $woocommerce->cart->get_cart();
     foreach($items as $item => $values) { 
-        if ($ticketid == $values['data']->get_id()) {
+        if ($productid == $values['data']->get_id()) {
             return $values;
         }
     }

@@ -11,6 +11,7 @@ class XmasSurvey implements SurveyBase {
     public function __construct(Special $special, $config) {
         $this->special = $special;
         $this->config = json_decode($config);
+        $this->processed = false;
     }
 
     public function do_survey(BookingOrder $bookingorder) {
@@ -90,7 +91,12 @@ class XmasSurvey implements SurveyBase {
         }
 
         $wpdb->insert("{$wpdb->prefix}wc_railticket_surveyresp", $data);
-        return "<h5>Thankyou for completing your details, please continue to the <a href='/checkout'>checkout</a> to complete your purchase.</h5>";
+        $this->processed = true;
+        return "<h5>Thankyou for completing your details.</h5>";
+    }
+
+    public function is_processed() {
+        return $this->processed;
     }
 
     public function get_report($bookings) {

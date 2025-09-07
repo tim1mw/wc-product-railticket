@@ -1321,7 +1321,11 @@ function submitTickets() {
                 if (response.gotosurvey) {
                     window.location.replace('/more-details');
                 } else {
-                    window.location.replace(finishurl);
+                    if (response.followupurl !== false) {
+                        window.location.replace(response.followupurl);
+                    } else {
+                        window.location.replace(finishurl);
+                    }
                 }
             }
         } else {

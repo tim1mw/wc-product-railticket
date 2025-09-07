@@ -113,6 +113,14 @@ class TicketBuilder {
         }
     }
 
+    public function get_special() {
+        return $this->special;
+    }
+
+    public function get_bookable_day() {
+        return $this->bookableday;
+    }
+
     private function is_guard() {
         if( is_user_logged_in() ) {
             if (current_user_can('manage_tickets')) {
@@ -667,6 +675,13 @@ class TicketBuilder {
             $purchase->gotosurvey = true;
         } else {
             $purchase->gotosurvey = false;
+        }
+
+        $followups = FollowUpProduct::get_follow_ups_ticketbuilder($this);
+        $purchase->followupurl = false;
+        if (count($followups) > 0) {
+            $fp = reset($followups);
+            $purchase->followupurl = $fp->get_url();
         }
 
         return $purchase;

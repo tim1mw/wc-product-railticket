@@ -370,6 +370,10 @@ class BookableDay {
         return (bool) $this->data->sameservicereturn;
     }
 
+    public function get_id() {
+        return $this->data->id;
+    }
+
     public function get_date($format = false) {
         if (!$format) {
             return $this->data->date;

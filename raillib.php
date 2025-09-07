@@ -375,5 +375,14 @@ function railticket_survey() {
         return;
     }
 
-    return $survey->do_survey($bookingorder);
+    $message = $survey->do_survey($bookingorder);
+    if ($survey->is_processed()) {
+       $fps = FollowUpProduct::get_follow_ups_bookingorder($bookingorder);
+       if (count($fps) > 0) {
+           wp_redirect(reset($fps)->get_url());
+           return;
+       }
+    }
+
+    return $message."<h5>Please continue to the <a href='/checkout'>checkout</a> to complete your purchase.</h5>";;
 }
