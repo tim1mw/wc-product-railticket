@@ -326,3 +326,24 @@ $sql[] = "CREATE TABLE {$wpdb->prefix}wc_railticket_ttrevisions (
   name varchar(255) NOT NULL,
   PRIMARY KEY (id)
 ) ".$charset_collate;
+
+
+$sql[] = "CREATE TABLE wp_wc_railticket_followupprod (
+  id int(11) NOT NULL,
+  ruletype varchar(10) NOT NULL,
+  product_id bigint(20) NOT NULL,
+  use_choice int(1) NOT NULL,
+  data text NOT NULL,
+  PRIMARY KEY (id),
+  KEY product (product_id)
+) ".$charset_collate;
+
+$sql[] = "CREATE TABLE wp_wc_railticket_productlink (
+  id int(11) NOT NULL,
+  follow_id int(11) NOT NULL,
+  entity_id int(10) NOT NULL,
+  type varchar(10) NOT NULL,
+  PRIMARY KEY (id),
+  KEY entity (entity_id),
+  KEY type (type) 
+)".$charset_collate;
