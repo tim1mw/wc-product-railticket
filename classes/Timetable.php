@@ -88,7 +88,7 @@ class Timetable {
 
         $revision = $wpdb->get_var("SELECT id FROM {$wpdb->prefix}wc_railticket_ttrevisions WHERE ".
             "datefrom >= '".$start."' AND dateto <= '".$end."' ORDER BY datefrom DESC LIMIT 1");
-        $tt = $wpdb->get_row("SELECT timetableid, date FROM {$wpdb->prefix}wc_railticket_dates WHERE date >= '".$start."' AND date <= '".$end."'");
+        $tt = $wpdb->get_row("SELECT timetableid, date FROM {$wpdb->prefix}wc_railticket_dates WHERE date >= '".$start."' AND date <= '".$end."' ORDER BY date DESC");
 
         if (!$revision || !$tt) {
             return false;
