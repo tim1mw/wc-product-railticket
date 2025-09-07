@@ -11,6 +11,7 @@ class FollowUpProduct {
     public const SPECIAL = "special";
 
     public const RTYPE_PERSEAT = "perseat";
+    public const RTYPE_PERTICKET = "perticket";
     public const RTYPE_FIXED = "fixed";
     public const RTYPE_PERCENT = "percent";
     public const RTYPE_ORIGINAL = "original";
@@ -106,11 +107,14 @@ class FollowUpProduct {
         switch ($this->data->ruletype) {
             case self::RTYPE_PERSEAT:
                 return $this->data->data->price * $bookingorder->get_seats();
+            case self::RTYPE_PERTICKET:
+                return $this->data->data->price * $bookingorder->total_paid_tickets($this->data->data->price);
             case self::RTYPE_FIXED:
                 return $this->data->data->price;
             case self::RTYPE_PERCENT:
                 return ($bookingorder->get_price() / 100) * $this->data->data->percent;
             case self::RTYPE_ORIGINAL:
+
                 return $price;
         }
 

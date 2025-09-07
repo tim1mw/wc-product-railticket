@@ -357,6 +357,18 @@ class BookingOrder {
         return $count;
     }
 
+    public function total_paid_tickets($min = 0) {
+        $count = 0;
+
+        foreach ($this->tickets as $ticket => $num) {
+            if ($this->ticketprices[$ticket] > $min) {
+                $count += $num;
+            }
+        }
+
+        return $count;    
+    }
+
     public function get_travellers() {
         return $this->travellers;
     }
