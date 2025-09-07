@@ -38,7 +38,7 @@ class FollowUpProduct {
     }
 
     public static function get_follow_ups_bookingorder(\wc_railticket\BookingOrder $bo) {
-        if ($bo->get_special()) {
+        if ($bo->is_special()) {
             return self::get_follow_ups_special($bo->get_special());
         } else {
             return self::get_follow_ups_bookable($bo->get_bookable_day());

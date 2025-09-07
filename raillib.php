@@ -377,7 +377,8 @@ function railticket_survey() {
 
     $message = $survey->do_survey($bookingorder);
     if ($survey->is_processed()) {
-       $fps = FollowUpProduct::get_follow_ups_bookingorder($bookingorder);
+       $fps = \wc_railticket\FollowUpProduct::get_follow_ups_bookingorder($bookingorder);
+
        if (count($fps) > 0) {
            wp_redirect(reset($fps)->get_url());
            return;
