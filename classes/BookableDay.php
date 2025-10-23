@@ -546,11 +546,12 @@ class BookableDay {
 
             $capused = $trainservice->get_inventory(false, false);
             $t->seatsleft = $capused->totalseats;
-            if ($capused->totalseats == 0) {
+            if ($capused->totalseats <= 0) {
                 $t->seatsleftstr = __('FULL - Sorry!', 'wc_railticket');
                 $t->classes .= " railticket_full";
                 if ($nodisable) {
                     $t->classes .= ' railticket_late';
+                    $t->seatsleftstr .= ' '.$capused->totalseats.' seats';
                 } else {
                     $t->disabled = 'disabled';
                     $t->notbookable = true;
