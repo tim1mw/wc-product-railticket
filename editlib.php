@@ -2123,12 +2123,17 @@ function railticket_fares() {
     wp_enqueue_style('railticket_style');
 
     // Need to do this first
-    if (array_key_exists('action', $_REQUEST)) {
-        switch ($_REQUEST['action']) {
-            case 'addrevision':
-                \wc_railticket\FareCalculator::add_revision(railticket_getpostfield('name'), railticket_getpostfield('datefrom'), railticket_getpostfield('dateto'));
-                break;
+    try {
+        if (array_key_exists('action', $_REQUEST)) {
+            switch ($_REQUEST['action']) {
+                case 'addrevision':
+                    \wc_railticket\FareCalculator::add_revision(railticket_getpostfield('name'), railticket_getpostfield('datefrom'), railticket_getpostfield('dateto'));
+                    break;
+            }
         }
+    }  catch (\wc_railticket\TicketException $e) {
+        echo "<p style='color:red;font-size:large;'>ERROR: ".$e->getMessage()."</p>";
+        return;
     }
 
     $pricerevisionid = railticket_getpostfield('pricerevision');
@@ -2153,7 +2158,7 @@ function railticket_fares() {
     $timetable = $farecalc->get_last_timetable();
 
     if ($timetable == false) {
-        echo "<p>No timetables have been loaded. Please load a timetable.</p>";
+        echo "<p>No timetables have been found for the fare revsion '".$farecalc->get_name()."', so no station names are available. Please load a timetable for the fare revision.</p>";
         return;
     }
 
@@ -2175,9 +2180,9 @@ function railticket_fares() {
                 $id = railticket_getpostfield('id');
                 $farecalc->delete_fare($id);
                 break;
-            case 'addrevision':
-                \wc_railticket\FareCalculator::add_revision(railticket_gettfpostfield('name'), railticket_gettfpostfield('datefrom'), railticket_gettfpostfield('dateto'));
-                break;
+            //case 'addrevision':
+            //    \wc_railticket\FareCalculator::add_revision(railticket_gettfpostfield('name'), railticket_gettfpostfield('datefrom'), railticket_gettfpostfield('dateto'));
+            //    break;
         }
     }
 

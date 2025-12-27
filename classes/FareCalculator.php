@@ -17,6 +17,18 @@ class FareCalculator {
         $revision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_pricerevisions WHERE ".
             "id = ".$rev);
 
+        return self::get_fares_obj($revision);
+    }
+
+    public static function get_fares_date($date) {
+        global $wpdb;
+        $revision = $wpdb->get_row("SELECT * FROM {$wpdb->prefix}wc_railticket_pricerevisions WHERE ".
+            "'".$date."' >= datefrom AND '".$date."' <= dateto");
+
+        return self::get_fares_obj($revision);
+    }
+
+    private static function get_fares_obj($revision) {
         if (!$revision) {
             return false;
         }
@@ -26,6 +38,29 @@ class FareCalculator {
 
     public static function add_revision($name, $datefrom, $dateto) {
         global $wpdb;
+        // Sanity check the new revision
+        $datef = \DateTime::createFromFormat('Y-m-d', $datefrom);
+        $datet = \DateTime::createFromformat('Y-m-d', $dateto);
+
+        if ($datef == false) {
+            throw new TicketException("The from date is invalid");
+        }
+        if ($datet == false) {
+            throw new TicketException("The to date is invalid");
+        }
+        if ($datef > $datet) {
+            throw new TicketException("The from date '".$datefrom."' must be before the to date '".$dateto);
+        }
+
+        $rev = self::get_fares_date($datefrom);
+        if ($rev) {
+            throw new TicketException("The from date '".$datefrom."' overlaps an existing fare revision: ".$rev->get_name());
+        }
+        $rev = self::get_fares_date($dateto);
+        if ($rev) {
+            throw new TicketException("The to date '".$datefrom."' overlaps an existing fare revision: ".$rev->get_name());
+        }
+
         $wpdb->insert("{$wpdb->prefix}wc_railticket_pricerevisions", array('name' => $name, 'datefrom' => $datefrom, 'dateto' => $dateto));
     }
 
