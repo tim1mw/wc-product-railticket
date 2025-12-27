@@ -277,6 +277,7 @@ $sql[] = "CREATE TABLE ".$wpdb->prefix."wc_railticket_stats (
     postcodes text NOT NULL,
     postcodefirst text NOT NULL,
     postcodezone text NOT NULL,
+    waybill text NOT NULL,
     PRIMARY KEY  (id),
     UNIQUE KEY date (date))
 ".$charset_collate.";";
