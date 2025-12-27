@@ -461,14 +461,15 @@ class BookableDay {
         // Woocommerce orders are difficult to get directly, so pull from the bookings table and exclude duplicates
         $allids = array();
         $woobks = $wpdb->get_results("SELECT DISTINCT wooorderid FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."' ".
-            "AND woocartitem = '' AND manual = 0");
+            "AND woocartitem = '' AND manual = 0 AND wooorderid > 0");
+
         foreach($woobks as $bk) {
             $allids[] = $bk->wooorderid;
         }
 
         // Manual bookings only record the date against the booking not the order, so pull from bookings an exclude duplicates
         $mbks = $wpdb->get_results("SELECT DISTINCT manual FROM {$wpdb->prefix}wc_railticket_bookings WHERE date = '".$this->data->date."' ".
-            "AND woocartitem = '' AND wooorderid = 0");
+            "AND woocartitem = '' AND wooorderid = 0 AND manual > 0");
 
         foreach ($mbks as $mb) {
             $allids[] = 'M'.$mb->manual;
