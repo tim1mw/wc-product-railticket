@@ -21,6 +21,12 @@ define('SINGLE_TICKET', 0);
 define('RETURN_TICKET', 1);
 define('SPECIAL_TICKET', 2);
 
+/**
+* Define machine version of this plugin used for upgrades
+**/
+
+define('WC_RAILTICKET_VERSION', 7);
+
 require_once('Mustache/Autoloader.php');
 Mustache_Autoloader::register();
 $rtmustache = new Mustache_Engine(array(
@@ -33,8 +39,9 @@ require_once('woolib.php');
 require_once('editlib.php');
 
 // Install the DB
-register_activation_hook( __FILE__, 'railticket_create_db' );
-add_action( 'upgrader_process_complete', 'railticket_create_db', 10, 2 );
+//register_activation_hook( __FILE__, 'railticket_create_db' );
+add_action( 'upgrader_process_complete', 'railticket_update_db', 10, 2 );
+add_action( 'init', 'railticket_update_db', 5 );
 
 function wc_railticket_autoloader($class) {
     $namespace = 'wc_railticket';

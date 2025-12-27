@@ -16,13 +16,29 @@ add_filter( 'cron_schedules', 'railticket_add_every_two_minutes' );
 add_action( 'railticket_add_every_two_minutes', 'railticket_every_two_minutes_event_func' );
 
 
-function railticket_create_db() {
+function railticket_update_db($last_plugin_version) {
+/*
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-    include('sqlimport.php');
+    include('db/sqlimport.php');
     foreach ($sql as $s) {
         dbDelta($s);
+    }*/
+
+    global $wpdb;
+
+    $charset_collate = $wpdb->get_charset_collate();
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    include(WP_PLUGIN_DIR . '/wc-product-railticket/db/sqlimport.php');
+    foreach ($sql as $s) {
+        dbDelta($s);
+    }
+
+    if ($last_plugin_version === 0) {
+        add_option('wc-product-railticket_version', WC_RAILTICKET_VERSION);
+    } else {
+        update_option('wc-product-railticket_version', WC_RAILTICKET_VERSION);
     }
 }
 
