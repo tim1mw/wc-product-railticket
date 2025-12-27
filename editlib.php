@@ -671,6 +671,8 @@ function railticket_get_all_pricerevisions($chosenfr) {
         $f = new stdclass();
         $f->name = $fare->get_name();
         $f->value = $fare->get_revision();
+        $f->datefrom = $fare->get_date_from(true);
+        $f->dateto = $fare->get_date_to(true);
         if ($f->value == $chosenfr) {
             $f->selected = 'selected';
         } else {
@@ -2155,18 +2157,6 @@ function railticket_fares() {
     $showdisabled = railticket_gettfpostfield('showdisabled');
 
     $farecalc = \wc_railticket\FareCalculator::get_fares($pricerevisionid); 
-    $timetable = $farecalc->get_last_timetable();
-
-    if ($timetable == false) {
-        echo "<p>No timetables have been found for the fare revsion '".$farecalc->get_name()."', so no station names are available. Please load a timetable for the fare revision.</p>";
-        return;
-    }
-
-    $alldata = new \stdclass();
-    $alldata->stations = $timetable->get_stations(true);
-    if ($stnchoice == false) {
-        $stnchoice = reset($alldata->stations)->stnid;
-    }
 
     if (array_key_exists('action', $_REQUEST)) {
         switch ($_REQUEST['action']) {
@@ -2186,11 +2176,25 @@ function railticket_fares() {
         }
     }
 
-
+    $alldata = new \stdclass();
     $alldata->actionurl = railticket_get_page_url();
     $alldata->farerevisions = railticket_get_all_pricerevisions($pricerevisionid);
     $alldata->pricerevision = $pricerevisionid;
     $alldata->showdisabled = $showdisabled;
+    $alldata->datefrom = $farecalc->get_date_from(true);
+    $alldata->dateto = $farecalc->get_date_to(true);
+
+    $timetable = $farecalc->get_last_timetable();
+    if ($timetable == false) {
+        echo "<p>No timetables have been found for the fare revision '".$farecalc->get_name()."', so no station names are available. Please load a timetable for the fare revision.</p>";
+        $alldata->bdisabled='disabled';
+    } else {
+
+    $alldata->stations = $timetable->get_stations(true);
+    if ($stnchoice == false) {
+        $stnchoice = reset($alldata->stations)->stnid;
+    }
+
     if ($showdisabled) {
         $alldata->showdisabledcheck = 'checked';
     }
@@ -2238,6 +2242,7 @@ function railticket_fares() {
     $alldata->ids = implode(',', $alldata->ids);
     $alldata->tickettypes = array_values($farecalc->get_all_ticket_types());
     $alldata->journeytypes = $farecalc->get_all_journey_types();
+    }
 
     $template = $rtmustache->loadTemplate('fare_selector');
     echo $template->render($alldata);

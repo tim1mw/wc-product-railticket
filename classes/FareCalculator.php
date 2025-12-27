@@ -249,7 +249,7 @@ class FareCalculator {
         $wpdb->delete("{$wpdb->prefix}wc_railticket_travellers", array('id' => $id));
     }
 
-    private function get_date($key) {
+    private function get_date($key, $format = false) {
         if (!$format) {
             return $this->data->$key;
         }
@@ -264,7 +264,7 @@ class FareCalculator {
     }
 
     public function get_date_to($format = false) {
-        return $this->get_date('datefrom', $format);
+        return $this->get_date('dateto', $format);
     }
 
     public function get_last_timetable() {

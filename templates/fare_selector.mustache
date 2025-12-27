@@ -6,7 +6,7 @@
         <td>
     <select name='pricerevision'>
     {{# farerevisions }}
-        <option value='{{value}}' {{selected}}>{{name}}</option>    
+        <option value='{{value}}' {{selected}}>{{name}} ({{datefrom}} to {{dateto}})</option>    
     {{/ farerevisions }}
     </select>
         </td>
@@ -27,7 +27,7 @@
 </table>
 </form>
 <br /><br />
-<h3>Fares From {{stationname}}</h3>
+<h3>Fares From {{stationname}}, {{datefrom}} to {{dateto}}</h3>
 <p>Note all fares are reciprocal.</p>
 <form method='post' action='{{actionurl}}'>
 <input type='hidden' name='stn' value='{{fromstnid}}' />
@@ -63,7 +63,7 @@
     </tr>
     {{/fares}}
 </table>
-<p><input type='submit' value='Update' /></p>
+<p><input type='submit' value='Update' {{bdisabled}} /></p>
 </form>
 
 <br />
@@ -116,7 +116,7 @@
         <td><input type='text' name='n_image' value='' size='25' maxlength='255' />
     </tr>
 </table>
-<p><input type='submit' value='Add Fare' /></p>
+<p><input type='submit' value='Add Fare' {{bdisabled}} /></p>
 </form>
 
 <hr />
