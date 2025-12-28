@@ -82,13 +82,48 @@ class BookableDay {
 
     public static function get_next_bookable_dates($date, $num) {
         global $wpdb;
-        if ($date instanceof DateTime) {
+        if ($date instanceof \DateTime) {
             $date = $date->format('Y-m-d');
         }
 
         $sql = "SELECT date FROM {$wpdb->prefix}wc_railticket_bookable ".
             "WHERE date >= '".$date."' AND bookable = 1 AND soldout = 0 ORDER BY date ASC LIMIT ".$num;
 
+        $rec = $wpdb->get_results($sql);
+
+        if (count($rec) > 0) {
+            return $rec;
+        } else {
+            return false;
+        }
+    }
+
+    public static function get_next_dates($date, $num) {
+        global $wpdb;
+        if ($date instanceof \DateTime) {
+            $date = $date->format('Y-m-d');
+        }
+
+        $sql = "SELECT date FROM {$wpdb->prefix}wc_railticket_bookable ".
+            "WHERE date >= '".$date."' ORDER BY date ASC LIMIT ".$num;
+
+        $rec = $wpdb->get_results($sql);
+
+        if (count($rec) > 0) {
+            return $rec;
+        } else {
+            return false;
+        }
+    }
+
+    public static function get_prev_dates($date, $num) {
+        global $wpdb;
+        if ($date instanceof \DateTime) {
+            $date = $date->format('Y-m-d');
+        }
+
+        $sql = "SELECT date FROM {$wpdb->prefix}wc_railticket_bookable ".
+            "WHERE date < '".$date."' ORDER BY date DESC LIMIT ".$num;
 
         $rec = $wpdb->get_results($sql);
 

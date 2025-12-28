@@ -25,9 +25,9 @@
             <option value='{{stnid}}' {{selected}}>{{name}}</option>
         {{/tostns}}
         </select></td>
-        <td><select name='dep{{legnum}}'>
+        <td><select name='dep{{legnum}}' id='dep{{legnum}}' class='railticket_depchange'>
         {{#deps}}
-            <option value='{{key}}' {{selected}} {{disabled}}>{{formatted}} - {{seats}} Seats</option>
+            <option value='{{key}}-{{#stopsat}}{{key}}{{/stopsat}}' {{selected}} {{disabled}}>{{formatted}} - {{seats}} Seats (arr: {{#stopsat}}{{formatted}}{{/stopsat}})</option>
         {{/deps}}
         </select></td>
     </tr>
@@ -35,6 +35,7 @@
     <tr>
         <td colspan='2'><div id='railticket_commitmessage' style='font-weight:bold;font-size:large;color:blue;text-align:center;'></div></td>
         <td colspan='2' style='text-align:right;padding-top:10px;'>
+            {{#reverse}}<input type='button' name='commit' id='railticket_reverse' value='Reverse Booking' />&nbsp;{{/reverse}}
             <input type='button' name='commit' id='railticket_commit' value='Commit Changes' /><br />
             <input type='checkbox' name='notify' {{notify}} />Send email confirmation to customer
         </td>

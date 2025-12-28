@@ -44,6 +44,9 @@ function railticket_register_settings() {
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enckey');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_enciv');
    register_setting('wc_product_railticket_options_main', 'wc_product_railticket_finishurl');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_restrictguard');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_guardnext');
+   register_setting('wc_product_railticket_options_main', 'wc_product_railticket_guardprev');
 
    add_option('wc_railticket_date_format', '%e-%b-%y');
    register_setting('wc_product_railticket_options_main', 'wc_railticket_date_format'); 
@@ -256,12 +259,24 @@ function railticket_options() {
             <td><input size='32' type="text" min='32' max='32' id="wc_product_railticket_enckey" name="wc_product_railticket_enckey" value="<?php echo get_option('wc_product_railticket_enckey'); ?>" /></td>
         </tr>
         <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_enckey">Encryption IV for links</label></th>
+            <th scope="row"><label for="wc_product_railticket_enciv">Encryption IV for links</label></th>
             <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_enciv" name="wc_product_railticket_enciv" value="<?php echo get_option('wc_product_railticket_enciv'); ?>" /></td>
         </tr>
         <tr valign="top">
-            <th scope="row"><label for="wc_product_railticket_enckey">Ticket Selection Finish URL</label></th>
+            <th scope="row"><label for="wc_product_railticket_finishurl">Ticket Selection Finish URL</label></th>
             <td><input size='16' type="text" min='16' max='16' id="wc_product_railticket_finishurl" name="wc_product_railticket_finishurl" value="<?php echo get_option('wc_product_railticket_finishurl'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_restrictguard">Restrict guards date selection</label></th>
+            <td><input type="checkbox" id="wc_product_railticket_restrictguard" name="wc_product_railticket_restrictguard" <?php if (get_option('wc_product_railticket_restrictguard')) {echo " checked";} ?> /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_guardnext">Number of bookable days ahead a guard can view</label></th>
+            <td><input size='1' type="number" min='0' max='9' id="wc_product_railticket_guardnext" name="wc_product_railticket_guardnext" value="<?php echo get_option('wc_product_railticket_guardnext'); ?>" /></td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><label for="wc_product_railticket_guardprev">Number of bookable days previous a guard can view</label></th>
+            <td><input size='1' type="number" min='0' max='9' id="wc_product_railticket_guardprev" name="wc_product_railticket_guardprev" value="<?php echo get_option('wc_product_railticket_guardprev'); ?>" /></td>
         </tr>
     </table>
     <?php submit_button(); ?>
@@ -352,11 +367,6 @@ function wc_railticket_getmonthselect($chosenmonth = false) {
 
 function wc_railticket_getyearselect($currentyear = false) {
     global $wpdb;
-
-    // The guard only gets the current year
-    if (!current_user_can('admin_tickets')) {
-        return  $currentyear."<input type='hidden' value='".intval(date("Y"))."' name='year' />";
-    }
 
     if ($currentyear == false) {
         $currentyear = intval(date("Y"));
@@ -764,6 +774,7 @@ function railticket_deletebookableday() {
 }
 
 function railticket_summary_selector() {
+    global $rtmustache;
 
     $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
     $today = new \DateTime();
@@ -774,6 +785,7 @@ function railticket_summary_selector() {
         if (current_user_can('admin_tickets')) {
             $dateofjourney = $_REQUEST['dateofjourney'];
         } else {
+            // We always send guards back to the current day to avoid confusion.
             $dateofjourney = $today->format('Y-m-d');
         }
         $parts = explode('-', $dateofjourney);
@@ -781,14 +793,10 @@ function railticket_summary_selector() {
         $chosenmonth = $parts[1];
         $chosenday =  $parts[2];
     } else {
-        if (current_user_can('admin_tickets')) {
-            if (array_key_exists('year', $_REQUEST)) {
-                $chosenyear = $_REQUEST['year'];
-            } else {
-                $chosenyear = intval(date_i18n("Y"));
-            }
+        if (array_key_exists('year', $_REQUEST)) {
+            $chosenyear = $_REQUEST['year'];
         } else {
-            $chosenyear = $today->format('Y');
+            $chosenyear = intval(date_i18n("Y"));
         }
 
         if (array_key_exists('month', $_REQUEST)) {
@@ -810,35 +818,79 @@ function railticket_summary_selector() {
     }
     railticket_show_order_form();
 
-   ?>
-    <hr />
-    <h1>Service Summaries</h1>
-    <div class='railticket_editdate'>
-    <form method='post' action='<?php echo railticket_get_page_url(); ?>'>
-        <input type='hidden' name='action' value='filterbookings' />
-        <table><tr>
-            <td>Day</td>
-            <td>Month</td>
-            <td>Year</td>
-        </tr><tr>
-            <td><?php echo railticket_getdayselect($chosenday);?></td>
-            <td><?php echo wc_railticket_getmonthselect($chosenmonth);?></td>
-            <td><?php echo wc_railticket_getyearselect($chosenyear);?></td>
-        </tr><tr>
-            <td colspan='3'><input type='submit' value='Show Departures' style='width:100%' /></td>
-        </tr></table>
-    </form>
-    </div><br />
-    <hr />
-    <?php
+    if (current_user_can('admin_tickets') || !get_option('wc_product_railticket_restrictguard') ) {
+        $ssdata = new \stdclass();
+        $ssdata->chosenday = railticket_getdayselect($chosenday);
+        $ssdata->chosenmonth = wc_railticket_getmonthselect($chosenmonth);
+        $ssdata->chosenyear = wc_railticket_getyearselect($chosenyear);
+        $template = $rtmustache->loadTemplate('servicesummaryform');
+        echo $template->render($ssdata);
+        railticket_show_bookings_summary($dateofjourney, $today->format('Y-m-d'));
+    } else {
+        $ssdata = new \stdclass();
+        $ssdata->daybuttons = [];
 
-    railticket_show_bookings_summary($dateofjourney, $today->format('Y-m-d'));
+        $bks = railticket_guard_dates($today);
+        foreach ($bks as $bk) {
+            $ssday = new \stdclass();
+            $dparts = explode('-', $bk);
+            $ssday->year = $dparts[0];
+            $ssday->month = $dparts[1];
+            $ssday->day = $dparts[2];
+            $jdate = \DateTime::createFromFormat('Y-m-d', $bk, $railticket_timezone);
+            $ssday->name = railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+            $ssdata->daybuttons[] = $ssday;
+        }
+
+        $template = $rtmustache->loadTemplate('daybuttons');
+        echo $template->render($ssdata);
+        if (in_array($dateofjourney, $bks)) {
+            railticket_show_bookings_summary($dateofjourney, $today->format('Y-m-d'));
+        } else {
+            echo "<h3>Booking information for ".$dateofjourney." cannot be viewed.</h3>";
+        }
+    }
+}
+
+function railticket_guard_dates($today) {
+    $bks = \wc_railticket\BookableDay::get_next_dates($today, intval(get_option('wc_product_railticket_guardnext')) + 1);
+    $prev = intval(get_option('wc_product_railticket_guardprev'));
+    if ($prev > 0) {
+        $bks = array_merge(array_reverse(\wc_railticket\BookableDay::get_prev_dates($today, $prev)), $bks);
+    }
+
+    $bki = [];
+    foreach ($bks as $bk) {
+        $bki[] = $bk->date;
+    }
+
+    return $bki;
+}
+
+function railticket_can_view_date($date, $bks = false) {
+    if (current_user_can('admin_tickets') || !get_option('wc_product_railticket_restrictguard') ) {
+        return true;
+    }
+
+    if ($date instanceof \DateTime) {
+        $date = $date->format('Y-m-d');
+    }
+
+    if (!$bks) {
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $today = new \DateTime();
+        $today->setTimezone($railticket_timezone);
+        $today->setTime(0,0,0);
+        $bks = railticket_guard_dates($today);
+    }
+
+    return in_array($date, $bks);
 }
 
 function railticket_show_order_form() {
     ?>
     <hr /><br />
-    <h1>Lookup Online Order<h1>
+    <h1>Lookup Online Order</h1>
     <div class='railticket_editdate'>
     <form method='post' action='<?php echo railticket_get_page_url() ?>'>
         <input type='hidden' name='action' value='showorder' />    
@@ -999,11 +1051,15 @@ function railticket_get_daysurveys() {
 
 function railticket_show_bookings_summary($dateofjourney, $today) {
     global $rtmustache;
+
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
 
     // If the override code is empty, this day has a timetable, but hasn't been initialised.
     if (!$bookableday) {
-        echo "<h3>Booking data not initiailised for this day - please make this day bookable.</h3>";
+        $railticket_timezone = new \DateTimeZone(get_option('timezone_string'));
+        $jdate = \DateTime::createFromFormat('Y-m-d', $dateofjourney, $railticket_timezone);
+        $jdate =  railticket_timefunc(get_option('wc_railticket_date_format'), $jdate->getTimeStamp());
+        echo "<h3>Booking data not initiailised for ".$jdate." - please make this day bookable.</h3>";
         return;
     }
     echo "<h1>Summary for ".$bookableday->get_date(true);
@@ -1199,6 +1255,15 @@ function railticket_show_dep_button($dateofjourney, \wc_railticket\Station $stat
 
 function railticket_show_departure($dateofjourney, \wc_railticket\Station $station, $direction, $deptime, $destination = false, $summaryonly = false) {
     global $rtmustache;
+
+    if (!railticket_can_view_date($dateofjourney)) {
+        ?><h3>Guards cannot view services on: <?php echo $dateofjourney ?></h3>
+        <form action='<?php echo railticket_get_page_url() ?>' method='post'>
+            <input type='hidden' name='action' value='filterbookings' />
+            <input type='submit' name='submit' value='Back to Services' />
+        </form><?php
+        return;
+    }
 
     $bookableday = \wc_railticket\BookableDay::get_bookable_day($dateofjourney);
     $finaldestination = $bookableday->timetable->get_terminal($direction);

@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", setupEditor);
 
 var notify = true;
 var notifyover = true;
+var lastData = false;
 
 function setupEditor() {
     renderEditor(defaultData);
@@ -27,7 +28,8 @@ function dataUpdated(response) {
 }
 
 function commitEdit() {
-    railTicketEditAjax(getEditFormData('editorder'), true, editCommitted);
+    var form = getEditFormData('editorder');
+    railTicketEditAjax(form, true, editCommitted);
 }
 
 function editCommitted(response) {
@@ -46,29 +48,66 @@ function renderEditor(data) {
     if (notify) {
         data.notify = 'checked';
     }
+    
+    if (data.bookings.length == 2) {
+        data.reverse = true;
+    }
 
     mv.innerHTML = Mustache.render(mvtempl, data);
+    lastData = data;
 
     var eles = document.getElementsByClassName('railticket_refeshdata');
     for (var i = 0; i < eles.length; i++) {
         eles[i].addEventListener('change', dataChanged);
     }
+    var eles = document.getElementsByClassName('railticket_depchange');
+    for (var i = 0; i < eles.length; i++) {
+        eles[i].addEventListener('change', validateForm);
+    }
     var com = document.getElementById('railticket_commit');
     com.addEventListener('click', commitEdit);
 
-    var disable = false;
-    for (i in data.bookings) {
-        if (data.bookings[i].deps.length == 0) {
-            disable = true;
-        }
+    if (data.reverse) {
+        var rev = document.getElementById('railticket_reverse');
+        rev.addEventListener('click', reverseEdit);
     }
-    var cb = document.getElementById('railticket_commit');
-    cb.disabled = disable;
+
+    validateForm();
 
     var nodes = document.getElementById('railticket_overridebays').getElementsByTagName('*');
     for(var i = 0; i < nodes.length; i++){
         nodes[i].disabled = true;
     }
+}
+
+function reverseEdit() {
+    var first = lastData.bookings[0];
+    lastData.bookings[0] = lastData.bookings[1];
+    lastData.bookings[0].legnum = 1;
+    lastData.bookings[1] = first;
+    lastData.bookings[1].legnum = 2;
+
+    var firstArr = false;
+    for (index in lastData.bookings[0].deps) {
+        if (lastData.bookings[0].deps[index].hasOwnProperty('selected') && lastData.bookings[0].deps[index].selected == 'selected') {
+            firstArr = (parseInt(lastData.bookings[0].deps[index].hour) *60 ) + parseInt(lastData.bookings[0].deps[index].min);
+            break;
+        }
+    }
+
+    for (index in lastData.bookings[1].deps) {
+        lastData.bookings[1].deps[index].selected = '';
+    }
+
+    for (index in lastData.bookings[1].deps) {
+        var depTime = (parseInt(lastData.bookings[1].deps[index].hour) *60 ) + parseInt(lastData.bookings[1].deps[index].min);
+        if (depTime > firstArr) {
+            lastData.bookings[1].deps[index].selected = 'selected';
+            break;
+        }
+    }
+
+    renderEditor(lastData);
 }
     
 
@@ -115,11 +154,55 @@ function getEditFormData(datareq) {
         legs[i] = {};
         legs[i].from = getFormValue('fromstation'+(i+1));
         legs[i].to = getFormValue('tostation'+(i+1));
-        legs[i].dep = getFormValue('dep'+(i+1));
+        var dep = getFormValue('dep'+(i+1)).split('-');
+        legs[i].dep = dep[0];
     }
 
     data.append('legs', JSON.stringify(legs));
     return data;
+}
+
+function validateForm() {
+
+    var cb = document.getElementById('railticket_commit');
+    for (i in lastData.bookings) {
+        if (lastData.bookings[i].deps.length == 0) {
+            cb.disabled = disable;
+            return;
+        }
+    }
+
+    var prevArr = false;
+    var disable = false;
+
+    for (i=0; i < lastData.bookings.length; i++) {
+        var dep = getFormValue('dep'+(i+1)).split('-');
+        if (prevArr !== false) {
+            var leg = document.getElementById('dep'+(i+1));
+            if (!isDepAfterArr(prevArr, dep[0])) {
+                disable = true;
+                leg.style.color = 'red';
+                leg.setCustomValidity('Departure time is before prior trip arrival.');
+            } else {
+                leg.style.color = 'black';
+                leg.setCustomValidity('');
+            }
+        }
+        prevArr = dep[1];
+    }
+
+    cb.disabled = disable;
+}
+
+function isDepAfterArr(prevArr, dep) {
+    var arrTimes = prevArr.split('.');
+    var arrTime = (parseInt(arrTimes[0]) * 60) + parseInt(arrTimes[1]);
+    var depTimes = dep.split('.');
+    var depTime = (parseInt(depTimes[0]) * 60) + parseInt(depTimes[1]);
+    if (depTime > arrTime) {
+        return true;
+    }
+    return false;
 }
 
 function getCBFormValue(param) {
